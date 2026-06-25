@@ -1,0 +1,13 @@
+{
+    "entityName": "Nhan Như Ngọc",
+    "currentLevel": 5,
+    "baseHealth": 280,
+    "baseDamage": 30,
+    "baseAttackSpeed": 1.0,
+    "race": 0,
+    "gender": 1,
+    "spiritRoots": [
+        5,
+        4
+    ]
+}
