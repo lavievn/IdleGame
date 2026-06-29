@@ -30,8 +30,6 @@ public class GameManager : MonoBehaviour
     [SerializeField] private SaveManager saveManager; 
 
     public List<GameObject> activeMonsters = new List<GameObject>();
-    public float currentAttackRange = 120f; 
-    
     private bool hasDeployed = false; 
 
     void Start()
@@ -52,7 +50,8 @@ public class GameManager : MonoBehaviour
     private void InitHeroData()
     {
         runtimeHeroData = Instantiate(heroDataSO);
-        bool hasSaveData = saveManager != null && saveManager.LoadGame(runtimeHeroData);
+        // Mặc định khởi động sẽ lấy AutoSave
+        bool hasSaveData = saveManager != null && saveManager.LoadGame(runtimeHeroData, SaveSlot.AutoSave);
 
         if (!hasSaveData)
         {
@@ -83,90 +82,48 @@ public class GameManager : MonoBehaviour
         CallNextWave();             
     }
 
-    void Update()
+    // --- CÁC HÀM XỬ LÝ SAVE/LOAD TỪ UI MỚI ---
+    public void ForceManualSave(int slotIndex)
     {
-        if (heroController == null || !hasDeployed) return;
-
-        bool heroIsMoving = false;
-        bool heroIsFighting = false;
-
-        if (activeMonsters.Count == 0)
+        SaveSlot slot = (SaveSlot)slotIndex;
+        if (saveManager != null && runtimeHeroData != null)
         {
-            if (!heroController.IsAtCenter())
-            {
-                heroController.MoveToCenter(150f);
-                heroIsMoving = true;
-                if (environmentManager != null) environmentManager.PanEnvironment(150f * Time.deltaTime);
-            }
+            saveManager.SaveGame(runtimeHeroData, slot);
+            UpdateEventLog($"Đã lưu tiến trình vào: {slot}");
         }
-        else
-        {
-            float heroActualX = heroController.GetActualXPosition();
-            float minDistance = float.MaxValue;
-            GameObject nearestMonster = null;
-
-            foreach (var m in activeMonsters)
-            {
-                if (m == null || !m.activeSelf) continue;
-                float dist = heroActualX - m.GetComponent<RectTransform>().anchoredPosition.x;
-                if (dist > 0 && dist < minDistance)
-                {
-                    minDistance = dist;
-                    nearestMonster = m;
-                }
-            }
-
-            // 1. LOGIC DI CHUYỂN CỦA HERO
-            if (nearestMonster != null)
-            {
-                RectTransform targetRect = nearestMonster.GetComponent<RectTransform>();
-                float distanceX = heroActualX - targetRect.anchoredPosition.x;
-                float distanceY = Mathf.Abs(heroController.GetYPosition() - targetRect.anchoredPosition.y);
-
-                if (distanceX > currentAttackRange || distanceY > 15f) 
-                {
-                    heroIsMoving = true;
-                    heroController.MoveTowardsEnemy(targetRect.anchoredPosition.y, 100f);
-                    if (environmentManager != null) environmentManager.PanEnvironment(150f * Time.deltaTime);
-                }
-                else
-                {
-                    heroIsFighting = true; 
-                }
-            }
-
-            // 2. LOGIC DI CHUYỂN ĐỘC LẬP CỦA QUÁI
-            foreach (var m in activeMonsters)
-            {
-                if (m == null || !m.activeSelf) continue;
-                RectTransform mRect = m.GetComponent<RectTransform>();
-                MonsterController mController = m.GetComponent<MonsterController>();
-
-                float mDistX = heroActualX - mRect.anchoredPosition.x;
-                float mDistY = Mathf.Abs(heroController.GetYPosition() - mRect.anchoredPosition.y);
-
-                // Quái trôi theo nền cỏ nếu Hero đang di chuyển
-                if (heroIsMoving) mRect.anchoredPosition += new Vector2(150f * Time.deltaTime, 0);
-
-                // Nếu CHƯA VÀO TẦM CỦA NÓ -> Nó tiếp tục lết về phía Hero
-                if (mDistX > mController.attackRange || mDistY > 15f)
-                {
-                    float step = 100f * Time.deltaTime;
-                    float newY = Mathf.MoveTowards(mRect.anchoredPosition.y, heroController.GetYPosition(), step);
-                    mRect.anchoredPosition = new Vector2(mRect.anchoredPosition.x + step, newY);
-                }
-            }
-        }
-        
-        heroController.HandleAnimation(heroIsMoving, heroIsFighting);
     }
+
+    public void ForceManualLoad(int slotIndex)
+    {
+        SaveSlot slot = (SaveSlot)slotIndex;
+        if (saveManager == null || !saveManager.HasSave(slot)) return;
+
+        // 1. Dọn dẹp sạch sẽ chiến trường tránh kẹt Coroutine
+        hasDeployed = false;
+        if (combatManager != null) combatManager.ForceClearAllMonsters();
+        activeMonsters.Clear();
+        if (heroController != null) heroController.heroRect.gameObject.SetActive(false);
+        if (gameOverPanel != null) gameOverPanel.SetActive(false);
+
+        // 2. Nạp dữ liệu mới
+        saveManager.LoadGame(runtimeHeroData, slot);
+
+        // 3. Đưa người chơi về Màn Hình Chờ an toàn
+        if (heroController != null) heroController.SetGenderVisual(runtimeHeroData.gender);
+        SetupPreGameUI();
+        UpdateEventLog($"Đã tải dữ liệu từ: {slot}");
+    }
+    // ------------------------------------------
 
     private IEnumerator AutoSaveRoutine()
     {
         while (true)
         {
             yield return new WaitForSeconds(10f);
-            if (hasDeployed && runtimeHeroData != null && runtimeHeroData.isDirty && saveManager != null) saveManager.SaveGame(runtimeHeroData);
+            if (hasDeployed && runtimeHeroData != null && runtimeHeroData.isDirty && saveManager != null) 
+            {
+                saveManager.SaveGame(runtimeHeroData, SaveSlot.AutoSave);
+            }
         }
     }
 
@@ -190,13 +147,22 @@ public class GameManager : MonoBehaviour
     {
         if (confirmationPopup != null) confirmationPopup.SetActive(false);
         if (gameOverPanel != null) gameOverPanel.SetActive(false);
-        if (saveManager != null) saveManager.DeleteSave();
+        if (saveManager != null) saveManager.DeleteSave(SaveSlot.AutoSave);
         if (combatManager != null) combatManager.ForceClearAllMonsters();
         activeMonsters.Clear();
         if (heroController != null) heroController.heroRect.gameObject.SetActive(false);
         InitHeroData();
     }
     public void OnCancelResetClicked() { if (confirmationPopup != null) confirmationPopup.SetActive(false); }
+
+    public void SetHeroAttackMode(int modeIndex)
+    {
+        if (heroController != null)
+        {
+            heroController.ChangeAttackMode(modeIndex);
+            UpdateEventLog($"Đổi thế: {(AttackMode)modeIndex}");
+        }
+    }
 
     private void CallNextWave()
     {
@@ -215,7 +181,6 @@ public class GameManager : MonoBehaviour
             }
         }
 
-        // [CẬP NHẬT CHÍ MẠNG]: Kích hoạt trạng thái Combat ngay lập tức khi quái sinh ra
         if (combatManager != null) combatManager.StartBattle(activeMonsters, currentMonsterDataSO);
     }
 
@@ -231,5 +196,5 @@ public class GameManager : MonoBehaviour
         if (hasDeployed) CallNextWave();
     }
 
-    private void OnApplicationQuit() { if (saveManager != null && hasDeployed && runtimeHeroData != null) saveManager.SaveGame(runtimeHeroData); }
+    private void OnApplicationQuit() { if (saveManager != null && hasDeployed && runtimeHeroData != null) saveManager.SaveGame(runtimeHeroData, SaveSlot.AutoSave); }
 }

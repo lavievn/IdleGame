@@ -3,21 +3,21 @@ using UnityEngine;
 using System.IO;
 using TuTienCore;
 
+public enum SaveSlot { AutoSave, ManualSave1, ManualSave2 }
+
 [System.Serializable]
 public class PlayerData
 {
     public string entityName;
     public int currentLevel;
-    public int currentExp;       // Thêm lưu trữ EXP
-    public int expToNextLevel;   // Thêm lưu trữ Max EXP
+    public int currentExp;       
+    public int expToNextLevel;   
     public int baseHealth;
     public int baseDamage;
     public float baseAttackSpeed;
     public RaceType race;
     public GenderType gender;
     public List<ElementType> spiritRoots;
-    
-    // Lưu trữ tiến trình cộng điểm
     public int statPoints;
     public int addedHealth;
     public int addedDamage;
@@ -26,16 +26,21 @@ public class PlayerData
 public class SaveManager : MonoBehaviour
 {
     private string saveDirectory;
-    private string saveFilePath;
 
     void Awake()
     {
-        // [FIX CHÍ MẠNG] Dùng persistentDataPath để game luôn có quyền Write/Read trên mọi phân vùng Windows
         saveDirectory = Path.Combine(Application.persistentDataPath, "SaveData");
-        saveFilePath = Path.Combine(saveDirectory, "player_save.json");
     }
 
-    public void SaveGame(EntityDataSO heroData)
+    private string GetFilePath(SaveSlot slot)
+    {
+        string fileName = "autosave.json";
+        if (slot == SaveSlot.ManualSave1) fileName = "manualsave1.json";
+        else if (slot == SaveSlot.ManualSave2) fileName = "manualsave2.json";
+        return Path.Combine(saveDirectory, fileName);
+    }
+
+    public void SaveGame(EntityDataSO heroData, SaveSlot slot = SaveSlot.AutoSave)
     {
         if (!Directory.Exists(saveDirectory)) Directory.CreateDirectory(saveDirectory);
 
@@ -57,19 +62,19 @@ public class SaveManager : MonoBehaviour
         };
 
         string json = JsonUtility.ToJson(data, true);
-        File.WriteAllText(saveFilePath, json);
+        File.WriteAllText(GetFilePath(slot), json);
         
-        heroData.isDirty = false; // Reset cờ sau khi lưu thành công
-        Debug.Log($"[SAVE] Đã lưu tiến trình tại: {saveFilePath}");
+        heroData.isDirty = false; 
     }
 
-    public bool LoadGame(EntityDataSO heroData)
+    public bool LoadGame(EntityDataSO heroData, SaveSlot slot = SaveSlot.AutoSave)
     {
-        if (File.Exists(saveFilePath))
+        string path = GetFilePath(slot);
+        if (File.Exists(path))
         {
             try
             {
-                string json = File.ReadAllText(saveFilePath);
+                string json = File.ReadAllText(path);
                 PlayerData data = JsonUtility.FromJson<PlayerData>(json);
 
                 heroData.entityName = data.entityName;
@@ -95,8 +100,28 @@ public class SaveManager : MonoBehaviour
         return false;
     }
 
-    public void DeleteSave()
+    public bool HasSave(SaveSlot slot)
     {
-        if (File.Exists(saveFilePath)) File.Delete(saveFilePath);
+        return File.Exists(GetFilePath(slot));
+    }
+
+    // Tiện ích để UI hiển thị thông tin File Save
+    public string GetSaveDetails(SaveSlot slot)
+    {
+        string path = GetFilePath(slot);
+        if (!File.Exists(path)) return "Trống";
+        try
+        {
+            string json = File.ReadAllText(path);
+            PlayerData data = JsonUtility.FromJson<PlayerData>(json);
+            return $"Lv.{data.currentLevel} - {data.entityName}";
+        }
+        catch { return "Lỗi Dữ Liệu"; }
+    }
+
+    public void DeleteSave(SaveSlot slot = SaveSlot.AutoSave)
+    {
+        string path = GetFilePath(slot);
+        if (File.Exists(path)) File.Delete(path);
     }
 }

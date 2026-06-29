@@ -9,8 +9,6 @@ public class CombatManager : MonoBehaviour
     private GameManager gameManager;
     private HeroController heroController;
     
-    public AttackMode currentAttackMode = AttackMode.Melee;
-
     private EntityDataSO runtimeHeroData;
     private int currentHeroHP, maxHeroHP;
     private bool isBattling = false;
@@ -29,18 +27,6 @@ public class CombatManager : MonoBehaviour
     private List<ActiveMonsterInfo> activeMonsters = new List<ActiveMonsterInfo>();
 
     void Start() { gameManager = GetComponent<GameManager>(); heroController = Object.FindFirstObjectByType<HeroController>(); }
-
-    public void SetAttackMode(int modeIndex)
-    {
-        currentAttackMode = (AttackMode)modeIndex;
-        if (gameManager != null)
-        {
-            if (currentAttackMode == AttackMode.Melee) gameManager.currentAttackRange = 120f;
-            else if (currentAttackMode == AttackMode.RangedPhysical) gameManager.currentAttackRange = 300f;
-            else if (currentAttackMode == AttackMode.RangedMagic) gameManager.currentAttackRange = 350f;
-            gameManager.UpdateEventLog($"Đổi thế: {currentAttackMode}");
-        }
-    }
 
     public void SetupHeroInfo(EntityDataSO hData)
     {
@@ -80,13 +66,14 @@ public class CombatManager : MonoBehaviour
     {
         ActiveMonsterInfo nearest = null;
         float minDist = float.MaxValue;
-        float heroX = heroController.GetActualXPosition();
+        if (heroController == null) return null;
+        float heroX = heroController.heroRect.position.x;
 
         foreach (var info in activeMonsters)
         {
             if (info.currentHP <= 0 || info.go == null) continue;
-            float dist = heroX - info.go.GetComponent<RectTransform>().anchoredPosition.x;
-            if (dist > 0 && dist < minDist) { minDist = dist; nearest = info; }
+            float dist = Mathf.Abs(heroX - info.go.GetComponent<RectTransform>().position.x);
+            if (dist < minDist) { minDist = dist; nearest = info; }
         }
         return nearest;
     }
@@ -98,15 +85,9 @@ public class CombatManager : MonoBehaviour
             ActiveMonsterInfo target = GetNearestMonster();
             if (target == null) { yield return null; continue; }
 
-            float heroX = heroController.GetActualXPosition();
-            float mX = target.go.GetComponent<RectTransform>().anchoredPosition.x;
-            float mY = target.go.GetComponent<RectTransform>().anchoredPosition.y;
-            float hY = heroController.GetYPosition();
-
-            // Đo khoảng cách. Nếu Hero chưa vào tầm của mình thì ngủ đông 1 frame chờ chạy tiếp
-            if ((heroX - mX) <= gameManager.currentAttackRange && Mathf.Abs(hY - mY) <= 15f)
+            if (heroController.CurrentState == HeroState.Combat)
             {
-                if (currentAttackMode == AttackMode.RangedMagic)
+                if (heroController.attackMode == AttackMode.RangedMagic)
                 {
                     yield return new WaitForSeconds(2.0f);
                     if (!isBattling || activeMonsters.Count == 0) yield break;
@@ -172,13 +153,7 @@ public class CombatManager : MonoBehaviour
         {
             if (info.go == null || info.controller == null) yield break;
 
-            float heroX = heroController.GetActualXPosition();
-            float mX = info.go.GetComponent<RectTransform>().anchoredPosition.x;
-            float mY = info.go.GetComponent<RectTransform>().anchoredPosition.y;
-            float hY = heroController.GetYPosition();
-
-            // Nếu Quái chưa lết tới tầm CỦA NÓ thì ngủ đông 1 frame chờ chạy tiếp
-            if ((heroX - mX) <= info.controller.attackRange && Mathf.Abs(hY - mY) <= 15f)
+            if (info.controller.currentState == MonsterState.Attacking)
             {
                 if (info.controller.attackMode == AttackMode.RangedMagic)
                 {

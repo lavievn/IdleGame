@@ -12,6 +12,7 @@ public class EntityDataSO : ScriptableObject
     public int baseHealth = 100;
     public int baseDamage = 10;
     public float baseAttackSpeed = 1.0f;
+	public float AddAttackSpeed = 0f;
     public RaceType race = RaceType.NhanToc;
     public GenderType gender;
     public List<ElementType> spiritRoots = new List<ElementType>();
@@ -29,11 +30,15 @@ public class EntityDataSO : ScriptableObject
         {
             currentExp -= expToNextLevel;
             currentLevel++;
-            expToNextLevel = currentLevel * 50; 
-            baseHealth += 20; baseDamage += 5; statPoints += 2;
-            leveledUp = true; 
+            expToNextLevel = currentLevel * 30; 
+            baseHealth += 20; baseDamage += 2; statPoints += 2;
+			AddAttackSpeed += 0.03f;
+			baseAttackSpeed = AddAttackSpeed += baseAttackSpeed;
+            leveledUp = true;
+				
         }
-        isDirty = true; return leveledUp; 
+        isDirty = true; 
+        return leveledUp; 
     }
 
     public void AllocateHealth() { if (statPoints > 0) { statPoints--; addedHealth += 10; isDirty = true; } }

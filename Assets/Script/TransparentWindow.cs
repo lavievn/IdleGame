@@ -1,129 +1,181 @@
 using System;
+using System.Collections;
 using System.Runtime.InteropServices;
-using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.InputSystem;
 
 public class TransparentWindow : MonoBehaviour
 {
+    [Header("UI Interaction Elements")]
+    public RectTransform[] clickableUI; 
+    public RectTransform[] draggableUI; 
+
+    private bool isCurrentlyClickable = false;
+
+    // --- IMPORT WinAPI ---
     [DllImport("user32.dll")]
     private static extern IntPtr GetActiveWindow();
-
     [DllImport("user32.dll")]
     private static extern int SetWindowLong(IntPtr hWnd, int nIndex, uint dwNewLong);
-
-    [DllImport("user32.dll", SetLastError = true)]
-    static extern bool SetWindowPos(IntPtr hWnd, IntPtr hWndInsertAfter, int X, int Y, int cx, int cy, uint uFlags);
-
     [DllImport("user32.dll")]
-    static extern int SetLayeredWindowAttributes(IntPtr hwnd, uint crKey, byte bAlpha, uint dwFlags);
+    private static extern int SetWindowPos(IntPtr hwnd, IntPtr hwndInsertAfter, int x, int y, int cx, int cy, int uFlags);
+    [DllImport("Dwmapi.dll")]
+    private static extern uint DwmExtendFrameIntoClientArea(IntPtr hWnd, ref MARGINS margins);
+    [DllImport("user32.dll")]
+    private static extern bool GetCursorPos(out POINT lpPoint);
+    [DllImport("user32.dll")]
+    private static extern bool ScreenToClient(IntPtr hWnd, ref POINT lpPoint);
+    [DllImport("user32.dll")]
+    private static extern bool ReleaseCapture();
+    [DllImport("user32.dll")]
+    private static extern int SendMessage(IntPtr hWnd, int Msg, int wParam, int lParam);
 
-    // API lấy trỏ chuột trực tiếp từ Windows
+    const int WM_NCLBUTTONDOWN = 0xA1;
+    const int HTCAPTION = 0x2;
+
     [StructLayout(LayoutKind.Sequential)]
     public struct POINT { public int X; public int Y; }
-    [DllImport("user32.dll")]
-    public static extern bool GetCursorPos(out POINT lpPoint);
-    [DllImport("user32.dll")]
-    public static extern bool ScreenToClient(IntPtr hWnd, ref POINT lpPoint);
+    private struct MARGINS { public int cxLeftWidth; public int cxRightWidth; public int cyTopHeight; public int cyBottomHeight; }
 
-    // API Kéo cửa sổ
-    [DllImport("user32.dll")]
-    public static extern bool ReleaseCapture();
-    [DllImport("user32.dll")]
-    public static extern bool SendMessage(IntPtr hwnd, int wMsg, int wParam, int lParam);
-
-    private const int GWL_EXSTYLE = -20;
-    private const uint WS_EX_LAYERED = 0x00080000;
-    private const uint WS_EX_TRANSPARENT = 0x00000020;
-    private const uint LWA_COLORKEY = 0x00000001;
-    private const int WM_NCLBUTTONDOWN = 0xA1;
-    private const int HT_CAPTION = 0x2;
-
+    const int GWL_EXSTYLE = -20;
+    const uint WS_EX_LAYERED = 0x00080000;
+    const uint WS_EX_TRANSPARENT = 0x00000020;
+    const int GWL_STYLE = -16;
+    const uint WS_POPUP = 0x80000000;
+    const uint WS_VISIBLE = 0x10000000;
+    static readonly IntPtr HWND_TOPMOST = new IntPtr(-1);
+    
     private IntPtr hWnd;
 
-    [Header("GÁN CÁC NÚT BẤM (START, MENU...)")]
-    public List<RectTransform> clickableUI = new List<RectTransform>();
-
-    [Header("GÁN KHU VỰC KÉO CỬA SỔ (GROUND)")]
-    public List<RectTransform> draggableUI = new List<RectTransform>();
-
-    private void Start()
+    void Start()
     {
 #if !UNITY_EDITOR
         hWnd = GetActiveWindow();
-        SetWindowLong(hWnd, GWL_EXSTYLE, WS_EX_LAYERED);
-        SetLayeredWindowAttributes(hWnd, 0, 0, LWA_COLORKEY);
-        SetWindowPos(hWnd, new IntPtr(-1), 0, 0, 0, 0, 0x0001 | 0x0002);
+        SetWindowLong(hWnd, GWL_STYLE, WS_POPUP | WS_VISIBLE);
+        
+        MARGINS margins = new MARGINS { cxLeftWidth = -1 };
+        DwmExtendFrameIntoClientArea(hWnd, ref margins);
+        
+        SetWindowLong(hWnd, GWL_EXSTYLE, WS_EX_LAYERED | WS_EX_TRANSPARENT);
+        SetWindowPos(hWnd, HWND_TOPMOST, 0, 0, 0, 0, 0x0001 | 0x0002);
 #endif
     }
 
-    private void Update()
+    void Update()
     {
 #if !UNITY_EDITOR
-        bool isHoveringClickable = false;
-        bool isHoveringDraggable = false;
+        if (Mouse.current == null) return;
 
-        // 1. Dùng API Windows đo tọa độ thực tế, bỏ qua hệ thống Unity
+        bool isOverClickable = false;
+        bool isOverDraggable = false;
+        
+        CheckHitboxUI(out isOverClickable, out isOverDraggable);
+
+        bool isHoveringOverAnyUI = isOverClickable || isOverDraggable;
+
+        // Bật/tắt xuyên thấu
+        if (isHoveringOverAnyUI && !isCurrentlyClickable)
+        {
+            ToggleClickThrough(false); 
+        }
+        else if (!isHoveringOverAnyUI && isCurrentlyClickable)
+        {
+            ToggleClickThrough(true);  
+        }
+
+        // Kéo thả
+        if (isOverDraggable && Mouse.current.leftButton.wasPressedThisFrame)
+        {
+            ReleaseCapture();
+            SendMessage(hWnd, WM_NCLBUTTONDOWN, HTCAPTION, 0);
+        }
+#endif
+    }
+
+    void CheckHitboxUI(out bool overClickable, out bool overDraggable)
+    {
+        overClickable = false;
+        overDraggable = false;
+
+#if !UNITY_EDITOR
         POINT p;
         GetCursorPos(out p);
         ScreenToClient(hWnd, ref p);
-        
-        // Convert tọa độ Win (Góc trái trên) sang tọa độ Unity (Góc trái dưới)
         Vector2 mousePos = new Vector2(p.X, Screen.height - p.Y);
+#else
+        if (Mouse.current == null) return;
+        Vector2 mousePos = Mouse.current.position.ReadValue();
+#endif
 
-        // 2. Quét mảng nút bấm
-        foreach (var rect in clickableUI)
+        for (int i = 0; i < clickableUI.Length; i++)
         {
-            if (rect != null && rect.gameObject.activeInHierarchy && RectTransformUtility.RectangleContainsScreenPoint(rect, mousePos, null))
+            if (clickableUI[i] != null && RectTransformUtility.RectangleContainsScreenPoint(clickableUI[i], mousePos))
             {
-                isHoveringClickable = true; break;
+                overClickable = true;
+                break;
             }
         }
 
-        // 3. Quét mảng kéo rê (Chỉ quét nếu không trỏ vào nút)
-        if (!isHoveringClickable)
+        for (int i = 0; i < draggableUI.Length; i++)
         {
-            foreach (var rect in draggableUI)
+            if (draggableUI[i] != null && RectTransformUtility.RectangleContainsScreenPoint(draggableUI[i], mousePos))
             {
-                if (rect != null && rect.gameObject.activeInHierarchy && RectTransformUtility.RectangleContainsScreenPoint(rect, mousePos, null))
-                {
-                    isHoveringDraggable = true; break;
-                }
+                overDraggable = true;
+                break;
             }
         }
+    }
 
-        // 4. Ra lệnh cho Windows
-        if (isHoveringClickable || isHoveringDraggable)
-        {
-            // Tắt xuyên thấu, đóng rắn cửa sổ để bắt click
+    // --- CÁC CỜ ÉP RENDER CỦA WINDOWS ---
+    const int SWP_NOSIZE = 0x0001;
+    const int SWP_NOMOVE = 0x0002;
+    const int SWP_NOZORDER = 0x0004;
+    const int SWP_FRAMECHANGED = 0x0020; 
+    const int SWP_SHOWWINDOW = 0x0040;
+
+    void ToggleClickThrough(bool isTransparent)
+    {
+        isCurrentlyClickable = !isTransparent;
+        if (isTransparent)
+            SetWindowLong(hWnd, GWL_EXSTYLE, WS_EX_LAYERED | WS_EX_TRANSPARENT);
+        else
             SetWindowLong(hWnd, GWL_EXSTYLE, WS_EX_LAYERED);
 
-            // Xử lý kéo cửa sổ
-            if (isHoveringDraggable && UnityEngine.InputSystem.Mouse.current.leftButton.wasPressedThisFrame)
-            {
-                ReleaseCapture();
-                SendMessage(hWnd, WM_NCLBUTTONDOWN, HT_CAPTION, 0);
-            }
-        }
-        else
-        {
-            // Bật xuyên thấu, cho click đâm qua Desktop
-            SetWindowLong(hWnd, GWL_EXSTYLE, WS_EX_LAYERED | WS_EX_TRANSPARENT);
-        }
-#endif
+        SetWindowPos(hWnd, IntPtr.Zero, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_FRAMECHANGED);
+        
+        MARGINS margins = new MARGINS { cxLeftWidth = -1 };
+        DwmExtendFrameIntoClientArea(hWnd, ref margins);
     }
-	// --- MODULE ĐỔI KÍCH THƯỚC CỬA SỔ ---
+
+    // --- KHỐI RESIZE BỌC THÉP TÁI THIẾT LẬP ---
     public void ResizeWindow(int width, int height)
     {
 #if !UNITY_EDITOR
         if (hWnd != IntPtr.Zero)
         {
-            // Cờ 0x0002 (SWP_NOMOVE): Giữ nguyên vị trí cửa sổ, chỉ đổi Width/Height
-            // Cờ 0x0004 (SWP_NOZORDER): Giữ nguyên lớp Z (không đè lên các app khác)
-            SetWindowPos(hWnd, IntPtr.Zero, 0, 0, width, height, 0x0002 | 0x0004);
+            StopAllCoroutines();
+            Screen.SetResolution(width, height, FullScreenMode.Windowed);
+            StartCoroutine(ReapplyTransparencyDelay(width, height));
         }
-#else
-        // Chạy bình thường nếu test trong Editor
-        Screen.SetResolution(width, height, FullScreenMode.Windowed);
+#endif
+    }
+
+    private IEnumerator ReapplyTransparencyDelay(int width, int height)
+    {
+        yield return new WaitForSeconds(0.2f); 
+
+#if !UNITY_EDITOR
+        SetWindowLong(hWnd, GWL_STYLE, WS_POPUP | WS_VISIBLE);
+        
+        if (!isCurrentlyClickable)
+            SetWindowLong(hWnd, GWL_EXSTYLE, WS_EX_LAYERED | WS_EX_TRANSPARENT);
+        else
+            SetWindowLong(hWnd, GWL_EXSTYLE, WS_EX_LAYERED);
+
+        SetWindowPos(hWnd, IntPtr.Zero, 0, 0, width, height, SWP_NOMOVE | SWP_NOZORDER | SWP_SHOWWINDOW | SWP_FRAMECHANGED);
+        
+        MARGINS margins = new MARGINS { cxLeftWidth = -1 };
+        DwmExtendFrameIntoClientArea(hWnd, ref margins);
 #endif
     }
 }

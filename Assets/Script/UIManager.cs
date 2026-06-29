@@ -3,11 +3,9 @@ using UnityEngine.UI;
 using UnityEngine.Events;
 using System.Collections.Generic;
 
-// [CLASS KÈM THEO]: Gắn script này vào các cục UI muốn click thay thế cho Button của uGUI
-
-
 public class UIManager : MonoBehaviour
-{
+{	
+    [Header("Core References")]
     public static UIManager Instance;
 
     [Header("UI MENUS")]
@@ -15,29 +13,28 @@ public class UIManager : MonoBehaviour
     public GameObject mapMenu;
     public Image groundImage;
     public TransparentWindow transparentWindow;
+    
+    [Header("POPUP THOÁT GAME")]
+    public GameObject exitConfirmPopup; // Bảng hỏi "Bạn có muốn thoát..."
 
-    // Danh sách các nút bấm đang hiển thị trên màn hình
     private List<CustomInteractable> interactables = new List<CustomInteractable>();
 
     void Awake() 
     { 
         Instance = this; 
     }
-void Update()
+
+    void Update()
     {
-        // Xóa bỏ #if UNITY_EDITOR để bản Build cũng bắt được tín hiệu
         if (UnityEngine.InputSystem.Mouse.current != null && UnityEngine.InputSystem.Mouse.current.leftButton.wasPressedThisFrame)
         {
             HandleMouseClick(UnityEngine.InputSystem.Mouse.current.position.ReadValue());
         }
     }
-	
-	
 
     public void RegisterInteractable(CustomInteractable item) { if (!interactables.Contains(item)) interactables.Add(item); }
     public void UnregisterInteractable(CustomInteractable item) { interactables.Remove(item); }
 
-    // Quét toán học xem chuột có đè lên bất kỳ nút nào không (Gọi từ TransparentWindow)
     public bool CheckInteractableHover(Vector2 mousePos)
     {
         foreach (var item in interactables)
@@ -48,24 +45,20 @@ void Update()
         return false;
     }
 
-// Kích hoạt Event Click (Gọi từ TransparentWindow)
     public void HandleMouseClick(Vector2 mousePos)
     {
-        // 1. IN DEBUG TỌA ĐỘ
         GameManager gm = Object.FindFirstObjectByType<GameManager>();
         if (gm != null && gm.infoText != null) 
         {
-            gm.infoText.text = $"WinAPI Tọa độ Click: {mousePos.x} , {mousePos.y}";
+            gm.infoText.text = $"WinAPI Tọa độ Click: {mousePos.x:F1} , {mousePos.y:F1}";
         }
 
-        // 2. VÒNG LẶP XỬ LÝ CLICK CŨ
         foreach (var item in interactables)
         {
             if (item != null && item.gameObject.activeInHierarchy && RectTransformUtility.RectangleContainsScreenPoint(item.GetRect(), mousePos, null))
             {
                 item.onClickEvent?.Invoke();
-			
-                return; // Tránh click xuyên 2 nút nằm đè lên nhau
+                return; 
             }
         }
     }
@@ -82,7 +75,22 @@ void Update()
         systemMenu.SetActive(false); 
     }
 
-    public void ExitGame() { Application.Quit(); }
+    // --- LOGIC THOÁT GAME ---
+    public void ClickExitButton() 
+    { 
+        if (exitConfirmPopup != null) exitConfirmPopup.SetActive(true); 
+    }
+
+    public void ConfirmExit() 
+    { 
+        Application.Quit(); // Lệnh này chạy sẽ ngầm gọi Auto-save trong GameManager
+    }
+
+    public void CancelExit() 
+    { 
+        if (exitConfirmPopup != null) exitConfirmPopup.SetActive(false); 
+    }
+    // -------------------------
 
     public void SetWindowScale(int size)
     {
@@ -98,4 +106,18 @@ void Update()
         }
         mapMenu.SetActive(false); 
     }
+
+    private void ExecuteScale(int width)
+    {
+        if (transparentWindow == null) transparentWindow = FindObjectOfType<TransparentWindow>(); 
+        if (transparentWindow != null)
+        {
+            int height = Mathf.RoundToInt(width * (9f / 16f));
+            transparentWindow.ResizeWindow(width, height);
+        }
+    }
+
+    public void Scale200() { ExecuteScale(200); }
+    public void Scale500() { ExecuteScale(500); }
+    public void Scale1000() { ExecuteScale(1000); }
 }
