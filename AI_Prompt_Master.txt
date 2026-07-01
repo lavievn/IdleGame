@@ -1,3 +1,159 @@
+save point 1.
+CORE ARCHITECTURE & GDD - DESKTOP IDLE RPG: TU TIÊN
+
+Tài liệu nội bộ dự án. Trạng thái: Nguyên mẫu (V1.0).
+1. Thể loại, Mục tiêu & Vòng lặp cốt lõi
+
+    Thể loại: Desktop Overlay, Idle RPG, Roguelite, Xianxia (Tu tiên).
+
+    Mục tiêu cốt lõi: Trải nghiệm treo máy cày cuốc (Endless Progression) không xâm lấn, chạy nền trực tiếp trên màn hình làm việc của Windows.
+
+    Core Loop: Môi trường cuộn (Khám phá) -> Spawn Quái -> Tiếp cận (Dừng cuộn) -> Auto-Battle (Trừ HP) -> Reset Wave / Xử lý tiến trình -> Lặp lại.
+
+2. Các cơ chế (Mechanics) chính đã chốt
+
+    Desktop Overlay: Cửa sổ game lơ lửng, trong suốt không viền. Cho phép click xuyên thủng (Click-through) ở vùng không có UI.
+
+    Window Management: Kéo thả vùng UI được chỉ định (Ground) để di chuyển game. Hỗ trợ đa màn hình (Virtual Screen) và tự động Clamp chống lọt cửa sổ ra ngoài mép màn hình.
+
+    Responsive UI & Parallax: Giao diện co giãn tự động theo tỷ lệ (Canvas Scaler). Môi trường tạo ảo giác di chuyển bằng cách cuộn các điểm neo thị giác (Grass) sang phải thay vì nhân vật di chuyển.
+
+    Combat Location-Agnostic: Hero neo cố định mép phải, Quái neo ẩn ngoài mép trái. Tính toán khoảng cách va chạm tự động quy đổi theo tỷ lệ chiều rộng thực tế của Canvas.
+
+    Hệ thống Tag-based & Skin: Phân loại sức mạnh bằng mảng chuỗi định danh (VD: Basic_01, Ground_Type). Hiển thị đồ họa (VD: Skin FadeIn_01) chạy Coroutine hoàn toàn độc lập với vòng lặp logic.
+
+3. Kiến trúc Code & Quy chuẩn
+
+    Kiến trúc hiện tại: Phân tách trách nhiệm (Separation of Concerns) kết hợp State Machine cơ bản.
+
+        TransparentWindow.cs: Cô lập toàn bộ giao tiếp cấp hệ điều hành (OS API) và Input.
+
+        UIManager.cs: Cô lập tương tác người dùng (View).
+
+        GameManager.cs: Cô lập logic game, chỉ số và State (Explore/Combat).
+
+    Xử lý Input đột phá: Bỏ qua EventSystem mặc định của Unity. Dò tìm va chạm chuột bằng Toán học ma trận (RectTransformUtility) và đọc tín hiệu click phần cứng (GetAsyncKeyState) để tránh kẹt Focus.
+
+    Quy chuẩn đặt tên (Naming Convention):
+
+        Class, Hàm (Methods), Coroutine: PascalCase (VD: SpawnMonster, ClampToScreen).
+
+        Biến cục bộ, private/public: camelCase (VD: currentHeroHP, dragOffset).
+
+        Hằng số (Constants): UPPER_SNAKE_CASE (VD: HWND_TOPMOST, VK_LBUTTON).
+
+        Tags/ID: Pascal_Snake_Case (VD: Basic_01, FadeIn_01).
+
+4. Thư viện & Package đang sử dụng
+
+    Native OS DLLs: user32.dll, Dwmapi.dll (Giao tiếp trực tiếp với Windows API).
+
+    Unity Core Packages: uGUI (Canvas System truyền thống), TextMeshPro (Hệ thống Text hiển thị).
+
+    Blacklist: Tuyệt đối KHÔNG sử dụng UI Toolkit để tránh xung đột Input hệ thống.
+
+Save point 2:
+[SAVE POINT TỔNG HỢP] DESKTOP IDLE RPG: TU TIÊNSử dụng nội dung này để nạp vào prompt (Context) của phiên làm việc mới.1. Kiến Trúc Kỹ Thuật (Core Stack)Engine & UI: Unity 6 (URP) - Dùng uGUI Canvas truyền thống (TextMeshPro). Canvas Scaler: Scale With Screen Size (1000x1000, Match 0.5).Hiển thị Overlay: Desktop Overlay trong suốt, không viền, click-through, hỗ trợ đa màn hình thông qua Windows API (user32.dll).Anchor Hệ Thống UI: Ground (Bottom-Stretch), Hero (Bottom-Right), Monster (Bottom-Left), Menu/Map (Top-Right/Left). Text UI chiến đấu (EventLog, HP, ATK) đã được tách độc lập để tránh bị ẩn do SetActive(false) của các Menu cha.2. Trạng Thái Mã Nguồn (Các File C# Đã Hoàn Thiện)Tên FileChức năng cốt lõi đã chạy ổn địnhTuTienEnums.csQuản lý Enum, NameDatabase, RankDatabase (Luyện Khí -> Chân Tiên), Toán học tương khắc hệ.EntityDataSO.csLưu trữ cấu trúc Data gốc, cộng/lưu EXP, hàm AddExp trả về bool khi đột phá cảnh giới.GameManager.csQuản lý Game Loop chính trong Update(): Check khoảng cách (< 120f) -> Đổi State -> Gọi Combat.CombatManager.csXử lý Real-time Combat độc lập UI. Tốc độ đánh (1.0f / speed), RNG Sát thương (75%-100%), sinh cấp độ quái bám sát Hero.TransparentWindow.csQuản lý xuyên thấu Window API, Raycast Target, kéo thả UI.UIManager.csChuyển đổi trạng thái Menu, Auto-scale 200/500/1000.EnvironmentManager.csXử lý Parallax Looping cỏ trôi thông qua hàm PanEnvironment.HeroController.csLogic Move, Anim nhún nhảy, Update Text Máu/Sát thương độc lập.MonsterController.csQuản lý HealthBar, DmgText, Feedback giật lùi (đã bọc chống lỗi Coroutine rác khi quái chết).MonsterSpawner.csObject Pooling tái sử dụng quái vật.SaveManager.csLưu trữ file JSON.3. Các Cơ Chế Gameplay Đã Khóa (Locked Mechanics)Tốc độ tấn công (Attack Speed): Xử lý bằng WaitForSeconds(1.0f / baseAttackSpeed). Số càng to đánh càng nhanh.Sát thương (Damage): (Lực công gốc - Giáp) * Hệ số tương khắc * Random(0.75f, 1.0f).Kinh nghiệm (EXP): Thăng cấp cần currentLevel * 100 EXP. Quái cho (Hero Level + Monster Level) * 2 EXP. Quái được sinh ra với cấp độ dao động trong khoảng Hero Level +/- 5.Luồng xử lý (Flow): Hero tự động tiến lên -> Cuộn nền Parallax -> Gặp quái dừng lại -> Bơm text EventLog khi hạ địch/lên cấp.4. Tiến Độ Đang Làm Dở (Tiếp tục ở Session mới)Tính năng: Hệ thống Phân bổ Điểm Tiềm Năng (Stats Allocation) để bù đắp lạm phát sức mạnh của quái vật.Phần code ngầm đã xong (Nằm trong EntityDataSO.cs):C#public int statPoints = 0; 
+public int addedHealth = 0; 
+public int addedDamage = 0;
+
+// Trả về True nếu lên cấp, cộng 5 điểm tiềm năng
+public bool AddExp(int amount) { ... } 
+
+public void AllocateHealth() { if (statPoints > 0) { statPoints--; addedHealth += 10; } }
+public void AllocateDamage() { if (statPoints > 0) { statPoints--; addedDamage += 2; } }
+
+public int GetCalculatedHealth() => baseHealth + addedHealth;
+public int GetCalculatedDamage() => baseDamage + addedDamage;
+Nhiệm vụ đầu tiên khi mở hội thoại mới:Thiết kế giao diện UI (Tạo bảng cộng điểm, Text hiển thị statPoints, 2 nút Button [+]) và kết nối logic các nút này gọi hàm Allocate... từ EntityDataSO.cs, sau đó ép HeroController render lại thông số trên màn hình chính.
+
+Save point 3
+[THIẾT LẬP VAI TRÒ]
+    Luôn đóng vai trò là Sparing Partner linh hoạt của tôi:
+
+        Khi tôi có ý tưởng: Đặt 3-5 câu hỏi phản biện về điểm mù, rủi ro cấu trúc/tài chính. Nhìn vào kịch bản xấu nhất.
+
+        Khi tôi bế tắc: Trực tiếp đưa giải pháp thực dụng, code tối ưu, không hỏi vặn vẹo.
+
+        Nguyên tắc: Trả lời thẳng thắn, bám sát thực tế, tối ưu hóa chi phí phần cứng (RAM/CPU) và ưu tiên hiệu năng vận hành game treo máy.
+
+    [TỔNG QUAN DỰ ÁN]
+
+        Tên dự án: Game PC Tu Tiên Idle 2.5D.
+
+        Đặc thù: Desktop Overlay (Game trong suốt, click xuyên thấu nền Desktop, dùng thư viện user32.dll của Windows).
+
+        Triết lý UX/UI: Tối giản UI quái nhỏ (không thanh máu) để giảm Draw Calls, chỉ giữ UI cho Boss. Mọi thông tin farm quái báo qua Event Log.
+
+    [KIẾN TRÚC HỆ THỐNG CỐT LÕI ĐÃ CHỐT]
+    1. Không gian & Di chuyển (2.5D):
+
+        Trục X: Hero chạy từ phải sang trái, quái và cỏ cuộn từ trái sang phải.
+
+        Trục Y: Quái Spawn ngẫu nhiên độ cao (Y từ 10 đến 90, Anchor Bottom-Left). Hero biết tự động leo Y để bám đuổi (tránh Z-Fighting dính chùm).
+
+    2. Logic Combat (Chuẩn bị nạp V1.4.1):
+
+        Đa mục tiêu (1vN): Mỗi Wave spawn ngẫu nhiên 1-3 quái. Xử lý EXP x5 tốc độ.
+
+        AI Độc lập (Free Will): Quái và Hero có tầm đánh tách biệt. Chưa tới tầm thì tiếp tục lết bộ, không bị khóa cứng bởi trạng thái của kẻ khác.
+
+        3 Hệ kỹ năng: Cận chiến (Tầm 120f), Ranged Vật lý (300f), Phép AoE (350f, có Delay vận chiêu 2.0s).
+
+        Cơ chế Phòng thủ: Hero có "Cương thể" (Super Armor) khi farm map thường — nhận sát thương nhưng không bị ngắt animation vận chiêu (Chống Stun-lock). Khối logic Đỡ đòn/Ngắt chiêu (Block/Cancel) chỉ dành riêng cho Boss.
+
+    3. Tối ưu Hiệu năng (Performance Core):
+
+        Hệ thống Quái chạy 100% bằng Object Pooling.
+
+        Quản lý Hitbox UI không dùng Graphic Raycaster mặc định mà tính toán ma trận điểm qua RectTransformUtility.RectangleContainsScreenPoint.
+
+        Các Feedback Animation (chớp đỏ, nảy hình) dùng biến Coroutine tham chiếu cứng để dừng, triệt tiêu hoàn toàn rác RAM (GC Alloc).
+
+    [TÌNH TRẠNG LƯU TRỮ TRƯỚC KHI TẠM DỪNG]
+
+        Đang giải quyết điểm mù: Xung đột Input giữa Unity New Input System và WinAPI khiến bản Build .exe bị "Ghosting" (Windows nuốt mất cú click).
+
+        File đã cập nhật cuối: TransparentWindow.cs (Viết lại toàn bộ bằng hàm WinAPI GetCursorPos dò tọa độ độc lập, thêm hàm ResizeWindow cho nút thu phóng).
+
+        Đang tiến hành map 2 mảng clickableUI (chứa nút bấm vật lý: DeployButton, Menu...) và draggableUI (chứa Ground) trên Inspector.
+
+    Dựa trên bối cảnh này, hãy xác nhận bạn đã nắm rõ kiến trúc và sẵn sàng gỡ lỗi tiếp mảng UI trong suốt!
+
+💻 HƯỚNG DẪN UP GITHUB CHUẨN MỰC (Chống phình rác)
+
+Để lưu toàn bộ mã nguồn này mà không làm hỏng cấu trúc khi mang sang máy khác, hãy làm theo đúng 4 bước cơ bản nhất bằng GitHub Desktop:
+
+    Khởi tạo Lá chắn Rác:
+
+        Lên web GitHub -> Create New Repository.
+
+        Ở mục Add .gitignore, gõ và chọn Unity. (Bước này là sinh tử, nó sẽ chặn thư mục Library nặng hàng GB không cho up lên).
+
+    Đồng bộ về máy:
+
+        Mở app GitHub Desktop -> File -> Clone repository -> Kéo repo vừa tạo về một ổ cứng trống.
+
+    Chuyển nhà:
+
+        Mở thư mục gốc dự án Unity cũ của bạn.
+
+        CHỈ COPY 3 THỨ NÀY: Thư mục Assets, Thư mục Packages, Thư mục ProjectSettings.
+
+        Paste 3 thứ đó vào thư mục Repo mới clone ở Bước 2.
+
+    Đóng băng thời gian:
+
+        Mở GitHub Desktop lên, nó sẽ hiện danh sách các file bạn vừa copy vào.
+
+        Dưới góc trái (Summary), gõ: "Save Point: Tích hợp WinAPI và Combat 2.5D".
+
+        Bấm Commit to main, sau đó bấm Push origin để tống lên mây.
+
+Khi sang máy tính mới, bạn chỉ cần Clone nó về, mở Unity Hub -> Add project -> Trỏ thẳng vào thư mục đó. Unity sẽ tự động tốn khoảng 3-5 phút để biên dịch lại (re-build) các file tạm một cách sạch sẽ nhất.
+
+Save point 4
+
 [HƯỚNG DẪN DÀNH CHO AI - ĐỌC VÀ XÁC NHẬN TRƯỚC KHI BẮT ĐẦU]
 
 # 1. VAI TRÒ CỦA AI (SPARING PARTNER)
