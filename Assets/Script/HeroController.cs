@@ -121,10 +121,14 @@ public class HeroController : MonoBehaviour
             else
             {
                 CurrentState = HeroState.Approaching;
+                
+                // VÁ LỖI CỰC KỲ QUAN TRỌNG: Mở khóa Camera để mặt đất tiếp tục trôi
+                // Camera chỉ đứng lại khi bắt đầu đánh nhau, tạo cảm giác đuổi bắt mượt mà
                 ReleaseScrollLock(); 
+                
                 HandleAnimation(true, false);
 
-                float step = 100f * Time.deltaTime;
+                float step = 150f * Time.deltaTime;
                 float worldDir = Mathf.Sign(target.transform.position.x - heroRect.position.x);
                 heroRect.anchoredPosition += new Vector2(worldDir * step, 0);
 

@@ -1,127 +1,145 @@
-using System.Collections.Generic;
-using UnityEngine;
+using System;
 using System.IO;
-using TuTienCore;
-
-public enum SaveSlot { AutoSave, ManualSave1, ManualSave2 }
-
-[System.Serializable]
-public class PlayerData
-{
-    public string entityName;
-    public int currentLevel;
-    public int currentExp;       
-    public int expToNextLevel;   
-    public int baseHealth;
-    public int baseDamage;
-    public float baseAttackSpeed;
-    public RaceType race;
-    public GenderType gender;
-    public List<ElementType> spiritRoots;
-    public int statPoints;
-    public int addedHealth;
-    public int addedDamage;
-}
+using System.Threading.Tasks;
+using UnityEngine;
 
 public class SaveManager : MonoBehaviour
 {
+    public static SaveManager Instance { get; private set; }
+
+    private const string SAVE_EXTENSION = ".json";
+    private const string TEMP_EXTENSION = ".tmp";
+    
     private string saveDirectory;
 
-    void Awake()
+    private void Awake()
     {
-        saveDirectory = Path.Combine(Application.persistentDataPath, "SaveData");
-    }
-
-    private string GetFilePath(SaveSlot slot)
-    {
-        string fileName = "autosave.json";
-        if (slot == SaveSlot.ManualSave1) fileName = "manualsave1.json";
-        else if (slot == SaveSlot.ManualSave2) fileName = "manualsave2.json";
-        return Path.Combine(saveDirectory, fileName);
-    }
-
-    public void SaveGame(EntityDataSO heroData, SaveSlot slot = SaveSlot.AutoSave)
-    {
-        if (!Directory.Exists(saveDirectory)) Directory.CreateDirectory(saveDirectory);
-
-        PlayerData data = new PlayerData
+        // Singleton pattern chuẩn
+        if (Instance != null && Instance != this)
         {
-            entityName = heroData.entityName,
-            currentLevel = heroData.currentLevel,
-            currentExp = heroData.currentExp,
-            expToNextLevel = heroData.expToNextLevel,
-            baseHealth = heroData.baseHealth,
-            baseDamage = heroData.baseDamage,
-            baseAttackSpeed = heroData.baseAttackSpeed,
-            race = heroData.race,
-            gender = heroData.gender,
-            spiritRoots = new List<ElementType>(heroData.spiritRoots),
-            statPoints = heroData.statPoints,
-            addedHealth = heroData.addedHealth,
-            addedDamage = heroData.addedDamage
-        };
-
-        string json = JsonUtility.ToJson(data, true);
-        File.WriteAllText(GetFilePath(slot), json);
-        
-        heroData.isDirty = false; 
-    }
-
-    public bool LoadGame(EntityDataSO heroData, SaveSlot slot = SaveSlot.AutoSave)
-    {
-        string path = GetFilePath(slot);
-        if (File.Exists(path))
-        {
-            try
-            {
-                string json = File.ReadAllText(path);
-                PlayerData data = JsonUtility.FromJson<PlayerData>(json);
-
-                heroData.entityName = data.entityName;
-                heroData.currentLevel = data.currentLevel;
-                heroData.currentExp = data.currentExp;
-                heroData.expToNextLevel = data.expToNextLevel > 0 ? data.expToNextLevel : 100;
-                heroData.baseHealth = data.baseHealth;
-                heroData.baseDamage = data.baseDamage;
-                heroData.baseAttackSpeed = data.baseAttackSpeed > 0 ? data.baseAttackSpeed : 1.0f;
-                heroData.race = data.race;
-                heroData.gender = data.gender;
-                heroData.spiritRoots = new List<ElementType>(data.spiritRoots);
-                
-                heroData.statPoints = data.statPoints;
-                heroData.addedHealth = data.addedHealth;
-                heroData.addedDamage = data.addedDamage;
-                
-                heroData.isDirty = false;
-                return true;
-            }
-            catch { return false; }
+            Destroy(gameObject);
+            return;
         }
-        return false;
+        Instance = this;
+        DontDestroyOnLoad(gameObject);
+
+        // Khởi tạo thư mục Save
+        saveDirectory = Application.persistentDataPath + "/Saves/";
+        if (!Directory.Exists(saveDirectory))
+        {
+            Directory.CreateDirectory(saveDirectory);
+        }
     }
+
+    // =========================================================
+    // CÁC HÀM ADAPTER ĐỂ TƯƠNG THÍCH HOÀN TOÀN VỚI GAMEMANAGER CŨ
+    // =========================================================
 
     public bool HasSave(SaveSlot slot)
     {
-        return File.Exists(GetFilePath(slot));
+        string finalPath = saveDirectory + slot.ToString() + SAVE_EXTENSION;
+        return File.Exists(finalPath);
     }
 
-    // Tiện ích để UI hiển thị thông tin File Save
-    public string GetSaveDetails(SaveSlot slot)
+    public void DeleteSave(SaveSlot slot)
     {
-        string path = GetFilePath(slot);
-        if (!File.Exists(path)) return "Trống";
+        string finalPath = saveDirectory + slot.ToString() + SAVE_EXTENSION;
+        if (File.Exists(finalPath))
+        {
+            File.Delete(finalPath);
+            Debug.Log($"[SaveManager] Đã xóa file save của slot: {slot}");
+        }
+    }
+
+    // Đổi thành bool để tương thích với GameManager hiện tại
+    public bool SaveGame(EntityDataSO entityData, SaveSlot slot)
+    {
+        if (entityData == null) return false;
+        
+        // Serialize ScriptableObject thành JSON string ở Main Thread
+        string jsonData = JsonUtility.ToJson(entityData, true);
+        
+        // Gọi hàm ghi file bất đồng bộ và an toàn (Atomic)
+        WriteToFileAsync(slot.ToString(), jsonData);
+        
+        return true;
+    }
+
+    // Đổi thành bool để tương thích với GameManager dòng 54
+    public bool LoadGame(EntityDataSO entityData, SaveSlot slot)
+    {
+        if (entityData == null) return false;
+
+        string jsonData = LoadGame(slot.ToString());
+        if (!string.IsNullOrEmpty(jsonData))
+        {
+            // Đổ data từ chuỗi JSON trực tiếp đè lên ScriptableObject hiện tại
+            JsonUtility.FromJsonOverwrite(jsonData, entityData);
+            Debug.Log($"[SaveManager] Đã load thành công dữ liệu vào {entityData.name} từ {slot}");
+            return true;
+        }
+        else
+        {
+            Debug.LogWarning($"[SaveManager] Không thể load hoặc file trống ở slot {slot}");
+            return false;
+        }
+    }
+
+    // =========================================================
+    // LÕI XỬ LÝ I/O BẤT ĐỒNG BỘ VÀ AN TOÀN (ATOMIC SAVE)
+    // =========================================================
+
+    public void SaveGame(string slotName, string jsonData)
+    {
+        WriteToFileAsync(slotName, jsonData);
+    }
+
+    private async void WriteToFileAsync(string slotName, string data)
+    {
+        string finalPath = saveDirectory + slotName + SAVE_EXTENSION;
+        string tempPath = saveDirectory + slotName + TEMP_EXTENSION;
+
         try
         {
-            string json = File.ReadAllText(path);
-            PlayerData data = JsonUtility.FromJson<PlayerData>(json);
-            return $"Lv.{data.currentLevel} - {data.entityName}";
+            // Tách luồng I/O ra khỏi Game Loop chính để tránh giật lag
+            await Task.Run(() =>
+            {
+                // Bước 1: Ghi toàn bộ data vào file .tmp
+                File.WriteAllText(tempPath, data);
+
+                // Bước 2: Swap file an toàn (Atomic Move)
+                if (File.Exists(finalPath))
+                {
+                    File.Delete(finalPath);
+                }
+                File.Move(tempPath, finalPath);
+            });
+
+            Debug.Log($"[SaveManager] Đã ghi đè an toàn thành công vào slot: {slotName}");
         }
-        catch { return "Lỗi Dữ Liệu"; }
+        catch (Exception e)
+        {
+            Debug.LogError($"[SaveManager] Lỗi ghi file save (File gốc vẫn an toàn): {e.Message}");
+        }
     }
 
-    public void DeleteSave(SaveSlot slot = SaveSlot.AutoSave)
+    public string LoadGame(string slotName)
     {
-        string path = GetFilePath(slot);
-        if (File.Exists(path)) File.Delete(path);
+        string finalPath = saveDirectory + slotName + SAVE_EXTENSION;
+
+        if (!File.Exists(finalPath))
+        {
+            return null;
+        }
+
+        try
+        {
+            return File.ReadAllText(finalPath);
+        }
+        catch (Exception e)
+        {
+            Debug.LogError($"[SaveManager] Lỗi đọc file save: {e.Message}");
+            return null;
+        }
     }
 }

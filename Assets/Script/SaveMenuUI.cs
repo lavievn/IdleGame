@@ -1,3 +1,4 @@
+using System.IO;
 using UnityEngine;
 using TMPro;
 
@@ -5,7 +6,7 @@ public class SaveMenuUI : MonoBehaviour
 {
     [Header("REFERENCES")]
     public GameManager gameManager;
-    public SaveManager saveManager;
+    // Bỏ SaveManager reference vì UI sẽ tự check file hoặc gọi thông qua GameManager để đảm bảo Decoupled (phân tách độc lập)
 
     [Header("CÁC BẢNG MENU CON (CẦN KÉO VÀO)")]
     public GameObject saveSubMenu;    // Bảng chứa 2 nút Save1, Save2
@@ -18,6 +19,13 @@ public class SaveMenuUI : MonoBehaviour
     public TextMeshProUGUI manual2InfoText;
 
     private SaveSlot pendingSaveSlot; // Nhớ tạm slot đang định lưu đè
+    private string saveDirectory;     // Cache lại đường dẫn gốc
+
+    void Awake()
+    {
+        // Cache đường dẫn 1 lần duy nhất ở Awake để tránh tạo rác GC khi ghép chuỗi
+        saveDirectory = Application.persistentDataPath + "/Saves/";
+    }
 
     void OnEnable()
     {
@@ -30,10 +38,21 @@ public class SaveMenuUI : MonoBehaviour
 
     public void RefreshUI()
     {
-        if (saveManager == null) return;
-        if (autoSaveInfoText != null) autoSaveInfoText.text = "Auto: " + saveManager.GetSaveDetails(SaveSlot.AutoSave);
-        if (manual1InfoText != null) manual1InfoText.text = "Slot 1: " + saveManager.GetSaveDetails(SaveSlot.ManualSave1);
-        if (manual2InfoText != null) manual2InfoText.text = "Slot 2: " + saveManager.GetSaveDetails(SaveSlot.ManualSave2);
+        // Tối ưu Zero GC: Tránh dùng phép cộng chuỗi (+) khi cập nhật UI liên tục
+        if (autoSaveInfoText != null) 
+            autoSaveInfoText.text = HasSave(SaveSlot.AutoSave) ? "Auto: Đã có dữ liệu" : "Auto: Trống";
+            
+        if (manual1InfoText != null) 
+            manual1InfoText.text = HasSave(SaveSlot.ManualSave1) ? "Slot 1: Đã có dữ liệu" : "Slot 1: Trống";
+            
+        if (manual2InfoText != null) 
+            manual2InfoText.text = HasSave(SaveSlot.ManualSave2) ? "Slot 2: Đã có dữ liệu" : "Slot 2: Trống";
+    }
+
+    // Tự kiểm tra file có trên ổ cứng không thông qua System.IO
+    private bool HasSave(SaveSlot slot)
+    {
+        return File.Exists(saveDirectory + slot.ToString() + ".json");
     }
 
     // --- CÁC NÚT ĐIỀU HƯỚNG CHÍNH ---
@@ -58,7 +77,7 @@ public class SaveMenuUI : MonoBehaviour
         SaveSlot slot = (SaveSlot)slotIndex;
         
         // Nếu đã có dữ liệu -> Hiện bảng hỏi
-        if (saveManager.HasSave(slot))
+        if (HasSave(slot))
         {
             pendingSaveSlot = slot;
             overwritePopup.SetActive(true);
@@ -82,17 +101,27 @@ public class SaveMenuUI : MonoBehaviour
 
     private void ExecuteSave(SaveSlot slot)
     {
-        gameManager.ForceManualSave((int)slot);
-        RefreshUI(); // Update lại Text ngay lập tức
+        if (gameManager != null)
+        {
+            gameManager.ForceManualSave((int)slot);
+            RefreshUI(); // Update lại Text ngay lập tức sau khi có file
+        }
+        else
+        {
+            Debug.LogError("[SaveMenuUI] Thiếu tham chiếu tới GameManager. Hãy kéo thả vào Inspector!");
+        }
     }
 
     // --- LOGIC TẢI GAME ---
     // Gắn hàm này vào các nút Load (Truyền Index 0, 1 hoặc 2)
     public void ClickLoadSlot(int slotIndex)
     {
-        gameManager.ForceManualLoad(slotIndex);
-        
-        // Đóng toàn bộ System Menu lại sau khi Load thành công để người chơi vào game ngay
-        gameObject.SetActive(false);
+        if (gameManager != null)
+        {
+            gameManager.ForceManualLoad(slotIndex);
+            
+            // Đóng toàn bộ System Menu lại sau khi Load thành công để người chơi vào game ngay
+            gameObject.SetActive(false);
+        }
     }
 }

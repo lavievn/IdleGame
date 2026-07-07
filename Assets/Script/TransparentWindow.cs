@@ -6,8 +6,14 @@ using UnityEngine.InputSystem;
 
 public class TransparentWindow : MonoBehaviour
 {
-    [Header("UI Interaction Elements")]
+    [Header("UI Interaction Elements (Thứ tự ưu tiên Z-Index)")]
+    [Tooltip("Kéo các Popup/Bảng thông báo (Save/Load/Exit) vào đây. Ưu tiên cao nhất.")]
+    public RectTransform[] modalUI;     
+    
+    [Tooltip("Kéo các nút bấm, kỹ năng, menu hệ thống vào đây. Ưu tiên thứ hai.")]
     public RectTransform[] clickableUI; 
+    
+    [Tooltip("Kéo vùng nền (Ground) dùng để kéo thả cửa sổ vào đây. Ưu tiên thấp nhất.")]
     public RectTransform[] draggableUI; 
 
     private bool isCurrentlyClickable = false;
@@ -83,7 +89,7 @@ public class TransparentWindow : MonoBehaviour
             ToggleClickThrough(true);  
         }
 
-        // Kéo thả
+        // Kéo thả (chỉ chạy khi chắc chắn không click đè lên Modal/Clickable)
         if (isOverDraggable && Mouse.current.leftButton.wasPressedThisFrame)
         {
             ReleaseCapture();
@@ -107,21 +113,45 @@ public class TransparentWindow : MonoBehaviour
         Vector2 mousePos = Mouse.current.position.ReadValue();
 #endif
 
-        for (int i = 0; i < clickableUI.Length; i++)
+        // 1. Tầng Modal/Popup (Ưu tiên tuyệt đối)
+        if (modalUI != null)
         {
-            if (clickableUI[i] != null && RectTransformUtility.RectangleContainsScreenPoint(clickableUI[i], mousePos))
+            for (int i = 0; i < modalUI.Length; i++)
             {
-                overClickable = true;
-                break;
+                if (modalUI[i] != null && modalUI[i].gameObject.activeInHierarchy && 
+                    RectTransformUtility.RectangleContainsScreenPoint(modalUI[i], mousePos))
+                {
+                    overClickable = true;
+                    return; // BREAK EARLY: Chặn tia Raycast, bảo vệ click cho Popup
+                }
             }
         }
 
-        for (int i = 0; i < draggableUI.Length; i++)
+        // 2. Tầng UI Clickable thông thường (Nút bấm, Menu)
+        if (clickableUI != null)
         {
-            if (draggableUI[i] != null && RectTransformUtility.RectangleContainsScreenPoint(draggableUI[i], mousePos))
+            for (int i = 0; i < clickableUI.Length; i++)
             {
-                overDraggable = true;
-                break;
+                if (clickableUI[i] != null && clickableUI[i].gameObject.activeInHierarchy && 
+                    RectTransformUtility.RectangleContainsScreenPoint(clickableUI[i], mousePos))
+                {
+                    overClickable = true;
+                    return; // BREAK EARLY: Chặn kéo thả cửa sổ khi đang đè lên nút
+                }
+            }
+        }
+
+        // 3. Tầng Draggable (Thấp nhất, chỉ xét khi 2 tầng trên bị xuyên thủng)
+        if (draggableUI != null)
+        {
+            for (int i = 0; i < draggableUI.Length; i++)
+            {
+                if (draggableUI[i] != null && draggableUI[i].gameObject.activeInHierarchy && 
+                    RectTransformUtility.RectangleContainsScreenPoint(draggableUI[i], mousePos))
+                {
+                    overDraggable = true;
+                    break;
+                }
             }
         }
     }

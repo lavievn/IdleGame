@@ -517,7 +517,19 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::CustomInteractable
   onClickEvent:
     m_PersistentCalls:
-      m_Calls: []
+      m_Calls:
+      - m_Target: {fileID: 649540123}
+        m_TargetAssemblyTypeName: 
+        m_MethodName: 
+        m_Mode: 0
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: 
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
 --- !u!1 &53355771
 GameObject:
   m_ObjectHideFlags: 0
@@ -3095,6 +3107,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a6410b583dd466240b01de972d2c14b8, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TransparentWindow
+  modalUI:
+  - {fileID: 723202596}
+  - {fileID: 362515422}
+  - {fileID: 497102481}
   clickableUI:
   - {fileID: 726454876}
   - {fileID: 858665731}

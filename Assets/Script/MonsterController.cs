@@ -38,6 +38,10 @@ public class MonsterController : MonoBehaviour
     void OnEnable()
     {
         if (!ActiveMonsters.Contains(this)) ActiveMonsters.Add(this);
+        
+        // Bắt buộc gọi để fix lỗi Pooling làm mất thông số đánh xa
+        InitRandomAttackMode(); 
+        
         currentState = MonsterState.PassiveScroll;
         currentTarget = null;
         hasLockedScroll = false;
@@ -62,7 +66,8 @@ public class MonsterController : MonoBehaviour
 
         if (currentState == MonsterState.PassiveScroll)
         {
-            if (rect.anchoredPosition.x > 0f) FindTarget();
+            // Vừa sinh ra là lập tức quét mục tiêu, bỏ điều kiện vướng ở mốc 0f
+            FindTarget();
         }
         else 
         {
@@ -80,6 +85,7 @@ public class MonsterController : MonoBehaviour
             if (distWorld <= rangeWorld)
             {
                 currentState = MonsterState.Attacking;
+                // Khi một con quái xả skill, chỉ duy nhất con quái đó khóa màn hình, không ảnh hưởng vận tốc di chuyển của các con khác
                 if (!hasLockedScroll) { EnvironmentManager.Instance?.LockScroll(); hasLockedScroll = true; }
             }
             else
@@ -87,6 +93,7 @@ public class MonsterController : MonoBehaviour
                 currentState = MonsterState.Approaching;
                 ReleaseScrollLock(); 
                 
+                // Mệnh lệnh sinh tử: Chưa đủ tầm đánh của mình thì PHẢI LẾT BỘ TIẾP
                 float step = 150f * Time.deltaTime; 
                 float worldDir = Mathf.Sign(currentTarget.heroRect.position.x - rect.position.x);
                 rect.anchoredPosition += new Vector2(worldDir * step, 0);
@@ -129,7 +136,7 @@ public class MonsterController : MonoBehaviour
     public void InitRandomAttackMode()
     {
         attackMode = (AttackMode)Random.Range(0, 3);
-        if (attackMode == AttackMode.Melee) attackRange = 20f;
+        if (attackMode == AttackMode.Melee) attackRange = 30f;
         else if (attackMode == AttackMode.RangedPhysical) attackRange = 100f;
         else if (attackMode == AttackMode.RangedMagic) attackRange = 250f;
     }
