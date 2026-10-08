@@ -1,143 +1,163 @@
-using System.Collections.Generic;
 using UnityEngine;
+using TuTienCore;
 
 public class EnvironmentManager : MonoBehaviour
 {
     public static EnvironmentManager Instance { get; private set; }
 
     [Header("MÔI TRƯỜNG")]
-    [SerializeField] private RectTransform[] groundDetails; 
-    public float scrollSpeed = 150f; 
+    [SerializeField] private RectTransform[] groundDetails;
+    [SerializeField] private RectTransform battleArea;
+    [Min(0f)] public float scrollSpeed = 150f;
 
-    private float groundWidth;
-    private int battleLockCount = 0; 
-    
-    // Đất trôi tự do khi không ai bị khóa màn hình
-    public bool IsScrolling => battleLockCount <= 0 && HeroController.ActiveHeroes.Count > 0;
+    [Header("VÙNG CAMERA - tỷ lệ chiều rộng Ground")]
+    [Range(0.2f, 0.8f)] public float explorationHeroX = 0.5f;
+    [Range(0f, 1f)] public float speedZoneLeft = 0.06f;
+    [Range(0f, 1f)] public float speedZoneRight = 0.91f;
+
+    // Applied inside the saved edges so upgrading a scene preserves serialized
+    // 0.06/0.91 values while narrowing each side by 25% of their original span.
+    [Range(0f, 0.49f)] public float speedZoneInset = 0.25f;
+    public float CurrentBackgroundSpeed { get; private set; }
+
+    // A dead, still-visible hero remains the camera subject until hidden/replaced.
+    // It is intentionally NOT put back in the list of living combat actors.
+    private HeroController cameraTarget;
+
+    [Header("TẦM ĐÁNH - tỷ lệ chiều rộng Ground")]
+    [Range(0.01f, 0.15f)] public float meleeRangeRatio = 0.035f;
+    [Range(0.1f, 0.6f)] public float heroPhysicalRangeRatio = 0.36f;
+    [Range(0.1f, 0.6f)] public float heroMagicRangeRatio = 0.42f;
+    [Range(0.1f, 0.6f)] public float monsterPhysicalRangeRatio = 0.28f;
+    [Range(0.1f, 0.6f)] public float monsterMagicRangeRatio = 0.36f;
+
+    public RectTransform BattleArea => battleArea;
+    public float Width => battleArea != null ? battleArea.rect.width : 0f;
+    public float HomeX => battleArea.rect.xMin + Width * explorationHeroX;
+    private float ZoneMin => Mathf.Clamp01(Mathf.Min(speedZoneLeft, speedZoneRight));
+    private float ZoneMax => Mathf.Clamp01(Mathf.Max(speedZoneLeft, speedZoneRight));
+    private float ZoneInset => Mathf.Min(0.49f, Mathf.Max(0f, speedZoneInset)) * (ZoneMax - ZoneMin);
+    public float ZoneLeftX => battleArea.rect.xMin + Width * (ZoneMin + ZoneInset);
+    public float ZoneRightX => battleArea.rect.xMin + Width * (ZoneMax - ZoneInset);
+    public bool IsScrolling { get; private set; }
+    // Ground units/second actually applied this frame, including zone correction.
+    public float CurrentCameraSpeed { get; private set; }
+
+    public void FollowHero(HeroController hero) { cameraTarget = hero; }
 
     void Awake()
     {
-        if (Instance == null) Instance = this;
-        else Destroy(gameObject);
+        if (Instance != null && Instance != this) { Destroy(gameObject); return; }
+        Instance = this;
+        if (battleArea == null && groundDetails != null)
+        {
+            foreach (var detail in groundDetails)
+                if (detail != null) { battleArea = detail.parent as RectTransform; break; }
+        }
     }
 
-    void Start()
-    {
-        if (groundDetails.Length > 0 && groundDetails[0].parent != null)
-            groundWidth = ((RectTransform)groundDetails[0].parent).rect.width;
-        else
-            groundWidth = Screen.width;
-    }
+    void OnDestroy() { if (Instance == this) Instance = null; }
 
+    // All AI moves before CombatManager.Update. Camera presentation runs after both.
     void Update()
     {
-        if (IsScrolling) 
-        {
-            ScrollEnvironment(scrollSpeed * Time.deltaTime);
-        }
+        if (battleArea == null || Width <= 0f) return;
+        float dt = Time.deltaTime;
+        foreach (var hero in HeroController.ActiveHeroes)
+            if (hero != null && hero.IsDeployed) hero.TickMovement(this, dt);
+        foreach (var monster in MonsterController.ActiveMonsters)
+            if (monster != null && monster.IsAlive) monster.TickMovement(this, dt);
+        // Monsters may have entered a hero's range during this frame.
+        foreach (var hero in HeroController.ActiveHeroes)
+            if (hero != null && hero.IsDeployed) hero.RefreshCombatState(this);
     }
 
     void LateUpdate()
     {
-        // THUẬT TOÁN CAMERA MỀM (DYNAMIC FRAMING)
-        if (battleLockCount > 0)
+        IsScrolling = false;
+        CurrentCameraSpeed = 0f;
+        CurrentBackgroundSpeed = 0f;
+        if (battleArea == null || Width <= 0f) return;
+        if (cameraTarget == null || !cameraTarget.IsCameraSubject)
         {
-            HandleDynamicFraming();
+            cameraTarget = null;
+            foreach (var hero in HeroController.ActiveHeroes)
+                if (hero != null && hero.IsDeployed) { cameraTarget = hero; break; }
         }
+        if (cameraTarget == null) return;
+
+        // No monster framing and no attraction to the centre. Equal hero/camera
+        // speeds preserve the hero's CURRENT screen position, even after a fight.
+        float pan = BattleMotion.ZoneCameraStep(Position(cameraTarget.heroRect).x,
+            ZoneLeftX, ZoneRightX, scrollSpeed, Time.deltaTime);
+        PanWorld(pan);
+        // Decorative scrolling follows real running distance; a stationary hero
+        // and the background instead receive exactly the same camera pan.
+        float backgroundPan = cameraTarget.IsDeployed && cameraTarget.MovementDistanceThisFrame > 0.001f
+            ? cameraTarget.MovementDistanceThisFrame : pan;
+        PanEnvironment(backgroundPan);
+        CurrentBackgroundSpeed = Time.deltaTime > 0f ? backgroundPan / Time.deltaTime : 0f;
+        CurrentCameraSpeed = Time.deltaTime > 0f ? pan / Time.deltaTime : 0f;
+        IsScrolling = Mathf.Abs(pan) > 0.01f;
     }
 
-    public void LockScroll() { battleLockCount++; }
-    public void UnlockScroll() { battleLockCount = Mathf.Max(0, battleLockCount - 1); }
-
-    public void ScrollEnvironment(float amount)
+    public Vector2 Position(RectTransform rect)
     {
-        PanEnvironment(amount);
+        return battleArea.InverseTransformPoint(rect.position);
     }
 
-    private void HandleDynamicFraming()
+    public void SetPosition(RectTransform rect, Vector2 position)
     {
-        if (HeroController.ActiveHeroes.Count == 0) return;
-        HeroController hero = HeroController.ActiveHeroes[0];
-        if (hero == null || hero.IsDead) return;
+        Vector3 local = battleArea.InverseTransformPoint(rect.position);
+        local.x = position.x;
+        local.y = position.y;
+        rect.position = battleArea.TransformPoint(local);
+    }
 
-        // BẮT BUỘC DÙNG WORLD SPACE (.position.x) ĐỂ BỎ QUA SỰ KHÁC BIỆT CỦA ANCHOR
-        float minX = hero.heroRect.position.x;
-        float maxX = minX;
+    public bool IsVisible(RectTransform rect)
+    {
+        float x = Position(rect).x;
+        return x >= battleArea.rect.xMin && x <= battleArea.rect.xMax;
+    }
 
-        bool hasValidMonsters = false;
+    public float AttackRange(AttackMode mode, bool hero)
+    {
+        float ratio = meleeRangeRatio;
+        if (mode == AttackMode.RangedPhysical)
+            ratio = hero ? heroPhysicalRangeRatio : monsterPhysicalRangeRatio;
+        else if (mode == AttackMode.RangedMagic)
+            ratio = hero ? heroMagicRangeRatio : monsterMagicRangeRatio;
+        return Mathf.Max(1f, Width * ratio);
+    }
 
-        foreach (var mon in MonsterController.ActiveMonsters)
-        {
-            if (mon.currentState == MonsterState.Dead) continue;
-            
-            // Chỉ lấy tọa độ các quái đang trực tiếp tham chiến
-            if (mon.currentState == MonsterState.Approaching || mon.currentState == MonsterState.Attacking)
-            {
-                float mx = mon.GetComponent<RectTransform>().position.x;
-                if (mx < minX) minX = mx;
-                if (mx > maxX) maxX = mx;
-                hasValidMonsters = true;
-            }
-        }
-
-        if (!hasValidMonsters) return;
-
-        // 1. Tính tâm điểm giao tranh thực tế
-        float combatCenterX = (minX + maxX) / 2f;
-        
-        // 2. Xác định tâm của màn hình UI
-        float targetCenter = Screen.width / 2f; 
-        if (groundDetails.Length > 0 && groundDetails[0].parent != null)
-        {
-            targetCenter = groundDetails[0].parent.position.x; // Lấy tâm của thẻ Container chứa cỏ
-        }
-
-        // 3. Tính độ lệch để Camera trượt theo
-        float diff = targetCenter - combatCenterX;
-
-        // 4. Nếu lệch > 2 units thì bắt đầu Pan mượt mà
-        if (Mathf.Abs(diff) > 2f)
-        {
-            // Tốc độ đuổi theo của Camera (Hệ số 2.5f)
-            float panStep = diff * Time.deltaTime * 2.5f;
-
-            // Pan Hero (Theo World Space)
-            hero.heroRect.position += new Vector3(panStep, 0, 0);
-
-            // Pan Quái (Theo World Space)
-            foreach (var mon in MonsterController.ActiveMonsters)
-            {
-                if (mon.currentState != MonsterState.Dead)
-                {
-                    mon.GetComponent<RectTransform>().position += new Vector3(panStep, 0, 0);
-                }
-            }
-
-            // Pan Mặt đất (Đổi về Local Space vì cỏ cuộn bằng AnchoredPosition)
-            float scaleFactor = 1f;
-            if (groundDetails.Length > 0 && groundDetails[0] != null)
-            {
-                Canvas canvas = groundDetails[0].GetComponentInParent<Canvas>();
-                if (canvas != null) scaleFactor = canvas.scaleFactor;
-            }
-            
-            if (scaleFactor <= 0) scaleFactor = 1f;
-            PanEnvironment(panStep / scaleFactor);
-        }
+    private void PanWorld(float amount)
+    {
+        Vector3 worldDelta = battleArea.TransformVector(new Vector3(amount, 0f, 0f));
+        foreach (var hero in HeroController.ActiveHeroes)
+            if (hero != null && hero.IsDeployed) hero.heroRect.position += worldDelta;
+        // Death removes the hero from ActiveHeroes, but the body still travels
+        // with the world until it reaches the right zone edge.
+        if (cameraTarget != null && cameraTarget.IsDead && cameraTarget.IsCameraSubject)
+            cameraTarget.heroRect.position += worldDelta;
+        foreach (var monster in MonsterController.ActiveMonsters)
+            if (monster != null && monster.IsAlive) monster.Rect.position += worldDelta;
+        if (CombatManager.Instance != null) CombatManager.Instance.PanEffects(amount);
     }
 
     public void PanEnvironment(float amount)
     {
-        foreach (RectTransform detail in groundDetails)
+        if (battleArea == null || groundDetails == null) return;
+        foreach (var detail in groundDetails)
         {
             if (detail == null) continue;
-            detail.anchoredPosition += new Vector2(amount, 0);
-            
-            // Cỏ trượt vòng lặp
-            if (amount > 0 && detail.anchoredPosition.x > groundWidth + 100f) 
-                detail.anchoredPosition = new Vector2(-100f, detail.anchoredPosition.y);
-            else if (amount < 0 && detail.anchoredPosition.x < -100f)
-                detail.anchoredPosition = new Vector2(groundWidth + 100f, detail.anchoredPosition.y);
+            Vector2 p = Position(detail);
+            float width = detail.rect.width * Mathf.Abs(detail.localScale.x);
+            // Wrap only once the ENTIRE decoration is outside the viewport.
+            // Keep the overshoot so a low frame rate cannot bunch decorations together.
+            float min = battleArea.rect.xMin - (1f - detail.pivot.x) * width - 20f;
+            float max = battleArea.rect.xMax + detail.pivot.x * width + 20f;
+            p.x = BattleMotion.Wrap(p.x + amount, min, max);
+            SetPosition(detail, p);
         }
     }
 }

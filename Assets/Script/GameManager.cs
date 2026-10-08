@@ -3,15 +3,15 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
-using TuTienCore; 
+using TuTienCore;
 
 public class GameManager : MonoBehaviour
 {
     [Header("UI CỐT LÕI")]
     public Image eventLog;
-    public TextMeshProUGUI eventLogText; 
-    public GameObject preGameUI; 
-    public TextMeshProUGUI infoText; 
+    public TextMeshProUGUI eventLogText;
+    public GameObject preGameUI;
+    public TextMeshProUGUI infoText;
 
     [Header("UI GAME OVER")]
     public GameObject gameOverPanel;
@@ -20,17 +20,21 @@ public class GameManager : MonoBehaviour
     [Header("DỮ LIỆU GỐC")]
     public EntityDataSO heroDataSO;
     public EntityDataSO currentMonsterDataSO;
-    private EntityDataSO runtimeHeroData; 
+    private EntityDataSO runtimeHeroData;
 
     [Header("SYSTEMS")]
-    [SerializeField] private HeroController heroController; 
+    [SerializeField] private HeroController heroController;
     [SerializeField] private MonsterSpawner monsterSpawner;
     [SerializeField] private EnvironmentManager environmentManager;
     [SerializeField] private CombatManager combatManager;
-    [SerializeField] private SaveManager saveManager; 
+    [SerializeField] private SaveManager saveManager;
 
     public List<GameObject> activeMonsters = new List<GameObject>();
-    private bool hasDeployed = false; 
+    private Coroutine nextWaveCoroutine;
+    [Min(0f)] public float waveDelay = 1.5f;
+    public float CurrentWaveDelay => BattleMotion.WaveDelay(waveDelay,
+        heroController != null ? Mathf.Max(0f, heroController.moveSpeed) : 150f);
+    private bool hasDeployed = false;
 
     void Start()
     {
@@ -49,6 +53,7 @@ public class GameManager : MonoBehaviour
 
     private void InitHeroData()
     {
+        if (runtimeHeroData != null) Destroy(runtimeHeroData);
         runtimeHeroData = Instantiate(heroDataSO);
         // Mặc định khởi động sẽ lấy AutoSave
         bool hasSaveData = saveManager != null && saveManager.LoadGame(runtimeHeroData, SaveSlot.AutoSave);
@@ -75,11 +80,13 @@ public class GameManager : MonoBehaviour
 
     public void OnDeployClicked()
     {
-        preGameUI.SetActive(false); 
-        hasDeployed = true;         
+        if (hasDeployed) return;
+        CancelNextWave();
+        preGameUI.SetActive(false);
+        hasDeployed = true;
         if (combatManager != null) combatManager.SetupHeroInfo(runtimeHeroData);
-        heroController.SpawnHero(); 
-        CallNextWave();             
+        heroController.SpawnHero();
+        CallNextWave();
     }
 
     // --- CÁC HÀM XỬ LÝ SAVE/LOAD TỪ UI MỚI ---
@@ -100,9 +107,10 @@ public class GameManager : MonoBehaviour
 
         // 1. Dọn dẹp sạch sẽ chiến trường tránh kẹt Coroutine
         hasDeployed = false;
+        CancelNextWave();
         if (combatManager != null) combatManager.ForceClearAllMonsters();
         activeMonsters.Clear();
-        if (heroController != null) heroController.heroRect.gameObject.SetActive(false);
+        if (heroController != null) heroController.HideHero();
         if (gameOverPanel != null) gameOverPanel.SetActive(false);
 
         // 2. Nạp dữ liệu mới
@@ -120,7 +128,7 @@ public class GameManager : MonoBehaviour
         while (true)
         {
             yield return new WaitForSeconds(10f);
-            if (hasDeployed && runtimeHeroData != null && runtimeHeroData.isDirty && saveManager != null) 
+            if (hasDeployed && runtimeHeroData != null && runtimeHeroData.isDirty && saveManager != null)
             {
                 saveManager.SaveGame(runtimeHeroData, SaveSlot.AutoSave);
             }
@@ -130,27 +138,33 @@ public class GameManager : MonoBehaviour
     public void OnHeroDied()
     {
         hasDeployed = false;
+        CancelNextWave();
         activeMonsters.Clear();
         if (gameOverPanel != null) gameOverPanel.SetActive(true);
     }
 
     public void OnRetryClicked()
     {
+        if (hasDeployed) return;
+        CancelNextWave();
         if (gameOverPanel != null) gameOverPanel.SetActive(false);
         hasDeployed = true;
         if (combatManager != null) combatManager.SetupHeroInfo(runtimeHeroData);
+        heroController.SpawnHero();
         CallNextWave();
     }
 
     public void OnResetClicked() { if (confirmationPopup != null) confirmationPopup.SetActive(true); }
     public void OnConfirmResetClicked()
     {
+        hasDeployed = false;
+        CancelNextWave();
         if (confirmationPopup != null) confirmationPopup.SetActive(false);
         if (gameOverPanel != null) gameOverPanel.SetActive(false);
         if (saveManager != null) saveManager.DeleteSave(SaveSlot.AutoSave);
         if (combatManager != null) combatManager.ForceClearAllMonsters();
         activeMonsters.Clear();
-        if (heroController != null) heroController.heroRect.gameObject.SetActive(false);
+        if (heroController != null) heroController.HideHero();
         InitHeroData();
     }
     public void OnCancelResetClicked() { if (confirmationPopup != null) confirmationPopup.SetActive(false); }
@@ -166,9 +180,9 @@ public class GameManager : MonoBehaviour
 
     private void CallNextWave()
     {
-        if (monsterSpawner == null) return;
+        if (!hasDeployed || monsterSpawner == null) return;
         activeMonsters.Clear();
-        
+
         int spawnCount = Random.Range(1, 4);
         for (int i = 0; i < spawnCount; i++)
         {
@@ -186,15 +200,35 @@ public class GameManager : MonoBehaviour
 
     public void OnMonsterDied(GameObject deadMonster)
     {
-        activeMonsters.Remove(deadMonster);
-        if (activeMonsters.Count == 0) StartCoroutine(WaitAndCallNextWave());
+        if (!activeMonsters.Remove(deadMonster)) return;
+        if (hasDeployed && activeMonsters.Count == 0 && nextWaveCoroutine == null)
+            nextWaveCoroutine = StartCoroutine(WaitAndCallNextWave());
     }
 
     private IEnumerator WaitAndCallNextWave()
     {
-        yield return new WaitForSeconds(3f);
+        // Accumulate normalized progress so speed changes affect a pending wave.
+        // At speed 0, wait without resetting the progress already earned.
+        float progress = 0f;
+        do
+        {
+            yield return null;
+            if (!hasDeployed) { nextWaveCoroutine = null; yield break; }
+            float delay = CurrentWaveDelay;
+            if (delay <= 0f) break;
+            progress += Time.deltaTime / delay;
+        } while (progress < 1f);
+        nextWaveCoroutine = null;
         if (hasDeployed) CallNextWave();
     }
+
+    private void CancelNextWave()
+    {
+        if (nextWaveCoroutine != null) StopCoroutine(nextWaveCoroutine);
+        nextWaveCoroutine = null;
+    }
+
+    private void OnDisable() { CancelNextWave(); }
 
     private void OnApplicationQuit() { if (saveManager != null && hasDeployed && runtimeHeroData != null) saveManager.SaveGame(runtimeHeroData, SaveSlot.AutoSave); }
 }

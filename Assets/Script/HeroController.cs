@@ -1,9 +1,9 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.UI; 
-using TMPro; 
-using TuTienCore; 
+using UnityEngine.UI;
+using TMPro;
+using TuTienCore;
 
 public enum HeroState { Idle, Returning, Approaching, Combat, Dead }
 
@@ -12,161 +12,183 @@ public class HeroController : MonoBehaviour
     [Header("REFERENCES")]
     public RectTransform heroRect;
     public string spawnSkin = "FadeIn_01";
-
     [Header("COMBAT STATS")]
     public AttackMode attackMode = AttackMode.Melee;
-    public float attackRange = 30f; 
-
+    public float attackRange = 30f;
+    [Min(0f)] public float moveSpeed = 150f;
+    [Min(0f)] public float laneSpeed = 150f;
     [Header("UI ELEMENTS")]
-    public Image hpFillImage; 
-    public TextMeshProUGUI dmgTextPrototype; 
-    public TextMeshProUGUI atkStatusText; 
+    public Image hpFillImage;
+    public TextMeshProUGUI dmgTextPrototype;
+    public TextMeshProUGUI atkStatusText;
 
     public static List<HeroController> ActiveHeroes = new List<HeroController>();
-    public HeroState CurrentState = HeroState.Returning;
+    public HeroState CurrentState = HeroState.Idle;
     public bool IsDead => CurrentState == HeroState.Dead;
+    public bool IsDeployed => deployed && !IsDead && isActiveAndEnabled &&
+        heroRect != null && heroRect.gameObject.activeInHierarchy;
+    public bool IsCameraSubject => (deployed || IsDead) && isActiveAndEnabled &&
+        heroRect != null && heroRect.gameObject.activeInHierarchy;
+    public MonsterController CurrentTarget { get; private set; }
 
-    private Canvas parentCanvas;
-    private CanvasGroup canvasGroup;
-    private float groundWidth;
+    public float MovementDistanceThisFrame { get; private set; }
+
+    private bool deployed;
     private Coroutine fadeDmgCoroutine;
-    private Coroutine attackFeedbackCoroutine; 
-    private bool hasLockedScroll = false;
+    private Coroutine attackFeedbackCoroutine;
+    private Vector3 damageTextHome;
 
     void Awake()
     {
-        if (heroRect != null) heroRect.gameObject.SetActive(false);
-        if (dmgTextPrototype != null) dmgTextPrototype.alpha = 0f; 
-        if (atkStatusText != null) atkStatusText.text = ""; 
-    }
-
-    void OnEnable()
-    {
-        if (!ActiveHeroes.Contains(this)) ActiveHeroes.Add(this);
-        CurrentState = HeroState.Returning;
-        hasLockedScroll = false;
-        
-        ApplyAttackRange();
+        if (heroRect != null)
+        {
+            // Use the feet centre as the logical origin. Scaling feedback no longer
+            // moves the visual centre sideways when the old pivot was bottom-right.
+            Vector3 feet = heroRect.TransformPoint(new Vector3(heroRect.rect.center.x, heroRect.rect.yMin, 0f));
+            heroRect.pivot = new Vector2(0.5f, 0f);
+            heroRect.position = feet;
+            heroRect.gameObject.SetActive(false);
+        }
+        if (dmgTextPrototype != null)
+        {
+            damageTextHome = dmgTextPrototype.transform.localPosition;
+            dmgTextPrototype.alpha = 0f;
+        }
+        if (atkStatusText != null) atkStatusText.text = "";
     }
 
     void OnDisable()
     {
-        if (ActiveHeroes.Contains(this)) ActiveHeroes.Remove(this);
-        ReleaseScrollLock();
+        MovementDistanceThisFrame = 0f;
+        deployed = false;
+        ActiveHeroes.Remove(this);
+        CurrentTarget = null;
+        ResetFeedback();
     }
-
-    void Start()
-    {
-        if (heroRect == null) return;
-        parentCanvas = GetComponentInParent<Canvas>();
-        canvasGroup = heroRect.GetComponent<CanvasGroup>();
-        if (canvasGroup == null) canvasGroup = heroRect.gameObject.AddComponent<CanvasGroup>();
-        if (heroRect.parent != null) groundWidth = ((RectTransform)heroRect.parent).rect.width;
-    }
-
-    private float GetCanvasScale() => parentCanvas != null ? parentCanvas.scaleFactor : 1f;
 
     public void ChangeAttackMode(int modeIndex)
     {
+        if (modeIndex < 0 || modeIndex > 2) return;
         attackMode = (AttackMode)modeIndex;
-        ApplyAttackRange();
-        
-        if (CurrentState == HeroState.Combat)
-        {
-            CurrentState = HeroState.Idle; 
-            ReleaseScrollLock();
-        }
+        if (!IsDead) CurrentState = HeroState.Idle;
     }
 
-    private void ApplyAttackRange()
+    public void TickMovement(EnvironmentManager space, float dt)
     {
-        if (attackMode == AttackMode.Melee) attackRange = 30f;
-        else if (attackMode == AttackMode.RangedPhysical) attackRange = 150f;
-        else if (attackMode == AttackMode.RangedMagic) attackRange = 250f;
-    }
-
-    void Update()
-    {
-        if (IsDead) return;
-
-        MonsterController target = FindClosestMonster();
-
-        if (target == null)
+        MovementDistanceThisFrame = 0f;
+        if (!IsDeployed) return;
+        attackRange = space.AttackRange(attackMode, true);
+        // Retain the selected enemy until it dies; do not alternate between nearly
+        // equidistant enemies (and their Y lanes) every frame.
+        if (CurrentTarget == null || !CurrentTarget.IsAlive)
+            CurrentTarget = FindClosestMonster(space);
+        Vector2 p = space.Position(heroRect);
+        float startX = p.x;
+        if (CurrentTarget == null)
         {
-            ReleaseScrollLock();
             CurrentState = HeroState.Returning;
-            if (!IsAtCenter()) {
-                MoveToCenter(100f);
-                HandleAnimation(true, false);
-            } else {
-                CurrentState = HeroState.Idle;
-                HandleAnimation(true, false);
-            }
+            // Hero speed is independent from the camera's base scroll speed.
+            p.x -= Mathf.Max(0f, moveSpeed) * dt;
+            p.y = Mathf.MoveTowards(p.y, 0f, laneSpeed * dt);
+            MovementDistanceThisFrame = Mathf.Abs(p.x - startX);
+            space.SetPosition(heroRect, p);
+            HandleAnimation(true, false);
+            return;
         }
-        else
-        {
-            float distWorld = Mathf.Abs(heroRect.position.x - target.transform.position.x);
-            float rangeWorld = attackRange * GetCanvasScale();
 
-            if (distWorld <= rangeWorld)
-            {
-                CurrentState = HeroState.Combat;
-                if (!hasLockedScroll) { EnvironmentManager.Instance?.LockScroll(); hasLockedScroll = true; }
-                HandleAnimation(false, true);
-                
-                float step = 150f * Time.deltaTime;
-                float newY = Mathf.MoveTowards(heroRect.anchoredPosition.y, target.transform.localPosition.y, step);
-                heroRect.anchoredPosition = new Vector2(heroRect.anchoredPosition.x, newY);
-            }
-            else
-            {
-                CurrentState = HeroState.Approaching;
-                
-                // VÁ LỖI CỰC KỲ QUAN TRỌNG: Mở khóa Camera để mặt đất tiếp tục trôi
-                // Camera chỉ đứng lại khi bắt đầu đánh nhau, tạo cảm giác đuổi bắt mượt mà
-                ReleaseScrollLock(); 
-                
-                HandleAnimation(true, false);
-
-                float step = 150f * Time.deltaTime;
-                float worldDir = Mathf.Sign(target.transform.position.x - heroRect.position.x);
-                heroRect.anchoredPosition += new Vector2(worldDir * step, 0);
-
-                float newY = Mathf.MoveTowards(heroRect.anchoredPosition.y, target.transform.localPosition.y, step);
-                heroRect.anchoredPosition = new Vector2(heroRect.anchoredPosition.x, newY);
-            }
-        }
+        Vector2 target = space.Position(CurrentTarget.Rect);
+        p.x = BattleMotion.Approach(p.x, target.x, attackRange, moveSpeed, dt);
+        if (attackMode == AttackMode.Melee)
+            p.y = Mathf.MoveTowards(p.y, target.y, laneSpeed * dt);
+        MovementDistanceThisFrame = Mathf.Abs(p.x - startX);
+        space.SetPosition(heroRect, p);
+        RefreshCombatState(space);
     }
 
-    private MonsterController FindClosestMonster()
+    public void RefreshCombatState(EnvironmentManager space)
     {
-        float closestDist = float.MaxValue;
-        MonsterController closest = null;
-        float currentScale = GetCanvasScale();
+        if (!IsDeployed || CurrentTarget == null || !CurrentTarget.IsAlive) return;
+        CurrentState = CanAttack(CurrentTarget, space) ? HeroState.Combat : HeroState.Approaching;
+        HandleAnimation(CurrentState == HeroState.Approaching, CurrentState == HeroState.Combat);
+    }
 
-        foreach (var mon in MonsterController.ActiveMonsters)
+    public bool CanAttack(MonsterController target, EnvironmentManager space)
+    {
+        if (!IsDeployed || target == null || !target.IsAlive || space == null || space.BattleArea == null) return false;
+        Vector2 delta = space.Position(target.Rect) - space.Position(heroRect);
+        float range = space.AttackRange(attackMode, true);
+        return Mathf.Abs(delta.x) <= range + 0.1f &&
+            (attackMode != AttackMode.Melee || Mathf.Abs(delta.y) <= 15f);
+    }
+
+    private MonsterController FindClosestMonster(EnvironmentManager space)
+    {
+        float distance = float.MaxValue;
+        MonsterController closest = null;
+        float x = space.Position(heroRect).x;
+        foreach (var monster in MonsterController.ActiveMonsters)
         {
-            if (mon.currentState == MonsterState.Dead) continue;
-            float dist = Mathf.Abs(heroRect.position.x - mon.transform.position.x) / currentScale;
-            if (dist < closestDist)
-            {
-                closestDist = dist;
-                closest = mon;
-            }
+            if (monster == null || !monster.IsAlive || !space.IsVisible(monster.Rect)) continue;
+            float d = Mathf.Abs(x - space.Position(monster.Rect).x);
+            if (d < distance) { distance = d; closest = monster; }
         }
         return closest;
     }
 
-    private void ReleaseScrollLock()
+    public void SpawnHero()
     {
-        if (hasLockedScroll)
+        if (heroRect == null) return;
+        gameObject.SetActive(true);
+        ResetFeedback();
+        CurrentTarget = null;
+        MovementDistanceThisFrame = 0f;
+        CurrentState = HeroState.Returning;
+        deployed = true;
+        heroRect.gameObject.SetActive(true);
+        if (!ActiveHeroes.Contains(this)) ActiveHeroes.Add(this);
+        Canvas.ForceUpdateCanvases();
+        var space = EnvironmentManager.Instance;
+        if (space != null && space.BattleArea != null)
         {
-            EnvironmentManager.Instance?.UnlockScroll();
-            hasLockedScroll = false;
+            space.SetPosition(heroRect, new Vector2(space.HomeX, 0f));
+            space.FollowHero(this);
         }
     }
 
-    public void Die() { CurrentState = HeroState.Dead; gameObject.SetActive(false); }
+    public void HideHero()
+    {
+        MovementDistanceThisFrame = 0f;
+        deployed = false;
+        CurrentTarget = null;
+        CurrentState = HeroState.Idle;
+        ActiveHeroes.Remove(this);
+        ResetFeedback();
+        if (heroRect != null) heroRect.gameObject.SetActive(false);
+    }
+
+    public void Die()
+    {
+        MovementDistanceThisFrame = 0f;
+        deployed = false;
+        CurrentTarget = null;
+        CurrentState = HeroState.Dead;
+        ActiveHeroes.Remove(this);
+        ResetFeedback();
+    }
+
+    private void ResetFeedback()
+    {
+        if (fadeDmgCoroutine != null) StopCoroutine(fadeDmgCoroutine);
+        if (attackFeedbackCoroutine != null) StopCoroutine(attackFeedbackCoroutine);
+        fadeDmgCoroutine = null;
+        attackFeedbackCoroutine = null;
+        if (heroRect != null) heroRect.localScale = Vector3.one;
+        if (dmgTextPrototype != null)
+        {
+            dmgTextPrototype.alpha = 0f;
+            dmgTextPrototype.transform.localPosition = damageTextHome;
+        }
+    }
 
     public void SetGenderVisual(GenderType gender)
     {
@@ -201,7 +223,7 @@ public class HeroController : MonoBehaviour
     private IEnumerator FadeDamageTextRoutine()
     {
         float duration = 0.8f; float elapsed = 0f;
-        Vector3 startPos = dmgTextPrototype.transform.localPosition;
+        Vector3 startPos = damageTextHome;
         while (elapsed < duration)
         {
             elapsed += Time.deltaTime;
@@ -213,15 +235,8 @@ public class HeroController : MonoBehaviour
     }
     public void HandleAnimation(bool isMoving, bool isFighting)
     {
-        if (heroRect == null || !heroRect.gameObject.activeSelf) return; 
+        if (heroRect == null || !heroRect.gameObject.activeSelf || attackFeedbackCoroutine != null) return;
         if (isMoving && !isFighting) { float bounce = Mathf.Sin(Time.time * 8f) * 0.04f; heroRect.localScale = new Vector3(1 + bounce, 1 + bounce, 1); }
         else if (!isFighting) heroRect.localScale = Vector3.one;
     }
-    public void SpawnHero() { if (heroRect != null) heroRect.gameObject.SetActive(true); }
-    public void MoveToCenter(float speed) { if (heroRect == null) return; float targetX = -groundWidth / 2f; heroRect.anchoredPosition = Vector2.MoveTowards(heroRect.anchoredPosition, new Vector2(targetX, 0f), speed * Time.deltaTime); }
-    public void MoveTowardsEnemy(float targetY, float speed) { if (heroRect == null) return; float step = speed * Time.deltaTime; float newY = Mathf.MoveTowards(heroRect.anchoredPosition.y, targetY, step); heroRect.anchoredPosition = new Vector2(heroRect.anchoredPosition.x - step, newY); }
-    public void Pan(float amount) { if (heroRect != null) heroRect.anchoredPosition += new Vector2(amount, 0); }
-    public bool IsAtCenter() { if (heroRect == null) return true; return Mathf.Abs(heroRect.anchoredPosition.x - (-groundWidth / 2f)) < 1f; }
-    public float GetActualXPosition() => heroRect != null ? (groundWidth + heroRect.anchoredPosition.x) : 0f;
-    public float GetYPosition() => heroRect != null ? heroRect.anchoredPosition.y : 0f;
 }

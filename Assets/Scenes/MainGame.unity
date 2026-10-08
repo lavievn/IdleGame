@@ -948,7 +948,17 @@ MonoBehaviour:
   - {fileID: 1977279960}
   - {fileID: 971839201}
   - {fileID: 394156745}
+  battleArea: {fileID: 0}
   scrollSpeed: 150
+  explorationHeroX: 0.5
+  speedZoneLeft: 0.06
+  speedZoneRight: 0.91
+  speedZoneInset: 0.25
+  meleeRangeRatio: 0.035
+  heroPhysicalRangeRatio: 0.36
+  heroMagicRangeRatio: 0.42
+  monsterPhysicalRangeRatio: 0.28
+  monsterMagicRangeRatio: 0.36
 --- !u!4 &87556252
 Transform:
   m_ObjectHideFlags: 0
@@ -3793,6 +3803,7 @@ MonoBehaviour:
   combatManager: {fileID: 649540127}
   saveManager: {fileID: 0}
   activeMonsters: []
+  waveDelay: 1.5
 --- !u!4 &649540125
 Transform:
   m_ObjectHideFlags: 0
@@ -3837,6 +3848,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6420e6ba55f03b94ba4b6cd8029b52d1, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::CombatManager
+  physicalFlightTime: 0.18
+  magicFlightTime: 1.2
+  magicArcHeight: 65
+  effectsScale: 1
   monsterSpawner: {fileID: 1711842760}
 --- !u!114 &649540128
 MonoBehaviour:
@@ -4683,6 +4698,8 @@ MonoBehaviour:
   spawnSkin: FadeIn_01
   attackMode: 0
   attackRange: 50
+  moveSpeed: 300
+  laneSpeed: 150
   hpFillImage: {fileID: 1988525334}
   dmgTextPrototype: {fileID: 1835480570}
   atkStatusText: {fileID: 748831508}

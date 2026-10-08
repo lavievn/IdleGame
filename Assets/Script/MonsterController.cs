@@ -9,136 +9,103 @@ public enum MonsterState { PassiveScroll, Approaching, Attacking, Dead }
 
 public class MonsterController : MonoBehaviour
 {
-    public Image hpFillImage; 
-    public TextMeshProUGUI dmgTextPrototype; 
+    public Image hpFillImage;
+    public TextMeshProUGUI dmgTextPrototype;
     public AttackMode attackMode;
     public float attackRange;
-
+    [Min(0f)] public float moveSpeed = 150f;
     public MonsterState currentState = MonsterState.PassiveScroll;
     public static List<MonsterController> ActiveMonsters = new List<MonsterController>();
+    public HeroController CurrentTarget { get; private set; }
+    public RectTransform Rect => rect;
+    public bool IsAlive => isActiveAndEnabled && currentState != MonsterState.Dead;
 
-    private HeroController currentTarget;
     private RectTransform rect;
-    private Canvas parentCanvas;
-    private bool hasLockedScroll = false; 
     private Coroutine attackFeedbackCoroutine;
     private Coroutine fadeDmgCoroutine;
 
-    void Awake() 
-    { 
-        if (dmgTextPrototype != null) dmgTextPrototype.alpha = 0f; 
-        rect = GetComponent<RectTransform>();
-    }
-
-    void Start()
-    {
-        parentCanvas = GetComponentInParent<Canvas>();
-    }
+    void Awake() { rect = GetComponent<RectTransform>(); }
 
     void OnEnable()
     {
-        if (!ActiveMonsters.Contains(this)) ActiveMonsters.Add(this);
-        
-        // Bắt buộc gọi để fix lỗi Pooling làm mất thông số đánh xa
-        InitRandomAttackMode(); 
-        
+        if (rect == null) rect = GetComponent<RectTransform>();
+        ResetFeedback();
+        // Exactly one random roll per activation (including pooled respawns).
+        InitRandomAttackMode();
         currentState = MonsterState.PassiveScroll;
-        currentTarget = null;
-        hasLockedScroll = false;
+        CurrentTarget = null;
+        if (!ActiveMonsters.Contains(this)) ActiveMonsters.Add(this);
     }
 
     void OnDisable()
     {
-        if (ActiveMonsters.Contains(this)) ActiveMonsters.Remove(this);
-        ReleaseScrollLock();
+        ActiveMonsters.Remove(this);
+        CurrentTarget = null;
+        ResetFeedback();
     }
 
-    private float GetCanvasScale() => parentCanvas != null ? parentCanvas.scaleFactor : 1f;
-
-    void Update()
+    public void TickMovement(EnvironmentManager space, float dt)
     {
-        if (currentState == MonsterState.Dead) return;
-
-        if (EnvironmentManager.Instance != null && EnvironmentManager.Instance.IsScrolling)
+        if (!IsAlive) return;
+        attackRange = space.AttackRange(attackMode, false);
+        if (CurrentTarget == null || !CurrentTarget.IsDeployed)
         {
-            rect.anchoredPosition += new Vector2(EnvironmentManager.Instance.scrollSpeed * Time.deltaTime, 0);
+            CurrentTarget = null;
+            // Enter through the left edge before engaging; camera pans still carry
+            // passive monsters with the world while the hero is exploring.
+            if (space.IsVisible(rect)) FindTarget(space);
         }
+        if (CurrentTarget == null) { currentState = MonsterState.PassiveScroll; return; }
 
-        if (currentState == MonsterState.PassiveScroll)
-        {
-            // Vừa sinh ra là lập tức quét mục tiêu, bỏ điều kiện vướng ở mốc 0f
-            FindTarget();
-        }
-        else 
-        {
-            if (currentTarget == null || currentTarget.IsDead)
-            {
-                ReleaseScrollLock();
-                currentState = MonsterState.PassiveScroll;
-                FindTarget(); 
-                return;
-            }
-
-            float distWorld = Mathf.Abs(rect.position.x - currentTarget.heroRect.position.x);
-            float rangeWorld = attackRange * GetCanvasScale();
-            
-            if (distWorld <= rangeWorld)
-            {
-                currentState = MonsterState.Attacking;
-                // Khi một con quái xả skill, chỉ duy nhất con quái đó khóa màn hình, không ảnh hưởng vận tốc di chuyển của các con khác
-                if (!hasLockedScroll) { EnvironmentManager.Instance?.LockScroll(); hasLockedScroll = true; }
-            }
-            else
-            {
-                currentState = MonsterState.Approaching;
-                ReleaseScrollLock(); 
-                
-                // Mệnh lệnh sinh tử: Chưa đủ tầm đánh của mình thì PHẢI LẾT BỘ TIẾP
-                float step = 150f * Time.deltaTime; 
-                float worldDir = Mathf.Sign(currentTarget.heroRect.position.x - rect.position.x);
-                rect.anchoredPosition += new Vector2(worldDir * step, 0);
-            }
-        }
+        Vector2 p = space.Position(rect);
+        float targetX = space.Position(CurrentTarget.heroRect).x;
+        p.x = BattleMotion.Approach(p.x, targetX, attackRange, moveSpeed, dt);
+        space.SetPosition(rect, p);
+        currentState = CanAttack(CurrentTarget, space) ? MonsterState.Attacking : MonsterState.Approaching;
     }
 
-    private void FindTarget()
+    public bool CanAttack(HeroController target, EnvironmentManager space)
     {
-        float closestDist = float.MaxValue;
-        HeroController closestHero = null;
-        float currentScale = GetCanvasScale();
+        if (!IsAlive || target == null || !target.IsDeployed || space == null || space.BattleArea == null) return false;
+        Vector2 delta = space.Position(target.heroRect) - space.Position(rect);
+        // Monster lanes are visual depth, not obstacles. A melee monster can reach
+        // a ranged hero without forcing that hero to walk down its lane.
+        return Mathf.Abs(delta.x) <= space.AttackRange(attackMode, false) + 0.1f;
+    }
 
+    private void FindTarget(EnvironmentManager space)
+    {
+        float nearest = float.MaxValue;
         foreach (var hero in HeroController.ActiveHeroes)
         {
-            if (hero.IsDead) continue;
-            float dist = Mathf.Abs(rect.position.x - hero.heroRect.position.x) / currentScale;
-            if (dist <= attackRange + 400f) 
-            {
-                if (dist < closestDist) { closestDist = dist; closestHero = hero; }
-            }
-        }
-
-        if (closestHero != null)
-        {
-            currentTarget = closestHero;
-            currentState = MonsterState.Approaching;
-        }
-    }
-
-    private void ReleaseScrollLock()
-    {
-        if (hasLockedScroll)
-        {
-            EnvironmentManager.Instance?.UnlockScroll();
-            hasLockedScroll = false;
+            if (hero == null || !hero.IsDeployed) continue;
+            float distance = Mathf.Abs(space.Position(rect).x - space.Position(hero.heroRect).x);
+            if (distance < nearest) { nearest = distance; CurrentTarget = hero; }
         }
     }
 
     public void InitRandomAttackMode()
     {
         attackMode = (AttackMode)Random.Range(0, 3);
-        if (attackMode == AttackMode.Melee) attackRange = 30f;
-        else if (attackMode == AttackMode.RangedPhysical) attackRange = 100f;
-        else if (attackMode == AttackMode.RangedMagic) attackRange = 250f;
+        var space = EnvironmentManager.Instance;
+        if (space != null && space.Width > 0f) attackRange = space.AttackRange(attackMode, false);
+    }
+
+    public void MarkDead()
+    {
+        currentState = MonsterState.Dead;
+        CurrentTarget = null;
+        ActiveMonsters.Remove(this);
+    }
+
+    private void ResetFeedback()
+    {
+        if (attackFeedbackCoroutine != null) StopCoroutine(attackFeedbackCoroutine);
+        if (fadeDmgCoroutine != null) StopCoroutine(fadeDmgCoroutine);
+        attackFeedbackCoroutine = null;
+        fadeDmgCoroutine = null;
+        transform.localScale = Vector3.one;
+        if (dmgTextPrototype != null) dmgTextPrototype.alpha = 0f;
     }
 
     public void PlayAttackFeedback()

@@ -5,9 +5,9 @@ using TuTienCore;
 public class MonsterSpawner : MonoBehaviour
 {
     [SerializeField] private GameObject monsterPrefab;
-    [SerializeField] private Transform monsterContainer; 
-    [SerializeField] private Vector2 spawnPosition = new Vector2(-100f, 0f); 
-    [SerializeField] private float minY = 10f; 
+    [SerializeField] private Transform monsterContainer;
+    [SerializeField] private Vector2 spawnPosition = new Vector2(-100f, 0f);
+    [SerializeField] private float minY = 10f;
     [SerializeField] private float maxY = 90f;
 
     private IObjectPool<GameObject> monsterPool;
@@ -23,17 +23,10 @@ public class MonsterSpawner : MonoBehaviour
                 {
                     rect.anchorMin = Vector2.zero;
                     rect.anchorMax = Vector2.zero;
-                    rect.pivot = new Vector2(0.5f, 0f); 
-                    
+                    rect.pivot = new Vector2(0.5f, 0f);
+
                     float randomY = Random.Range(minY, maxY);
                     rect.anchoredPosition = new Vector2(spawnPosition.x, randomY);
-                }
-                
-                // Khởi tạo logic chiến đấu ngẫu nhiên
-                var controller = m.GetComponent<MonsterController>();
-                if (controller != null)
-                {
-                    controller.InitRandomAttackMode();
                 }
 
                 m.SetActive(true);

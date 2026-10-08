@@ -1,18 +1,38 @@
-using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using TuTienCore; 
+using TuTienCore;
 
+// EnvironmentManager moves actors first; damage uses their final positions this frame.
+[DefaultExecutionOrder(100)]
 public class CombatManager : MonoBehaviour
 {
+    public static CombatManager Instance { get; private set; }
+    [Header("HIỆU ỨNG ĐÒN ĐÁNH")]
+    [Min(0.01f)] public float physicalFlightTime = 0.18f;
+    [Min(0.01f)] public float magicFlightTime = 1.2f;
+    [Min(0f)] public float magicArcHeight = 65f;
+    [Min(0.1f)] public float effectsScale = 1f;
     [SerializeField] private MonsterSpawner monsterSpawner;
+    private BattleEffects effects;
+    private class Projectile
+    {
+        public ActiveMonsterInfo monster;
+        public bool fromHero, magic;
+        public Vector2 start;
+        public float elapsed, duration, arc;
+        public int damage;
+        public BattleEffects.Bolt visual;
+    }
+    private readonly List<Projectile> projectiles = new List<Projectile>();
+    public int PendingProjectileCount => projectiles.Count;
     private GameManager gameManager;
     private HeroController heroController;
-    
     private EntityDataSO runtimeHeroData;
     private int currentHeroHP, maxHeroHP;
-    private bool isBattling = false;
-    private Coroutine heroAttackCoroutine;
+    private bool isBattling;
+    private float heroAttackTimer;
+    private AttackMode heroWindupMode;
+    private ActiveMonsterInfo heroWindupTarget;
 
     public class ActiveMonsterInfo
     {
@@ -21,172 +41,279 @@ public class CombatManager : MonoBehaviour
         public EntityDataSO data;
         public int currentHP;
         public int maxHP;
-        public Coroutine attackCoroutine;
+        public float attackTimer;
     }
 
-    private List<ActiveMonsterInfo> activeMonsters = new List<ActiveMonsterInfo>();
+    private readonly List<ActiveMonsterInfo> activeMonsters = new List<ActiveMonsterInfo>();
 
-    void Start() { gameManager = GetComponent<GameManager>(); heroController = Object.FindFirstObjectByType<HeroController>(); }
+    void Start()
+    {
+        Instance = this;
+        gameManager = GetComponent<GameManager>();
+        heroController = Object.FindFirstObjectByType<HeroController>();
+        if (monsterSpawner == null) monsterSpawner = Object.FindFirstObjectByType<MonsterSpawner>();
+    }
 
     public void SetupHeroInfo(EntityDataSO hData)
     {
+        ClearProjectiles();
         runtimeHeroData = hData;
         maxHeroHP = runtimeHeroData.GetCalculatedHealth();
         currentHeroHP = maxHeroHP;
-        if (heroController != null) { heroController.UpdateHealthBar(currentHeroHP, maxHeroHP); heroController.UpdateAtkUI(runtimeHeroData.GetCalculatedDamage()); }
+        ResetHeroAttack();
+        if (heroController != null)
+        {
+            heroController.UpdateHealthBar(currentHeroHP, maxHeroHP);
+            heroController.UpdateAtkUI(runtimeHeroData.GetCalculatedDamage());
+        }
     }
 
     public void StartBattle(List<GameObject> monsters, EntityDataSO baseMonsterData)
     {
-        activeMonsters.Clear();
+        ForceClearAllMonsters();
         foreach (var m in monsters)
         {
-            ActiveMonsterInfo info = new ActiveMonsterInfo();
+            if (m == null) continue;
+            var info = new ActiveMonsterInfo();
             info.go = m;
             info.controller = m.GetComponent<MonsterController>();
             info.data = Instantiate(baseMonsterData);
             info.data.currentLevel = Mathf.Clamp(runtimeHeroData.currentLevel + Random.Range(-5, 6), 1, 999);
-            
             info.maxHP = Mathf.RoundToInt(info.data.GetCalculatedHealth() * (1f + (info.data.currentLevel - 1) * 0.05f));
             info.currentHP = info.maxHP;
             if (info.controller != null) info.controller.UpdateHealthBar(info.currentHP, info.maxHP);
             activeMonsters.Add(info);
         }
-
-        isBattling = true;
-        heroAttackCoroutine = StartCoroutine(HeroAttackRoutine());
-
-        foreach (var info in activeMonsters)
-        {
-            info.attackCoroutine = StartCoroutine(MonsterAttackRoutine(info));
-        }
+        isBattling = activeMonsters.Count > 0;
     }
 
-    private ActiveMonsterInfo GetNearestMonster()
+    void Update()
     {
-        ActiveMonsterInfo nearest = null;
-        float minDist = float.MaxValue;
-        if (heroController == null) return null;
-        float heroX = heroController.heroRect.position.x;
-
-        foreach (var info in activeMonsters)
+        var space = EnvironmentManager.Instance;
+        if (effects != null) effects.Advance(Time.deltaTime);
+        if (!isBattling || currentHeroHP <= 0 || heroController == null || !heroController.IsDeployed || space == null)
+        { if (projectiles.Count > 0) ClearProjectiles(); return; }
+        if (effects == null && space.BattleArea != null) effects = BattleEffects.Create(space.BattleArea);
+        // Advance existing shots before launching new ones; a new shot must not
+        // consume time from before its launch during this frame.
+        TickProjectiles(space, Time.deltaTime);
+        if (!isBattling) return;
+        TickHeroAttack(space, Time.deltaTime);
+        if (!isBattling) return;
+        for (int i = activeMonsters.Count - 1; i >= 0; i--)
         {
-            if (info.currentHP <= 0 || info.go == null) continue;
-            float dist = Mathf.Abs(heroX - info.go.GetComponent<RectTransform>().position.x);
-            if (dist < minDist) { minDist = dist; nearest = info; }
+            var info = activeMonsters[i];
+            if (info.controller == null || !info.controller.CanAttack(heroController, space) ||
+                info.controller.CurrentTarget != heroController)
+            {
+                info.attackTimer = 0f;
+                continue;
+            }
+            info.attackTimer += Time.deltaTime;
+            float duration = AttackDuration(info.controller.attackMode, info.data.baseAttackSpeed);
+            if (info.attackTimer < duration) continue;
+            info.attackTimer = 0f;
+            // Revalidate immediately before damage; there are no suspended coroutines
+            // that can wake up after a load/retry or a pooled object is reused.
+            if (!info.controller.CanAttack(heroController, space)) continue;
+            float dmg = (info.data.GetCalculatedDamage() - 5) * Random.Range(0.75f, 1.0f);
+            int finalDmg = Mathf.Max(1, Mathf.RoundToInt(dmg));
+            info.controller.PlayAttackFeedback();
+            if (info.controller.attackMode == AttackMode.Melee)
+            {
+                Impact(BodyPosition(heroController.heroRect, space), false);
+                DealDamageToHero(finalDmg);
+            }
+            else Launch(info, false, info.controller.attackMode, finalDmg, duration, space, 0);
+            if (!isBattling) return;
         }
-        return nearest;
     }
 
-    private IEnumerator HeroAttackRoutine()
+    private void TickHeroAttack(EnvironmentManager space, float dt)
     {
-        while (isBattling && activeMonsters.Count > 0 && currentHeroHP > 0)
+        ActiveMonsterInfo target = null;
+        foreach (var info in activeMonsters)
+            if (info.controller == heroController.CurrentTarget) { target = info; break; }
+        if (target == null || !heroController.CanAttack(target.controller, space))
         {
-            ActiveMonsterInfo target = GetNearestMonster();
-            if (target == null) { yield return null; continue; }
-
-            if (heroController.CurrentState == HeroState.Combat)
+            ResetHeroAttack();
+            return;
+        }
+        if (heroWindupTarget != target || heroWindupMode != heroController.attackMode)
+        {
+            ResetHeroAttack();
+            heroWindupTarget = target;
+            heroWindupMode = heroController.attackMode;
+        }
+        heroAttackTimer += dt;
+        if (heroAttackTimer < AttackDuration(heroWindupMode, runtimeHeroData.baseAttackSpeed)) return;
+        heroAttackTimer = 0f;
+        heroController.PlayAttackFeedback();
+        if (heroWindupMode == AttackMode.RangedMagic)
+        {
+            // Ground-local horizontal AoE, limited to the hero's actual attack range.
+            // One fireball per in-range victim; each resolves its own impact.
+            for (int i = activeMonsters.Count - 1; i >= 0; i--)
             {
-                if (heroController.attackMode == AttackMode.RangedMagic)
-                {
-                    yield return new WaitForSeconds(2.0f);
-                    if (!isBattling || activeMonsters.Count == 0) yield break;
-                    if (heroController != null) heroController.PlayAttackFeedback();
-                    List<ActiveMonsterInfo> targets = new List<ActiveMonsterInfo>(activeMonsters);
-                    foreach (var t in targets) { if (t.currentHP > 0) DealDamageToMonster(t, true); }
-                }
-                else
-                {
-                    yield return new WaitForSeconds(1.0f / Mathf.Max(0.1f, runtimeHeroData.baseAttackSpeed));
-                    if (!isBattling || activeMonsters.Count == 0) yield break;
-                    target = GetNearestMonster(); 
-                    if (target != null) DealDamageToMonster(target, false);
-                }
+                var victim = activeMonsters[i];
+                if (heroController.CanAttack(victim.controller, space))
+                    Launch(victim, true, heroWindupMode, RollHeroDamage(),
+                        AttackDuration(heroWindupMode, runtimeHeroData.baseAttackSpeed), space, i);
             }
-            else
+        }
+        else if (heroController.CanAttack(target.controller, space))
+        {
+            if (heroWindupMode == AttackMode.Melee)
             {
-                yield return null; 
+                Impact(BodyPosition(target.controller.Rect, space), false);
+                DealDamageToMonster(target, RollHeroDamage());
             }
+            else Launch(target, true, heroWindupMode, RollHeroDamage(),
+                AttackDuration(heroWindupMode, runtimeHeroData.baseAttackSpeed), space, 0);
         }
     }
 
-    private void DealDamageToMonster(ActiveMonsterInfo target, bool isAoE)
+    private static float AttackDuration(AttackMode mode, float speed)
+    {
+        return mode == AttackMode.RangedMagic ? 2f : 1f / Mathf.Max(0.1f, speed);
+    }
+
+    private void ResetHeroAttack() { heroAttackTimer = 0f; heroWindupTarget = null; }
+
+    private int RollHeroDamage()
     {
         float dmg = (runtimeHeroData.GetCalculatedDamage() - 2) * Random.Range(0.75f, 1.0f);
-        int finalDmg = Mathf.Max(1, Mathf.RoundToInt(dmg));
-        target.currentHP -= finalDmg;
+        return Mathf.Max(1, Mathf.RoundToInt(dmg));
+    }
 
-        if (!isAoE && heroController != null) heroController.PlayAttackFeedback();
-        
-        if (target.controller != null) { target.controller.UpdateHealthBar(target.currentHP, target.maxHP); target.controller.ShowDamage(finalDmg); }
-
-        if (target.currentHP <= 0) HandleMonsterDeath(target);
+    private void DealDamageToMonster(ActiveMonsterInfo target, int finalDmg)
+    {
+        target.currentHP = Mathf.Max(0, target.currentHP - finalDmg);
+        if (target.controller != null)
+        {
+            target.controller.UpdateHealthBar(target.currentHP, target.maxHP);
+            target.controller.ShowDamage(finalDmg);
+        }
+        if (target.currentHP == 0) HandleMonsterDeath(target);
     }
 
     private void HandleMonsterDeath(ActiveMonsterInfo target)
     {
         activeMonsters.Remove(target);
-        if (target.attackCoroutine != null) StopCoroutine(target.attackCoroutine);
-        
-        int exp = (runtimeHeroData.currentLevel + target.data.currentLevel) * 5; 
+        if (target.controller != null) target.controller.MarkDead();
+        int exp = (runtimeHeroData.currentLevel + target.data.currentLevel) * 5;
         bool isLevelUp = runtimeHeroData.AddExp(exp);
-
         if (isLevelUp)
         {
             maxHeroHP = runtimeHeroData.GetCalculatedHealth();
-            currentHeroHP = maxHeroHP; 
-            if (heroController != null) { heroController.UpdateHealthBar(currentHeroHP, maxHeroHP); heroController.UpdateAtkUI(runtimeHeroData.GetCalculatedDamage()); }
+            currentHeroHP = maxHeroHP;
+            heroController.UpdateHealthBar(currentHeroHP, maxHeroHP);
+            heroController.UpdateAtkUI(runtimeHeroData.GetCalculatedDamage());
         }
-
         if (gameManager != null) gameManager.UpdateEventLog($"Đánh bại quái. Nhận {exp} EXP!");
-
         monsterSpawner.DespawnMonster(target.go);
         if (target.data != null) Destroy(target.data);
-
         if (gameManager != null) gameManager.OnMonsterDied(target.go);
-        if (activeMonsters.Count == 0) isBattling = false;
+        if (activeMonsters.Count == 0) { isBattling = false; ResetHeroAttack(); }
     }
 
-    private IEnumerator MonsterAttackRoutine(ActiveMonsterInfo info)
+    private void DealDamageToHero(int damage)
     {
-        while (isBattling && info.currentHP > 0 && currentHeroHP > 0)
+        currentHeroHP = Mathf.Max(0, currentHeroHP - damage);
+        heroController.UpdateHealthBar(currentHeroHP, maxHeroHP);
+        heroController.ShowDamage(damage);
+        if (currentHeroHP > 0) return;
+        heroController.Die();
+        ForceClearAllMonsters();
+        if (gameManager != null) gameManager.OnHeroDied();
+    }
+
+    private Vector2 BodyPosition(RectTransform rect, EnvironmentManager space)
+    {
+        // Aim at the body rather than the feet pivot; height is Ground-local.
+        return space.Position(rect) + new Vector2(0f, 24f * Mathf.Max(0.1f, effectsScale));
+    }
+
+    private void Launch(ActiveMonsterInfo monster, bool fromHero, AttackMode mode,
+        int damage, float interval, EnvironmentManager space, int spread)
+    {
+        bool magic = mode == AttackMode.RangedMagic;
+        Vector2 start = BodyPosition(fromHero ? heroController.heroRect : monster.controller.Rect, space);
+        var shot = new Projectile { monster = monster, fromHero = fromHero, magic = magic,
+            start = start, damage = damage,
+            duration = BattleMotion.FlightDuration(magic ? magicFlightTime : physicalFlightTime, interval),
+            arc = magic ? Mathf.Max(0f, magicArcHeight) * (1f + (spread % 3) * 0.22f) : 0f };
+        if (effects != null)
         {
-            if (info.go == null || info.controller == null) yield break;
+            shot.visual = effects.AddBolt(start, magic, (magic ? 5f : 2f) * Mathf.Max(0.1f, effectsScale));
+            shot.visual.direction = BodyPosition(fromHero ? monster.controller.Rect : heroController.heroRect, space) - start;
+        }
+        projectiles.Add(shot);
+    }
 
-            if (info.controller.currentState == MonsterState.Attacking)
+    private void TickProjectiles(EnvironmentManager space, float dt)
+    {
+        for (int i = projectiles.Count - 1; i >= 0; i--)
+        {
+            var shot = projectiles[i];
+            // Info identity, not just GameObject identity: pooling cannot redirect
+            // an old projectile onto a new life of the same monster.
+            if (!activeMonsters.Contains(shot.monster) || shot.monster.controller == null ||
+                !shot.monster.controller.IsAlive || !heroController.IsDeployed)
+            { RemoveProjectile(i); continue; }
+            shot.elapsed += dt;
+            float t = shot.duration > 0f ? Mathf.Clamp01(shot.elapsed / shot.duration) : 1f;
+            Vector2 end = BodyPosition(shot.fromHero ? shot.monster.controller.Rect : heroController.heroRect, space);
+            Vector2 position = new Vector2(shot.start.x + (end.x - shot.start.x) * t,
+                shot.start.y + (end.y - shot.start.y) * t + 4f * shot.arc * t * (1f - t));
+            if (shot.visual != null)
             {
-                if (info.controller.attackMode == AttackMode.RangedMagic)
-                {
-                    yield return new WaitForSeconds(2.0f);
-                    if (!isBattling || info.currentHP <= 0 || info.go == null) yield break;
-                }
-                else
-                {
-                    yield return new WaitForSeconds(1.0f / Mathf.Max(0.1f, info.data.baseAttackSpeed));
-                    if (!isBattling || info.currentHP <= 0 || info.go == null) yield break;
-                }
-
-                float dmg = (info.data.GetCalculatedDamage() - 5) * Random.Range(0.75f, 1.0f);
-                int finalDmg = Mathf.Max(1, Mathf.RoundToInt(dmg));
-                currentHeroHP -= finalDmg;
-
-                if (info.controller != null) info.controller.PlayAttackFeedback();
-                if (heroController != null) { heroController.UpdateHealthBar(currentHeroHP, maxHeroHP); heroController.ShowDamage(finalDmg); }
-
-                if (currentHeroHP <= 0) { ForceClearAllMonsters(); if (gameManager != null) gameManager.OnHeroDied(); }
+                shot.visual.direction = position - shot.visual.position;
+                shot.visual.position = position;
             }
-            else
-            {
-                yield return null; 
-            }
+            if (t < 1f) continue;
+            RemoveProjectile(i); // remove BEFORE callbacks can clear the entire battle
+            Impact(end, shot.magic);
+            if (shot.fromHero) DealDamageToMonster(shot.monster, shot.damage);
+            else DealDamageToHero(shot.damage);
+            if (!isBattling) { ClearProjectiles(false); return; }
         }
     }
 
-    public void ForceClearAllMonsters() 
-    { 
-        isBattling = false; 
-        foreach(var info in activeMonsters) 
+    private void Impact(Vector2 position, bool fire)
+    {
+        if (effects != null) effects.Burst(position, fire, Mathf.Max(0.1f, effectsScale));
+    }
+    private void RemoveProjectile(int index)
+    {
+        if (effects != null && projectiles[index].visual != null) effects.RemoveBolt(projectiles[index].visual);
+        projectiles.RemoveAt(index);
+    }
+    private void ClearProjectiles(bool clearParticles = true)
+    {
+        for (int i = projectiles.Count - 1; i >= 0; i--) RemoveProjectile(i);
+        if (clearParticles && effects != null) effects.Clear();
+    }
+    public void PanEffects(float amount)
+    {
+        foreach (var shot in projectiles) shot.start.x += amount;
+        if (effects != null) effects.Pan(amount);
+    }
+    void OnDisable() { ClearProjectiles(); ResetHeroAttack(); }
+    void OnDestroy()
+    {
+        if (Instance == this) Instance = null;
+        if (effects != null) Destroy(effects.gameObject);
+    }
+
+    public void ForceClearAllMonsters()
+    {
+        isBattling = false;
+        ResetHeroAttack();
+        ClearProjectiles();
+        foreach (var info in activeMonsters)
         {
+            if (info.controller != null) info.controller.MarkDead();
             if (info.go != null) monsterSpawner.DespawnMonster(info.go);
             if (info.data != null) Destroy(info.data);
         }
