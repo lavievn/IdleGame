@@ -1,0 +1,609 @@
+PROJECT_INFO_DEV — DESKTOP IDLE RPG TU TIÊN
+Tài liệu thiết kế, hiện trạng và bàn giao phát triển của lavievn/IdleGame
+Ngày đối chiếu: 09/10/2026, múi giờ Việt Nam (UTC+7).
+Đổi tên và thay thế AI_Prompt_Master.txt; lịch sử tài liệu cũ vẫn ở Git.
+
+0. ĐỌC TRƯỚC: PHẠM VI, NGUỒN VÀ ĐỘ TIN CẬY
+
+Tài liệu này là điểm nạp bối cảnh cho các phiên phát triển tiếp theo. Không dùng
+các bản tóm tắt cũ làm bằng chứng rằng một tính năng đã hoạt động trên bản build.
+Mỗi lần làm việc phải kiểm tra nhánh, commit, scene và bản lưu đang dùng.
+
+Có BA trạng thái mã cần phân biệt:
+- GitHub main tại thời điểm đối chiếu: b75c83ac9fcabc6d6195458c2aae9cbf4aa7f7f0,
+  thông điệp "0.0.4.4 before balancing and UI fix". Đã đọc lại EntityDataSO.cs,
+  UIManager.cs và tài liệu gốc ở commit này. Các sửa cân bằng/UI/nền 0.0.4.5+
+  dưới đây CHƯA nằm trong nền mã này tại lúc kiểm tra.
+- Bộ mã tích lũy đã chuẩn bị và gửi người dùng: 0.0.4.51, tới commit local
+  5915106 (sửa menu desktop), trước đó 2bf5f16 (nền). Các mục ghi "bản vá hiện
+  tại" trong tài liệu chỉ bộ mã này, không tự động đồng nghĩa với GitHub main.
+- Dự án Unity trên máy người dùng: đã nhận phản hồi Play Mode khá ổn ở 0.0.4.5;
+  scene/Inspector có thể đã chỉnh riêng. Chưa nhận kết quả kiểm thử terrain
+  và bản sửa menu desktop cuối cùng. Không biết mọi giá trị local hiện tại.
+
+Lần cập nhật tài liệu này chỉ đổi/cập nhật tài liệu trên GitHub; không tự động
+đưa các script 0.0.4.51 lên main, không đổi phiên bản gameplay.
+
+Nhãn trạng thái dùng xuyên suốt:
+[ĐỊNH HƯỚNG] ý định thiết kế, chưa phải chức năng chạy được.
+[CÓ MÃ] đã đối chiếu hiện thực trong mã; chưa đủ để kết luận build hoạt động.
+[ĐÃ THỬ] nêu rõ ai thử, trên môi trường nào và giới hạn.
+[CẦN KIỂM THỬ] đã sửa nhưng chưa xác nhận ở môi trường đích.
+[CHƯA CHỐT] thông số/mô tả còn thiếu hoặc mâu thuẫn, không tự suy diễn.
+
+Nguồn đã đọc:
+G1. https://share.gemini.google/RpDUVn7TkGFB
+    "Tu Tiên: UI Stats Allocation": bàn giao, cộng điểm, phân tách mã,
+    chiến đấu 1vN, 2.5D, cương thể và chuỗi lỗi input desktop.
+G2. https://share.gemini.google/v94ZO4moY56v
+    "Tối ưu hóa GameManager và Xây dựng Gameplay": tầm nhìn, pooling,
+    hệ tộc/linh căn/vũ khí/võ học, lưu game, cấp độ, UI và tiến trình.
+G3. https://share.gemini.google/cQ9a37VqBHU2
+    "Khởi Tạo Phiên Làm Việc Mới": Save/Load, popup, hitbox ưu tiên,
+    lỗi quái chờ nhau/camera và tổng kết hạng mục.
+Đã đọc các yêu cầu của người dùng và nội dung hiển thị trong cả ba bản chia sẻ.
+Tệp đính kèm trong các chat chia sẻ không cho tải/xem trực tiếp; không coi mã
+đính kèm chưa đọc là bằng chứng. Mã trong repo và bộ vá là nguồn đối chiếu mã.
+Các đường link khác được nhắc trong chat chưa được dùng làm nguồn bổ sung.
+
+Nguồn bổ sung: AI_Prompt_Master.txt cũ; yêu cầu và phản hồi trong cuộc trò
+chuyện phát triển hiện tại; Assets/Script, Assets/DataScript, scene MainGame,
+Packages/manifest.json, ProjectSettings; Docs và Tests~ của bộ vá.
+
+Thứ tự giải quyết xung đột:
+1) Yêu cầu trực tiếp mới nhất của người dùng quyết định hành vi mong muốn.
+2) Mã/scene đúng commit quyết định điều gì thực sự đang được triển khai.
+3) Kết quả thử quyết định mức độ xác nhận; phân biệt Play Mode và Windows build.
+4) Chat/tài liệu cũ giữ lịch sử, không lấn át ba mục trên.
+Không dùng những kết luận "100% hoàn thành", "zero GC", "không còn bug" từ
+AI cũ nếu chưa đo hoặc thử. Không lấy tỷ lệ hoàn thành cảm tính làm tiến độ.
+
+1. TẦM NHÌN VÀ PHẠM VI SẢN PHẨM
+
+[ĐỊNH HƯỚNG — G1/G2 và tài liệu cũ]
+- Game PC tu tiên, Idle RPG 2D/2.5D, có hướng Roguelite và phát triển lâu dài.
+- Hiển thị phủ trên desktop Windows: cửa sổ trong suốt, không viền, có thể
+  kéo và thu/phóng; khoảng rỗng cho click xuyên xuống ứng dụng phía sau.
+- Chơi tự động, ít xâm lấn công việc. Ưu tiên tài nguyên CPU/GPU/RAM thấp,
+  chạy nền lâu, không tích lũy đối tượng/tác vụ không được thu hồi.
+- Không khóa nhân vật vào class cứng. Lối xây dựng nhân vật dựa trên tộc,
+  linh căn, vũ khí, võ học, trang bị và tương tác thẻ định danh.
+- Hero, đồng đội, đối thủ có thể dùng nền dữ liệu chung. Quái thường đơn giản;
+  boss/elite mới cần hệ vũ khí, trang bị, võ học và đối sách đội hình sâu.
+- Luân Hồi, tiến trình ngoại tuyến, đồng bộ thời gian thực, Lò Bát Quái là
+  hướng dài hạn. Chưa có đặc tả đủ để triển khai, chưa có mã chức năng xác nhận.
+  "Đồng bộ thời gian thực" chưa được chốt là thời gian OS, máy chủ hay nhiều
+  thiết bị; không tự biến thành yêu cầu multiplayer hoặc backend.
+
+Vòng lặp hiện tại của bản vá:
+Mở game -> chọn Tiếp tục/Chơi mới -> xác nhận -> triển khai hero -> chạy và
+sinh đợt 1–3 quái -> từng thực thể tiếp cận theo tầm riêng -> tự đánh -> nhận
+EXP/hồi 5–10 HP khi hạ quái -> hết đợt chờ theo tốc độ chạy -> đợt mới.
+Hero chết -> dừng AI/chiến đấu -> Game Over -> thử lại hero cũ hoặc chơi mới
+có xác nhận. Đây chưa phải vòng Luân Hồi và chưa có phần thưởng ngoại tuyến.
+
+2. NỀN TẢNG KỸ THUẬT VÀ CẤU TRÚC DỰ ÁN
+
+[CÓ MÃ — các tệp cấu hình local đã đọc]
+- Unity: ProjectSettings/ProjectVersion.txt ghi 6000.5.0f1.
+- URP: com.unity.render-pipelines.universal 17.5.0.
+- uGUI: com.unity.ugui 2.5.0; TextMeshPro cho thông tin/nhãn.
+- Input System: com.unity.inputsystem 1.19.0; activeInputHandler = 1.
+- runInBackground = 1 trong Player Settings.
+- WinAPI: user32.dll và Dwmapi.dll. Bản sửa desktop giới hạn nhánh native
+  ở UNITY_STANDALONE_WIN && !UNITY_EDITOR.
+- UI chiến đấu dựng trong Canvas. Không chuyển sang UI Toolkit nếu chưa có
+  quyết định thiết kế mới; đây là lựa chọn kiến trúc dự án, không phải kết luận
+  rằng UI Toolkit luôn xung đột Windows.
+
+Cấu trúc cần giữ khi đồng bộ:
+Assets/ (script, .meta, ảnh, dữ liệu, prefab, scene)
+Packages/ (manifest và khóa phụ thuộc)
+ProjectSettings/ (cấu hình Unity)
+Project_info_dev.txt (bối cảnh và bàn giao)
+Docs/ và Tests~/ (nếu có trong bộ vá/nhánh đang làm).
+Không đưa Library/, Temp/, Logs/, Obj/ hoặc bản build vào nguồn chỉ để đồng bộ.
+Giữ .meta để bảo toàn GUID/tham chiếu. Không có cam kết thời gian import cố
+định trên máy khác. Unity Hub mở dự án; việc tải thay đổi Git phải thực hiện
+qua Git/GitHub Desktop, rồi Unity import lại.
+
+Hierarchy/đơn vị:
+- Hero và quái cần cùng không gian chiến đấu Ground. Quái dùng prefab
+  Assets/Prefabs/Monster.prefab và container được gán cho MonsterSpawner.
+- Hero thường neo phải dưới, quái neo trái dưới; không cộng trực tiếp hai
+  anchoredPosition.x có gốc neo khác nhau để tính khoảng cách/tâm giao tranh.
+- EnvironmentManager.Position/SetPosition quy đổi qua không gian cục bộ
+  BattleArea. AI không lấy scale nhún nhảy hoặc Screen.width làm đơn vị tầm đánh.
+- Scene local có nhiều CanvasScaler: có mục 800x600 và mục 1920x1080,
+  Match 0.5 ở mục 1920x1080. Không áp lại lời bàn giao "1000x1000" cho mọi Canvas.
+- Ground logic giữ nguyên kích thước/scale chiến đấu; lớp Ground hình ảnh
+  lớn hơn không được làm đổi tầm đánh hoặc tọa độ AI.
+- Các menu có cấu hình runtime. Bố cục trong scene và bố cục khi chạy có thể
+  khác; phải kiểm tra cả serialized reference và mã khởi tạo.
+
+3. PHÂN CHIA TRÁCH NHIỆM TRONG BẢN VÁ 0.0.4.51
+
+TransparentWindow.cs:
+  Giao tiếp Windows; tạo overlay, đổi click-through, kéo Ground, resize.
+  Thứ tự dò vùng: modal -> clickable -> draggable. Dùng GetCursorPos,
+  ScreenToClient, GetClientRect để đưa chuột về pixel game; đăng ký nút động.
+  Cú nhấn hiện vẫn lấy từ InputSystem Mouse.leftButton.wasPressedThisFrame;
+  KHÔNG ghi rằng toàn bộ click đang dùng GetAsyncKeyState như chat cũ.
+UIManager.cs + CustomInteractable.cs:
+  Đăng ký/hủy vùng tương tác, gọi UnityEvent, bật/tắt menu, chọn độ khó/scale.
+  Bản sửa ưu tiên nút con trước container cha; cache RectTransform khi cần.
+StartMenuUI.cs:
+  Tạo Tiếp tục/Chơi mới và hộp xác nhận từ mẫu UI hiện có; chặn lựa chọn
+  Tiếp tục khi không có save. Không tự nhận diện đây là hệ menu sản phẩm hoàn chỉnh.
+GameManager.cs:
+  Điều phối mở game, dữ liệu hero, triển khai, đợt quái, lưu/tải, độ khó,
+  chết/thử lại/chơi mới và nhật ký. Hủy đợt chờ khi tải/reset để tránh sinh kép.
+EnvironmentManager.cs:
+  Không gian Ground; điều phối AI trong Update, camera/nền trong LateUpdate;
+  vùng tốc độ camera, tầm đánh theo tỷ lệ, dịch đồng nhất hero/quái/hiệu ứng.
+BattleMotion.cs:
+  Quy tắc thuần về tiếp cận không vượt tầm, giới hạn bước camera, độ trễ
+  đợt theo tốc độ, giới hạn thời gian bay và wrap giữ phần vượt biên.
+HeroController.cs:
+  AI di chuyển, mục tiêu ổn định đến khi không còn hợp lệ, đổi kiểu đánh,
+  trạng thái sống/chết/triển khai, chuyển lane, biểu hiện đi và ra đòn.
+MonsterController.cs:
+  AI/tầm riêng từng quái; chủ động tiếp cận, không đợi đồng đội chết;
+  reset trạng thái/feedback/mục tiêu khi lấy/trả pool; kiểu đánh ngẫu nhiên.
+MonsterSpawner.cs:
+  UnityEngine.Pool.ObjectPool<GameObject>, lấy/trả prefab, reset vị trí,
+  Y ngẫu nhiên mặc định 10–90. defaultCapacity 5, maxSize 20 không phải
+  bằng chứng rằng đã tạo sẵn 5 con hoặc giới hạn mọi active monster ở 20.
+CombatManager.cs:
+  HP, đồng hồ ra đòn, kiểm tra tầm/mục tiêu, EXP và sát thương, đạn/va chạm.
+  Update có DefaultExecutionOrder(100), sau AI, trước camera LateUpdate.
+  Không còn mỗi thực thể khóa cuộn toàn cục bằng battleLockCount.
+BattleEffects.cs:
+  Lưới uGUI vẽ chung đạn/hạt loé ngắn; không cần ảnh/prefab particle mới.
+  Hiệu ứng không nhận raycast; dịch cùng camera; dọn khi xóa chiến trường.
+GroundPresentation.cs:
+  Lớp nền cố định, dải đất–cỏ lặp và các món cỏ trang trí; tách khỏi tọa độ AI.
+CombatBalance.cs:
+  Nguồn công thức cân bằng dùng chung runtime/mô phỏng; phải đọc trước khi
+  sửa chỉ số, tránh sửa SO rồi bị ApplyHeroBalance tính lại.
+EntityDataSO.cs:
+  Dữ liệu cấp/EXP/chỉ số/điểm/tộc/linh căn/độ khó; AddExp trả bool;
+  ApplyHeroBalance chuyển save cũ và RebuildHeroStats tái tạo chỉ số cơ sở.
+SaveManager.cs + SaveSlot.cs:
+  JSON và ba slot; ghi đồng bộ file nhỏ qua .tmp rồi File.Replace/File.Move;
+  chọn slot gần nhất theo thời gian sửa file; xóa save có kết quả thành công/lỗi.
+SaveMenuUI.cs:
+  Menu save/load thủ công và xác nhận ghi đè đã có mã, còn phải rà kết nối,
+  thứ tự popup và layout trên Windows. Không nằm trong bộ kiểm tra stub hiện tại.
+TuTienEnums.cs / TagSO.cs:
+  Enum, tên, cảnh giới, hàm linh căn và định nghĩa thẻ; chưa phải hệ kết hợp
+  vũ khí/võ học/khắc hệ hoàn chỉnh.
+
+4. CAMERA — HÀNH VI ĐÃ CHỐT MỚI NHẤT
+
+[ĐÃ THỬ — người dùng xác nhận camera hoạt động tốt; CÓ MÃ]
+Hero chạy từ phải sang trái. "Camera" được biểu diễn bằng dịch cảnh/nhân vật
+sang phải, không nhất thiết là dịch Unity Camera vật lý.
+
+Chuẩn hiện tại là vùng đỏ, thay thế ý tưởng camera trung bình hero–bầy quái:
+- Hero ở TRONG vùng đỏ: camera luôn dùng tốc độ mặc định của chính nó.
+- Hero định vượt mép trái/phải: camera điều chỉnh nhanh/chậm theo chuyển động
+  hero để giữ hero ở biên. Bước dịch được chặn tránh vượt vùng trong frame dài.
+- Hero đang chạy nhanh: trượt về mép trái rồi đẩy camera theo kịp.
+- Hero chậm hoặc đứng đánh: camera vẫn trôi mặc định, khiến hero trượt sang
+  phải; chỉ tới mép đỏ phải mới giảm theo hero (đứng im tương ứng 0).
+- Hero chết nhưng hình còn hiện vẫn là đối tượng camera; tới mép phải thì dừng.
+- Không ghim hero lại giữa khi hết giao chiến; không kéo tâm bầy quái về giữa.
+- Camera độc lập số quái/kiểu đánh. Quái chưa đủ tầm tiếp tục chạy dù quái khác
+  đã đánh. Không đưa LockScroll vào Approaching/Attacking như thiết kế cũ.
+
+Thông số mặc định trong mã:
+scrollSpeed = 150 đơn vị Ground/giây; hero moveSpeed = 150, laneSpeed = 150.
+Đây là mặc định khai báo, không đảm bảo giá trị Inspector của mọi scene.
+Ví dụ "1000" trong mô tả của người dùng là ví dụ quan hệ tốc độ, không phải
+lệnh tăng tất cả mặc định lên 1000. GitHub scene 0.0.4.4 có hero moveSpeed 300
+trong diff đã đọc; phải đối chiếu scene máy người dùng khi đo cảm giác chạy.
+
+Biên gốc speedZoneLeft = 0.06, speedZoneRight = 0.91; speedZoneInset = 0.25
+thu mỗi bên 25% bề rộng vùng gốc. Biên hiệu lực: 0.2725 và 0.6975 bề rộng
+Ground. Không tiếp tục thu thêm 25% mỗi lần mở scene/cập nhật tài liệu.
+
+Nền khi hero chạy cuộn theo quãng đường chạy thực tế của hero. Khi hero đứng
+đánh/chết, nền nhận cùng bước camera để cùng hero trượt về mép phải. Vì vậy
+"background bằng tốc độ hero" không có nghĩa ép nền về 0 ngay lúc hero đứng
+đánh trong vùng đỏ; cần giữ hành vi trôi này mà người dùng đã chốt.
+
+5. CHIẾN ĐẤU VÀ HIỆU ỨNG HIỆN TẠI
+
+[CÓ MÃ — bộ vá]
+- Đợt quái ngẫu nhiên 1–3. Spawn từ mép trái, offset các con thêm 60 đơn vị;
+  mỗi con có Y và kiểu đánh riêng. Nút đổi thế chỉ đổi hero.
+- Hero chọn mục tiêu gần nhất khi cần mục tiêu mới rồi giữ mục tiêu hợp lệ,
+  tránh đổi liên tục giữa quái ngang khoảng cách/Y. Quái tự chọn hero sống.
+- Hero cận chiến tự chạy tới quái đánh xa; không bị ghim ở tâm gây bế tắc.
+- Kiểm tra tầm bằng không gian Ground thống nhất, theo X. Hero cận chiến
+  căn Y theo đối thủ; đánh xa giữ lane. Lane thị giác không phải vật cản.
+- Không bước qua khoảng cách dừng, kể cả frame dài/tốc độ lớn.
+- Tầm mặc định theo chiều rộng Ground W:
+  cận chiến hai bên 0.035W;
+  hero vật lý 0.36W, phép 0.42W;
+  quái vật lý 0.28W, phép 0.36W.
+  Các số 120/300/350 của bản cũ là lịch sử, không phải tầm hiện tại cố định.
+- Timer vận đòn kiểm tra lại mục tiêu/tầm; đổi kiểu, ra khỏi tầm, chết/load/reset
+  hủy nhịp cũ. Đạn không được gây sát thương cho đối tượng pool đã tái dùng.
+- Phép bắn từng quả vào các quái trong tầm lúc phóng; không gây AoE toàn map.
+- Cận chiến loé sáng nhỏ ở va chạm; vật lý là tia nhỏ thẳng tới một mục tiêu;
+  phép là một/nhiều cầu lửa đi vòng cung, bay chậm hơn vật lý.
+- Thời gian mong muốn: vật lý 0.18 giây, phép 1.2 giây, độ cao cung 65;
+  thời gian thực giới hạn không quá 85% chu kỳ đòn tại lúc bắn.
+  Sát thương đánh xa xử lý khi đến đích, không trừ HP ngay khi phóng.
+- Nhún nhảy biểu diễn chạy; scale bật nhanh/feedback biểu diễn ra đòn.
+  Chừa điểm gọi để thay animation thật; chưa có hệ animation sản phẩm hoàn chỉnh.
+
+[ĐỊNH HƯỚNG — G1/G2]
+Nhiều hero/quái có thể đánh cùng một mục tiêu và cộng sát thương độc lập.
+Hiện game điều phối dữ liệu chính cho một hero; chưa triển khai tổ đội hoàn chỉnh
+chỉ vì có danh sách ActiveHeroes hoặc có video chung.mp4.
+Farm thường: bị đánh vẫn vận chiêu, trừ khi chết. Đỡ đòn/ngắt chiêu và đối sách
+animation dành cho boss đặc biệt; chưa triển khai hệ boss/block/cancel hoàn chỉnh.
+
+6. CÂN BẰNG, EXP VÀ HỒI MÁU — BỘ VÁ 0.0.4.5+
+
+[CÓ MÃ — CombatBalance.cs, EntityDataSO.cs, CombatManager.cs]
+Gọi L là cấp được chặn 1–999; S là hệ số tốc độ đánh (khác tốc độ chạy).
+Hero:
+- HP tối đa cơ sở = 400 + 16*(L-1).
+- ATK cơ sở = 10 + (L-1).
+- S = 1 + min(0.25, 0.005*(L-1)); tối đa 1.25.
+- EXP cần = min(2,000,000,000, ceil(100*1.15^(L-1))).
+- Mỗi cấp +1 điểm; AllocateHealth +6 HP/điểm hoặc AllocateDamage +1 ATK/điểm.
+- EXP dư giữ lại, có thể lên nhiều cấp; UI phân bổ điểm chưa được nối hoàn chỉnh.
+Quái:
+- HP = 55 + 6*(L-1).
+- ATK = 6 + ceil(0.6*(L-1)).
+- S dùng công thức tăng chậm như hero.
+- Cấp sinh quanh hero +/- max(2,ceil(cấp hero*0.1)), chặn 1–999.
+- EXP mỗi quái = 12 + 2*L; chế độ Khó nhân 3.
+
+Kiểu đánh               Chu kỳ cơ sở/S          Hệ số sát thương
+Cận chiến               1.4 giây/S             1
+Vật lý xa               0.7 giây/S             1
+Phép xa                 2.0 giây/S             1.8
+Cả hero/quái dùng công thức chu kỳ này. Không gọi S là số giây chờ.
+Sát thương hiện tại = max(1, round(ATK * hệ số kiểu * random(0.85,1))).
+Khó nhân 2 sát thương quái ở lúc nhận đòn. ATK trong UI là chỉ số đã cộng điểm,
+không phải kết quả cuối của mỗi đòn. Chưa tích hợp phòng thủ/crit/khắc hệ vào đây.
+
+Mục tiêu cân bằng mới: hero yếu hơn rõ rệt, không bất tử từ cấp 20; mọi cấp có
+rủi ro chết trong các tình huống phù hợp. Không có cơ chế ép chết ở một thời điểm.
+- Giết một quái hồi ngẫu nhiên 5–10 HP, không vượt HP tối đa.
+- Lên cấp không hồi đầy, không cộng ngay phần tăng HP tối đa vào HP hiện tại.
+- Không có hồi thụ động 5 HP/giây trong mã hiện tại.
+- Triển khai/thử lại bắt đầu đầy HP. Save hiện chưa ghi HP trận riêng; tải và
+  triển khai bắt đầu một lượt mới, không khôi phục nguyên trận đang dở.
+
+Giới hạn chưa cân bằng xong:
+- Trần EXP 2 tỷ làm các cấp rất cao không còn tăng đúng cấp số nhân.
+- Ở cấp 50/100, tốc độ tăng EXP đã rất lớn; cần chốt thời gian lên cấp mong
+  muốn sau khi có trang bị/võ học/ngoại tuyến, không coi 1.15 là cân bằng cuối.
+- Cận chiến trong mô phỏng khó hơn rõ so với đánh xa; chưa đảm bảo ba thế ngang sức.
+- Chỉ số trong SO có thể bị ApplyHeroBalance tính lại. Inspector không phải
+  nguồn cân bằng duy nhất; phải sửa công thức hoặc cấu hình chủ đích.
+
+Chuyển save cũ:
+- balanceVersion=1 cho công thức mới. Giữ cấp, tên/giới tính/linh căn và tỷ lệ
+  EXP trong cấp; tái tính HP/ATK/S, quy đổi ngân sách điểm về L-1.
+- Điểm đã dùng được phân lại theo tỷ trọng nếu vượt ngân sách mới. Không giữ
+  mọi điểm dư của cơ chế +2/+5 điểm trước đây.
+- Sao lưu Saves trước chạy lần đầu; rollback script không tự đảo ngược save
+  đã được lưu theo cân bằng mới.
+
+7. NHỊP SINH QUÁI, NỀN VÀ TRANG TRÍ
+
+[CÓ MÃ — 0.0.4.4+]
+Nhịp đợt: delay = baseDelay * max(0.25,150/hero.moveSpeed).
+baseDelay mặc định 1.5 giây. Tốc độ chạy 150 -> 1.5 giây; 300 -> 0.75 giây;
+từ 600 trở lên -> sàn 0.375 giây, không thấp hơn 25% mặc định.
+Đây là khoảng chờ đợt tiếp sau khi sạch đợt, không phải mỗi con có timer độc lập.
+Timer tích lũy tiến độ nên đổi tốc độ tác động cả đợt đang chờ. moveSpeed=0
+tạm dừng tiến độ. Dùng tốc độ chạy cấu hình, không dùng S hoặc tốc độ thực tế
+0 khi hero đứng đánh để làm nghẽn sinh quái.
+
+[CÓ MÃ, CẦN KIỂM THỬ hình ảnh — 0.0.4.51]
+- Ground cố định tạo lớp hình ảnh riêng, rộng/cao 1.2 lần, tint xám đen
+  (0.17,0.17,0.17,1). Giữ Ground logic nguyên scale; ẩn Image gốc khi chạy.
+- Grass1 lấy sprite đất–cỏ gốc Ground, trải kín chiều ngang; giữ chiều cao/Y.
+- Ba đoạn lặp có bước bằng chiều rộng Ground, mỗi đoạn rộng thêm 1 đơn vị
+  chồng biên; modulo giữ pha, thích ứng đổi chiều rộng cửa sổ.
+- Các cỏ còn lại là đồ trang trí, không phải mọi cỏ đều biến thành dải nền.
+- Scene đã đối chiếu có bảy Grass1 (1)..(7) chồng (0,0), nhỏ 10x20, thiếu sprite.
+  Đây giải thích việc chỉ nhìn thấy một cỏ trong scene repo, không chứng minh
+  scene local chưa thay đổi. Bộ vá dùng sprite cỏ cũ cho placeholder thiếu ảnh,
+  rải thành các khoảng X riêng có lệch/Y ngẫu nhiên, lấy lại Y khi quay vòng.
+- Giữ ảnh riêng nếu đã gán; lấy cả cỏ trực tiếp chưa nằm trong groundDetails.
+- Chồng biên bảo đảm phủ hình học, chưa bảo đảm texture nối hoa văn tự nhiên.
+  Cần thử nhìn mối nối, frame dài, scroll ngược và cửa sổ 200/500/1000.
+
+8. UI, SAVE/LOAD VÀ OVERLAY
+
+[CÓ MÃ — 0.0.4.5+; người dùng đã thử Play Mode và báo khá ổn]
+Mở game: Tiếp tục và Chơi mới, cả hai có xác nhận.
+- Chưa xác nhận: không tự load hoặc ghi đè save cũ.
+- Tiếp tục: chọn save có thời gian sửa gần nhất trong ba slot, trừ khi có
+  lựa chọn thủ công. Save hỏng/không đọc được không bắt đầu lượt giả.
+  Chưa có cơ chế tự tìm slot hợp lệ cũ hơn khi slot mới nhất hỏng.
+- Chơi mới: xác nhận mới xóa AutoSave, ManualSave1, ManualSave2 và file tạm,
+  tạo hero cấp 1/0 EXP/0 điểm, Bình thường. Hủy giữ dữ liệu.
+- MapMenu góc trái: nhãn Bình thường/Khó thay 1/2. Khó đổi màu dải nền theo
+  màu map hiện có, nhân 2 sát thương quái, nhân 3 EXP. Màu không phải cơ chế.
+- Độ khó được lưu; áp dụng sát thương/EXP theo chế độ hiện tại, kể cả quái
+  đã xuất hiện. Ground cố định mới vẫn xám đen.
+- Hero chết hiện Game Over; thử lại giữ hero/chỉ số, hồi đầy để bắt đầu lượt.
+- EventLog và text HP/ATK/sát thương cần không bị ẩn bởi menu cha.
+
+Save hiện tại:
+- Application.persistentDataPath/Saves; không ghi bên cạnh .exe theo yêu cầu
+  rất sớm nữa. Ba file AutoSave.json, ManualSave1.json, ManualSave2.json.
+- Ghi JSON nhỏ ĐỒNG BỘ trên luồng chính, .tmp -> Replace/Move. Đã bỏ hàng đợi
+  ghi nền để tác vụ cũ không tái tạo save sau Chơi mới.
+- Tự lưu mỗi 10 giây khi đã triển khai và dirty; lưu khi chết và lúc thoát
+  trong các điều kiện của GameManager. Không hứa bảo toàn mọi EXP nếu crash.
+- Dữ liệu chính: tên, cấp/EXP/chỉ số/điểm/tộc/giới tính/linh căn/balanceVersion/
+  difficulty. Chưa có kho/trang bị/võ học/đội hình để lưu; không hứa đã lưu chúng.
+- Manual Save/Load và hỏi ghi đè có SaveMenuUI; rà lại Inspector và modal.
+- TryGetLatestSlot dựa vào mtime file, không phải thời gian chơi hoặc cloud sync.
+
+[CÓ MÃ, CẦN KIỂM THỬ WINDOWS — bản sửa menu mới nhất 0.0.4.51]
+Người dùng báo bấm nút menu đỏ ở desktop không hiện ba nút scale.
+Đối chiếu scene repo: MenuArea thiếu trong clickableUI; SystemMenu có sizeDelta
+âm (-200.3,-150); con scale offset âm. Các nguyên nhân này có bằng chứng từ
+scene, nhưng chưa kiểm tra trực tiếp executable máy người dùng.
+Bộ vá 5915106:
+- Tự đăng ký MenuArea/các nút vào hitbox, bổ sung hitbox động.
+- Nút đỏ neo phải dưới; kích thước 180x96, vị trí (-16,110).
+- Bảng neo phải dưới; 640x150, vị trí (-16,265).
+- Hàng trên 200/500/1000, hàng dưới giữ Exit/Save/Load; sửa offset nhãn.
+- Ưu tiên click nút con trước bảng cha; mở menu đưa bảng lên trước.
+- Hover và click dùng cùng phép đổi tọa độ Windows client -> Screen Unity.
+- Chọn scale đóng bảng; rộng 200/500/1000, cao làm tròn theo 9/16.
+- ReapplyTransparencyDelay 0.2 giây giữ cơ chế áp lại DWM sau resize.
+Cần chép Assets rồi BUILD LẠI WINDOWS; script mới không sửa executable cũ.
+
+Khoảng trống overlay chưa được ghi là hoàn thiện:
+- Bản TransparentWindow hiện không có thuật toán clamp Virtual Screen như
+  lời bàn giao rất cũ. Hỗ trợ đa màn hình/DPI khác nhau vẫn phải thử và bổ sung.
+- Exit popup có hàm nhưng scene đã đọc thiếu exitConfirmPopup; cần đấu nối
+  và thử, không tuyên bố exit confirmation hoàn tất.
+- Modal SaveMenuUI cần chặn tương tác phía sau trong cả hitbox native và dispatch
+  custom; ưu tiên một rect modal không tự chứng minh mọi nút bên dưới đã bị chặn.
+- Chính sách đặt trên cùng, giữ focus và phản ứng khi mất màn hình chưa chốt hết.
+
+9. TỘC, LINH CĂN, VŨ KHÍ, VÕ HỌC — ĐỊNH HƯỚNG PHẢI GIỮ
+
+Nguồn chủ yếu G2; tạm dùng cấu trúc đơn giản để thử, không đóng cứng cả hệ khi
+các hệ phái/thể loại quái chưa thống nhất. Chọn thiết kế dữ liệu dễ bổ sung.
+
+9.1 Tộc và linh thể
+[ĐỊNH HƯỚNG]
+- Có thuần chủng và con lai giữa các tộc. Con lai hưởng hai hệ từ cha/mẹ,
+  đổi lại hiệu suất mỗi hệ thấp hơn; ví dụ mong muốn 75% buff mỗi hệ.
+- Linh thể là thần hồn/nguyên anh thoát nhục thân của một tộc khác, không phải
+  tộc có khả năng sinh con lai. Cần dữ liệu nguồn gốc tộc sau khi mất thân thể.
+[CÓ MÃ]
+RaceType: NhanToc, YeuThu, MaToc, LinhThe, ConLai. Chưa có cấu trúc cha/mẹ,
+nguồn gốc linh thể, luật thừa kế hoặc bonus tộc chạy trong chiến đấu.
+
+9.2 Linh căn
+[ĐỊNH HƯỚNG]
+Nhân vật mới (cả người thuộc đội và không thuộc đội):
+1 căn 60%, 2 căn 25%, 3 căn 10%, 4 căn 5%.
+Con lai dự định mặc định 2 căn, không lấy theo phân bố chung.
+Hiệu suất được nêu trong chat: 2 căn giảm 25% mỗi hệ (còn 75%), 3 căn giảm
+30% (còn 70%), 4 căn giảm 40% (còn 60%). Các ví dụ +100 HP Mộc/cấp hoặc
++100 sát thương chưởng Hoả chỉ là minh hoạ định hướng, chưa là chỉ số cân bằng.
+[CHƯA CHỐT]
+Câu "mỗi căn thêm giảm 10%" không khớp hoàn toàn bảng 2/3/4 căn ở trên.
+Cần chốt bảng hoặc công thức duy nhất, linh căn trùng có được phép không,
+cách chọn hai hệ khi cha/mẹ đã có nhiều căn, và vai trò Độc/Băng so với ngũ hành.
+[CÓ MÃ]
+ElementType có Kim, Moc, Thuy, Hoa, Tho, Doc, Bang.
+GenerateRandomRoots hiện chọn NGẪU NHIÊN 1–2 căn trong 7 hệ, có thể trùng.
+Chưa thực hiện 60/25/10/5, chưa có giảm buff theo số căn.
+GetElementalMultiplier hiện trả 1.0; không có tương khắc thực tế trong combat.
+
+9.3 Vũ khí thay hệ phái cứng
+[ĐỊNH HƯỚNG]
+- Xây lối chơi theo loại vũ khí, ví dụ kiếm thiên crit/tốc độ, kết hợp chỉ số
+  nền của hero. WeaponType hiện chỉ có Kiem, Dao, Quyen.
+- Vũ khí có cấp/cảnh giới; được mô tả lấy cấp theo hero lúc tạo/nhận, và khi
+  hero cầm đồ cao hơn thì giảm hiệu quả, tối đa giảm 80% (còn ít nhất 20%).
+- Hàm GetWeaponLevelPenalty đã có phép max(0.2,1-0.1*chênh cấp), nhưng chưa
+  có trang bị/vật phẩm để áp vào chiến đấu.
+[CHƯA CHỐT]
+Đơn vị chênh lệch là cấp hay cảnh giới; cấp vũ khí có giữ sau khi hero lên cấp
+không; hình phạt áp lên mọi dòng chỉ số hay chỉ bonus. Ví dụ cũ nói chênh ba
+cảnh giới mà +100 thành +50, crit 20% thành khoảng 14%; không khớp một phép
+trừ 10% thống nhất. Giữ ví dụ để thảo luận, không hard-code chúng.
+
+9.4 Võ học và hiệu ứng kết hợp
+[ĐỊNH HƯỚNG]
+- Võ học/vũ khí tương tác: kiếm+Độc gây độc/xuất huyết theo thời gian;
+  kiếm+Hoả tăng sát thương/crit; Thuỷ giảm tốc; Băng có thể choáng/trói.
+- Có võ học, điểm nâng võ học và điểm nâng chỉ số trực tiếp; chỉ số trang bị
+  tham gia cân bằng. Chưa có skill database, inventory, equip, DOT hay CC.
+- Công thức sát thương mong muốn gồm ATK nền, võ học, phần trăm vũ khí,
+  crit, bonus tộc/linh căn, thủ và giảm trừ/khắc hệ đối phương.
+[CHƯA CHỐT]
+Công thức được viết bằng lời chưa rõ phép cộng/nhân, thời điểm crit, trần giảm
+sát thương và thứ tự khắc hệ. Phải chốt từng biến/đơn vị, ví dụ số và kiểm tra
+biên trước tích hợp, không gọi công thức CombatBalance tạm là thiết kế cuối.
+
+9.5 Nhân vật, tên và UI cốt truyện
+[ĐỊNH HƯỚNG]
+- Khi bấm vùng EventLog trong bản chính thức mở mô tả xuất thân/hoàn cảnh/
+  linh căn hero. Chưa có bảng cốt truyện đầy đủ trong bộ mã đã đọc.
+- Ngoại hình thử: khối đơn giản, phân biệt giới tính và màu hệ trước khi có
+  asset thật; hero nam xanh lá, nữ đỏ nhạt đã có SetGenderVisual.
+- Từng yêu cầu khoảng 50 tên có giới tính. Hiện NameDatabase có 10 tên nam
+  và 10 tên nữ; chọn giới tính rồi tên cùng nhóm, chưa đủ danh sách 50.
+- RankDatabase: Luyện Khí, Trúc Cơ, Kết Đan, Nguyên Anh, Hoá Thần, Luyện Hư,
+  Hợp Thể, Đại Thừa, Độ Kiếp, Chân Tiên; mỗi 10 cấp đổi nhóm, sau đó trả Tiên Đế.
+  Đây chỉ là ánh xạ tên hiện tại, chưa hệ đột phá/cảnh giới thật.
+
+9.6 Quái thường, elite và boss
+[ĐỊNH HƯỚNG — quyết định sau cùng ở G1/G2]
+- Quái thường đơn giản: linh căn/chỉ số theo cấp, EXP và rơi đồ theo cấp.
+  EXP hiện dùng công thức xác định, chưa random; chưa có rơi đồ.
+- Thông tin quái thường trong sản phẩm nên tối giản/ẩn thanh HP; boss mới
+  có UI chi tiết. Khi hero chết cần log tên/hệ quái để đổi đồ/công pháp phù hợp.
+- Hiện prefab/controller vẫn có hpFillImage và dmgTextPrototype để thử.
+  Chưa hoàn tất UI quái thường tối giản và log nguồn gây chết.
+- Boss là thực thể đặc biệt, có thể dùng nền dữ liệu nhân vật, hệ võ học/đồ,
+  block/cancel và đối sách. Chưa có hệ boss/elite/cấu hình hành vi đã xác nhận.
+
+10. MA TRẬN TIẾN ĐỘ VÀ KẾ HOẠCH TIẾP THEO
+
+Không quy đổi thành % vì chưa có bộ tiêu chí nghiệm thu toàn sản phẩm.
+Trạng thái ở cột dưới chỉ bộ vá đã chuẩn bị, trừ mục ghi riêng GitHub.
+
+Hạng mục                         Trạng thái                     Việc còn lại
+Camera vùng đỏ/AI riêng           Có mã; user thử camera tốt      Kiểm tra hồi quy khi thêm đội/đồ
+1–3 quái, ba thế, đạn/VFX          Có mã; kiểm tra logic đạt       Thử hình/nhịp trong Unity build
+Cân bằng EXP/HP/ATK/tốc đánh       Có mã; mô phỏng, Play Mode      Chốt nhịp chơi sau thêm hệ sâu
+Tiếp tục/Chơi mới/Khó             Có mã; user báo Play Mode ổn    Windows và save hỏng/gián đoạn
+Ground 1.2/Grass1 loop/trang trí   Có mã; hình học đạt             Thử texture/render/resize
+Nút menu đỏ + scale desktop       Đã sửa 5915106                  Chờ kết quả Windows thực tế
+Manual Save/Load/Exit popup       Có mã, nối scene chưa đủ        Rà null/ref/layout/modal
+Phân bổ điểm                     Có API và điểm trong dữ liệu    Chưa có UI dùng được xác nhận
+Linh căn/tộc                      Enum/RNG nền đơn giản           Luật xác suất/buff/chủng tộc
+Vũ khí/võ học/trang bị             Enum/helper/ý tưởng             Chốt dữ liệu, làm vòng tối thiểu
+Khắc hệ/phòng thủ/crit             Chưa tích hợp vào combat        Chốt thứ tự tính và test
+Boss/elite/block/cancel            Định hướng                      Chưa làm
+Đội hình/nhiều hero                Có danh sách thực thể nền       Chưa có quản lý đội/dữ liệu đội
+Luân Hồi/ngoại tuyến/Lò Bát Quái    Định hướng                      Chưa có đặc tả/mã xác nhận
+Đa màn hình + clamp/DPI            Mong muốn, chưa đủ hiện thực    Windows thử và triển khai thiếu
+Tối ưu chạy nền dài giờ            Có pooling/thu hồi              Chưa có profiling mục tiêu
+Đồng bộ mã lên GitHub              main mới tới 0.0.4.4 lúc đọc    Đối chiếu/nhập bộ vá có chủ đích
+
+Ưu tiên đề xuất (chưa là lịch phát hành hoặc việc đã bắt đầu):
+P0. Xác nhận bản Windows sau sửa nút đỏ: mở menu, chọn 200/500/1000 và mở
+    lại mỗi lần; DPI 100/150%, kéo cửa sổ, không click lọt desktop.
+P0. Rà popup Exit/manual save/load/modal, luồng Chơi mới, slot hỏng và crash
+    ghi file; giữ an toàn dữ liệu trước khi mở rộng gameplay.
+P1. Thử nền 0.0.4.51 phủ ngang/không khe/giữ cao, cỏ trang trí có nhiều món;
+    không làm lại camera đã được người dùng chấp nhận.
+P1. Đối chiếu dự án Unity local với main/bộ vá, nhập mã đã thử trên nhánh
+    phù hợp; không ghi đè scene có chỉnh riêng chỉ để "đồng bộ version".
+P2. UI phân bổ điểm: hiển thị điểm, HP/ATK, nút +; refresh khi thay đổi;
+    thao tác chỉ trừ đúng một điểm, lưu/tải giữ đúng, xử lý HP tối đa có chủ đích.
+P2. Chốt bảng linh căn và dữ liệu vũ khí/võ học tối thiểu, sau đó mới nối
+    tương khắc/crit/phòng thủ vào sát thương và cân bằng lại.
+P3. Kho/rơi đồ/đội hình/boss, rồi đặc tả Luân Hồi/ngoại tuyến/Lò Bát Quái.
+    Không tự triển khai cả danh sách nếu chưa có yêu cầu phạm vi cụ thể.
+
+11. KIỂM THỬ ĐÃ CÓ VÀ NHỮNG ĐIỀU KHÔNG ĐƯỢC SUY RA
+
+Tests~ dùng Unity test doubles, không phải Unity engine thực.
+Bộ gần nhất: 67 tình huống regression đạt, kết quả Tests~/test-results.txt.
+Bao gồm AI/tầm, frame dài, các Canvas scale, camera nhanh/chậm/đứng/chết,
+nhịp đợt, đạn tới đích/hủy/pool, cân bằng/chuyển save, lựa chọn khởi đầu/độ
+khó, phủ nền và menu desktop. Nhánh UNITY_STANDALONE_WIN biên dịch được
+trong bộ stub; WinAPI chưa chạy ở môi trường này.
+
+360 lượt mô phỏng cân bằng: cấp 1/10/20/50/100/999, ba thế, 20 seed/tổ hợp,
+30 FPS, Ground rộng 1000, tối đa 120 giây, HP đầu đầy, dồn điểm ATK. Có tử vong
+ở mọi tổ hợp được lấy mẫu; KHÔNG chứng minh tất cả cấu hình ở mọi cấp sẽ chết,
+không dự báo chính xác thời gian sống của Unity local hoặc màn hình khác.
+
+Người dùng đã xác nhận camera/vùng đỏ hoạt động và 0.0.4.5 khá ổn trong
+Play Mode. Không chuyển phản hồi đó thành nghiệm thu Windows 0.0.4.51.
+Không có bằng chứng profiling xác nhận zero GC, ngân sách CPU/GPU/RAM,
+chạy 24/7, clamp màn hình hoặc hỗ trợ tổ đội hoàn chỉnh.
+
+Checklist hồi quy khi tiếp tục:
+- Hero cận vs quái xa; ba quái khác thế cùng tiếp cận; không xếp hàng chờ.
+- Đổi thế lúc vận chiêu; ra khỏi tầm; chết/load/reset lúc có đạn bay.
+- Hero chạy150/300, đứng đánh, chết: camera trong vùng mặc định, biên theo hero.
+- Scale200/500/1000, kéo desktop, DPI nhiều mức; biên camera/tầm không đổi sai.
+- Chơi mới hủy/xác nhận; tiếp tục save cũ/mới/hỏng; manual overwrite/load;
+  không đợt kép, không save cũ sống lại, không chuyển balance hai lần.
+- Giết quái lên cấp chỉ hồi5–10; đứng không hồi; Khó damage2x/EXP3x.
+- Loop nền sau bước dài/cuộn ngược/resize; không scale Ground logic.
+- Chạy dài với Profiler: GC Alloc, memory growth, số object/pool/task,
+  thời gian JSON I/O, draw call/UI rebuild và mức sử dụng khi mất focus.
+  Đặt ngân sách mục tiêu sau đo; không ghi "zero GC" chỉ vì dùng pooling.
+
+12. LỊCH SỬ QUYẾT ĐỊNH — KHÔNG KHÔI PHỤC NHẦM LOGIC CŨ
+
+- Giai đoạn đầu: hero neo phải/đi về giữa, đóng băng cảnh khi giao chiến;
+  mon đơn; GameManager ôm logic. Sau đó tách môi trường/AI/combat/pooling.
+- G1/G3: đa quái, các tầm riêng, thử camera mềm trung bình. Nhiều lỗi do
+  anchor khác gốc, lock cuộn toàn cục, hướng cỏ và ghim tâm; chưa ổn.
+- Commit c6be85d8: mốc gốc đã đổi camera/hero/monster, còn "chưa ổn".
+  Không suy ngày phát triển chỉ từ nhãn phiên bản hoặc bản chat.
+- d96db27: thống nhất không gian/tầm và AI riêng dựa video canchien/danhxa/chung.
+- 96b8ce5 / 0.0.4.3: camera trôi mặc định trong vùng, theo hero ở biên.
+- 2da86f5 / 0.0.4.4: thu vùng, nền theo hero, nhịp đợt theo tốc độ, VFX/đạn.
+- 27fd8cb / 0.0.4.5: EXP tăng15%, HP/ATK/tốc đánh tăng chậm, hồi khi giết,
+  bỏ đầy HP khi lên cấp, chuyển save cũ.
+- 84fc705 / vẫn0.0.4.5: Tiếp tục/Chơi mới hỏi xác nhận; Bình thường/Khó.
+- 2bf5f16 / 0.0.4.51: Ground cố định1.2 xám đen, Grass1 đất–cỏ loop,
+  cỏ trang trí được rải lại.
+- 5915106 / vẫn0.0.4.51: sửa menu đỏ/hitbox/bố cục scale/tọa độ chuột desktop.
+- GitHub main b75c83ac được người dùng đưa tới0.0.4.4 trước đợt cập nhật tài
+  liệu này. Các hash local ở trên không có nghĩa đều đã được push lên GitHub.
+
+Các mô tả đã bị thay thế:
+- EXP cấp*100/cấp*30 hoặc nhân5/nhân10 mỗi cấp -> công thức CombatBalance.
+- Tốc đánh cộng lặp gần nhân đôi -> hệ số giới hạn1.25.
+- EXP quái dựa tổng cấp hero+quái nhân2/5 ->12+2*cấp quái, Khó nhân3.
+- RNG damage75–100% ->85–100% trong bộ cân bằng mới.
+- Hồi5HP/giây/hồi đầy khi lên cấp -> chỉ5–10 khi giết.
+- battleLockCount/tâm giao tranh/minmax anchor -> vùng đỏ và không gian Ground.
+- Save bên cạnh exe/SaveData, nền đa luồng ->persistentDataPath/Saves, đồng bộ.
+- "Đã làm tương khắc" -> helper hiện trả1, chưa nối combat.
+- "UI quái thường tối giản xong" -> vẫn HP/damage để thử.
+
+13. QUY ƯỚC LÀM VIỆC VÀ BÀN GIAO VỀ SAU
+
+- Trao đổi tiếng Việt, trực tiếp, tập trung kỹ thuật. Phản biện khi có rủi ro
+  cụ thể, không biến mọi yêu cầu sửa lỗi thành một vòng3–5 câu hỏi.
+- Đọc tài liệu này và mã hiện tại trước sửa; thiếu file/scene/dữ liệu thì lấy
+  từ repo hoặc hỏi người dùng. Không đoán tên hàm/Inspector hoặc hứa đã thử.
+- Với thao tác Unity của người dùng: hướng dẫn từng bước nhỏ, rõ object,
+  component, reference, cách thử; chờ kết quả nếu bước sau phụ thuộc kết quả.
+- Khi giao mã, cung cấp file đầy đủ có .meta cần thiết hoặc gói tích lũy rõ
+  phiên bản; tránh buộc người dùng ghép snippet gây mất hàm/ngoặc/tham chiếu.
+- Ưu tiên phân tách trách nhiệm, API hợp đồng ổn định, data runtime không
+  ghi đè asset gốc; cache khi có ích và dọn coroutine/projectile/SO khi kết thúc.
+- Chuẩn tên: class/hàm PascalCase, biến camelCase, hằng UPPER_SNAKE_CASE,
+  ID tag ổn định. Lifecycle Unity giữ đúng tên yêu cầu của engine.
+- Trong chat cũ có quy tắc save point sau3 giờ, bản bàn giao sau đổi thành2
+  giờ. Dùng mốc2 giờ làm ưu tiên bàn giao trong phiên hoạt động hoặc khi quay
+  lại sau khoảng nghỉ; tiêu đề SAVE POINT <version>.<MMDDHHmm>, giờ Việt Nam.
+  Đây là ghi chép ở lượt trao đổi phù hợp, không phải lời hứa AI tự gửi tin
+  khi không có phiên/tác vụ đang chạy. Không tự tạo lịch nhắc ngoài phạm vi.
+- Mỗi save point gồm: commit/nhánh và phiên bản đang dùng, mục tiêu, thay đổi,
+  file liên quan, thông số, kết quả thử, bug còn lại, việc kế tiếp, đường dẫn gói.
+- GitHub là nguồn bền vững cho tài liệu. Phiên mới cần đọc Project_info_dev.txt;
+  không giả định bộ nhớ AI tự giữ toàn bộ chat hoặc luôn truy cập được link.
+- User hiện đã cho phép cập nhật tài liệu trực tiếp trên GitHub. Với mã game,
+  các lượt trước chủ yếu nhận ZIP để tự kiểm thử/sync; không coi yêu cầu tài
+  liệu này là yêu cầu push tất cả script hoặc phát hành build.
+- Cập nhật tài liệu khi yêu cầu/hành vi/trạng thái đổi; ghi bằng chứng và
+  giới hạn, không xóa ý tưởng chưa triển khai chỉ vì hiện tại chưa có code.
+
+14. ĐIỂM BÀN GIAO HIỆN TẠI
+
+Phiên bản bộ vá gần nhất:0.0.4.51, giữ nguyên.
+Việc gần nhất: sửa nút menu đỏ/ba nút scale trên Windows; đã giao ZIP.
+Gói: IdleGame_0.0.4.51_DesktopMenuFix.zip (tích lũy, có hướng dẫn/rollback).
+Kết quả:67 regression logic đạt; chưa chạy Unity/Windows ở môi trường sửa mã.
+Phản hồi cần tiếp theo: người dùng build mới, thử nút đỏ và200/500/1000.
+Chưa có nhiệm vụ đang triển khai cho boss/đội/ngoại tuyến/đồ trong lượt này.
+
+Khi mở phiên tiếp theo:
+1. Đọc file này; xác định local đã nhập gói nào và main đã thay đổi chưa.
+2. Đọc script/scene liên quan tới yêu cầu mới và phản hồi test Windows.
+3. Giữ camera vùng đỏ làm chuẩn; xử lý đúng lỗi hiện hữu trước hệ sâu mới.
+4. Sau thay đổi, cập nhật ma trận tiến độ, lịch sử và điểm bàn giao này.
