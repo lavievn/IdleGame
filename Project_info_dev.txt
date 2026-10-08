@@ -13,10 +13,10 @@ Nền mã mới nhất người dùng đã push: 0.0.4.51f, main tại commit
 b33bb1d8d3dedf7ad887cec7ca69b3f660e003ae. Đã đối chiếu trực tiếp scene,
 TransparentWindow, UIManager và PlayerSettings. Main đã chứa các sửa gameplay,
 cân bằng, UI và terrain trước đó; mô tả main 0.0.4.4 trong bàn giao cũ đã hết hạn.
-Người dùng xác nhận các logic khác tạm chưa thấy lỗi, nhưng bản desktop vẫn
-không mở được System Menu, cửa sổ phủ màn hình và kéo bị dính xuống đáy.
-Bản vá Windows mới giữ phiên bản 0.0.4.51f, chuẩn bị trên nhánh sửa riêng;
-chỉ được coi là nghiệm thu sau khi người dùng build và thử Windows thực tế.
+Ở nền này người dùng từng báo menu không mở, cửa sổ phủ màn hình và kéo
+bị dính xuống đáy. Sau bản vá Windows 0.0.4.51f, ngày 09/10/2026 người dùng
+xác nhận đã thử: System Menu hoạt động, scale cửa sổ đúng logic và cho phép
+merge PR #1 vào main. Chưa có xác nhận riêng về kéo cửa sổ, DPI/màn hình phụ.
 
 Nhãn trạng thái dùng xuyên suốt:
 [ĐỊNH HƯỚNG] ý định thiết kế, chưa phải chức năng chạy được.
@@ -121,8 +121,8 @@ TransparentWindow.cs:
   Giao tiếp Windows; tạo overlay, đổi click-through, kéo Ground, resize.
   Thứ tự dò vùng: modal -> clickable -> draggable. Dùng GetCursorPos,
   ScreenToClient, GetClientRect để đưa chuột về pixel game; đăng ký nút động.
-  Cú nhấn hiện vẫn lấy từ InputSystem Mouse.leftButton.wasPressedThisFrame;
-  KHÔNG ghi rằng toàn bộ click đang dùng GetAsyncKeyState như chat cũ.
+  Windows player nhận cạnh nhấn bằng GetAsyncKeyState; UIManager tránh phát
+  click lần hai. Editor vẫn dùng InputSystem Mouse.leftButton.wasPressedThisFrame.
 UIManager.cs + CustomInteractable.cs:
   Đăng ký/hủy vùng tương tác, gọi UnityEvent, bật/tắt menu, chọn độ khó/scale.
   Bản sửa ưu tiên nút con trước container cha; cache RectTransform khi cần.
@@ -370,7 +370,9 @@ Bản vá mới:
 68 regression logic đạt, gồm fixture Button-only đúng scene, một click mỗi
 lần nhấn và kéo khỏi đáy/tọa độ âm. Nhánh Windows biên dịch riêng bằng Unity
 stubs; chưa chạy native WinAPI hoặc Unity executable tại môi trường sửa.
-Cần BUILD LẠI WINDOWS. Thử mở menu khi game không focus, chọn từng scale,
+[ĐÃ THỬ — phản hồi người dùng 09/10/2026] System Menu đã hoạt động và scale
+cửa sổ đúng logic; cho phép merge PR #1. Kéo cửa sổ/DPI chưa xác nhận riêng.
+Khi nhập mã ở máy khác cần BUILD LẠI WINDOWS. Thử mở menu khi game không focus, chọn từng scale,
 mở lại sau resize, kéo ground lên/xuống/trái/phải, thả ngoài cửa sổ, rồi thử
 DPI 100/125/150% và màn hình phụ nếu có. Không ghi là đã fix hoàn toàn trước
 khi nhận kết quả này. Các script camera/hero/monster/cân bằng không thay đổi.
@@ -478,7 +480,7 @@ Camera vùng đỏ/AI riêng           Có mã; user thử camera tốt      Ki�
 Cân bằng EXP/HP/ATK/tốc đánh       Có mã; mô phỏng, Play Mode      Chốt nhịp chơi sau thêm hệ sâu
 Tiếp tục/Chơi mới/Khó             Có mã; user báo Play Mode ổn    Windows và save hỏng/gián đoạn
 Ground 1.2/Grass1 loop/trang trí   Có mã; hình học đạt             Thử texture/render/resize
-Nút menu đỏ + scale desktop       Vá lại 0.0.4.51f                Chờ build Windows xác nhận
+Nút menu đỏ + scale desktop       Người dùng xác nhận hoạt động   Kéo/DPI/màn hình phụ chưa xác nhận
 Manual Save/Load/Exit popup       Có mã, nối scene chưa đủ        Rà null/ref/layout/modal
 Phân bổ điểm                     Có API và điểm trong dữ liệu    Chưa có UI dùng được xác nhận
 Linh căn/tộc                      Enum/RNG nền đơn giản           Luật xác suất/buff/chủng tộc
@@ -489,11 +491,11 @@ Boss/elite/block/cancel            Định hướng                      Chưa l
 Luân Hồi/ngoại tuyến/Lò Bát Quái    Định hướng                      Chưa có đặc tả/mã xác nhận
 Đa màn hình + clamp/DPI            Mong muốn, chưa đủ hiện thực    Windows thử và triển khai thiếu
 Tối ưu chạy nền dài giờ            Có pooling/thu hồi              Chưa có profiling mục tiêu
-Đồng bộ mã lên GitHub              main mới tới 0.0.4.4 lúc đọc    Đối chiếu/nhập bộ vá có chủ đích
+Đồng bộ mã lên GitHub              Nền 0.0.4.51f + PR #1          Người dùng cho phép merge bản vá
 
 Ưu tiên đề xuất (chưa là lịch phát hành hoặc việc đã bắt đầu):
-P0. Xác nhận bản Windows sau sửa nút đỏ: mở menu, chọn 200/500/1000 và mở
-    lại mỗi lần; DPI 100/150%, kéo cửa sổ, không click lọt desktop.
+P0. Menu và scale đã được người dùng xác nhận ngày 09/10/2026; tiếp tục thử
+    kéo cửa sổ, DPI 100/150%, màn hình phụ và click khi game không focus.
 P0. Rà popup Exit/manual save/load/modal, luồng Chơi mới, slot hỏng và crash
     ghi file; giữ an toàn dữ liệu trước khi mở rộng gameplay.
 P1. Thử nền 0.0.4.51 phủ ngang/không khe/giữ cao, cỏ trang trí có nhiều món;
@@ -522,7 +524,9 @@ trong bộ stub; WinAPI chưa chạy ở môi trường này.
 không dự báo chính xác thời gian sống của Unity local hoặc màn hình khác.
 
 Người dùng đã xác nhận camera/vùng đỏ hoạt động và 0.0.4.5 khá ổn trong
-Play Mode. Không chuyển phản hồi đó thành nghiệm thu Windows 0.0.4.51.
+Play Mode. Không chuyển phản hồi đó thành nghiệm thu toàn bộ Windows 0.0.4.51.
+Ngày 09/10/2026, người dùng xác nhận System Menu và scale cửa sổ của bản vá
+0.0.4.51f hoạt động đúng. Phản hồi không xác nhận riêng kéo cửa sổ hoặc DPI.
 Không có bằng chứng profiling xác nhận zero GC, ngân sách CPU/GPU/RAM,
 chạy 24/7, clamp màn hình hoặc hỗ trợ tổ đội hoàn chỉnh.
 
@@ -605,8 +609,9 @@ Phiên bản hiện tại: 0.0.4.51f, giữ nguyên; nền GitHub b33bb1d8.
 Việc gần nhất: vá lại MenuArea Button, input native, startup window và kéo.
 Gói: IdleGame_0.0.4.51f_WindowsOverlayFix.zip; có mã nền mới nhất và hướng dẫn.
 Kết quả:68 regression logic đạt; Windows branch biên dịch bằng stubs.
-Chưa chạy Unity/WinAPI thực tế ở môi trường sửa; người dùng cần build mới,
-thử nút đỏ,200/500/1000 và kéo cửa sổ. Các logic khác tạm ổn theo phản hồi.
+Chưa chạy Unity/WinAPI thực tế ở môi trường sửa. Người dùng đã thử và xác
+nhận System Menu/scale hoạt động, cho phép merge PR #1 vào main ngày
+09/10/2026. Kéo cửa sổ/DPI/màn hình phụ còn chờ xác nhận riêng.
 Chưa triển khai boss/đội/ngoại tuyến/đồ trong lượt này.
 
 Khi mở phiên tiếp theo:
