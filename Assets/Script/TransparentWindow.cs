@@ -4,6 +4,7 @@ using System.Runtime.InteropServices;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
+[DefaultExecutionOrder(-100)]
 public class TransparentWindow : MonoBehaviour
 {
     [Header("UI Interaction Elements (Thứ tự ưu tiên Z-Index)")]
@@ -36,6 +37,11 @@ public class TransparentWindow : MonoBehaviour
     [DllImport("user32.dll")]
     private static extern int SendMessage(IntPtr hWnd, int Msg, int wParam, int lParam);
 
+    [DllImport("user32.dll")]
+    private static extern bool GetClientRect(IntPtr hWnd, out CLIENTRECT rect);
+    [StructLayout(LayoutKind.Sequential)]
+    private struct CLIENTRECT { public int left, top, right, bottom; }
+
     const int WM_NCLBUTTONDOWN = 0xA1;
     const int HTCAPTION = 0x2;
 
@@ -55,7 +61,7 @@ public class TransparentWindow : MonoBehaviour
 
     void Start()
     {
-#if !UNITY_EDITOR
+#if UNITY_STANDALONE_WIN && !UNITY_EDITOR
         hWnd = GetActiveWindow();
         SetWindowLong(hWnd, GWL_STYLE, WS_POPUP | WS_VISIBLE);
         
@@ -69,7 +75,7 @@ public class TransparentWindow : MonoBehaviour
 
     void Update()
     {
-#if !UNITY_EDITOR
+#if UNITY_STANDALONE_WIN && !UNITY_EDITOR
         if (Mouse.current == null) return;
 
         bool isOverClickable = false;
@@ -103,15 +109,8 @@ public class TransparentWindow : MonoBehaviour
         overClickable = false;
         overDraggable = false;
 
-#if !UNITY_EDITOR
-        POINT p;
-        GetCursorPos(out p);
-        ScreenToClient(hWnd, ref p);
-        Vector2 mousePos = new Vector2(p.X, Screen.height - p.Y);
-#else
-        if (Mouse.current == null) return;
-        Vector2 mousePos = Mouse.current.position.ReadValue();
-#endif
+        Vector2 mousePos;
+        if (!TryGetPointerPosition(out mousePos)) return;
 
         // 1. Tầng Modal/Popup (Ưu tiên tuyệt đối)
         if (modalUI != null)
@@ -141,6 +140,11 @@ public class TransparentWindow : MonoBehaviour
             }
         }
 
+        // Dynamic buttons and scene triggers omitted from clickableUI still
+        // block click-through and dragging using their actual rendered rects.
+        if (UIManager.Instance != null && UIManager.Instance.CheckInteractableHover(mousePos))
+        { overClickable = true; return; }
+
         // 3. Tầng Draggable (Thấp nhất, chỉ xét khi 2 tầng trên bị xuyên thủng)
         if (draggableUI != null)
         {
@@ -154,6 +158,34 @@ public class TransparentWindow : MonoBehaviour
                 }
             }
         }
+    }
+
+    public void RegisterClickable(RectTransform rect)
+    {
+        if (rect == null) return;
+        var list = new System.Collections.Generic.List<RectTransform>(clickableUI ?? new RectTransform[0]);
+        if (!list.Contains(rect)) list.Add(rect);
+        clickableUI = list.ToArray();
+    }
+    public static Vector2 ClientToGamePosition(float x, float y, float clientWidth, float clientHeight, float gameWidth, float gameHeight)
+    {
+        if (clientWidth <= 0f || clientHeight <= 0f) return Vector2.zero;
+        return new Vector2(x * gameWidth / clientWidth, (clientHeight - y) * gameHeight / clientHeight);
+    }
+    public bool TryGetPointerPosition(out Vector2 point)
+    {
+#if UNITY_STANDALONE_WIN && !UNITY_EDITOR
+        POINT cursor;
+        CLIENTRECT client;
+        if (hWnd == IntPtr.Zero || !GetCursorPos(out cursor) || !ScreenToClient(hWnd, ref cursor) || !GetClientRect(hWnd, out client))
+        { point=Vector2.zero; return false; }
+        point = ClientToGamePosition(cursor.X, cursor.Y, client.right-client.left, client.bottom-client.top, Screen.width, Screen.height);
+        return true;
+#else
+        if (Mouse.current == null) { point=Vector2.zero; return false; }
+        point = Mouse.current.position.ReadValue();
+        return true;
+#endif
     }
 
     // --- CÁC CỜ ÉP RENDER CỦA WINDOWS ---
@@ -180,7 +212,7 @@ public class TransparentWindow : MonoBehaviour
     // --- KHỐI RESIZE BỌC THÉP TÁI THIẾT LẬP ---
     public void ResizeWindow(int width, int height)
     {
-#if !UNITY_EDITOR
+#if UNITY_STANDALONE_WIN && !UNITY_EDITOR
         if (hWnd != IntPtr.Zero)
         {
             StopAllCoroutines();
@@ -194,7 +226,7 @@ public class TransparentWindow : MonoBehaviour
     {
         yield return new WaitForSeconds(0.2f); 
 
-#if !UNITY_EDITOR
+#if UNITY_STANDALONE_WIN && !UNITY_EDITOR
         SetWindowLong(hWnd, GWL_STYLE, WS_POPUP | WS_VISIBLE);
         
         if (!isCurrentlyClickable)

@@ -78,8 +78,14 @@ public class CombatManager : MonoBehaviour
             info.go = m;
             info.controller = m.GetComponent<MonsterController>();
             info.data = Instantiate(baseMonsterData);
-            info.data.currentLevel = Mathf.Clamp(runtimeHeroData.currentLevel + Random.Range(-5, 6), 1, 999);
-            info.maxHP = Mathf.RoundToInt(info.data.GetCalculatedHealth() * (1f + (info.data.currentLevel - 1) * 0.05f));
+            int spread = CombatBalance.LevelSpread(runtimeHeroData.currentLevel);
+            info.data.currentLevel = Mathf.Clamp(runtimeHeroData.currentLevel + Random.Range(-spread, spread + 1), 1, 999);
+            info.data.baseHealth = CombatBalance.MonsterHealth(info.data.currentLevel);
+            info.data.baseDamage = CombatBalance.MonsterAttack(info.data.currentLevel);
+            info.data.baseAttackSpeed = CombatBalance.HeroSpeed(info.data.currentLevel);
+            info.data.addedHealth = 0;
+            info.data.addedDamage = 0;
+            info.maxHP = info.data.GetCalculatedHealth();
             info.currentHP = info.maxHP;
             if (info.controller != null) info.controller.UpdateHealthBar(info.currentHP, info.maxHP);
             activeMonsters.Add(info);
@@ -116,8 +122,7 @@ public class CombatManager : MonoBehaviour
             // Revalidate immediately before damage; there are no suspended coroutines
             // that can wake up after a load/retry or a pooled object is reused.
             if (!info.controller.CanAttack(heroController, space)) continue;
-            float dmg = (info.data.GetCalculatedDamage() - 5) * Random.Range(0.75f, 1.0f);
-            int finalDmg = Mathf.Max(1, Mathf.RoundToInt(dmg));
+            int finalDmg = CombatBalance.Damage(info.data.GetCalculatedDamage(), info.controller.attackMode, Random.Range(0.85f, 1f));
             info.controller.PlayAttackFeedback();
             if (info.controller.attackMode == AttackMode.Melee)
             {
@@ -175,15 +180,14 @@ public class CombatManager : MonoBehaviour
 
     private static float AttackDuration(AttackMode mode, float speed)
     {
-        return mode == AttackMode.RangedMagic ? 2f : 1f / Mathf.Max(0.1f, speed);
+        return CombatBalance.AttackInterval(mode, speed);
     }
 
     private void ResetHeroAttack() { heroAttackTimer = 0f; heroWindupTarget = null; }
 
     private int RollHeroDamage()
     {
-        float dmg = (runtimeHeroData.GetCalculatedDamage() - 2) * Random.Range(0.75f, 1.0f);
-        return Mathf.Max(1, Mathf.RoundToInt(dmg));
+        return CombatBalance.Damage(runtimeHeroData.GetCalculatedDamage(), heroWindupMode, Random.Range(0.85f, 1f));
     }
 
     private void DealDamageToMonster(ActiveMonsterInfo target, int finalDmg)
@@ -201,15 +205,14 @@ public class CombatManager : MonoBehaviour
     {
         activeMonsters.Remove(target);
         if (target.controller != null) target.controller.MarkDead();
-        int exp = (runtimeHeroData.currentLevel + target.data.currentLevel) * 5;
-        bool isLevelUp = runtimeHeroData.AddExp(exp);
-        if (isLevelUp)
-        {
-            maxHeroHP = runtimeHeroData.GetCalculatedHealth();
-            currentHeroHP = maxHeroHP;
-            heroController.UpdateHealthBar(currentHeroHP, maxHeroHP);
-            heroController.UpdateAtkUI(runtimeHeroData.GetCalculatedDamage());
-        }
+        int exp = CombatBalance.KillExp(target.data.currentLevel) * (gameManager != null && gameManager.IsHardMode ? 3 : 1);
+        runtimeHeroData.AddExp(exp);
+        // Raising max HP never fills current HP. The only in-run healing is a
+        // small, explicit 5..10 HP reward per kill, capped at the new maximum.
+        maxHeroHP = runtimeHeroData.GetCalculatedHealth();
+        currentHeroHP = Mathf.Clamp(currentHeroHP + Random.Range(5, 11), 0, maxHeroHP);
+        heroController.UpdateHealthBar(currentHeroHP, maxHeroHP);
+        heroController.UpdateAtkUI(runtimeHeroData.GetCalculatedDamage());
         if (gameManager != null) gameManager.UpdateEventLog($"Đánh bại quái. Nhận {exp} EXP!");
         monsterSpawner.DespawnMonster(target.go);
         if (target.data != null) Destroy(target.data);
@@ -219,6 +222,7 @@ public class CombatManager : MonoBehaviour
 
     private void DealDamageToHero(int damage)
     {
+        damage *= gameManager != null && gameManager.IsHardMode ? 2 : 1;
         currentHeroHP = Mathf.Max(0, currentHeroHP - damage);
         heroController.UpdateHealthBar(currentHeroHP, maxHeroHP);
         heroController.ShowDamage(damage);

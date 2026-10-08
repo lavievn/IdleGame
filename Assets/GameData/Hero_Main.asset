@@ -16,7 +16,7 @@ MonoBehaviour:
   currentLevel: 1
   currentExp: 0
   expToNextLevel: 100
-  baseHealth: 1000
+  baseHealth: 400
   baseDamage: 10
   baseAttackSpeed: 1
   race: 0

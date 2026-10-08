@@ -20,6 +20,16 @@ public class EnvironmentManager : MonoBehaviour
     [Range(0f, 0.49f)] public float speedZoneInset = 0.25f;
     public float CurrentBackgroundSpeed { get; private set; }
 
+    private GroundPresentation groundPresentation;
+
+    public bool HasLoopingTerrain => groundPresentation != null;
+    public void SetTerrainTint(Color color) { EnsureGroundPresentation(); if (groundPresentation != null) groundPresentation.SetTerrainTint(color); }
+    private void EnsureGroundPresentation()
+    {
+        if (groundPresentation == null) groundPresentation = GroundPresentation.Install(this, groundDetails);
+    }
+    void Start() { EnsureGroundPresentation(); }
+
     // A dead, still-visible hero remains the camera subject until hidden/replaced.
     // It is intentionally NOT put back in the list of living combat actors.
     private HeroController cameraTarget;
@@ -147,6 +157,8 @@ public class EnvironmentManager : MonoBehaviour
     public void PanEnvironment(float amount)
     {
         if (battleArea == null || groundDetails == null) return;
+        EnsureGroundPresentation();
+        if (groundPresentation != null) { groundPresentation.Scroll(amount); return; }
         foreach (var detail in groundDetails)
         {
             if (detail == null) continue;

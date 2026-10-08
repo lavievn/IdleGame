@@ -35,6 +35,14 @@ public class GameManager : MonoBehaviour
     public float CurrentWaveDelay => BattleMotion.WaveDelay(waveDelay,
         heroController != null ? Mathf.Max(0f, heroController.moveSpeed) : 150f);
     private bool hasDeployed = false;
+    private enum MenuChoice { None, Continue, NewGame }
+    private MenuChoice pendingChoice;
+    private SaveSlot continueSlot;
+    private bool manualSelection;
+    private StartMenuUI startMenu;
+    public bool IsHardMode => runtimeHeroData != null && runtimeHeroData.difficulty == 1;
+    public bool HasPendingConfirmation => pendingChoice != MenuChoice.None;
+    public bool CanContinue => saveManager != null && (manualSelection ? saveManager.HasSave(continueSlot) : saveManager.TryGetLatestSlot(out continueSlot));
 
     void Start()
     {
@@ -47,7 +55,9 @@ public class GameManager : MonoBehaviour
         if (gameOverPanel != null) gameOverPanel.SetActive(false);
         if (confirmationPopup != null) confirmationPopup.SetActive(false);
 
-        InitHeroData();
+        // Do not load or overwrite a save until the player confirms a choice.
+        startMenu = StartMenuUI.Install(this);
+        SetupPreGameUI();
         StartCoroutine(AutoSaveRoutine());
     }
 
@@ -55,16 +65,20 @@ public class GameManager : MonoBehaviour
     {
         if (runtimeHeroData != null) Destroy(runtimeHeroData);
         runtimeHeroData = Instantiate(heroDataSO);
-        // Mặc định khởi động sẽ lấy AutoSave
-        bool hasSaveData = saveManager != null && saveManager.LoadGame(runtimeHeroData, SaveSlot.AutoSave);
+        runtimeHeroData.currentLevel = 1;
+        runtimeHeroData.currentExp = 0;
+        runtimeHeroData.expToNextLevel = 100;
+        runtimeHeroData.addedHealth = runtimeHeroData.addedDamage = runtimeHeroData.statPoints = 0;
+        runtimeHeroData.balanceVersion = 0;
+        runtimeHeroData.difficulty = 0;
 
-        if (!hasSaveData)
         {
             runtimeHeroData.gender = Random.Range(0, 2) == 0 ? GenderType.Nam : GenderType.Nu;
             runtimeHeroData.entityName = NameDatabase.GetRandomName(runtimeHeroData.gender);
             runtimeHeroData.spiritRoots = SynergyMath.GenerateRandomRoots();
         }
 
+        runtimeHeroData.ApplyHeroBalance();
         if (heroController != null) heroController.SetGenderVisual(runtimeHeroData.gender);
         SetupPreGameUI();
     }
@@ -74,11 +88,15 @@ public class GameManager : MonoBehaviour
     private void SetupPreGameUI()
     {
         preGameUI.SetActive(true);
-        string rootStr = string.Join(" - ", runtimeHeroData.spiritRoots);
-        infoText.text = $"Tên: {runtimeHeroData.entityName}\nLinh căn: {rootStr}\nHP: {runtimeHeroData.GetCalculatedHealth()}";
+        if (startMenu != null) startMenu.Refresh();
+        if (infoText != null) infoText.text = CanContinue
+            ? "Tiếp tục hành trình đã lưu hoặc bắt đầu một hành trình mới."
+            : "Chưa có bản lưu. Chọn Chơi mới để bắt đầu.";
     }
 
-    public void OnDeployClicked()
+    public void OnDeployClicked() { OnContinueClicked(); }
+
+    private void DeployHero()
     {
         if (hasDeployed) return;
         CancelNextWave();
@@ -93,7 +111,7 @@ public class GameManager : MonoBehaviour
     public void ForceManualSave(int slotIndex)
     {
         SaveSlot slot = (SaveSlot)slotIndex;
-        if (saveManager != null && runtimeHeroData != null)
+        if (saveManager != null && runtimeHeroData != null && !HasPendingConfirmation)
         {
             saveManager.SaveGame(runtimeHeroData, slot);
             UpdateEventLog($"Đã lưu tiến trình vào: {slot}");
@@ -102,9 +120,12 @@ public class GameManager : MonoBehaviour
 
     public void ForceManualLoad(int slotIndex)
     {
+        if (HasPendingConfirmation) return;
         SaveSlot slot = (SaveSlot)slotIndex;
         if (saveManager == null || !saveManager.HasSave(slot)) return;
 
+        var loaded = Instantiate(heroDataSO != null ? heroDataSO : runtimeHeroData);
+        if (!saveManager.LoadGame(loaded, slot)) { Destroy(loaded); UpdateEventLog("Không đọc được bản lưu."); return; }
         // 1. Dọn dẹp sạch sẽ chiến trường tránh kẹt Coroutine
         hasDeployed = false;
         CancelNextWave();
@@ -114,9 +135,13 @@ public class GameManager : MonoBehaviour
         if (gameOverPanel != null) gameOverPanel.SetActive(false);
 
         // 2. Nạp dữ liệu mới
-        saveManager.LoadGame(runtimeHeroData, slot);
+        if (runtimeHeroData != null) Destroy(runtimeHeroData);
+        runtimeHeroData = loaded;
+        continueSlot = slot;
+        manualSelection = true;
 
         // 3. Đưa người chơi về Màn Hình Chờ an toàn
+        runtimeHeroData.ApplyHeroBalance();
         if (heroController != null) heroController.SetGenderVisual(runtimeHeroData.gender);
         SetupPreGameUI();
         UpdateEventLog($"Đã tải dữ liệu từ: {slot}");
@@ -128,7 +153,7 @@ public class GameManager : MonoBehaviour
         while (true)
         {
             yield return new WaitForSeconds(10f);
-            if (hasDeployed && runtimeHeroData != null && runtimeHeroData.isDirty && saveManager != null)
+            if (hasDeployed && !HasPendingConfirmation && runtimeHeroData != null && runtimeHeroData.isDirty && saveManager != null)
             {
                 saveManager.SaveGame(runtimeHeroData, SaveSlot.AutoSave);
             }
@@ -137,6 +162,7 @@ public class GameManager : MonoBehaviour
 
     public void OnHeroDied()
     {
+        if (saveManager != null && runtimeHeroData != null) saveManager.SaveGame(runtimeHeroData, SaveSlot.AutoSave);
         hasDeployed = false;
         CancelNextWave();
         activeMonsters.Clear();
@@ -145,7 +171,7 @@ public class GameManager : MonoBehaviour
 
     public void OnRetryClicked()
     {
-        if (hasDeployed) return;
+        if (hasDeployed || HasPendingConfirmation || runtimeHeroData == null) return;
         CancelNextWave();
         if (gameOverPanel != null) gameOverPanel.SetActive(false);
         hasDeployed = true;
@@ -154,20 +180,79 @@ public class GameManager : MonoBehaviour
         CallNextWave();
     }
 
-    public void OnResetClicked() { if (confirmationPopup != null) confirmationPopup.SetActive(true); }
+    public void OnContinueClicked()
+    {
+        if (hasDeployed || HasPendingConfirmation) return;
+        if (!CanContinue) { UpdateEventLog("Không tìm thấy bản lưu để tiếp tục."); return; }
+        pendingChoice = MenuChoice.Continue;
+        ShowConfirmation(manualSelection ? "Bạn có muốn tiếp tục từ ô lưu vừa chọn không?" : "Bạn có muốn tiếp tục từ bản lưu gần nhất không?");
+    }
+    public void OnNewGameClicked()
+    {
+        if (HasPendingConfirmation) return;
+        pendingChoice = MenuChoice.NewGame;
+        ShowConfirmation("Chơi mới sẽ xóa toàn bộ bản lưu tự động và hai ô lưu tay. Bạn có chắc muốn bắt đầu lại từ đầu?");
+    }
+    private void ShowConfirmation(string message)
+    {
+        if (startMenu != null) startMenu.ShowConfirmation(message);
+        else if (confirmationPopup != null) confirmationPopup.SetActive(true);
+    }
+    public void OnResetClicked() { OnNewGameClicked(); }
     public void OnConfirmResetClicked()
     {
-        hasDeployed = false;
-        CancelNextWave();
+        var choice = pendingChoice;
+        if (choice == MenuChoice.None) return;
+        pendingChoice = MenuChoice.None;
         if (confirmationPopup != null) confirmationPopup.SetActive(false);
+        if (choice == MenuChoice.Continue)
+        {
+            var loaded = Instantiate(heroDataSO);
+            if (saveManager == null || !saveManager.LoadGame(loaded, continueSlot))
+            {
+                Destroy(loaded);
+                UpdateEventLog("Không đọc được bản lưu. Chưa bắt đầu trò chơi.");
+                if (startMenu != null) startMenu.Refresh();
+                return;
+            }
+            if (runtimeHeroData != null) Destroy(runtimeHeroData);
+            runtimeHeroData = loaded;
+            runtimeHeroData.ApplyHeroBalance();
+        }
+        else
+        {
+            if (saveManager == null || !saveManager.DeleteAllSaves())
+            { UpdateEventLog("Không xóa được bản lưu. Chưa tạo trò chơi mới."); return; }
+            hasDeployed = false;
+            CancelNextWave();
+            if (combatManager != null) combatManager.ForceClearAllMonsters();
+            activeMonsters.Clear();
+            if (heroController != null) heroController.HideHero();
+            manualSelection = false;
+            InitHeroData();
+            if (heroController != null) heroController.ChangeAttackMode(0);
+        }
+        manualSelection = false;
         if (gameOverPanel != null) gameOverPanel.SetActive(false);
-        if (saveManager != null) saveManager.DeleteSave(SaveSlot.AutoSave);
-        if (combatManager != null) combatManager.ForceClearAllMonsters();
-        activeMonsters.Clear();
-        if (heroController != null) heroController.HideHero();
-        InitHeroData();
+        if (heroController != null) heroController.SetGenderVisual(runtimeHeroData.gender);
+        if (UIManager.Instance != null) UIManager.Instance.ApplyDifficultyVisual(IsHardMode);
+        DeployHero();
+        if (saveManager != null && !saveManager.SaveGame(runtimeHeroData, SaveSlot.AutoSave))
+            UpdateEventLog("Đã bắt đầu nhưng chưa ghi được bản lưu. Kiểm tra quyền ghi thư mục Saves.");
     }
-    public void OnCancelResetClicked() { if (confirmationPopup != null) confirmationPopup.SetActive(false); }
+    public void OnCancelResetClicked()
+    {
+        pendingChoice = MenuChoice.None;
+        if (confirmationPopup != null) confirmationPopup.SetActive(false);
+    }
+    public void SetDifficulty(int mode)
+    {
+        if (HasPendingConfirmation || runtimeHeroData == null) return;
+        runtimeHeroData.difficulty = mode == 1 ? 1 : 0;
+        runtimeHeroData.isDirty = true;
+        if (UIManager.Instance != null) UIManager.Instance.ApplyDifficultyVisual(IsHardMode);
+        UpdateEventLog(IsHardMode ? "Khó: sát thương quái ×2, EXP nhận ×3." : "Bình thường: sát thương quái ×1, EXP nhận ×1.");
+    }
 
     public void SetHeroAttackMode(int modeIndex)
     {

@@ -1,6 +1,6 @@
 using System;
 using System.IO;
-using System.Threading.Tasks;
+
 using UnityEngine;
 
 public class SaveManager : MonoBehaviour
@@ -37,13 +37,13 @@ public class SaveManager : MonoBehaviour
 
     public bool HasSave(SaveSlot slot)
     {
-        string finalPath = saveDirectory + slot.ToString() + SAVE_EXTENSION;
+        string finalPath = Path.Combine(saveDirectory, slot.ToString() + SAVE_EXTENSION);
         return File.Exists(finalPath);
     }
 
     public void DeleteSave(SaveSlot slot)
     {
-        string finalPath = saveDirectory + slot.ToString() + SAVE_EXTENSION;
+        string finalPath = Path.Combine(saveDirectory, slot.ToString() + SAVE_EXTENSION);
         if (File.Exists(finalPath))
         {
             File.Delete(finalPath);
@@ -59,10 +59,9 @@ public class SaveManager : MonoBehaviour
         // Serialize ScriptableObject thành JSON string ở Main Thread
         string jsonData = JsonUtility.ToJson(entityData, true);
         
-        // Gọi hàm ghi file bất đồng bộ và an toàn (Atomic)
-        WriteToFileAsync(slot.ToString(), jsonData);
-        
-        return true;
+        bool saved = WriteToFile(slot.ToString(), jsonData);
+        if (saved) entityData.isDirty = false;
+        return saved;
     }
 
     // Đổi thành bool để tương thích với GameManager dòng 54
@@ -73,10 +72,15 @@ public class SaveManager : MonoBehaviour
         string jsonData = LoadGame(slot.ToString());
         if (!string.IsNullOrEmpty(jsonData))
         {
-            // Đổ data từ chuỗi JSON trực tiếp đè lên ScriptableObject hiện tại
-            JsonUtility.FromJsonOverwrite(jsonData, entityData);
-            Debug.Log($"[SaveManager] Đã load thành công dữ liệu vào {entityData.name} từ {slot}");
-            return true;
+            try
+            {
+                if (!jsonData.TrimStart().StartsWith("{") || !jsonData.Contains("\"currentLevel\"")) return false;
+                entityData.balanceVersion = 0;
+                entityData.difficulty = 0;
+                JsonUtility.FromJsonOverwrite(jsonData, entityData);
+                return entityData.currentLevel >= 1;
+            }
+            catch (Exception e) { Debug.LogError("Không đọc được bản lưu: " + e.Message); return false; }
         }
         else
         {
@@ -86,46 +90,60 @@ public class SaveManager : MonoBehaviour
     }
 
     // =========================================================
-    // LÕI XỬ LÝ I/O BẤT ĐỒNG BỘ VÀ AN TOÀN (ATOMIC SAVE)
+    // LƯU ĐỒNG BỘ VÀ THAY TỆP QUA TỆP TẠM
     // =========================================================
 
-    public void SaveGame(string slotName, string jsonData)
+    public bool TryGetLatestSlot(out SaveSlot slot)
     {
-        WriteToFileAsync(slotName, jsonData);
+        slot = SaveSlot.AutoSave;
+        DateTime latest = DateTime.MinValue;
+        bool found = false;
+        foreach (SaveSlot candidate in Enum.GetValues(typeof(SaveSlot)))
+        {
+            string path = Path.Combine(saveDirectory, candidate + SAVE_EXTENSION);
+            if (!File.Exists(path)) continue;
+            DateTime date = File.GetLastWriteTimeUtc(path);
+            if (!found || date > latest) { latest = date; slot = candidate; found = true; }
+        }
+        return found;
     }
 
-    private async void WriteToFileAsync(string slotName, string data)
+    public bool DeleteAllSaves()
     {
-        string finalPath = saveDirectory + slotName + SAVE_EXTENSION;
-        string tempPath = saveDirectory + slotName + TEMP_EXTENSION;
-
         try
         {
-            // Tách luồng I/O ra khỏi Game Loop chính để tránh giật lag
-            await Task.Run(() =>
+            foreach (SaveSlot slot in Enum.GetValues(typeof(SaveSlot)))
             {
-                // Bước 1: Ghi toàn bộ data vào file .tmp
-                File.WriteAllText(tempPath, data);
-
-                // Bước 2: Swap file an toàn (Atomic Move)
-                if (File.Exists(finalPath))
-                {
-                    File.Delete(finalPath);
-                }
-                File.Move(tempPath, finalPath);
-            });
-
-            Debug.Log($"[SaveManager] Đã ghi đè an toàn thành công vào slot: {slotName}");
+                DeleteSave(slot);
+                string temp = Path.Combine(saveDirectory, slot + TEMP_EXTENSION);
+                if (File.Exists(temp)) File.Delete(temp);
+            }
+            return true;
         }
-        catch (Exception e)
+        catch (Exception e) { Debug.LogError("Không xóa được bản lưu: " + e.Message); return false; }
+    }
+
+    public void SaveGame(string slotName, string jsonData) { WriteToFile(slotName, jsonData); }
+
+    // Small JSON saves are serialized on the main thread. No queued old write
+    // can recreate a deleted save after the player confirms New Game.
+    private bool WriteToFile(string slotName, string data)
+    {
+        string finalPath = Path.Combine(saveDirectory, slotName + SAVE_EXTENSION);
+        string tempPath = Path.Combine(saveDirectory, slotName + TEMP_EXTENSION);
+        try
         {
-            Debug.LogError($"[SaveManager] Lỗi ghi file save (File gốc vẫn an toàn): {e.Message}");
+            File.WriteAllText(tempPath, data);
+            if (File.Exists(finalPath)) File.Replace(tempPath, finalPath, null);
+            else File.Move(tempPath, finalPath);
+            return true;
         }
+        catch (Exception e) { Debug.LogError("Không ghi được bản lưu: " + e.Message); return false; }
     }
 
     public string LoadGame(string slotName)
     {
-        string finalPath = saveDirectory + slotName + SAVE_EXTENSION;
+        string finalPath = Path.Combine(saveDirectory, slotName + SAVE_EXTENSION);
 
         if (!File.Exists(finalPath))
         {

@@ -18,5 +18,5 @@ public class CustomInteractable : MonoBehaviour
         if (UIManager.Instance != null) UIManager.Instance.UnregisterInteractable(this);
     }
 
-    public RectTransform GetRect() => rectTransform;
+    public RectTransform GetRect() { if (rectTransform == null) rectTransform = GetComponent<RectTransform>(); return rectTransform; }
 }
