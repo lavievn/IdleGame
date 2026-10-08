@@ -63,6 +63,10 @@ public class UIManager : MonoBehaviour
 
     void Update()
     {
+#if UNITY_STANDALONE_WIN && !UNITY_EDITOR
+        // TransparentWindow owns native clicks, including while Unity has no focus.
+        if (transparentWindow != null) return;
+#endif
         if (UnityEngine.InputSystem.Mouse.current != null && UnityEngine.InputSystem.Mouse.current.leftButton.wasPressedThisFrame)
         {
             Vector2 point;
@@ -146,10 +150,15 @@ public class UIManager : MonoBehaviour
             }
         }
         // Scene lists can omit this trigger. Discover and register it explicitly.
-        foreach (var item in Object.FindObjectsByType<CustomInteractable>(FindObjectsInactive.Include, FindObjectsSortMode.None))
+        foreach (var rect in Object.FindObjectsByType<RectTransform>(FindObjectsInactive.Include, FindObjectsSortMode.None))
         {
-            if (item.gameObject.name != "MenuArea") continue;
-            var rect = item.GetRect();
+            if (rect.gameObject.name != "MenuArea") continue;
+            // The actual scene uses a uGUI Button here, not CustomInteractable.
+            // Use one dispatch path so EventSystem cannot toggle it a second time.
+            var button = rect.GetComponent<Button>();
+            if (button != null) button.enabled = false;
+            var item = rect.GetComponent<CustomInteractable>();
+            if (item == null) item = rect.gameObject.AddComponent<CustomInteractable>();
             rect.anchorMin = rect.anchorMax = new Vector2(1f,0f);
             rect.pivot = new Vector2(1f,0f);
             rect.anchoredPosition = new Vector2(-16f,110f);

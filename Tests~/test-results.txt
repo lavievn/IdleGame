@@ -1,0 +1,88 @@
+PASS clamp approach in both directions, including long frame
+PASS equal melee range at 0.2/0.5/1/2 Canvas scale
+PASS camera pans all actors and ground equally
+PASS passive offscreen monster only follows world pan
+PASS ranged hero stops while melee monster keeps approaching
+PASS another attacker cannot halve approaching monster speed
+PASS melee hero approaches a stationary ranged monster
+PASS target remains stable until death
+PASS hidden hero freezes exploration; respawn recovers
+PASS hero death stops AI and retry clears dead state
+PASS no crossing at low frame rate
+PASS zone camera holds speed across 30/60/144 FPS
+PASS wrapping waits for full decoration to exit and preserves overshoot
+PASS AoE cannot hit off-range monsters
+PASS leaving range cancels windup before damage
+PASS changing attack mode restarts windup
+PASS clear battle cancels timers and pooled respawn resets state
+PASS melee aligns Y, ranged stays in own lane
+PASS pending wave is unique and cancelled on manual load
+PASS lethal monster hit stops hero and clears battle
+PASS aspect resize recalculates home and range without Start cache
+PASS equal speed preserves off-centre position after combat
+PASS fast hero drifts left then pushes camera to its own speed
+PASS slow hero drifts right then camera slows to hero speed
+PASS standing combat hero drifts with world then pins right edge
+PASS dead body stays camera subject until right edge then stops
+PASS speed changes while anchored do not leave zone
+PASS fast left anchor releases to base speed during combat then stops at right
+PASS camera is independent of monster count and attack mode
+PASS zone camera does not overshoot with a long frame
+PASS zone constraints remain correct across Canvas scales
+PASS resizing and reversed zone configuration keep hero in view
+PASS paused time causes no camera drift
+PASS new default zone insets each edge by quarter of original width
+PASS running background tracks actual hero movement independently of camera
+PASS stationary combat background and hero share camera displacement
+PASS wave delay inverse speed has hard quarter floor
+PASS pending wave reacts to speed changes and pauses at zero
+PASS physical shot damages one target only at impact
+PASS magic fans curved fireballs to in-range targets only
+PASS flight duration remains below attack interval even at extreme attack speed
+PASS projectile and particles pan with camera rather than independent scenery
+PASS cleared shots cannot damage pooled monster reused in new wave
+PASS death or hidden target cancels shots without retargeting
+PASS monster ranged attack also waits for projectile arrival
+PASS lethal projectile clears battle safely during projectile iteration
+PASS procedural UI mesh has valid triangles and expires particles
+PASS right menu trigger and scale panel get positive on-screen layout and desktop hitboxes
+PASS scale child gets click before menu container irrespective of registration order
+PASS native clicks fire once per press and dragging preserves grab offset
+PASS native client coordinates match Unity game pixels after DPI or resolution scaling
+PASS terrain visual clone grows 1.2 while logical ground and hero stats stay unchanged
+PASS terrain loop covers complete viewport through long scroll and resize
+PASS all seven grass placeholders receive sprites and separate random positions
+PASS difficulty changes scrolling terrain tint while fixed layer remains grey
+PASS continue asks before loading, cancel preserves save, confirmation loads latest
+PASS new game deletes all slots only after confirmation and resets hero
+PASS missing or corrupt save never starts a phantom continue
+PASS hard difficulty exactly doubles monster damage and triples kill EXP
+PASS map labels and click bindings select normal and hard
+PASS real save IO replaces existing file and clears legacy difficulty
+PASS runtime menu builds two buttons and blocks empty continue
+PASS exponential EXP increases and preserves excess across multiple levels
+PASS hero growth and speed remain bounded through level 999
+PASS legacy save migration removes exponential speed without resetting progress
+PASS level-up kill heals only 5 to 10 HP and never fills new maximum
+PASS ordinary kill healing is capped and there is no idle regeneration
+PASS monster HP and ATK scale at spawn and mode timing has correct order
+SIMULATION: 30 FPS, width 1000, initial HP full, 1..3 monsters per wave, max 120 simulated seconds, 20 seeds per row.
+SIM level=1 mode=Melee deaths=20/20 mean_observed_seconds=52.9 mean_spawned=6.0
+SIM level=1 mode=RangedPhysical deaths=19/20 mean_observed_seconds=83.2 mean_spawned=14.5
+SIM level=1 mode=RangedMagic deaths=20/20 mean_observed_seconds=74.4 mean_spawned=12.5
+SIM level=10 mode=Melee deaths=20/20 mean_observed_seconds=39.7 mean_spawned=5.8
+SIM level=10 mode=RangedPhysical deaths=19/20 mean_observed_seconds=87.6 mean_spawned=18.9
+SIM level=10 mode=RangedMagic deaths=20/20 mean_observed_seconds=70.9 mean_spawned=14.6
+SIM level=20 mode=Melee deaths=20/20 mean_observed_seconds=35.5 mean_spawned=5.9
+SIM level=20 mode=RangedPhysical deaths=20/20 mean_observed_seconds=74.3 mean_spawned=18.2
+SIM level=20 mode=RangedMagic deaths=20/20 mean_observed_seconds=59.6 mean_spawned=13.5
+SIM level=50 mode=Melee deaths=20/20 mean_observed_seconds=26.8 mean_spawned=4.8
+SIM level=50 mode=RangedPhysical deaths=20/20 mean_observed_seconds=71.1 mean_spawned=19.2
+SIM level=50 mode=RangedMagic deaths=20/20 mean_observed_seconds=60.6 mean_spawned=15.6
+SIM level=100 mode=Melee deaths=20/20 mean_observed_seconds=25.3 mean_spawned=5.0
+SIM level=100 mode=RangedPhysical deaths=20/20 mean_observed_seconds=60.7 mean_spawned=16.8
+SIM level=100 mode=RangedMagic deaths=20/20 mean_observed_seconds=55.4 mean_spawned=15.1
+SIM level=999 mode=Melee deaths=20/20 mean_observed_seconds=21.7 mean_spawned=4.5
+SIM level=999 mode=RangedPhysical deaths=20/20 mean_observed_seconds=59.8 mean_spawned=16.3
+SIM level=999 mode=RangedMagic deaths=20/20 mean_observed_seconds=50.5 mean_spawned=15.1
+PASS: 68 regression scenarios (Unity test doubles; not Play Mode).

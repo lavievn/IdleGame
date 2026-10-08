@@ -9,20 +9,14 @@ Tài liệu này là điểm nạp bối cảnh cho các phiên phát triển ti
 các bản tóm tắt cũ làm bằng chứng rằng một tính năng đã hoạt động trên bản build.
 Mỗi lần làm việc phải kiểm tra nhánh, commit, scene và bản lưu đang dùng.
 
-Có BA trạng thái mã cần phân biệt:
-- GitHub main tại thời điểm đối chiếu: b75c83ac9fcabc6d6195458c2aae9cbf4aa7f7f0,
-  thông điệp "0.0.4.4 before balancing and UI fix". Đã đọc lại EntityDataSO.cs,
-  UIManager.cs và tài liệu gốc ở commit này. Các sửa cân bằng/UI/nền 0.0.4.5+
-  dưới đây CHƯA nằm trong nền mã này tại lúc kiểm tra.
-- Bộ mã tích lũy đã chuẩn bị và gửi người dùng: 0.0.4.51, tới commit local
-  5915106 (sửa menu desktop), trước đó 2bf5f16 (nền). Các mục ghi "bản vá hiện
-  tại" trong tài liệu chỉ bộ mã này, không tự động đồng nghĩa với GitHub main.
-- Dự án Unity trên máy người dùng: đã nhận phản hồi Play Mode khá ổn ở 0.0.4.5;
-  scene/Inspector có thể đã chỉnh riêng. Chưa nhận kết quả kiểm thử terrain
-  và bản sửa menu desktop cuối cùng. Không biết mọi giá trị local hiện tại.
-
-Lần cập nhật tài liệu này chỉ đổi/cập nhật tài liệu trên GitHub; không tự động
-đưa các script 0.0.4.51 lên main, không đổi phiên bản gameplay.
+Nền mã mới nhất người dùng đã push: 0.0.4.51f, main tại commit
+b33bb1d8d3dedf7ad887cec7ca69b3f660e003ae. Đã đối chiếu trực tiếp scene,
+TransparentWindow, UIManager và PlayerSettings. Main đã chứa các sửa gameplay,
+cân bằng, UI và terrain trước đó; mô tả main 0.0.4.4 trong bàn giao cũ đã hết hạn.
+Người dùng xác nhận các logic khác tạm chưa thấy lỗi, nhưng bản desktop vẫn
+không mở được System Menu, cửa sổ phủ màn hình và kéo bị dính xuống đáy.
+Bản vá Windows mới giữ phiên bản 0.0.4.51f, chuẩn bị trên nhánh sửa riêng;
+chỉ được coi là nghiệm thu sau khi người dùng build và thử Windows thực tế.
 
 Nhãn trạng thái dùng xuyên suốt:
 [ĐỊNH HƯỚNG] ý định thiết kế, chưa phải chức năng chạy được.
@@ -353,21 +347,33 @@ Save hiện tại:
 - Manual Save/Load và hỏi ghi đè có SaveMenuUI; rà lại Inspector và modal.
 - TryGetLatestSlot dựa vào mtime file, không phải thời gian chơi hoặc cloud sync.
 
-[CÓ MÃ, CẦN KIỂM THỬ WINDOWS — bản sửa menu mới nhất 0.0.4.51]
-Người dùng báo bấm nút menu đỏ ở desktop không hiện ba nút scale.
-Đối chiếu scene repo: MenuArea thiếu trong clickableUI; SystemMenu có sizeDelta
-âm (-200.3,-150); con scale offset âm. Các nguyên nhân này có bằng chứng từ
-scene, nhưng chưa kiểm tra trực tiếp executable máy người dùng.
-Bộ vá 5915106:
-- Tự đăng ký MenuArea/các nút vào hitbox, bổ sung hitbox động.
-- Nút đỏ neo phải dưới; kích thước 180x96, vị trí (-16,110).
-- Bảng neo phải dưới; 640x150, vị trí (-16,265).
-- Hàng trên 200/500/1000, hàng dưới giữ Exit/Save/Load; sửa offset nhãn.
-- Ưu tiên click nút con trước bảng cha; mở menu đưa bảng lên trước.
-- Hover và click dùng cùng phép đổi tọa độ Windows client -> Screen Unity.
-- Chọn scale đóng bảng; rộng 200/500/1000, cao làm tròn theo 9/16.
-- ReapplyTransparencyDelay 0.2 giây giữ cơ chế áp lại DWM sau resize.
-Cần chép Assets rồi BUILD LẠI WINDOWS; script mới không sửa executable cũ.
+[CÓ MÃ, CẦN KIỂM THỬ WINDOWS — 0.0.4.51f]
+Bản sửa cũ 5915106 chưa giải quyết được lỗi theo phản hồi người dùng.
+Nguyên nhân đối chiếu mới: MenuArea trong MainGame.unity là Unity UI Button,
+không phải CustomInteractable. Hàm cấu hình cũ chỉ tìm CustomInteractable nên
+bỏ sót chính nút đỏ; clickableUI trong scene cũng thiếu vùng này.
+PlayerSettings mặc định 1920x1080 dù fullscreenMode=Windowed; startup cũ
+không ép độ phân giải nên cửa sổ có thể phủ màn hình và giữ lựa chọn Unity cũ.
+Kéo cũ dùng WM_NCLBUTTONDOWN/HTCAPTION với lParam=0; chưa chứng minh đây là
+nguyên nhân duy nhất dính đáy, nhưng đường kéo mới loại bỏ cơ chế caption/Snap.
+Bản vá mới:
+- Tìm MenuArea theo RectTransform, bổ sung CustomInteractable nếu thiếu,
+  tắt Button cũ và đăng ký hitbox/click. Chỉ một đường gọi ToggleSystemMenu.
+- Windows dùng GetAsyncKeyState high bit + cạnh nhấn để nhận click kể cả khi
+  Unity không focus; UIManager không phát click lần hai trong Windows player.
+- Giữ bố cục bảng scale/Exit/Save/Load, ưu tiên nút con trước bảng cha.
+- Startup ép Windowed 1000x563, đặt giữa màn hình chính, áp lại transparent,
+  topmost sau đổi độ phân giải; tắt fullscreen switch trong PlayerSettings.
+- Kéo bằng chênh lệch tọa độ chuột desktop, giữ offset điểm nắm, cho phép
+  tọa độ âm; không tự snap/dock vào đáy. Giữ vị trí trước khi đổi scale.
+- Scale rộng 200/500/1000, cao theo 9/16; áp lại DWM sau 0.2 giây.
+68 regression logic đạt, gồm fixture Button-only đúng scene, một click mỗi
+lần nhấn và kéo khỏi đáy/tọa độ âm. Nhánh Windows biên dịch riêng bằng Unity
+stubs; chưa chạy native WinAPI hoặc Unity executable tại môi trường sửa.
+Cần BUILD LẠI WINDOWS. Thử mở menu khi game không focus, chọn từng scale,
+mở lại sau resize, kéo ground lên/xuống/trái/phải, thả ngoài cửa sổ, rồi thử
+DPI 100/125/150% và màn hình phụ nếu có. Không ghi là đã fix hoàn toàn trước
+khi nhận kết quả này. Các script camera/hero/monster/cân bằng không thay đổi.
 
 Khoảng trống overlay chưa được ghi là hoàn thiện:
 - Bản TransparentWindow hiện không có thuật toán clamp Virtual Screen như
@@ -472,7 +478,7 @@ Camera vùng đỏ/AI riêng           Có mã; user thử camera tốt      Ki�
 Cân bằng EXP/HP/ATK/tốc đánh       Có mã; mô phỏng, Play Mode      Chốt nhịp chơi sau thêm hệ sâu
 Tiếp tục/Chơi mới/Khó             Có mã; user báo Play Mode ổn    Windows và save hỏng/gián đoạn
 Ground 1.2/Grass1 loop/trang trí   Có mã; hình học đạt             Thử texture/render/resize
-Nút menu đỏ + scale desktop       Đã sửa 5915106                  Chờ kết quả Windows thực tế
+Nút menu đỏ + scale desktop       Vá lại 0.0.4.51f                Chờ build Windows xác nhận
 Manual Save/Load/Exit popup       Có mã, nối scene chưa đủ        Rà null/ref/layout/modal
 Phân bổ điểm                     Có API và điểm trong dữ liệu    Chưa có UI dùng được xác nhận
 Linh căn/tộc                      Enum/RNG nền đơn giản           Luật xác suất/buff/chủng tộc
@@ -504,7 +510,7 @@ P3. Kho/rơi đồ/đội hình/boss, rồi đặc tả Luân Hồi/ngoại tuy�
 11. KIỂM THỬ ĐÃ CÓ VÀ NHỮNG ĐIỀU KHÔNG ĐƯỢC SUY RA
 
 Tests~ dùng Unity test doubles, không phải Unity engine thực.
-Bộ gần nhất: 67 tình huống regression đạt, kết quả Tests~/test-results.txt.
+Bộ gần nhất: 68 tình huống regression đạt, kết quả Tests~/test-results.txt.
 Bao gồm AI/tầm, frame dài, các Canvas scale, camera nhanh/chậm/đứng/chết,
 nhịp đợt, đạn tới đích/hủy/pool, cân bằng/chuyển save, lựa chọn khởi đầu/độ
 khó, phủ nền và menu desktop. Nhánh UNITY_STANDALONE_WIN biên dịch được
@@ -595,12 +601,13 @@ Các mô tả đã bị thay thế:
 
 14. ĐIỂM BÀN GIAO HIỆN TẠI
 
-Phiên bản bộ vá gần nhất:0.0.4.51, giữ nguyên.
-Việc gần nhất: sửa nút menu đỏ/ba nút scale trên Windows; đã giao ZIP.
-Gói: IdleGame_0.0.4.51_DesktopMenuFix.zip (tích lũy, có hướng dẫn/rollback).
-Kết quả:67 regression logic đạt; chưa chạy Unity/Windows ở môi trường sửa mã.
-Phản hồi cần tiếp theo: người dùng build mới, thử nút đỏ và200/500/1000.
-Chưa có nhiệm vụ đang triển khai cho boss/đội/ngoại tuyến/đồ trong lượt này.
+Phiên bản hiện tại: 0.0.4.51f, giữ nguyên; nền GitHub b33bb1d8.
+Việc gần nhất: vá lại MenuArea Button, input native, startup window và kéo.
+Gói: IdleGame_0.0.4.51f_WindowsOverlayFix.zip; có mã nền mới nhất và hướng dẫn.
+Kết quả:68 regression logic đạt; Windows branch biên dịch bằng stubs.
+Chưa chạy Unity/WinAPI thực tế ở môi trường sửa; người dùng cần build mới,
+thử nút đỏ,200/500/1000 và kéo cửa sổ. Các logic khác tạm ổn theo phản hồi.
+Chưa triển khai boss/đội/ngoại tuyến/đồ trong lượt này.
 
 Khi mở phiên tiếp theo:
 1. Đọc file này; xác định local đã nhập gói nào và main đã thay đổi chưa.
