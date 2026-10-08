@@ -17,7 +17,30 @@ public class TransparentWindow : MonoBehaviour
     [Tooltip("Kéo vùng nền (Ground) dùng để kéo thả cửa sổ vào đây. Ưu tiên thấp nhất.")]
     public RectTransform[] draggableUI; 
 
+    [Header("Windows startup window")]
+    public int startupWidth = 1000;
+    public int startupHeight = 563;
     private bool isCurrentlyClickable = false;
+    private bool previousButtonDown;
+    private bool dragging;
+    private POINT dragCursor;
+    private POINT dragWindow;
+    private POINT resizePosition;
+    private bool hasResizePosition;
+
+    // Edge detection must use the current high bit, not GetAsyncKeyState's
+    // unreliable "pressed since last call" bit.
+    public static bool ConsumePress(bool down, ref bool previous)
+    {
+        bool pressed = down && !previous;
+        previous = down;
+        return pressed;
+    }
+
+    public static Vector2 DragPosition(Vector2 window, Vector2 cursorAtPress, Vector2 cursorNow)
+    {
+        return window + cursorNow - cursorAtPress;
+    }
 
     // --- IMPORT WinAPI ---
     [DllImport("user32.dll")]
@@ -33,17 +56,17 @@ public class TransparentWindow : MonoBehaviour
     [DllImport("user32.dll")]
     private static extern bool ScreenToClient(IntPtr hWnd, ref POINT lpPoint);
     [DllImport("user32.dll")]
-    private static extern bool ReleaseCapture();
+    private static extern short GetAsyncKeyState(int key);
     [DllImport("user32.dll")]
-    private static extern int SendMessage(IntPtr hWnd, int Msg, int wParam, int lParam);
+    private static extern int GetSystemMetrics(int index);
+    [DllImport("user32.dll")]
+    private static extern bool GetWindowRect(IntPtr hWnd, out CLIENTRECT rect);
 
     [DllImport("user32.dll")]
     private static extern bool GetClientRect(IntPtr hWnd, out CLIENTRECT rect);
     [StructLayout(LayoutKind.Sequential)]
     private struct CLIENTRECT { public int left, top, right, bottom; }
 
-    const int WM_NCLBUTTONDOWN = 0xA1;
-    const int HTCAPTION = 0x2;
 
     [StructLayout(LayoutKind.Sequential)]
     public struct POINT { public int X; public int Y; }
@@ -62,46 +85,63 @@ public class TransparentWindow : MonoBehaviour
     void Start()
     {
 #if UNITY_STANDALONE_WIN && !UNITY_EDITOR
-        hWnd = GetActiveWindow();
-        SetWindowLong(hWnd, GWL_STYLE, WS_POPUP | WS_VISIBLE);
-        
-        MARGINS margins = new MARGINS { cxLeftWidth = -1 };
-        DwmExtendFrameIntoClientArea(hWnd, ref margins);
-        
-        SetWindowLong(hWnd, GWL_EXSTYLE, WS_EX_LAYERED | WS_EX_TRANSPARENT);
-        SetWindowPos(hWnd, HWND_TOPMOST, 0, 0, 0, 0, 0x0001 | 0x0002);
+        hWnd = System.Diagnostics.Process.GetCurrentProcess().MainWindowHandle;
+        if (hWnd == IntPtr.Zero) hWnd = GetActiveWindow();
+        previousButtonDown = NativeButtonDown();
+        // Override saved Unity fullscreen/resolution preferences as well as
+        // PlayerSettings. Transparency is reapplied after the resolution change.
+        Screen.SetResolution(startupWidth, startupHeight, FullScreenMode.Windowed);
+        StartCoroutine(ReapplyTransparencyDelay(startupWidth, startupHeight, true));
 #endif
     }
 
     void Update()
     {
 #if UNITY_STANDALONE_WIN && !UNITY_EDITOR
-        if (Mouse.current == null) return;
+        if (hWnd == IntPtr.Zero) return;
+        bool down = NativeButtonDown();
+        bool pressed = ConsumePress(down, ref previousButtonDown);
+        bool overClickable, overDraggable;
+        CheckHitboxUI(out overClickable, out overDraggable);
+        if (!down) dragging = false;
+        bool wantsClicks = overClickable || overDraggable || dragging;
+        if (wantsClicks != isCurrentlyClickable) ToggleClickThrough(!wantsClicks);
 
-        bool isOverClickable = false;
-        bool isOverDraggable = false;
-        
-        CheckHitboxUI(out isOverClickable, out isOverDraggable);
-
-        bool isHoveringOverAnyUI = isOverClickable || isOverDraggable;
-
-        // Bật/tắt xuyên thấu
-        if (isHoveringOverAnyUI && !isCurrentlyClickable)
+        if (pressed && overClickable)
         {
-            ToggleClickThrough(false); 
+            Vector2 point;
+            if (UIManager.Instance != null && TryGetPointerPosition(out point))
+                UIManager.Instance.HandleMouseClick(point);
         }
-        else if (!isHoveringOverAnyUI && isCurrentlyClickable)
+        else if (pressed && overDraggable)
         {
-            ToggleClickThrough(true);  
+            CLIENTRECT rect;
+            if (GetCursorPos(out dragCursor) && GetWindowRect(hWnd, out rect))
+            {
+                dragWindow = new POINT { X = rect.left, Y = rect.top };
+                dragging = true;
+            }
         }
-
-        // Kéo thả (chỉ chạy khi chắc chắn không click đè lên Modal/Clickable)
-        if (isOverDraggable && Mouse.current.leftButton.wasPressedThisFrame)
+        if (dragging && down)
         {
-            ReleaseCapture();
-            SendMessage(hWnd, WM_NCLBUTTONDOWN, HTCAPTION, 0);
+            POINT cursor;
+            if (GetCursorPos(out cursor))
+            {
+                Vector2 position = DragPosition(new Vector2(dragWindow.X, dragWindow.Y),
+                    new Vector2(dragCursor.X, dragCursor.Y), new Vector2(cursor.X, cursor.Y));
+                // Move directly, preserving the grab offset. No caption drag,
+                // Aero Snap, taskbar docking, or forced bottom coordinate.
+                SetWindowPos(hWnd, IntPtr.Zero, Mathf.RoundToInt(position.x), Mathf.RoundToInt(position.y),
+                    0, 0, SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE);
+            }
         }
 #endif
+    }
+
+    private static bool NativeButtonDown()
+    {
+        // Respect Windows' swapped primary mouse button setting.
+        return (GetAsyncKeyState(GetSystemMetrics(23) != 0 ? 0x02 : 0x01) & 0x8000) != 0;
     }
 
     void CheckHitboxUI(out bool overClickable, out bool overDraggable)
@@ -192,6 +232,7 @@ public class TransparentWindow : MonoBehaviour
     const int SWP_NOSIZE = 0x0001;
     const int SWP_NOMOVE = 0x0002;
     const int SWP_NOZORDER = 0x0004;
+    const int SWP_NOACTIVATE = 0x0010;
     const int SWP_FRAMECHANGED = 0x0020; 
     const int SWP_SHOWWINDOW = 0x0040;
 
@@ -203,7 +244,7 @@ public class TransparentWindow : MonoBehaviour
         else
             SetWindowLong(hWnd, GWL_EXSTYLE, WS_EX_LAYERED);
 
-        SetWindowPos(hWnd, IntPtr.Zero, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_FRAMECHANGED);
+        SetWindowPos(hWnd, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE | SWP_FRAMECHANGED);
         
         MARGINS margins = new MARGINS { cxLeftWidth = -1 };
         DwmExtendFrameIntoClientArea(hWnd, ref margins);
@@ -215,6 +256,10 @@ public class TransparentWindow : MonoBehaviour
 #if UNITY_STANDALONE_WIN && !UNITY_EDITOR
         if (hWnd != IntPtr.Zero)
         {
+            CLIENTRECT rect;
+            hasResizePosition = GetWindowRect(hWnd, out rect);
+            if (hasResizePosition) resizePosition = new POINT { X = rect.left, Y = rect.top };
+            dragging = false;
             StopAllCoroutines();
             Screen.SetResolution(width, height, FullScreenMode.Windowed);
             StartCoroutine(ReapplyTransparencyDelay(width, height));
@@ -222,19 +267,26 @@ public class TransparentWindow : MonoBehaviour
 #endif
     }
 
-    private IEnumerator ReapplyTransparencyDelay(int width, int height)
+    private IEnumerator ReapplyTransparencyDelay(int width, int height, bool center = false)
     {
-        yield return new WaitForSeconds(0.2f); 
+        yield return new WaitForSecondsRealtime(0.2f);
 
 #if UNITY_STANDALONE_WIN && !UNITY_EDITOR
+        // Unity can recreate its native window while changing fullscreen mode.
+        IntPtr current = System.Diagnostics.Process.GetCurrentProcess().MainWindowHandle;
+        if (current != IntPtr.Zero) hWnd = current;
+        if (hWnd == IntPtr.Zero) yield break;
         SetWindowLong(hWnd, GWL_STYLE, WS_POPUP | WS_VISIBLE);
-        
+
         if (!isCurrentlyClickable)
             SetWindowLong(hWnd, GWL_EXSTYLE, WS_EX_LAYERED | WS_EX_TRANSPARENT);
         else
             SetWindowLong(hWnd, GWL_EXSTYLE, WS_EX_LAYERED);
 
-        SetWindowPos(hWnd, IntPtr.Zero, 0, 0, width, height, SWP_NOMOVE | SWP_NOZORDER | SWP_SHOWWINDOW | SWP_FRAMECHANGED);
+        int x = center ? Math.Max(0, (GetSystemMetrics(0) - width) / 2) : resizePosition.X;
+        int y = center ? Math.Max(0, (GetSystemMetrics(1) - height) / 2) : resizePosition.Y;
+        SetWindowPos(hWnd, HWND_TOPMOST, x, y, width, height,
+            (center || hasResizePosition ? 0 : SWP_NOMOVE) | SWP_NOACTIVATE | SWP_SHOWWINDOW | SWP_FRAMECHANGED);
         
         MARGINS margins = new MARGINS { cxLeftWidth = -1 };
         DwmExtendFrameIntoClientArea(hWnd, ref margins);
