@@ -19,29 +19,48 @@ bị dính xuống đáy. Sau bản vá Windows 0.0.4.51f, ngày 09/10/2026 ngư
 xác nhận đã thử: System Menu hoạt động, scale cửa sổ đúng logic và cho phép
 merge PR #1 vào main. Chưa có xác nhận riêng về kéo cửa sổ, DPI/màn hình phụ.
 
-CẬP NHẬT ĐANG PHÁT TRIỂN: 0.0.4.54.d_prefinal, nền toàn bộ .54c (GitHub a040937).
-Nhánh feature/0.0.4.54.d_prefinal; chưa merge main, chưa kết thúc tiến trình 0.0.4.
-Hiện trạng ưu tiên: README.MD và Docs/Release_0.0.4.54.d_prefinal.md.
-Người dùng báo resize dịch vị trí/tầm/điểm rơi, quái bị bỏ lại khiến wave kẹt.
-[CÓ MÃ] Ground cố định chiều rộng logic (MainGame 1920), Canvas chiến đấu riêng;
-resize chỉ đổi scaleFactor, giữ tọa độ hero/quái/đạn, tầm, mục tiêu và trang trí.
-[CÓ MÃ] Quái ra hẳn mép phải: hủy wave/đạn cũ, đưa hero về HomeX, chờ rồi replay
-wave cùng số quái, random lại quái; không cộng tiến trình/EXP hoặc hồi HP giả.
-Giữ EXP từ quái đã hạ, HP/cấp/điểm và map; hủy retry khi chết/load/reset.
-[CÓ MÃ] Chết quay về map đầu cụm 5 map, wave 1; giữ nhân vật/chủ đề, random lại
-map trong chủ đề đó. Autosave ghi checkpoint ngay khi chết, Retry đầy HP.
-[CÓ MÃ] mapVisits lưu riêng tổng lượt vào map, gồm quay về sau chết; damage quái
-không giảm do rewind mapNumber. Save cũ chuyển từ số map, cứu wave không cộng lượt.
-Giữ UI theo điểm ảnh/DEVB/pause, linh căn và ranged từ .54c. Xem ghi chú .54c
-trong lịch sử cuối file; không nhầm đó là phiên bản mới nhất.
-[ĐÃ THỬ]139 tình huống logic với API Unity mô phỏng; 720 mô phỏng mặc định giữ
-kết quả .54c, biên dịch nhánh Windows với API mô phỏng. Chưa chạy Unity/WinAPI.
-[CẦN KIỂM THỬ] Resize khi có đạn/vận công, wave replay, chết/checkpoint/save,
-render Ground/HUD, taskbar/DPI/input. Gói là source project, chưa có EXE mới.
-README.MD thay tài liệu overlay 0.0.4.51f. Theo yêu cầu mới, tổng tiến độ được
-ước lượng có trọng số: hình ảnh 60–70% khối lượng, hoàn thành 10–15% (user);
-phần còn lại hoàn thành 35–45% (ước lượng), tổng 17,5–27%, trung tâm khoảng 22%.
-Không coi phần trăm này là nghiệm thu hoặc lịch phát hành.
+CẬP NHẬT ƯU TIÊN CAO NHẤT — 0.0.4.54g, trước khi người dùng gộp nhánh lên main
+Nhánh mã kiểm thử: feature/0.0.4.54g. README.MD là tài liệu trạng thái tổng quan
+mới nhất; xem Docs/Release_0.0.4.54g_ui.md cho thay đổi và checklist.
+Tất cả ghi chép .54d/.54e/.54f và .52 ở các mục lịch sử sau là mốc trước,
+KHÔNG ghi đè các thông số/chức năng hiện tại; luôn đọc lại commit tại thời điểm làm.
+
+[CÓ MÃ] 54d: Canvas/Ground logic ổn định khi resize; quái thoát biên phải replay
+wave dở, chết quay về map đầu cụm 5 map/5 wave, giữ cấp/EXP/checkpoint theo save.
+[CÓ MÃ] 54e: UI font theo preset, 3 kích thước ngang 600/800/1150, log sát thương
+rút gọn, 3 nút Kiếm/Cung/Phép, EXP trong chỉ số, lịch sử damage đầy đủ trong Info.
+[CÓ MÃ] 54f: ẩn HUD khi Start/Confirmation/Game Over, nhãn Menu đỏ; data originHealth
+là HP nền của từng nhân vật, KHÔNG mặc định cố định 400 trong thiết kế về sau.
+HP nền khi Cận×2, Cung×0.6, Phép×1. Cận +50..100 HP riêng/cấp, lưu vào save;
+Cận kill heal Random3..5*(1+0.05*(level-1)); Cung damage×0.7 và 150% tốc đánh
+Hero; Phép Hero chỉ vận sức khi có target, nổ AoE250 theo Ground. Đây là
+THÔNG SỐ KIỂM THỬ, không phải kết quả cân bằng tối ưu.
+[CÓ MÃ] 54g: bảng chỉ số debug đầy đủ ở bên phải dưới Chỉ số/DEVB/Tạm dừng,
+log damage và nút đổi thế ở cột trái; tên map lớn giữa cửa sổ 3s rồi thu nhỏ
+trong 0.85s. Chữ damage bật ra ngược nguồn gây sát thương và fade 1s.
+[CÓ MÃ — BỔ SUNG CUỐI 54g] Wave hiện tại/5, mapNumber và địa hình theo
+WorldNames.Terrain(mapTerrain) bên dưới nhãn map thu nhỏ, cập nhật mỗi wave.
+Hero_DMG_Text trước đây ở Ground độc lập, Monster_DMG_Text nằm trong HP fill;
+đã chỉnh neo trực tiếp vào rect đối tượng nhận sát thương. Quái gần/đứng
+đánh/không có target nay đều được bù khác biệt GroundPan-CameraPan thay vì
+bị trôi chậm theo camera khi Hero cận di chuyển tới. Không đổi balance .54f.
+[CHƯA NGHIỆM THU] Các thay đổi cuối .54g đã được chuẩn bị kiểm tra tĩnh và
+bổ sung bài kiểm tra hồi quy, chưa có kết quả chạy Unity Editor/Windows native.
+Phản hồi người dùng từ .54g trước sửa: wave/terrain thiếu trong tên map; chữ
+damage lệch thân Hero/quái; quái đánh xa dừng và trôi chậm so với Ground.
+Không tự xóa kết quả phản hồi này khỏi lịch sử trước khi user test bản sửa.
+[ĐIỂM GỘP] Tất cả chỉnh sửa, README.MD và Project_info_dev.txt triển khai trên
+feature/0.0.4.54g; CHƯA tự merge main. Sau khi user kiểm tra và merge,
+main trở thành mốc mới chỉ khi Git thực sự xác nhận. WINDOWS_OVERLAY_FIX_0.0.4.51f.txt
+được loại khỏi nhánh; phần hữu ích về nút MenuArea/uGUI Button, WinAPI input,
+kéo/thả, topmost/DPI đã được chuyển vào README.MD. Git history còn bản cũ.
+[ƯU TIÊN] Thử cụ thể Hero CẬN vs quái CUNG/PHÉP đứng bắn, tốc Ground khác camera;
+chữ damage ở thân, death/despawn, tên map wave/terrain, 600/800/1150;
+thử 5 wave và hết cụm 5 map, save/load/resize/pause, build Windows thật.
+
+Các ước lượng hoàn thành và kết quả mô phỏng của các bản cũ (139 regression,
+720 mô phỏng và tỉ trọng tổng khoảng 22%) chỉ là SỐ LIỆU MỐC CŨ; không khẳng
+định bộ test mới đã đạt, không cập nhật tiến độ bằng suy đoán.
 
 Nhãn trạng thái dùng xuyên suốt:
 [ĐỊNH HƯỚNG] ý định thiết kế, chưa phải chức năng chạy được.
@@ -569,7 +588,7 @@ P2. Chốt bảng linh căn và dữ liệu vũ khí/võ học tối thiểu, sa
 P3. Kho/rơi đồ/đội hình/boss, rồi đặc tả Luân Hồi/ngoại tuyến/Lò Bát Quái.
     Không tự triển khai cả danh sách nếu chưa có yêu cầu phạm vi cụ thể.
 
-11. KIỂM THỬ ĐÃ CÓ VÀ NHỮNG ĐIỀU KHÔNG ĐƯỢC SUY RA
+11. KIỂM THỬ LỊCH SỬ (TRƯỚC .54g) VÀ NHỮNG ĐIỀU KHÔNG ĐƯỢC SUY RA
 
 Tests~ dùng Unity test doubles, không phải Unity engine thực.
 Bộ gần nhất: 78 tình huống regression đạt, kết quả Tests~/test-results.txt.
@@ -664,7 +683,7 @@ Các mô tả đã bị thay thế:
 - Cập nhật tài liệu khi yêu cầu/hành vi/trạng thái đổi; ghi bằng chứng và
   giới hạn, không xóa ý tưởng chưa triển khai chỉ vì hiện tại chưa có code.
 
-14. ĐIỂM BÀN GIAO HIỆN TẠI
+14. ĐIỂM BÀN GIAO LỊCH SỬ (MỐC .52; ĐÃ BỊ MỤC ĐẦU VÀ MỤC 15 THAY THẾ)
 
 Phiên bản đang thử:0.0.4.52, nềnmainf6140282; feature/0.0.4.52.
 Tên ghép/tộc/linh căn/khắc hệ/log, menu phân trang và chu kỳ map đã có mã.
@@ -721,7 +740,7 @@ HP cơ bản 400 hiện tại chỉ là giá trị kiểm thử logic, KHÔNG ph
 Hướng phát triển: khởi tạo nhân vật ngẫu nhiên theo bối cảnh, cốt truyện, hoàn cảnh xuất hiện; linh căn, tâm pháp, võ học và trang bị đều có thể ảnh hưởng các chỉ số.
 Kiến trúc phải giữ nguyên dữ liệu nền của mỗi nhân vật, cho phép nhiều tầng chỉ số; không khóa hệ thống vào chỉ 3 kiểu tấn công hay gán cứng base HP 400.
 Các thay đổi sau này cần phân biệt base theo nhân vật, hệ số theo lối đánh, thưởng mỗi cấp, hiệu ứng và chỉ số trang bị. Khi thêm random vĩnh viễn nên lưu kết quả vào save, có kế hoạch tương thích save cũ.
-54e chỉ sửa UI. Dự kiến 54f (CHƯA TRIỂN KHAI): Cận chiến HP khởi điểm gấp 2 base thử nghiệm, hồi 3~5*(1+5%*(cấp-1)) khi hạ địch, random +50..100 HP mỗi cấp; cung tốc đánh 150%, sát thương 70%, HP 60%; phép chỉ vận sức khi có mục tiêu, bán kính AoE từ 150 tăng thành 250 theo tọa độ Ground. Thử sức mạnh 5 wave đầu và map khó sau 25 wave.
+54e CHỈ sửa UI tại mốc đó. Các cơ chế 54f dự định nêu trước đây ĐÃ ĐƯỢC MÃ HÓA: Cận HP nền×2, hồi 3..5*(1+5%*(cấp-1)) khi hạ địch, thưởng 50..100 HP riêng/cấp và lưu; cung tốc đánh 150%, sát thương 70%, HP nền×0.6; phép bắt đầu vận sức khi có target, bán kính AoE Hero 250. Bán kính trong mã trước 54f là 100 (không phải 150 như phỏng đoán cũ). Chưa kết luận cân bằng thực chiến.
 
 
 === THỬ NGHIỆM 0.0.4.54f / THIẾT KẾ MỞ RỘNG VỀ SAU ===
@@ -740,3 +759,51 @@ Tất cả các giá trị này chỉ phục vụ thử nghiệm logic; tiếp t
 - Khi deploy hero hoặc đổi map sau wave 5, tên map xuất hiện lớn giữa cửa sổ, giữ vị trí đó đúng 3 giây rồi trong 0.85 giây vừa thu nhỏ vừa di chuyển đến nhãn ở dưới log và nút hệ đánh phía trái; giữ nhãn nhỏ đến khi đổi map. Khi chưa chơi, Game Over hoặc mở popup thì ẩn nhãn.
 - Popup sát thương Hero và quái bật ra về phía ngược nguồn gây sát thương (tọa độ Ground-local), đi theo một đường cong nhỏ rồi mờ dần tuyến tính trong 1 giây; không ảnh hưởng logic đạn/HP/hitbox, đặt lại vị trí cho quái được tái sử dụng từ pool.
 - Bất cứ thay đổi về gameplay/balance tiếp theo phải làm ở một phiên bản riêng sau khi UI .54g được kiểm tra.
+
+15. ĐIỂM BÀN GIAO MỚI NHẤT — .54g HOÀN THIỆN VÒNG UI/DI CHUYỂN
+
+Nguồn đúng khi bắt đầu phiên: GitHub feature/0.0.4.54g, README.MD,
+Docs/Release_0.0.4.54g_ui.md, Assets/Script trong cùng commit, không dựa mô tả
+.cũ hay file vá overlay 0.0.4.51f. Kiểm tra local/nhánh đang checkout và status
+Git trước khi sửa; KHÔNG coi main đã merge khi user chưa chủ động merge.
+
+ĐÃ SỬA TRONG MÃ (chưa có Unity/Windows nghiệm thu):
+1) Map-title: chữ to giữa màn hình 3s rồi thu nhỏ 0.85s; nhãn dưới tên map
+hiện Bản đồ N, Wave hiện tại/5, Địa hình; RestoreProgress() làm mới nhãn
+khi progress cập nhật, không restart hoạt ảnh lúc chỉ đổi wave.
+2) Hero/Monster damage text: transform label được gắn lại dưới RectTransform
+nhân vật/quái khi Awake, không còn dùng vị trí thiết kế Ground hay child HP.
+Vị trí khởi đầu căn thân; ngược hướng nguồn sát thương theo Ground-local,
+quỹ đạo nhô lên và alpha 0 sau 1s. Giữ chú ý trường hợp monster chết/despawn
+ngay sau hit có thể khiến label bị thu hồi sớm vì text còn nằm trong prefab:
+cần thử, và khi làm VFX manager tương lai ưu tiên popup tự quản lý ngoài pool.
+3) Monster motion: trong EnvironmentManager.Update, backgroundPan-cameraPan
+là phần bù carrier trước khi LateUpdate pan camera. MonsterApproach tách bước
+tự di chuyển khỏi phần bù; không bỏ carrier khi đã đúng tầm. MonsterController
+cũng bù carrier nếu chưa có target. Quái đang bắn xa không được trôi chậm hơn
+lớp Ground dù Hero cận vẫn tiếp cận. Không cộng camera thêm lần thứ hai.
+4) Test mới: GroundRelativeMotionRegression đã đổi kỳ vọng quái đứng đánh theo
+CurrentBackgroundSpeed; Patch54hRegression có các trường hợp hero melee tiến
+quái ranged khi speed Ground khác camera, popup anchored, map terrain/wave.
+Kết quả đã viết vào mã nhưng chưa chạy với Unity thật/EXE. Không công bố "PASS"
+nếu không có stdout kết quả thực.
+
+ĐỊNH HƯỚNG TRIỂN KHAI KẾ TIẾP (chưa làm, cần chốt đặc tả trước):
+- Hệ item/equipment thành lớp chỉ số độc lập: HP gốc, HP cộng, tăng/giảm damage,
+phòng thủ/giảm sát thương, bonus damage theo linh căn của item/vũ khí, giới hạn
+stack/cộng nhân/ràng buộc lưu bản. Có thể random theo xuất thân/trang bị và
+tác động mạnh hơn +HP/cấp ở giai đoạn sau. Chưa có schema/item inventory đầy đủ.
+- Placeholder slot item: ô trang bị/kho đồ để kiểm tra dữ liệu/khả năng tương tác.
+- Placeholder skill rồi hệ thống skill auto theo thứ tự ưu tiên, xét đủ điều kiện
+mục tiêu/tầm/chi phí/cooldown/hiệu ứng; một nhân vật phối hợp skill gần và xa,
+không khóa toàn nhân vật vào một class cố định. Cần tách quyết định hành động
+khỏi mode hiện tại và khả năng ghép kỹ năng với trang bị/tâm pháp/linh căn.
+- Placeholder âm thanh: sự kiện phát theo đòn, skill, hit, UI, môi trường; sau
+này trộn âm, âm lượng và nguồn asset tùy chọn, tránh hardcode.
+- Dự kiến tool có UI để import/gắn sprite/animation/effect/âm thanh cho Hero,
+quái, vũ khí, skill. Cần manifest/schema asset, preview, kiểm tra reference,
+quy tắc version, định dạng Unity chuẩn. CHƯA có đặc tả/tool thực hiện.
+
+Nguyên tắc làm việc: một cụm lỗi/nhánh, ưu tiên sửa nguyên nhân, có bài hồi quy
+cho bug cụ thể và yêu cầu Play Mode/Windows test; cập nhật README và tài liệu
+phiên bản trước merge. Chờ kết quả user thử .54g mới làm item/skill/balance.

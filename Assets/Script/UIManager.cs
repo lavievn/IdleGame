@@ -445,7 +445,7 @@ public class UIManager : MonoBehaviour
 
     private RectTransform hudCanvas, pauseRect, devButton, statsButton, statsPanel;
     private RectTransform mapTitleRect;
-    private TMPro.TextMeshProUGUI mapTitleText;
+    private TMPro.TextMeshProUGUI mapTitleText, mapDebugText;
     private Coroutine mapTitleRoutine;
     private float mapTitleElapsed;
     private string mapTitleName;
@@ -465,7 +465,30 @@ public class UIManager : MonoBehaviour
         mapTitleText.enableAutoSizing = false;
         mapTitleText.enableWordWrapping = false;
         mapTitleText.overflowMode = TMPro.TextOverflowModes.Ellipsis;
+        // Secondary debug line follows the small title, not the large 3s intro.
+        mapDebugText = MakeLabel(mapTitleRect,"",Vector2.zero,new Vector2(345,38));
+        mapDebugText.gameObject.name = "MapWaveAndTerrain";
+        var debugRect = (RectTransform)mapDebugText.transform;
+        debugRect.anchorMin = debugRect.anchorMax = new Vector2(.5f,0f);
+        debugRect.pivot = new Vector2(.5f,1f);
+        debugRect.anchoredPosition = new Vector2(0f,-2f);
+        debugRect.sizeDelta = new Vector2(345f,38f);
+        mapDebugText.alignment = TMPro.TextAlignmentOptions.Center;
+        mapDebugText.raycastTarget = false;
+        mapDebugText.enableWordWrapping = false;
+        mapDebugText.overflowMode = TMPro.TextOverflowModes.Ellipsis;
+        mapDebugText.gameObject.SetActive(false);
         mapTitleRect.gameObject.SetActive(false);
+    }
+    // This is updated for every wave; ShowMapTitle only restarts when the map changes.
+    public void UpdateMapDebug(EntityDataSO data)
+    {
+        if (data == null) return;
+        if (mapTitleRect == null) ConfigureMapTitle();
+        if (mapDebugText == null) return;
+        int wave = Mathf.Clamp(data.completedWavesInMap + 1,1,5);
+        mapDebugText.text = "Bản đồ " + data.mapNumber + " · Wave " + wave + "/5" +
+            "\nĐịa hình: " + TuTienCore.WorldNames.Terrain(data.mapTerrain);
     }
     public void ShowMapTitle(string name)
     {
@@ -513,6 +536,13 @@ public class UIManager : MonoBehaviour
         mapTitleRect.anchoredPosition = new Vector2(leftWidth * .5f * t,-151f*t);
         float big = Mathf.Clamp(w*.065f,32f,64f),small = w < 750f ? 16f : 18f;
         mapTitleText.fontSize = big+(small-big)*t;
+        if (mapDebugText != null)
+        {
+            mapDebugText.fontSize = w < 750f ? 12f : 14f;
+            mapDebugText.gameObject.SetActive(t >= .999f);
+            var debugRect = (RectTransform)mapDebugText.transform;
+            debugRect.sizeDelta = new Vector2(Mathf.Min(leftWidth-10f,335f),42f);
+        }
         float wide = Mathf.Min(w-20f,660f),narrow = Mathf.Min(leftWidth-12f,320f);
         mapTitleRect.sizeDelta = new Vector2(wide+(narrow-wide)*t,90f-60f*t);
     }
@@ -647,7 +677,7 @@ public class UIManager : MonoBehaviour
         foreach(var text in Object.FindObjectsByType<TMPro.TextMeshProUGUI>(FindObjectsInactive.Include,FindObjectsSortMode.None)) {
             if (!text.transform.IsChildOf(hudCanvas)) continue;
             bool compact = text.transform.parent != null && text.transform.parent.GetComponent<CustomInteractable>() != null;
-            if (text == mapTitleText) continue; // Animated font is owned by its own timeline.
+            if (text == mapTitleText || text == mapDebugText) continue; // Map labels own their fonts.
             float fontSize = text == (gm != null ? gm.eventLogText : null) ? 16f :
                 text == (heroForUI != null ? heroForUI.atkStatusText : null) ? (w>=1000?15f:14f) :
                 compact ? (w>=1000?16f:14f) : (w>=1000?17f:w>=750?16f:14f);

@@ -50,14 +50,26 @@ public class HeroController : MonoBehaviour
             heroRect.position = feet;
             heroRect.gameObject.SetActive(false);
         }
-        if (dmgTextPrototype != null)
-        {
-            damageTextHome = dmgTextPrototype.transform.localPosition;
-            dmgTextPrototype.alpha = 0f;
-        }
+        AlignDamageTextToBody();
+        if (dmgTextPrototype != null) dmgTextPrototype.alpha = 0f;
         if (atkStatusText != null) atkStatusText.text = "";
     }
 
+    private void AlignDamageTextToBody()
+    {
+        if (heroRect == null || dmgTextPrototype == null) return;
+        // Hero_DMG_Text used to be an independent Ground child with a fixed
+        // design-time position, so it was far away from the hurt Hero.
+        var rt = dmgTextPrototype.transform as RectTransform;
+        if (rt == null) return;
+        rt.SetParent(heroRect, false);
+        rt.anchorMin = rt.anchorMax = new Vector2(.5f,.5f);
+        rt.pivot = new Vector2(.5f,.5f);
+        rt.anchoredPosition = new Vector2(0f, heroRect.rect.height * .18f);
+        rt.sizeDelta = new Vector2(130f,40f);
+        dmgTextPrototype.raycastTarget = false;
+        damageTextHome = rt.localPosition;
+    }
     void OnDisable()
     {
         MovementDistanceThisFrame = 0f;

@@ -20,11 +20,15 @@ public static class BattleMotion
     public static float MonsterApproach(float position, float target, float range, float speed, float dt, float groundMinusCamera)
     {
         if (dt <= 0f) return position;
+        // The terrain is carried by backgroundPan, while actors receive cameraPan
+        // in EnvironmentManager.LateUpdate. Apply their difference EVERY frame,
+        // even while standing to attack, so a ranged defender stays attached to Ground.
+        float carrier = groundMinusCamera;
         float gap = target - position - range;
-        if (gap <= 0f) return position;
-        // This signed offset changes the ground's carrier motion, not the monster's own heading.
-        // The subsequent common camera pan yields base movement + ground pan on screen.
-        return position + Math.Min(gap, Math.Max(0f, speed) * dt + groundMinusCamera);
+        // Only walking is range-clamped. Carrier correction must never be discarded
+        // when the monster is already inside attack range.
+        float walk = Math.Min(Math.Max(0f, gap - carrier), Math.Max(0f, speed) * dt);
+        return position + carrier + walk;
     }
 
     // heroX is sampled AFTER the hero's own movement, BEFORE camera translation.

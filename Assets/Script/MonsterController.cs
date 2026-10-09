@@ -29,9 +29,25 @@ public class MonsterController : MonoBehaviour
     void Awake()
     {
         rect = GetComponent<RectTransform>();
-        if (dmgTextPrototype != null) { damageTextHome = dmgTextPrototype.transform.localPosition; dmgTextPrototype.alpha = 0f; }
+        AlignDamageTextToBody();
+        if (dmgTextPrototype != null) dmgTextPrototype.alpha = 0f;
     }
 
+    private void AlignDamageTextToBody()
+    {
+        if (dmgTextPrototype == null || rect == null) return;
+        // Prefab placed its label under Monster_Hp_Fill; that follows bar anchors,
+        // not the monster's body. Anchor it directly to the damage recipient.
+        var rt = dmgTextPrototype.transform as RectTransform;
+        if (rt == null) return;
+        rt.SetParent(rect, false);
+        rt.anchorMin = rt.anchorMax = new Vector2(.5f,.5f);
+        rt.pivot = new Vector2(.5f,.5f);
+        rt.anchoredPosition = new Vector2(0f, rect.rect.height * .18f);
+        rt.sizeDelta = new Vector2(130f,40f);
+        dmgTextPrototype.raycastTarget = false;
+        damageTextHome = rt.localPosition;
+    }
     void OnEnable()
     {
         if (rect == null) rect = GetComponent<RectTransform>();
@@ -59,7 +75,15 @@ public class MonsterController : MonoBehaviour
             CurrentTarget = null;
             FindTarget(space);
         }
-        if (CurrentTarget == null) { currentState = MonsterState.PassiveScroll; return; }
+        if (CurrentTarget == null)
+        {
+            // Stay coupled to Ground even before acquiring a target.
+            Vector2 idle = space.Position(rect);
+            idle.x += groundMinusCamera;
+            space.SetPosition(rect, idle);
+            currentState = MonsterState.PassiveScroll;
+            return;
+        }
 
         Vector2 p = space.Position(rect);
         float targetX = space.Position(CurrentTarget.heroRect).x;

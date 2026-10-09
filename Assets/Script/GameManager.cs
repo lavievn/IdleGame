@@ -164,7 +164,11 @@ public class GameManager : MonoBehaviour
     {
         runtimeHeroData.NormalizeMapProgress();
         runtimeHeroData.NormalizeRoots();
-        if (UIManager.Instance != null) UIManager.Instance.ApplyDifficultyVisual(IsHardMode);
+        if (UIManager.Instance != null)
+        {
+            UIManager.Instance.ApplyDifficultyVisual(IsHardMode);
+            UIManager.Instance.UpdateMapDebug(runtimeHeroData);
+        }
         UpdateEventLog(null);
     }
 
