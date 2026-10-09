@@ -44,6 +44,19 @@ Hero_DMG_Text trước đây ở Ground độc lập, Monster_DMG_Text nằm tro
 đã chỉnh neo trực tiếp vào rect đối tượng nhận sát thương. Quái gần/đứng
 đánh/không có target nay đều được bù khác biệt GroundPan-CameraPan thay vì
 bị trôi chậm theo camera khi Hero cận di chuyển tới. Không đổi balance .54f.
+[CÓ MÃ — TINH CHỈNH CAMERA CUỐI 54g] Hero chạm mép vùng đỏ thì
+không bị giữ ngay ở biên: chờ 1 giây, cho phép đi vượt biên đỏ nhưng vẫn
+nằm trong cửa sổ thật, rồi hồi vị trí bằng nội suy smoothstep trong 1.25
+giây về x ≈ 62% chiều rộng Ground, ngừng chỉnh và trở về cuộn thông
+thường. EnvironmentManager tính pan MỘT LẦN ở Update, dùng lại trong
+LateUpdate cho cùng khung hình để quái/đạn/địa hình không lệch.
+Mặc định delayedCameraReturn=true; cameraEdgeDelay=1,
+cameraReturnSeconds=1.25, cameraReturnX=.62. Chết dùng camera cũ;
+respawn/pause reset/đóng băng đúng trạng thái cần thiết. Giữ nguyên
+camera logic cơ bản/kiểm thử hồi quy lịch sử qua option tắt chế độ mới.
+[CHƯA NGHIỆM THU] Bổ sung 4 bài kiểm tra trong CameraDelayRegression.cs
+chưa có kết quả Unity Editor/Windows; phản hồi người dùng là yêu cầu camera
+chờ/hồi chứ không phải xác nhận đã hoạt động chính xác.
 [CHƯA NGHIỆM THU] Các thay đổi cuối .54g đã được chuẩn bị kiểm tra tĩnh và
 bổ sung bài kiểm tra hồi quy, chưa có kết quả chạy Unity Editor/Windows native.
 Phản hồi người dùng từ .54g trước sửa: wave/terrain thiếu trong tên map; chữ
@@ -807,3 +820,35 @@ quy tắc version, định dạng Unity chuẩn. CHƯA có đặc tả/tool th�
 Nguyên tắc làm việc: một cụm lỗi/nhánh, ưu tiên sửa nguyên nhân, có bài hồi quy
 cho bug cụ thể và yêu cầu Play Mode/Windows test; cập nhật README và tài liệu
 phiên bản trước merge. Chờ kết quả user thử .54g mới làm item/skill/balance.
+
+
+16. TINH CHỈNH CAMERA 0.0.4.54g — ĐỢT CUỐI, CÙNG NHÁNH
+
+Kỳ vọng người dùng: Hero vừa chạm rìa vùng đỏ không bị camera kéo lại
+ngay; sau khoảng 1 giây mới được camera đưa chậm, mượt về vùng gần giữa
+phía phải map (62% chiều ngang logic Ground), và dừng phần điều chỉnh.
+Thiết kế mặc định không thay scrollSpeed: sau khi hồi về vị trí đích, camera
+quay lại cuộn bình thường, và chu kỳ có thể kích hoạt lại nếu Hero chạm biên.
+Đây là tạm hiểu cụ thể hóa yêu cầu; chưa có phản hồi nghiệm thu từ user.
+
+Thực hiện trong mã:
+- BattleMotion.cs: CameraEdgeRecovery thuần C#, ba trạng thái Scrolling,
+  Waiting, Returning; đếm thời gian theo deltaTime, easing smoothstep;
+  clamp vào mép thật trong 1s chờ để Hero không đi mất khỏi cửa sổ.
+- EnvironmentManager.cs: điều khiển cameraEdgeDelay=1s,
+  cameraReturnSeconds=1.25s, cameraReturnX=.62; caching pan giữa Update và
+  LateUpdate (cùng nguồn cho AI bù groundMinusCamera); ResetCameraRecovery
+  lúc FollowHero/respawn; xác chết vẫn dùng xử lý camera cũ. Cờ
+  delayedCameraReturn=true mặc định, tùy tắt nếu cần đối chiếu.
+- Tests~/MotionRegression.cs: dùng delayedCameraReturn=false trong fixture
+  lịch sử, không làm sai các trường hợp test hệ camera cũ; thêm bài mới
+  CameraDelayRegression.cs để đo 1s chờ, hai biên, nội suy đến đích, pause,
+  respawn và tính nhất quán pan một lần/khung.
+- README.MD và Docs/Release_0.0.4.54g_ui.md đồng bộ thông số/chú ý kiểm thử.
+- CHƯA chạy Unity Editor/EXE. Bắt buộc thử ở 600/800/1150, Hero nhanh/chậm,
+  camera chạm biên khi combat, tạm dừng, resize giữa lúc chờ/hồi,
+  quái đánh xa đứng đánh, wave tiến, đạn đang bay.
+
+CHƯA ĐƯỢC PHÉP KẾT LUẬN rằng mọi tình huống camera đã ổn định nếu user chưa
+xác nhận trong Unity/Windows. Sau nghiệm thu mới tiếp tục item/slot/skill/audio
+và tool asset; không tự thay đổi gameplay hay cân bằng trong tinh chỉnh này.

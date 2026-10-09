@@ -29,7 +29,11 @@ partial class MotionRegression
             HeroController.ActiveHeroes.Clear();MonsterController.ActiveMonsters.Clear();UnityEngine.Object.objects.Clear();
             ground=(RectTransform)new GameObject(true).transform;ground.sizeDelta=new Vector2(1000,100);ground.localScale=new Vector3(scale,scale,1);
             grass=(RectTransform)new GameObject(true).transform;grass.parent=ground;grass.anchoredPosition=new Vector2(600,0);grass.sizeDelta=new Vector2(200,100);
-            space=new GameObject().AddComponent<EnvironmentManager>();space.speedZoneInset=0;Set(space,"battleArea",ground);Set(space,"groundDetails",new[]{grass});Call(space,"Awake");
+            space=new GameObject().AddComponent<EnvironmentManager>();
+            // Historical regression scenarios intentionally exercise the legacy
+            // zone camera; separate 54g tests exercise the NEW default mode.
+            space.delayedCameraReturn=false;
+            space.speedZoneInset=0;Set(space,"battleArea",ground);Set(space,"groundDetails",new[]{grass});Call(space,"Awake");
             hero=new GameObject().AddComponent<HeroController>();hero.heroRect=(RectTransform)new GameObject(true).transform;hero.heroRect.parent=ground;hero.heroRect.anchorMin=hero.heroRect.anchorMax=new Vector2(1,0);hero.heroRect.pivot=new Vector2(1,0);Call(hero,"Awake");hero.SpawnHero();
             spawner=new GameObject().AddComponent<MonsterSpawner>();Set(spawner,"monsterPool",new ObjectPool<GameObject>(()=>new GameObject(),m=>{},m=>m.SetActive(false),m=>{},5,20));
             combat=new GameObject().AddComponent<CombatManager>();Call(combat,"Start");combat.SetupHeroInfo(new EntityDataSO { baseHealth=10000,baseDamage=10,expToNextLevel=1000000 });
@@ -258,6 +262,7 @@ partial class MotionRegression
         Patch54fTests();
         Patch54gTests();
         Patch54hTests();
+        CameraDelayTests();
         TerrainTests();
         MenuDifficultyTests();
         BalanceTests();

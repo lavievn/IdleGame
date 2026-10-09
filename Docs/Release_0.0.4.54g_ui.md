@@ -58,3 +58,22 @@
 5. **Tool biên tập asset giao diện**: import/gắn animation/effect/sprite/âm thanh cho nhân vật, skill, vũ khí, với schema và kiểm tra reference trước khi xây.
 
 Chưa triển khai các hệ này trong .54g; chưa chốt số ô item, bảng kỹ năng, công thức thưởng item hoặc định dạng nhập tool.
+
+
+## Tinh chỉnh camera cuối .54g — 1 giây chờ ở biên đỏ
+
+- Trên bản trước, `ZoneCameraStep` kẹp Hero ngay khi chạm biên đỏ. Yêu cầu mới: **chạm biên → chờ 1 giây → hồi vị trí mượt về khoảng 62% chiều ngang Ground → kết thúc điều chỉnh**.
+- `CameraEdgeRecovery` là máy trạng thái riêng (cuộn thường / chờ / hồi). Trong thời gian chờ vẫn áp dụng cuộn thông thường; Hero được phép vượt biên đỏ nhưng luôn giữ trong giới hạn hiển thị thực, tránh biến mất khỏi cửa sổ khi chạy nhanh.
+- Sau thời gian chờ, camera nội suy mượt `smoothstep` trong **1,25 giây** đến vị trí khoảng **x=62% chiều ngang** (hơi phải tâm). Không dịch trực tiếp vị trí gameplay, không sửa HP/ATK/mục tiêu/đạn.
+- Sau hồi xong, camera trở lại tốc độ cuộn thường đã có; nếu Hero tiếp tục trôi và chạm biên lần nữa, chu kỳ chờ/hồi có thể lặp lại. `scrollSpeed` không đổi.
+- Để quái và nền không lệch trong quá trình camera hồi, `EnvironmentManager.Update` tính pan một lần và `LateUpdate` dùng **đúng kết quả cùng khung hình**, thay vì gọi hàm cập nhật máy trạng thái hai lần.
+- Pause (`deltaTime=0`) không làm tăng bộ đếm; chết tiếp tục dùng logic camera xác cũ; `FollowHero` khi respawn sẽ đặt lại máy trạng thái.
+- Thông số có thể tùy chỉnh trong `EnvironmentManager`: `cameraEdgeDelay = 1`, `cameraReturnSeconds = 1.25`, `cameraReturnX = 0.62`; `delayedCameraReturn = true` bật mặc định. Tắt tùy chọn để đối chiếu kiểu camera cũ nếu cần debug.
+- Bộ test cũ của `MotionRegression` được cố ý đặt `delayedCameraReturn=false` để giữ kỳ vọng lịch sử; thêm `Tests~/CameraDelayRegression.cs` với **4 bài kiểm tra** cho chế độ mới (trái/phải, pause/reset, trùng kết quả Update/LateUpdate). Chưa xác nhận test đã chạy thành công trên Unity/Windows.
+
+### Checklist chạy thật
+
+1. Thử Hero di chuyển chậm/nhanh hơn `scrollSpeed`, chạm cả **hai biên đỏ**: trong 1 giây không có ghim ngay vào biên, vẫn giữ Hero trong màn hình thực; camera đưa Hero về vùng x≈62% theo độ trễ 1,25 giây và ngừng chỉnh khi đủ vị trí.
+2. Kiểm tra khi Hero cận gặp quái phép/cung đứng đánh; quái, đạn và Ground vẫn đồng bộ trong lúc camera chờ và điều chỉnh.
+3. Đổi ba kích thước 600/800/1150, pause giữa chừng, chết/Retry, tấn công liên tục và kiểm tra Console.
+4. Không coi kiểm thử mô phỏng là nghiệm thu Play Mode hay Windows EXE.
