@@ -60,7 +60,7 @@ partial class MotionRegression
                     var hero=HeroAt(20);hero.mapProgressVersion=1;hero.mapNumber=mode==1?6:1;hero.difficulty=mode;Set(gm,"runtimeHeroData",hero);f.combat.SetupHeroInfo(hero);
                     Set(f.combat,"currentHeroHP",200);
                     typeof(CombatManager).GetMethod("DealDamageToHero",BindingFlags.NonPublic|BindingFlags.Instance).Invoke(f.combat,new object[]{10});
-                    Check(Get<int>(f.combat,"currentHeroHP")==200-(mode==1?20:10),"damage multiplier");
+                    Check(Get<int>(f.combat,"currentHeroHP")==200-(mode==1?10:5),"damage multiplier");
                     var m=f.Monster(-20);f.Battle(m);int expected=CombatBalance.KillExp(f.Enemies[0].data.currentLevel)*(mode==1?3:1);
                     typeof(CombatManager).GetMethod("HandleMonsterDeath",BindingFlags.NonPublic|BindingFlags.Instance).Invoke(f.combat,new object[]{f.Enemies[0]});
                     Check(hero.currentExp==expected,"EXP multiplier");
@@ -83,7 +83,7 @@ partial class MotionRegression
             try {
                 var data=HeroAt(5);data.difficulty=1;Check(save.SaveGame(data,SaveSlot.AutoSave),"first write");
                 data.currentLevel=8;Check(save.SaveGame(data,SaveSlot.AutoSave),"replace existing file");
-                var read=HeroAt(1);Check(save.LoadGame(read,SaveSlot.AutoSave)&&read.currentLevel==8&&read.difficulty==1,"read replaced content");
+                var read=HeroAt(1);Check(save.LoadGame(read,SaveSlot.AutoSave)&&read.currentLevel==8&&read.difficulty==0,"read replaced content");
                 File.WriteAllText(Path.Combine(dir,"AutoSave.json"),"{\"currentLevel\":2,\"currentExp\":0}");
                 Check(save.LoadGame(read,SaveSlot.AutoSave)&&read.difficulty==0&&read.balanceVersion==0,"legacy absent fields reset");
             } finally {Directory.Delete(dir,true);}

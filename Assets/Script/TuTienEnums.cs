@@ -4,7 +4,8 @@ using UnityEngine;
 namespace TuTienCore
 {
     public enum RaceType { NhanToc, YeuThu, MaToc, LinhThe, ConLai }
-    public enum ElementType { Kim, Moc, Thuy, Hoa, Tho, Doc, Bang }
+    public enum ElementType { Kim, Moc, Thuy, Hoa, Tho, Doc, Bang, Vo }
+    public enum TerrainType { DongBang, CaoNguyen, DamLay, RungRam, SaMac, DoiNui }
     public enum WeaponType { Kiem, Dao, Quyen }
     public enum GenderType { Nam, Nu }
     public enum AttackMode { Melee, RangedPhysical, RangedMagic } // Đã chuyển vào đây
@@ -51,7 +52,7 @@ namespace TuTienCore
         public static List<ElementType> GenerateRandomRoots(RaceType race)
         {
             int count = RootCount(Random.Range(0, 100), race);
-            var available = new List<ElementType> { ElementType.Kim, ElementType.Moc, ElementType.Hoa, ElementType.Thuy, ElementType.Tho };
+            var available = new List<ElementType> { ElementType.Kim, ElementType.Moc, ElementType.Hoa, ElementType.Thuy, ElementType.Tho, ElementType.Vo };
             var roots = new List<ElementType>();
             for (int i = 0; i < count; i++)
             {
@@ -71,7 +72,15 @@ namespace TuTienCore
                 att == ElementType.Hoa && def == ElementType.Kim;
         }
         public static float GetElementalMultiplier(ElementType att, ElementType def)
-            => Counters(att, def) ? 1.25f : Counters(def, att) ? .8f : 1f;
+            => GetElementalMultiplier(att, 3, def, 3);
+        public static float GetElementalMultiplier(ElementType att, int attTier, ElementType def, int defTier)
+        {
+            int gap = Mathf.Clamp(attTier, 1, 5) - Mathf.Clamp(defTier, 1, 5);
+            if (Counters(att, def))
+                return 1f + .30f * (gap >= 0 ? 1f + .10f * gap : Mathf.Max(.25f, 1f + .25f * gap));
+            if (Counters(def, att)) return 1f - .30f * (1f - .10f * gap);
+            return 1f; // Vô, legacy special roots, same root and unrelated pairs.
+        }
         public static float GetElementalMultiplier(List<ElementType> attackers, List<ElementType> defenders)
         {
             if (attackers == null || defenders == null || attackers.Count == 0 || defenders.Count == 0) return 1f;
@@ -79,13 +88,97 @@ namespace TuTienCore
             foreach (var att in attackers) foreach (var def in defenders) sum += GetElementalMultiplier(att, def);
             return sum / (attackers.Count * defenders.Count);
         }
+        public static void GenerateRootProfile(EntityDataSO data)
+        {
+            data.spiritRoots = GenerateRandomRoots(data.race);
+            data.rootTiers = new List<int>(); data.rootWeights = new List<float>();
+            foreach (var root in data.spiritRoots) data.rootTiers.Add(Random.Range(1, 6));
+            int count = data.spiritRoots.Count;
+            if (count == 2)
+            {
+                int gap = data.rootTiers[0] - data.rootTiers[1];
+                float first = .5f + Mathf.Clamp(gap, -3, 3) * .1f;
+                data.rootWeights.Add(first); data.rootWeights.Add(1f - first);
+            }
+            else for (int i = 0; i < count; i++) data.rootWeights.Add(1f / count);
+            data.hybridSecondaryRace = (RaceType)Random.Range(0, 4);
+            data.NormalizeRoots();
+        }
+        public static float GetElementalMultiplier(EntityDataSO attacker, EntityDataSO defender)
+        {
+            attacker.NormalizeRoots(); defender.NormalizeRoots();
+            if (attacker.spiritRoots.Count == 0 || defender.spiritRoots.Count == 0) return 1f;
+            float sum = 0f;
+            for (int a = 0; a < attacker.spiritRoots.Count; a++)
+                for (int d = 0; d < defender.spiritRoots.Count; d++)
+                    sum += attacker.rootWeights[a] * defender.rootWeights[d] * GetElementalMultiplier(
+                        attacker.spiritRoots[a], attacker.rootTiers[a], defender.spiritRoots[d], defender.rootTiers[d]);
+            return sum;
+        }
         public static int Damage(EntityDataSO attacker, EntityDataSO defender, AttackMode mode, float roll, int mapMultiplier = 1)
         {
-            float element = GetElementalMultiplier(attacker.spiritRoots, defender.spiritRoots);
+            float element = GetElementalMultiplier(attacker, defender);
             // Race-specific bonuses have not been specified; all races use x1.
             return Mathf.Max(1, Mathf.RoundToInt(CombatBalance.Damage(attacker.GetCalculatedDamage(), mode, roll) * element * mapMultiplier));
         }
     }
+
+    public static class WorldNames
+    {
+        private static readonly string[][] MapNames = {
+            new[] { "Thanh Phong Nguyên", "Bạch Lộ Bình Nguyên", "Vân Khê Đồng", "Thiên Lý Nguyên", "Kim Tuệ Nguyên" },
+            new[] { "Thiên Phong Cao Nguyên", "Vân Đỉnh Nguyên", "Hàn Sương Cao Nguyên", "Bạch Vân Đài", "Cửu Tiêu Nguyên" },
+            new[] { "U Minh Trạch", "Hắc Thủy Trạch", "Độc Vụ Đầm", "Thanh Liên Trạch", "Vụ Ẩn Trạch" },
+            new[] { "Vạn Mộc Lâm", "Thanh U Lâm", "Cổ Thụ Lâm", "Bích Ảnh Lâm", "Vân Ẩn Lâm" },
+            new[] { "Xích Sa Mạc", "Hoàng Sa Hải", "Lưu Sa Mạc", "Viêm Dương Mạc", "Tịch Dương Sa Hải" },
+            new[] { "Thanh Vân Sơn", "Hắc Nham Lĩnh", "Bạch Thạch Khâu", "Liên Vân Lĩnh", "Cửu Phong Sơn" }
+        };
+        public static readonly string[] AnimalNames = {
+            "Trư", "Hổ", "Lang", "Hồ", "Thố", "Lộc", "Ngưu", "Mã", "Dương", "Hầu",
+            "Viên", "Hùng", "Miêu", "Khuyển", "Thử", "Tượng", "Tê", "Báo", "Sư", "Ly",
+            "Xà", "Mãng", "Quy", "Ngạc", "Thiềm", "Oa", "Ưng", "Điêu", "Hạc", "Ô",
+            "Yến", "Tước", "Nhạn", "Áp", "Kê", "Khổng Tước", "Hải Âu", "Bức", "Lý", "Ngư",
+            "Kình", "Sa", "Chương", "Giải", "Hà", "Chu", "Hạt", "Ngô Công", "Phong", "Nghĩ"
+        };
+        public static string Terrain(TerrainType terrain)
+        {
+            return new[] { "Đồng bằng", "Cao nguyên", "Đầm lầy", "Rừng rậm", "Sa mạc", "Đồi núi" }[(int)terrain];
+        }
+        public static void AssignMap(EntityDataSO data)
+        {
+            string previous = data.mapName;
+            do {
+                data.mapTerrain = (TerrainType)Random.Range(0, MapNames.Length);
+                var names = MapNames[(int)data.mapTerrain];
+                data.mapName = names[Random.Range(0, names.Length)];
+            } while (data.mapName == previous);
+            data.isDirty = true;
+        }
+        public static float MonsterDamageScale(int mapVisit)
+            => Mathf.Min(1f, .5f + .1f * (System.Math.Max(1, mapVisit) / 20));
+        public static string MonsterName(EntityDataSO data, string animal)
+        {
+            if (data.race == RaceType.NhanToc) return data.entityName;
+            data.NormalizeRoots();
+            int dominant = 0;
+            for (int i = 1; i < data.spiritRoots.Count; i++)
+                if (data.rootWeights[i] > data.rootWeights[dominant] ||
+                    data.rootWeights[i] == data.rootWeights[dominant] && data.rootTiers[i] > data.rootTiers[dominant]) dominant = i;
+            string prefix = data.spiritRoots.Count == 0 ? "Vô" : IdentityDisplay.Element(data.spiritRoots[dominant]);
+            string marker = "";
+            if (data.race == RaceType.ConLai)
+                switch (data.hybridSecondaryRace) {
+                    case RaceType.LinhThe: marker = " Linh"; break;
+                    case RaceType.MaToc: marker = " Ma"; break;
+                    case RaceType.NhanToc: marker = " Nhân"; break;
+                    default: marker = " Thú"; break;
+                }
+            return prefix + marker + " " + animal;
+        }
+        public static string RandomMonsterName(EntityDataSO data)
+            => MonsterName(data, AnimalNames[Random.Range(0, AnimalNames.Length)]);
+    }
+
     public static class IdentityDisplay
     {
         public static string Race(RaceType race)
@@ -97,13 +190,20 @@ namespace TuTienCore
         {
             switch (root) { case ElementType.Kim:return "Kim"; case ElementType.Moc:return "Mộc";
                 case ElementType.Hoa:return "Hỏa"; case ElementType.Thuy:return "Thủy"; case ElementType.Tho:return "Thổ";
-                case ElementType.Doc:return "Độc"; case ElementType.Bang:return "Băng"; default:return "Không rõ"; }
+                case ElementType.Vo:return "Vô"; case ElementType.Doc:return "Độc"; case ElementType.Bang:return "Băng"; default:return "Không rõ"; }
         }
         public static string Describe(EntityDataSO data)
         {
             var roots = new List<string>();
-            if (data.spiritRoots != null) foreach (var root in data.spiritRoots) roots.Add(Element(root));
+            data.NormalizeRoots();
+            for (int i = 0; i < data.spiritRoots.Count; i++)
+                roots.Add(Element(data.spiritRoots[i]) + " " + Tier(data.rootTiers[i]) +
+                    (data.spiritRoots.Count > 1 ? " " + Mathf.RoundToInt(data.rootWeights[i] * 100f) + "%" : ""));
             return data.entityName + " · " + Race(data.race) + " · " + (roots.Count > 0 ? string.Join("/", roots.ToArray()) : "Không hệ");
+        }
+        public static string Tier(int tier)
+        {
+            return new[] { "Nhất trọng", "Nhị trọng", "Tam trọng", "Tứ trọng", "Ngũ trọng" }[Mathf.Clamp(tier, 1, 5) - 1];
         }
         public static Color ElementColor(ElementType root)
         {

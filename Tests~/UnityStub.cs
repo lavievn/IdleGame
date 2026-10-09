@@ -209,10 +209,20 @@ namespace UnityEngine {
  public static class JsonUtility {
   public static string ToJson(object value,bool pretty){var fields=new List<string>();foreach(var f in value.GetType().GetFields()) {
    if(f.FieldType==typeof(int)||f.FieldType==typeof(float)||f.FieldType.IsEnum)fields.Add("\""+f.Name+"\":"+Convert.ToString(f.FieldType.IsEnum?(object)Convert.ToInt32(f.GetValue(value)):f.GetValue(value),System.Globalization.CultureInfo.InvariantCulture));
+   else if(f.FieldType==typeof(List<int>) || f.FieldType==typeof(List<float>)) {
+    var nums=new List<string>();var items=(System.Collections.IEnumerable)f.GetValue(value);
+    if(items!=null)foreach(var item in items)nums.Add(Convert.ToString(item,System.Globalization.CultureInfo.InvariantCulture));
+    fields.Add("\""+f.Name+"\":["+string.Join(",",nums.ToArray())+"]");
+   }
    else if(f.FieldType==typeof(string)) fields.Add("\""+f.Name+"\":\""+f.GetValue(value)+"\"");
    else if(f.FieldType==typeof(List<TuTienCore.ElementType>)) {var roots=(List<TuTienCore.ElementType>)f.GetValue(value);var nums=new List<string>();if(roots!=null)foreach(var root in roots)nums.Add(((int)root).ToString());fields.Add("\""+f.Name+"\":["+string.Join(",",nums.ToArray())+"]");}
   }return "{"+string.Join(",",fields)+"}"; }
   public static void FromJsonOverwrite(string json,object value) { foreach(var f in value.GetType().GetFields()) {
+   if(f.FieldType==typeof(List<int>) || f.FieldType==typeof(List<float>)) {
+    var arr=System.Text.RegularExpressions.Regex.Match(json,"\""+f.Name+"\"\\s*:\\s*\\[([^]]*)\\]");
+    if(arr.Success){var list=(System.Collections.IList)Activator.CreateInstance(f.FieldType);foreach(var item in arr.Groups[1].Value.Split(','))
+     if(item.Trim().Length>0)list.Add(Convert.ChangeType(item.Trim(),f.FieldType.GetGenericArguments()[0],System.Globalization.CultureInfo.InvariantCulture));f.SetValue(value,list);}continue;
+   }
    if(f.FieldType==typeof(string)) {var str=System.Text.RegularExpressions.Regex.Match(json,"\""+f.Name+"\"\\s*:\\s*\"([^\"]*)\"");if(str.Success)f.SetValue(value,str.Groups[1].Value);continue;}
    if(f.FieldType==typeof(List<TuTienCore.ElementType>)) {var arr=System.Text.RegularExpressions.Regex.Match(json,"\""+f.Name+"\"\\s*:\\s*\\[([^]]*)\\]");if(arr.Success){var roots=new List<TuTienCore.ElementType>();foreach(var item in arr.Groups[1].Value.Split(','))if(item.Trim().Length>0)roots.Add((TuTienCore.ElementType)int.Parse(item.Trim()));f.SetValue(value,roots);}continue;}
    var m=System.Text.RegularExpressions.Regex.Match(json,"\""+f.Name+"\"\\s*:\\s*(-?[0-9.]+)");if(!m.Success)continue;

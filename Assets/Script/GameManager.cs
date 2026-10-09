@@ -76,12 +76,13 @@ public class GameManager : MonoBehaviour
         runtimeHeroData.balanceVersion = 0;
         runtimeHeroData.difficulty = 0;
         runtimeHeroData.mapNumber = 1; runtimeHeroData.completedWavesInMap = 0; runtimeHeroData.mapProgressVersion = 1;
+        runtimeHeroData.mapName = ""; WorldNames.AssignMap(runtimeHeroData);
 
         {
             runtimeHeroData.gender = Random.Range(0, 2) == 0 ? GenderType.Nam : GenderType.Nu;
             runtimeHeroData.entityName = NameDatabase.GetRandomName(runtimeHeroData.gender);
             runtimeHeroData.race = SynergyMath.GenerateRandomRace();
-            runtimeHeroData.spiritRoots = SynergyMath.GenerateRandomRoots(runtimeHeroData.race);
+            SynergyMath.GenerateRootProfile(runtimeHeroData);
         }
 
         runtimeHeroData.ApplyHeroBalance();
@@ -115,13 +116,14 @@ public class GameManager : MonoBehaviour
         if (!string.IsNullOrEmpty(message)) { recentEvents.Enqueue(message); while (recentEvents.Count > 2) recentEvents.Dequeue(); }
         if (eventLogText == null) return;
         string header = runtimeHeroData == null ? "" : IdentityDisplay.Describe(runtimeHeroData) +
-            " · Cấp " + runtimeHeroData.currentLevel + "\nMap " + runtimeHeroData.mapNumber +
+            " · Cấp " + runtimeHeroData.currentLevel + "\n" + runtimeHeroData.mapName + " · " + WorldNames.Terrain(runtimeHeroData.mapTerrain) +
             (IsHardMode ? " (Khó)" : " (Thường)") + " · Đợt " + (runtimeHeroData.completedWavesInMap + 1) + "/5\n";
         eventLogText.text = header + string.Join("\n", recentEvents.ToArray());
     }
     private void RestoreProgress()
     {
         runtimeHeroData.NormalizeMapProgress();
+        runtimeHeroData.NormalizeRoots();
         if (UIManager.Instance != null) UIManager.Instance.ApplyDifficultyVisual(IsHardMode);
         UpdateEventLog(null);
     }
@@ -342,7 +344,7 @@ public class GameManager : MonoBehaviour
             {
                 bool changed = runtimeHeroData.CompleteWave();
                 RestoreProgress();
-                if (changed) UpdateEventLog("Đã tới map " + runtimeHeroData.mapNumber + (IsHardMode ? ": quái gây sát thương ×2, EXP ×3." : ": bình thường."));
+                if (changed) UpdateEventLog("Đã tới " + runtimeHeroData.mapName + (IsHardMode ? ": quái gây sát thương ×2, EXP ×3." : ": bình thường."));
             }
             nextWaveCoroutine = StartCoroutine(WaitAndCallNextWave());
         }

@@ -17,6 +17,41 @@ public class EntityDataSO : ScriptableObject
     public GenderType gender;
     public List<ElementType> spiritRoots = new List<ElementType>();
 
+    // Parallel serializable lists, indexed exactly like spiritRoots; old saves default to Tam trọng/equal shares.
+    public List<int> rootTiers = new List<int>();
+    public List<float> rootWeights = new List<float>();
+    public RaceType hybridSecondaryRace = RaceType.YeuThu;
+    public string mapName = "";
+    public TerrainType mapTerrain = TerrainType.DongBang;
+
+    public void NormalizeRoots()
+    {
+        if (spiritRoots == null) spiritRoots = new List<ElementType>();
+        bool changed = false;
+        if (rootTiers == null || rootTiers.Count != spiritRoots.Count) {
+            rootTiers = new List<int>(); foreach (var root in spiritRoots) rootTiers.Add(3); changed = true;
+        }
+        for (int i = 0; i < rootTiers.Count; i++) {
+            int tier = Mathf.Clamp(rootTiers[i], 1, 5);
+            if (tier != rootTiers[i]) { rootTiers[i] = tier; changed = true; }
+        }
+        bool valid = rootWeights != null && rootWeights.Count == spiritRoots.Count;
+        float sum = 0f;
+        if (valid) foreach (float weight in rootWeights) {
+            if (float.IsNaN(weight) || float.IsInfinity(weight) || weight <= 0f) valid = false;
+            sum += weight;
+        }
+        if (!valid || float.IsInfinity(sum) || (spiritRoots.Count > 0 && sum <= 0f)) {
+            rootWeights = new List<float>();
+            foreach (var root in spiritRoots) rootWeights.Add(1f / spiritRoots.Count);
+            changed = true;
+        } else if (sum > 0f && Mathf.Abs(sum - 1f) > .00001f) {
+            for (int i = 0; i < rootWeights.Count; i++) rootWeights[i] /= sum;
+            changed = true;
+        }
+        if (changed) isDirty = true;
+    }
+
     public int statPoints = 0;
     public int addedHealth = 0;
     public int addedDamage = 0;
@@ -35,13 +70,14 @@ public class EntityDataSO : ScriptableObject
         mapNumber = System.Math.Max(1, mapNumber);
         completedWavesInMap = System.Math.Max(0, System.Math.Min(4, completedWavesInMap));
         difficulty = mapNumber % 6 == 0 ? 1 : 0;
+        if (string.IsNullOrEmpty(mapName) || !System.Enum.IsDefined(typeof(TerrainType), mapTerrain)) WorldNames.AssignMap(this);
     }
     public bool CompleteWave()
     {
         NormalizeMapProgress();
         completedWavesInMap++;
         bool changed = completedWavesInMap == 5;
-        if (changed) { completedWavesInMap = 0; if (mapNumber < int.MaxValue) mapNumber++; }
+        if (changed) { completedWavesInMap = 0; if (mapNumber < int.MaxValue) mapNumber++; WorldNames.AssignMap(this); }
         difficulty = mapNumber % 6 == 0 ? 1 : 0;
         isDirty = true;
         return changed;

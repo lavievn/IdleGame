@@ -80,7 +80,14 @@ public class SaveManager : MonoBehaviour
                 entityData.mapNumber = 1;
                 entityData.completedWavesInMap = 0;
                 entityData.mapProgressVersion = 0;
+                entityData.mapName = "";
+                entityData.mapTerrain = TuTienCore.TerrainType.DongBang;
+                entityData.rootTiers = new System.Collections.Generic.List<int>();
+                entityData.rootWeights = new System.Collections.Generic.List<float>();
+                entityData.hybridSecondaryRace = TuTienCore.RaceType.YeuThu;
                 JsonUtility.FromJsonOverwrite(jsonData, entityData);
+                entityData.NormalizeRoots();
+                entityData.NormalizeMapProgress();
                 return entityData.currentLevel >= 1;
             }
             catch (Exception e) { Debug.LogError("Không đọc được bản lưu: " + e.Message); return false; }

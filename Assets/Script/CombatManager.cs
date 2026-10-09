@@ -89,7 +89,8 @@ public class CombatManager : MonoBehaviour
             info.data.gender = Random.Range(0,2) == 0 ? GenderType.Nam : GenderType.Nu;
             info.data.entityName = NameDatabase.GetRandomName(info.data.gender);
             info.data.race = SynergyMath.GenerateRandomRace();
-            info.data.spiritRoots = SynergyMath.GenerateRandomRoots(info.data.race);
+            SynergyMath.GenerateRootProfile(info.data);
+            info.data.entityName = WorldNames.RandomMonsterName(info.data);
             info.maxHP = info.data.GetCalculatedHealth();
             info.currentHP = info.maxHP;
             if (info.controller != null) { info.controller.UpdateHealthBar(info.currentHP, info.maxHP); info.controller.SetIdentityVisual(info.data); }
@@ -229,7 +230,8 @@ public class CombatManager : MonoBehaviour
     private void DealDamageToHero(int damage) { ApplyIncomingDamage(damage, "Quái"); }
     private void ApplyIncomingDamage(int damage, string source)
     {
-        damage *= gameManager != null && gameManager.IsHardMode ? 2 : 1;
+        float mapScale = WorldNames.MonsterDamageScale(runtimeHeroData.mapNumber);
+        damage = Mathf.Max(1, Mathf.RoundToInt(damage * mapScale * (gameManager != null && gameManager.IsHardMode ? 2 : 1)));
         currentHeroHP = Mathf.Max(0, currentHeroHP - damage);
         if (gameManager != null) gameManager.UpdateEventLog(source + " gây " + damage + " sát thương cho " + runtimeHeroData.entityName + (currentHeroHP == 0 ? ": đã tử vong." : "."));
         heroController.UpdateHealthBar(currentHeroHP, maxHeroHP);

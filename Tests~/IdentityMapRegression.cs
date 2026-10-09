@@ -28,18 +28,18 @@ partial class MotionRegression
             var races=new HashSet<RaceType>();
             for(int i=0;i<1000;i++) {var race=SynergyMath.GenerateRandomRace();races.Add(race);var roots=SynergyMath.GenerateRandomRoots(race);
                 Check(roots.Count>=1&&roots.Count<=4,"count bounded");Check(new HashSet<ElementType>(roots).Count==roots.Count,"no repeated root");
-                foreach(var root in roots)Check((int)root<=4,"only five elements generated");if(race==RaceType.ConLai)Check(roots.Count==2,"mixed race two roots");
+                foreach(var root in roots)Check((int)root<=4 || root==ElementType.Vo,"only five elements generated");if(race==RaceType.ConLai)Check(roots.Count==2,"mixed race two roots");
             }
             Check(races.Count==5,"all existing races generated");
         });
         Run("all elemental counter pairs work both directions and legacy special roots stay neutral",()=>{
             var cycle=new[]{ElementType.Kim,ElementType.Moc,ElementType.Tho,ElementType.Thuy,ElementType.Hoa};
-            for(int i=0;i<5;i++) {var att=cycle[i];var def=cycle[(i+1)%5];Near(SynergyMath.GetElementalMultiplier(att,def),1.25f,"counter");Near(SynergyMath.GetElementalMultiplier(def,att),.8f,"countered");Near(SynergyMath.GetElementalMultiplier(att,att),1,"same");}
+            for(int i=0;i<5;i++) {var att=cycle[i];var def=cycle[(i+1)%5];Near(SynergyMath.GetElementalMultiplier(att,def),1.30f,"counter");Near(SynergyMath.GetElementalMultiplier(def,att),.70f,"countered");Near(SynergyMath.GetElementalMultiplier(att,att),1,"same");}
             Near(SynergyMath.GetElementalMultiplier(ElementType.Doc,ElementType.Kim),1,"legacy poison");
-            Near(SynergyMath.GetElementalMultiplier(new List<ElementType>{ElementType.Kim,ElementType.Hoa},new List<ElementType>{ElementType.Moc}),(1.25f+1f)/2,"multi root pair average");
+            Near(SynergyMath.GetElementalMultiplier(new List<ElementType>{ElementType.Kim,ElementType.Hoa},new List<ElementType>{ElementType.Moc}),(1.30f+1f)/2,"multi root pair average");
             var a=HeroAt(1);var b=HeroAt(1);a.baseDamage=100;a.spiritRoots=new List<ElementType>{ElementType.Kim};b.spiritRoots=new List<ElementType>{ElementType.Moc};
-            Check(SynergyMath.Damage(a,b,AttackMode.Melee,1)==125,"actual outgoing counter damage");
-            a.spiritRoots=b.spiritRoots;b.spiritRoots=new List<ElementType>{ElementType.Kim};Check(SynergyMath.Damage(a,b,AttackMode.Melee,1)==80,"actual incoming countered damage");
+            Check(SynergyMath.Damage(a,b,AttackMode.Melee,1)==130,"actual outgoing counter damage");
+            a.spiritRoots=b.spiritRoots;b.spiritRoots=new List<ElementType>{ElementType.Kim};Check(SynergyMath.Damage(a,b,AttackMode.Melee,1)==70,"actual incoming countered damage");
         });
         Run("five waves per map and five normal maps then one hard persist through two cycles",()=>{
             var data=HeroAt(1);data.NormalizeMapProgress();
@@ -77,10 +77,11 @@ partial class MotionRegression
         Run("magic damage is calculated separately for each target's roots",()=>{
             var f=new Field();var hero=HeroAt(1);hero.baseDamage=100;hero.spiritRoots=new List<ElementType>{ElementType.Kim};f.combat.SetupHeroInfo(hero);f.hero.ChangeAttackMode(2);
             var a=f.Monster(-20);var b=f.Monster(-30);f.Battle(a,b);f.Enemies[0].data.spiritRoots=new List<ElementType>{ElementType.Moc};f.Enemies[1].data.spiritRoots=new List<ElementType>{ElementType.Kim};
+            foreach(var enemy in f.Enemies){enemy.data.rootTiers.Clear();enemy.data.rootWeights.Clear();}
             f.hero.TickMovement(f.space,0);Time.deltaTime=2;Call(f.combat,"Update");
             var shots=(System.Collections.IList)typeof(CombatManager).GetField("projectiles",System.Reflection.BindingFlags.NonPublic|System.Reflection.BindingFlags.Instance).GetValue(f.combat);
             Check(shots.Count==2,"two targets launched");int min=int.MaxValue,max=0;foreach(var shot in shots){int damage=(int)shot.GetType().GetField("damage").GetValue(shot);min=Math.Min(min,damage);max=Math.Max(max,damage);}
-            Check(min>=153&&min<=180&&max>=191&&max<=225,"neutral and countered target use independent damage");
+            Check(min>=153&&min<=180&&max>=198&&max<=234,"neutral and countered target use independent damage");
         });
         Run("identity tint mixes fifty percent without accumulating over pooled reuse",()=>{
             var f=new Field();var image=f.hero.heroRect.gameObject.AddComponent<Image>();image.color=new Color(.2f,.4f,.6f,.75f);
@@ -92,9 +93,9 @@ partial class MotionRegression
         });
         Run("event log retains hero name race roots map and damage alongside EXP",()=>{
             var f=new Field();SaveManager save;string dir;var gm=MenuManager(f,out save,out dir);
-            try {var data=HeroAt(1);data.entityName="Hàn Tuyết Lôi";data.race=RaceType.MaToc;data.spiritRoots=new List<ElementType>{ElementType.Hoa};data.mapNumber=6;data.difficulty=1;
+            try {var data=HeroAt(1);data.entityName="Hàn Tuyết Lôi";data.race=RaceType.MaToc;data.spiritRoots=new List<ElementType>{ElementType.Hoa};data.mapNumber=6;data.difficulty=1;data.NormalizeMapProgress();
                 Set(gm,"runtimeHeroData",data);gm.eventLogText=new GameObject(true).AddComponent<TextMeshProUGUI>();gm.UpdateEventLog("Nhận 12 EXP");gm.UpdateEventLog("Quái gây 10 sát thương");
-                string text=gm.eventLogText.text;Check(text.Contains("Hàn Tuyết Lôi")&&text.Contains("Ma tộc")&&text.Contains("Hỏa")&&text.Contains("Map 6"),"identity and map persistent");
+                string text=gm.eventLogText.text;Check(text.Contains("Hàn Tuyết Lôi")&&text.Contains("Ma tộc")&&text.Contains("Hỏa")&&text.Contains(data.mapName),"identity and map persistent");
                 Check(text.Contains("12 EXP")&&text.Contains("10 sát thương"),"recent events coexist");
             }finally{Directory.Delete(dir,true);}
         });
