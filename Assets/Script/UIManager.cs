@@ -155,6 +155,10 @@ public class UIManager : MonoBehaviour
             rect.sizeDelta = new Vector2(180f,96f);
             item.onClickEvent = new UnityEvent(); item.onClickEvent.AddListener(ToggleSystemMenu);
             RegisterInteractable(item);
+            var caption = rect.GetComponentInChildren<TMPro.TextMeshProUGUI>(true);
+            if (caption == null) caption = MakeLabel(rect,"Menu",new Vector2(32,-12),new Vector2(60,22));
+            caption.text = "Menu"; caption.alignment = TMPro.TextAlignmentOptions.Center;
+            caption.gameObject.SetActive(true); caption.raycastTarget = false;
             if (transparentWindow != null) transparentWindow.RegisterClickable(rect);
         }
         if (transparentWindow != null)
@@ -281,6 +285,8 @@ public class UIManager : MonoBehaviour
             var text = MakeLabel(rect,"",new Vector2(220,-128),new Vector2(416,236));
             text.alignment = TMPro.TextAlignmentOptions.TopLeft; ReadableText(text,16);
             hero.atkStatusText = text; statsPanel = rect;
+            ConfigureCompactStatsText(text);
+            rect.gameObject.SetActive(false);
             if (transparentWindow != null) transparentWindow.RegisterClickable(rect);
         }
         damagePanel = new GameObject("DamageInfoPanel",typeof(RectTransform),typeof(CanvasRenderer),typeof(Image));
@@ -299,6 +305,30 @@ public class UIManager : MonoBehaviour
         SmallButton(body,"DamageClose","Đóng",new Vector2(1,0),new Vector2(1,0),new Vector2(-18,12),new Vector2(160,54),CloseDamageInfo);
         if (transparentWindow != null) transparentWindow.RegisterClickable(body);
         damagePanel.SetActive(false);
+    }
+    private static void ConfigureCompactStatsText(TMPro.TextMeshProUGUI label)
+    {
+        label.enableWordWrapping = false;
+        label.overflowMode = TMPro.TextOverflowModes.Ellipsis;
+        label.alignment = TMPro.TextAlignmentOptions.TopLeft;
+    }
+    public static bool ShouldShowCombatHUD(bool deployed, bool starting, bool gameOver, bool confirmation, bool modal)
+    {
+        return deployed && !starting && !gameOver && !confirmation && !modal;
+    }
+    private void RefreshCombatHUDVisibility()
+    {
+        var gm = Object.FindFirstObjectByType<GameManager>();
+        bool shown = ShouldShowCombatHUD(gm != null && gm.IsGameplayHUDVisible,
+            gm != null && gm.preGameUI != null && gm.preGameUI.activeInHierarchy,
+            gm != null && gm.gameOverPanel != null && gm.gameOverPanel.activeInHierarchy,
+            gm != null && gm.confirmationPopup != null && gm.confirmationPopup.activeInHierarchy,
+            (damagePanel != null && damagePanel.activeSelf) || (devUI != null && devUI.IsOpen) ||
+            (systemMenu != null && systemMenu.activeInHierarchy));
+        if (statsPanel != null) statsPanel.gameObject.SetActive(shown && Screen.height >= 290);
+        for (int i=0;i<attackButtons.Length;i++)
+            if (attackButtons[i] != null) attackButtons[i].gameObject.SetActive(shown);
+        if (gm != null && gm.eventLog != null) gm.eventLog.gameObject.SetActive(shown);
     }
     private void InstallAttackModeButtons()
     {
@@ -356,14 +386,14 @@ public class UIManager : MonoBehaviour
         if (damageText == null) return;
         string title = detailKind == 1 ? "CHỈ SỐ HERO" : detailKind == 2 ? "NHẬT KÝ" : "SÁT THƯƠNG " + (damagePage+1) + "/" + System.Math.Max(1,displayedDamage.Length);
         string content = detailKind != 0 ? detailSnapshot : displayedDamage.Length == 0 ? "Chưa có đòn đánh hoàn tất." : displayedDamage[damagePage];
-        var pages = ReadablePages(content, Mathf.Max(12,Screen.width-32), Mathf.Max(20,Screen.height-68));
+        var pages = ReadablePages(content, Mathf.Max(12,Screen.width-40), Mathf.Max(20,Screen.height-92));
         detailSliceCount = pages.Count; detailSlice = Mathf.Clamp(detailSlice,0,pages.Count-1);
         damageText.text = title + " · " + (detailSlice+1) + "/" + pages.Count + "\n" + pages[detailSlice];
     }
     public static List<string> ReadablePages(string content, float width, float height)
     {
-        int columns = System.Math.Max(12,(int)(width/8f));
-        int rows = System.Math.Max(1,(int)(height/18f)-1);
+        int columns = System.Math.Max(12,(int)(width/11f));
+        int rows = System.Math.Max(1,(int)(height/25f)-1);
         var lines = new List<string>();
         foreach (string line in (content ?? "").Split('\n')) {
             string rest = line;
@@ -461,6 +491,7 @@ public class UIManager : MonoBehaviour
             RegisterInteractable(item); if (transparentWindow != null) transparentWindow.RegisterClickable(item.GetRect()); button.enabled = false;
         }
         if (controlsChanged || Screen.width != layoutWidth || Screen.height != layoutHeight) LayoutReadableUI();
+        RefreshCombatHUDVisibility();
         RefreshAttackModeSelection();
     }
     private static void PlaceUI(RectTransform rect,Vector2 anchor,Vector2 pivot,Vector2 position,Vector2 size)
@@ -503,8 +534,8 @@ public class UIManager : MonoBehaviour
             if (gm.eventLogText != null) { var rt = (RectTransform)gm.eventLogText.transform; rt.anchorMin = Vector2.zero; rt.anchorMax = Vector2.one; rt.pivot = new Vector2(.5f,.5f); rt.sizeDelta = new Vector2(-58,-8); rt.anchoredPosition = new Vector2(-22,0); gm.eventLogText.overflowMode = TMPro.TextOverflowModes.Ellipsis; }
             var info = FindNamedRect("DamageInfoButton"); PlaceUI(info,new Vector2(1,1),new Vector2(1,1),new Vector2(-3,-3),new Vector2(42,22));
         }
-        if (statsPanel != null) { PlaceUI(statsPanel,new Vector2(0,1),new Vector2(0,1),new Vector2(6,-112),new Vector2(Mathf.Min(315,Mathf.Max(180,w*.52f)),76)); statsPanel.gameObject.SetActive(h>=290);
-            var stat = statsPanel.GetComponentInChildren<TMPro.TextMeshProUGUI>(true); if (stat != null) {var rt=(RectTransform)stat.transform;rt.anchorMin=Vector2.zero;rt.anchorMax=Vector2.one;rt.sizeDelta=new Vector2(-12,-12);rt.anchoredPosition=Vector2.zero;rt.pivot=new Vector2(.5f,.5f);}
+        if (statsPanel != null) { PlaceUI(statsPanel,new Vector2(0,1),new Vector2(0,1),new Vector2(6,-106),new Vector2(Mathf.Min(470,w-250),90));
+            var stat = statsPanel.GetComponentInChildren<TMPro.TextMeshProUGUI>(true); if (stat != null) {var rt=(RectTransform)stat.transform;rt.anchorMin=Vector2.zero;rt.anchorMax=Vector2.one;rt.sizeDelta=new Vector2(-16,-14);rt.anchoredPosition=Vector2.zero;rt.pivot=new Vector2(.5f,.5f);ConfigureCompactStatsText(stat);}
         }
         if (damagePanel != null) {
             var rt = (RectTransform)damagePanel.transform; rt.anchorMin = Vector2.zero; rt.anchorMax = Vector2.one; rt.pivot = new Vector2(.5f,.5f); rt.sizeDelta = new Vector2(-12,-12); rt.anchoredPosition = Vector2.zero;
@@ -524,12 +555,18 @@ public class UIManager : MonoBehaviour
         // readable pixel font, rather than shrinking a 1920px canvas to 250px.
         foreach(var text in Object.FindObjectsByType<TMPro.TextMeshProUGUI>(FindObjectsInactive.Include,FindObjectsSortMode.None)) {
             if (!text.transform.IsChildOf(hudCanvas)) continue;
-            ReadableText(text,w>=1000?18f:w>=750?16f:14f);
+            bool compact = text.transform.parent != null && text.transform.parent.GetComponent<CustomInteractable>() != null;
+            float fontSize = text == (gm != null ? gm.eventLogText : null) ? 16f :
+                text == (heroForUI != null ? heroForUI.atkStatusText : null) ? (w>=1000?17f:15f) :
+                compact ? (w>=1000?16f:14f) : (w>=1000?17f:w>=750?16f:14f);
+            ReadableText(text,fontSize);
             if (text.transform.parent != null && text.transform.parent.GetComponent<CustomInteractable>() != null && text != (gm != null ? gm.eventLogText : null)) {
                 var rt = (RectTransform)text.transform; rt.anchorMin=Vector2.zero;rt.anchorMax=Vector2.one;rt.sizeDelta=new Vector2(-8,-4);rt.anchoredPosition=Vector2.zero;rt.pivot=new Vector2(.5f,.5f);
             }
         }
+        if (heroForUI != null && heroForUI.atkStatusText != null) ConfigureCompactStatsText(heroForUI.atkStatusText);
         if (devUI != null) devUI.Layout();
+        RefreshCombatHUDVisibility();
     }
     private RectTransform FindNamedRect(string name)
     {

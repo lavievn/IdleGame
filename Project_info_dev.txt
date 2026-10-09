@@ -722,3 +722,12 @@ Hướng phát triển: khởi tạo nhân vật ngẫu nhiên theo bối cảnh
 Kiến trúc phải giữ nguyên dữ liệu nền của mỗi nhân vật, cho phép nhiều tầng chỉ số; không khóa hệ thống vào chỉ 3 kiểu tấn công hay gán cứng base HP 400.
 Các thay đổi sau này cần phân biệt base theo nhân vật, hệ số theo lối đánh, thưởng mỗi cấp, hiệu ứng và chỉ số trang bị. Khi thêm random vĩnh viễn nên lưu kết quả vào save, có kế hoạch tương thích save cũ.
 54e chỉ sửa UI. Dự kiến 54f (CHƯA TRIỂN KHAI): Cận chiến HP khởi điểm gấp 2 base thử nghiệm, hồi 3~5*(1+5%*(cấp-1)) khi hạ địch, random +50..100 HP mỗi cấp; cung tốc đánh 150%, sát thương 70%, HP 60%; phép chỉ vận sức khi có mục tiêu, bán kính AoE từ 150 tăng thành 250 theo tọa độ Ground. Thử sức mạnh 5 wave đầu và map khó sau 25 wave.
+
+
+=== THỬ NGHIỆM 0.0.4.54f / THIẾT KẾ MỞ RỘNG VỀ SAU ===
+Bản 54f khóa logic giao diện combat không được đè màn hình khởi đầu, xác nhận và Game Over; bố cục chữ không được tràn khung. Nút Menu đỏ ở dưới phải cần nhãn văn bản.
+Mọi nhân vật có originHealth riêng (HP ban đầu, hiện thường là 400 để thử); đường tăng HP theo cấp, điểm cộng và trang bị về sau là các lớp dữ liệu khác nhau. Không hardcode x2/x0.6 trực tiếp lên dữ liệu gốc hoặc reset originHealth khi đổi chế độ.
+Cận chiến: nhân phần HP nền x2, thêm HP riêng 50..100 mỗi lần nhân vật lên cấp (được lưu ở meleeGrowthBonus); giết quái hồi Random(3..5) * (1+5%*(level-1)), áp dụng lúc dùng cận chiến; chỉ số HP khác không hưởng phần thưởng cận chiến. Save cũ cấp cao được bù một lần 75 HP cho mỗi cấp đã qua để không reroll khi load.
+Cung: nhân HP nền x0.6; damage mode x0.7; đòn Hero 150% tốc độ so với các hệ khác ở tốc độ gốc (1.4/1.5s/đòn). Phép Hero cùng thời gian gốc 1.4s/đòn nhưng không vận sức trước khi có target sống trong tầm và hủy charge nếu mất target. AoE tính từ tâm nổ (Ground-local) bán kính250; monster vẫn radius100 và thời gian vận phép cũ.
+Chuyển chế độ đánh phải giữ %HP, không hồi máu do tăng maxHP. Cấp hiện tại và trang bị tương lai không được phụ thuộc vào chế độ đang đứng tại thời điểm save/load.
+Tất cả các giá trị này chỉ phục vụ thử nghiệm logic; tiếp theo cần chạy thực chiến 5 wave đầu, 25 wave/5 map và kiểm tra mất mục tiêu/resize mid-combat để đo độ khó thực tế.

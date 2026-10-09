@@ -71,6 +71,11 @@ public class GameManager : MonoBehaviour
     private StartMenuUI startMenu;
     public bool IsHardMode => runtimeHeroData != null && runtimeHeroData.difficulty == 1;
     public bool HasPendingConfirmation => pendingChoice != MenuChoice.None;
+    // Visible HUD only during active gameplay, never on start/confirmation/death screens.
+    public bool IsGameplayHUDVisible => hasDeployed &&
+        (preGameUI == null || !preGameUI.activeInHierarchy) &&
+        (gameOverPanel == null || !gameOverPanel.activeInHierarchy) &&
+        (confirmationPopup == null || !confirmationPopup.activeInHierarchy);
     public bool CanContinue => saveManager != null && (manualSelection ? saveManager.HasSave(continueSlot) : saveManager.TryGetLatestSlot(out continueSlot));
 
     void Start()
@@ -101,6 +106,9 @@ public class GameManager : MonoBehaviour
         runtimeHeroData.currentExp = 0;
         runtimeHeroData.expToNextLevel = 100;
         runtimeHeroData.addedHealth = runtimeHeroData.addedDamage = runtimeHeroData.statPoints = 0;
+        runtimeHeroData.originHealth = Mathf.Max(1,heroDataSO != null ? heroDataSO.baseHealth : CombatBalance.HeroHealth(1));
+        runtimeHeroData.meleeGrowthBonus = 0;
+        runtimeHeroData.meleeGrowthThroughLevel = 1;
         runtimeHeroData.balanceVersion = 0;
         runtimeHeroData.difficulty = 0;
         runtimeHeroData.mapNumber = 1; runtimeHeroData.completedWavesInMap = 0; runtimeHeroData.mapProgressVersion = 1;
@@ -164,6 +172,7 @@ public class GameManager : MonoBehaviour
     private void SetupPreGameUI()
     {
         preGameUI.SetActive(true);
+        preGameUI.transform.SetAsLastSibling();
         if (startMenu != null) startMenu.Refresh();
         if (infoText != null) infoText.text = CanContinue
             ? "Tiếp tục hành trình đã lưu hoặc bắt đầu một hành trình mới."
@@ -257,7 +266,7 @@ public class GameManager : MonoBehaviour
             UpdateEventLog("Thất bại: quay về map đầu của " + WorldNames.Region(runtimeHeroData.regionTheme) + ", đợt 1/5. Giữ cấp và chỉ số nhân vật.");
             if (saveManager != null) saveManager.SaveGame(runtimeHeroData, SaveSlot.AutoSave);
         }
-        if (gameOverPanel != null) gameOverPanel.SetActive(true);
+        if (gameOverPanel != null) { gameOverPanel.SetActive(true); gameOverPanel.transform.SetAsLastSibling(); }
     }
 
     public void OnRetryClicked()
@@ -352,6 +361,7 @@ public class GameManager : MonoBehaviour
         if (heroController != null)
         {
             heroController.ChangeAttackMode(modeIndex);
+            if (combatManager != null) combatManager.OnHeroAttackModeChanged();
             UpdateEventLog($"Đổi thế: {(AttackMode)modeIndex}");
         }
     }

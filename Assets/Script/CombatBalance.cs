@@ -56,15 +56,26 @@ public static class CombatBalance
     public static float MonsterSpeed(int level) { return MonsterDev != null ? MonsterDev.SpeedAt(level) : 1f + Math.Min(.25f, .005f * (Level(level) - 1)); }
     public static int LevelSpread(int level) { return Math.Max(2, (int)Math.Ceiling(Level(level) * 0.1d)); }
     public static int KillExp(int monsterLevel) { return 12 + 2 * Level(monsterLevel); }
-    public static float AttackInterval(AttackMode mode, float speed, bool devOverride = false)
+    public static float AttackInterval(AttackMode mode, float speed, bool devOverride = false, bool monster = false)
     {
-        float seconds = mode == AttackMode.Melee ? 1.4f : mode == AttackMode.RangedPhysical ? 0.7f : 2f;
+        float seconds = monster ? (mode == AttackMode.Melee ? 1.4f : mode == AttackMode.RangedPhysical ? .7f : 2f)
+            : (mode == AttackMode.RangedPhysical ? 1.4f / 1.5f : 1.4f);
         // A corrupted/legacy speed must not restore exponential attack growth.
         return seconds / Math.Max(0.1f, Math.Min(devOverride ? 20f : 1.25f, speed));
     }
+    // The stance scales character BASE health, not health added by equipment or points.
+    public static float HeroHealthMultiplier(AttackMode mode)
+    {
+        return mode == AttackMode.Melee ? 2f : mode == AttackMode.RangedPhysical ? .6f : 1f;
+    }
+    public static int MeleeKillHeal(int level, int baseRoll)
+    {
+        return Math.Max(1,(int)Math.Round(Math.Max(3,Math.Min(5,baseRoll)) *
+            (1d + .05d * (Level(level)-1)),MidpointRounding.AwayFromZero));
+    }
     public static float ModeMultiplier(AttackMode mode, float physicalFactor = .8f)
     {
-        return mode == AttackMode.RangedMagic ? 2.5f : mode == AttackMode.RangedPhysical ? Math.Max(.55f, Math.Min(.8f, physicalFactor)) : 1f;
+        return mode == AttackMode.RangedMagic ? 2.5f : mode == AttackMode.RangedPhysical ? .7f : 1f;
     }
     public static int Damage(int attack, AttackMode mode, float roll, float physicalFactor = .8f)
     {

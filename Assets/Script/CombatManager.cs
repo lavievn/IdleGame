@@ -13,7 +13,8 @@ public class CombatManager : MonoBehaviour
     [Min(0f)] public float magicArcHeight = 65f;
     [Min(0.1f)] public float effectsScale = 1f;
     [Min(0f)] public float physicalHitRadius = 12f;
-    [Min(0f)] public float magicImpactRadius = 100f;
+    [Min(0f)] public float magicImpactRadius = 100f; // Enemy radius unchanged.
+    [Min(0f)] public float heroMagicImpactRadius = 250f; // Ground-local hero explosion.
     [Min(0.1f)] public float magicProjectileScale = 4f;
     [SerializeField] private MonsterSpawner monsterSpawner;
     private BattleEffects effects;
@@ -63,7 +64,7 @@ public class CombatManager : MonoBehaviour
         ClearProjectiles();
         runtimeHeroData = hData;
         if (CombatBalance.HeroDev != null && heroController != null) heroController.moveSpeed = CombatBalance.HeroDev.movementSpeed;
-        maxHeroHP = runtimeHeroData.GetCalculatedHealth();
+        maxHeroHP = runtimeHeroData.GetCalculatedHealth(heroController != null ? heroController.attackMode : AttackMode.Melee);
         currentHeroHP = maxHeroHP;
         ResetHeroAttack();
         if (heroController != null)
@@ -112,7 +113,7 @@ public class CombatManager : MonoBehaviour
         if (!monster && runtimeHeroData != null)
         {
             float healthRatio = maxHeroHP > 0 ? (float)currentHeroHP / maxHeroHP : 1f;
-            runtimeHeroData.ApplyHeroBalance(); maxHeroHP = runtimeHeroData.GetCalculatedHealth();
+            runtimeHeroData.ApplyHeroBalance(); maxHeroHP = runtimeHeroData.GetCalculatedHealth(heroController != null ? heroController.attackMode : AttackMode.Melee);
             currentHeroHP = currentHeroHP <= 0 ? 0 : Mathf.Clamp(Mathf.RoundToInt(healthRatio * maxHeroHP),1,maxHeroHP);
             if (heroController != null) {
                 if (CombatBalance.HeroDev != null) heroController.moveSpeed = CombatBalance.HeroDev.movementSpeed;
@@ -139,6 +140,16 @@ public class CombatManager : MonoBehaviour
 
     public int CurrentHeroHP => currentHeroHP;
     public int MaxHeroHP => maxHeroHP;
+    public void OnHeroAttackModeChanged()
+    {
+        if (runtimeHeroData == null || heroController == null) return;
+        float ratio = maxHeroHP > 0 ? (float)currentHeroHP/maxHeroHP : 1f;
+        maxHeroHP = runtimeHeroData.GetCalculatedHealth(heroController.attackMode);
+        currentHeroHP = currentHeroHP <= 0 ? 0 : Mathf.Clamp(Mathf.RoundToInt(ratio*maxHeroHP),1,maxHeroHP);
+        ResetHeroAttack();
+        heroController.UpdateHealthBar(currentHeroHP,maxHeroHP);
+        heroController.UpdateStats(runtimeHeroData,currentHeroHP,maxHeroHP);
+    }
     void LateUpdate()
     {
         if (runtimeHeroData != null && heroController != null) heroController.UpdateStats(runtimeHeroData, currentHeroHP, maxHeroHP);
@@ -165,9 +176,16 @@ public class CombatManager : MonoBehaviour
             AttackMode mode = info.controller.attackMode;
             if (info.cycleMode != mode) { info.cycleMode = mode; info.attackTimer = 0f; }
             float duration = AttackDuration(mode, info.data.baseAttackSpeed, true);
+            bool eligible = info.controller.CanAttack(heroController, space);
+            if (mode == AttackMode.RangedMagic && !eligible)
+            {
+                info.attackTimer = 0f;
+                info.controller.UpdateChargeBar(false,0f);
+                continue;
+            }
             bool ready = AdvanceCycle(ref info.attackTimer, mode, duration, dt);
             info.controller.UpdateChargeBar(mode == AttackMode.RangedMagic, info.attackTimer / duration);
-            if (!ready || !info.controller.CanAttack(heroController, space)) continue;
+            if (!ready || !eligible) continue;
             info.attackTimer = mode == AttackMode.RangedMagic ? 0f : duration;
             info.controller.UpdateChargeBar(mode == AttackMode.RangedMagic, 0f);
             var trace = RollDamageTrace(info.data, runtimeHeroData, mode);
@@ -189,45 +207,53 @@ public class CombatManager : MonoBehaviour
         return mode == AttackMode.RangedMagic ? timer >= duration : timer <= 0f;
     }
 
+    private ActiveMonsterInfo NearestEligibleMonster(EnvironmentManager space)
+    {
+        ActiveMonsterInfo target = null; float nearest = float.MaxValue;
+        foreach (var info in activeMonsters)
+        {
+            if (info.controller == null || !heroController.CanAttack(info.controller,space)) continue;
+            float distance = Mathf.Abs(space.Position(info.controller.Rect).x-space.Position(heroController.heroRect).x);
+            if (distance < nearest) { nearest = distance; target = info; }
+        }
+        return target;
+    }
     private void TickHeroAttack(EnvironmentManager space, float dt)
     {
         AttackMode mode = heroController.attackMode;
         if (heroWindupMode != mode) { ResetHeroAttack(); heroWindupMode = mode; }
-        float duration = AttackDuration(mode, runtimeHeroData.baseAttackSpeed);
-        bool ready = AdvanceCycle(ref heroAttackTimer, mode, duration, dt);
-        heroController.UpdateChargeBar(mode == AttackMode.RangedMagic, heroAttackTimer / duration);
-        if (!ready || !isBattling) return;
-        // Choose the nearest eligible enemy NOW, without waiting for it to stop or align Y.
-        ActiveMonsterInfo target = null;
-        float nearest = float.MaxValue;
-        foreach (var info in activeMonsters)
+        float duration = AttackDuration(mode,runtimeHeroData.baseAttackSpeed);
+        ActiveMonsterInfo target = NearestEligibleMonster(space);
+        if (mode == AttackMode.RangedMagic && (!isBattling || target == null))
         {
-            if (!heroController.CanAttack(info.controller, space)) continue;
-            float distance = Mathf.Abs(space.Position(info.controller.Rect).x - space.Position(heroController.heroRect).x);
-            if (distance < nearest) { nearest = distance; target = info; }
+            heroAttackTimer = 0f;
+            heroController.UpdateChargeBar(false,0f);
+            return;
         }
-        if (target == null) return;
+        bool ready = AdvanceCycle(ref heroAttackTimer,mode,duration,dt);
+        heroController.UpdateChargeBar(mode == AttackMode.RangedMagic,heroAttackTimer/duration);
+        if (!ready || !isBattling || target == null) return;
         heroAttackTimer = mode == AttackMode.RangedMagic ? 0f : duration;
-        heroController.UpdateChargeBar(mode == AttackMode.RangedMagic, 0f);
+        heroController.UpdateChargeBar(mode == AttackMode.RangedMagic,0f);
         heroController.PlayAttackFeedback();
         var trace = RollHeroDamageTrace(target.data);
         if (mode == AttackMode.Melee)
         {
-            Impact(BodyPosition(target.controller.Rect, space), false);
-            DealDamageToMonsterWithTrace(target, trace);
+            Impact(BodyPosition(target.controller.Rect,space),false);
+            DealDamageToMonsterWithTrace(target,trace);
         }
-        else Launch(target, true, mode, trace, duration, space);
+        else Launch(target,true,mode,trace,duration,space);
     }
 
     private static DamageTrace RollDamageTrace(EntityDataSO attacker, EntityDataSO defender, AttackMode mode)
     {
-        float physicalFactor = mode == AttackMode.RangedPhysical ? Random.Range(.55f, .8f) : 1f;
+        float physicalFactor = mode == AttackMode.RangedPhysical ? .7f : 1f;
         return SynergyMath.EvaluateDamage(attacker, defender, mode, Random.Range(.85f, 1f), physicalFactor);
     }
 
     private static float AttackDuration(AttackMode mode, float speed, bool monster = false)
     {
-        return CombatBalance.AttackInterval(mode, speed, (monster ? CombatBalance.MonsterDev : CombatBalance.HeroDev) != null);
+        return CombatBalance.AttackInterval(mode, speed, (monster ? CombatBalance.MonsterDev : CombatBalance.HeroDev) != null, monster);
     }
 
     private void ResetHeroAttack()
@@ -268,10 +294,11 @@ public class CombatManager : MonoBehaviour
         if (target.controller != null) target.controller.MarkDead();
         int exp = CombatBalance.KillExp(target.data.currentLevel) * (gameManager != null && gameManager.IsHardMode ? 3 : 1);
         runtimeHeroData.AddExp(exp);
-        // Raising max HP never fills current HP. The only in-run healing is a
-        // small, explicit 5..10 HP reward per kill, capped at the new maximum.
-        maxHeroHP = runtimeHeroData.GetCalculatedHealth();
-        currentHeroHP = Mathf.Clamp(currentHeroHP + Random.Range(5, 11), 0, maxHeroHP);
+        // Levelling increases max HP without filling the newly gained capacity.
+        maxHeroHP = runtimeHeroData.GetCalculatedHealth(heroController != null ? heroController.attackMode : AttackMode.Melee);
+        int heal = heroController != null && heroController.attackMode == AttackMode.Melee
+            ? CombatBalance.MeleeKillHeal(runtimeHeroData.currentLevel,Random.Range(3,6)) : 0;
+        currentHeroHP = Mathf.Clamp(currentHeroHP + heal,0,maxHeroHP);
         heroController.UpdateHealthBar(currentHeroHP, maxHeroHP);
         heroController.UpdateStats(runtimeHeroData, currentHeroHP, maxHeroHP);
         if (gameManager != null) gameManager.UpdateEventLog($"Hạ {IdentityDisplay.Describe(target.data)}. Nhận {exp} EXP!");
@@ -363,7 +390,7 @@ public class CombatManager : MonoBehaviour
                 foreach (var victim in victims)
                 {
                     if (!activeMonsters.Contains(victim) || victim.controller == null || !victim.controller.IsAlive ||
-                        !WithinImpact(BodyPosition(victim.controller.Rect, space), end, magicImpactRadius)) continue;
+                        !WithinImpact(BodyPosition(victim.controller.Rect, space), end, heroMagicImpactRadius)) continue;
                     hit = true;
                     DealDamageToMonsterWithTrace(victim, SynergyMath.EvaluateSnapshot(shot.trace, victim.data));
                 }

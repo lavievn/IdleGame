@@ -56,25 +56,26 @@ partial class MotionRegression
         Run("magic charges before first cast, launches only one enlarged fireball",()=>{
             var f=new Field();f.hero.ChangeAttackMode(2);f.Battle(f.Monster(-200),f.Monster(-250),f.Monster(-300));Tough(f);
             CombatStep(f,1);Check(f.combat.PendingProjectileCount==0,"half charge no cast");
-            var bar=Get<MagicChargeBar>(f.hero,"chargeBar");Check(bar.Root.gameObject.activeSelf,"magic bar visible");Near(bar.Fill.fillAmount,.5f,"half charge");
+            var bar=Get<MagicChargeBar>(f.hero,"chargeBar");Check(bar.Root.gameObject.activeSelf,"magic bar visible");Near(bar.Fill.fillAmount,1f/1.4f,"partial windup");
             CombatStep(f,1);Check(f.combat.PendingProjectileCount==1,"one projectile for three enemies");Near(Bolts(f)[0].size,20,"old radius5 increased300 percent");
             var tr=ShotField<DamageTrace>(ShotList(f)[0],"trace");Near(tr.modeMultiplier,2.5f,"magic damage multiplier");Near(bar.Fill.fillAmount,0,"reset at launch");
-            CombatStep(f,1.2f);Check(f.combat.PendingProjectileCount==0,"no next cast before full charge");Near(bar.Fill.fillAmount,.6f,"next charge overlaps flight");
+            CombatStep(f,1.2f);Check(f.combat.PendingProjectileCount==0,"no next cast before full charge");Near(bar.Fill.fillAmount,1.2f/1.4f,"next charge overlaps flight");
         });
-        Run("magic charges on approach and holds full until an enemy enters range",()=>{
+        Run("magic does not charge until an enemy enters range",()=>{
             var f=new Field();f.hero.ChangeAttackMode(2);var m=f.Monster(-480);f.Battle(m);Tough(f);
-            CombatStep(f,2);Check(f.combat.PendingProjectileCount==0,"out of range does not fire");var bar=Get<MagicChargeBar>(f.hero,"chargeBar");Near(bar.Fill.fillAmount,1,"ready held");
-            f.space.SetPosition(m.Rect,new Vector2(-400,0));CombatStep(f,.01f);Check(f.combat.PendingProjectileCount==1,"cast on entry");Near(bar.Fill.fillAmount,0,"cast resets bar");
+            CombatStep(f,2);Check(f.combat.PendingProjectileCount==0,"out of range does not fire");var bar=Get<MagicChargeBar>(f.hero,"chargeBar");Near(Get<float>(f.combat,"heroAttackTimer"),0,"not precharged");
+            f.space.SetPosition(m.Rect,new Vector2(-400,0));CombatStep(f,.7f);Check(f.combat.PendingProjectileCount==0,"starts from zero");
+            CombatStep(f,.7f);Check(f.combat.PendingProjectileCount==1,"cast after full windup");Near(bar.Fill.fillAmount,0,"cast resets bar");
         });
-        Run("magic explosion uses radius100 at impact, including enemies outside shooter range",()=>{
-            var f=new Field();f.hero.ChangeAttackMode(2);var a=f.Monster(-400);var b=f.Monster(-490);var c=f.Monster(-501);var d=f.Monster(-400,AttackMode.Melee,101);f.Battle(a,b,c,d);Tough(f);
+        Run("hero magic explosion uses Ground-local radius 250",()=>{
+            var f=new Field();f.hero.ChangeAttackMode(2);var a=f.Monster(-400);var b=f.Monster(-490);var c=f.Monster(-670);var d=f.Monster(-400,AttackMode.Melee,260);f.Battle(a,b,c,d);Tough(f);
             CombatStep(f,2);Check(f.combat.PendingProjectileCount==1,"one target selected");CombatStep(f,1.2f);
             Check(f.Enemies[0].currentHP<10000&&f.Enemies[1].currentHP<10000,"impact radius hits second victim outside casting range");
             Check(f.Enemies[2].currentHP==10000&&f.Enemies[3].currentHP==10000,"outside circle untouched on X and Y");
         });
         Run("magic is fixed aim, moving primary can escape but a new arrival can be hit",()=>{
             var f=new Field();f.hero.ChangeAttackMode(2);var a=f.Monster(-200);var b=f.Monster(-480);f.Battle(a,b);Tough(f);CombatStep(f,2);
-            f.space.SetPosition(a.Rect,new Vector2(-50,0));f.space.SetPosition(b.Rect,new Vector2(-220,0));CombatStep(f,1.2f);
+            f.space.SetPosition(a.Rect,new Vector2(100,0));f.space.SetPosition(b.Rect,new Vector2(-220,0));CombatStep(f,1.2f);
             Check(f.Enemies[0].currentHP==10000&&f.Enemies[1].currentHP<10000,"impact uses current victims around old endpoint");
         });
         Run("magic retains launch power and roots even if hero stats change in flight",()=>{
@@ -122,9 +123,10 @@ partial class MotionRegression
             f.space.SetPosition(m.Rect,new Vector2(-150,0));CombatStep(f,.2f);
             Check(gm.DamageHistory.Length==1&&gm.DamageHistory[0].Contains("sát thương 0")&&!gm.DamageHistory[0].Contains("làm tròn"),"miss has explicit zero record");
         });
-        Run("next wave preserves hero charge but explicit reset clears it",()=>{
-            var f=new Field();f.hero.ChangeAttackMode(2);CombatStep(f,1.5f);Near(Get<float>(f.combat,"heroAttackTimer"),1.5f,"charges between waves");
-            f.Battle(f.Monster(-200));CombatStep(f,.5f);Check(f.combat.PendingProjectileCount==1,"normal wave does not restart charge");f.combat.ForceClearAllMonsters();Near(Get<float>(f.combat,"heroAttackTimer"),0,"explicit reset clears");
+        Run("next wave requires new target-gated magic charge",()=>{
+            var f=new Field();f.hero.ChangeAttackMode(2);CombatStep(f,1.5f);Near(Get<float>(f.combat,"heroAttackTimer"),0,"no charge between waves");
+            f.Battle(f.Monster(-200));CombatStep(f,.5f);Check(f.combat.PendingProjectileCount==0,"not precast");
+            CombatStep(f,.9f);Check(f.combat.PendingProjectileCount==1,"charges after eligible target");f.combat.ForceClearAllMonsters();Near(Get<float>(f.combat,"heroAttackTimer"),0,"explicit reset clears");
         });
     }
 }

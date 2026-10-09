@@ -100,7 +100,7 @@ partial class MotionRegression
             var f=new Field();f.hero.ChangeAttackMode(2);var near=f.Monster(-200);var far=f.Monster(-480);f.Battle(near,far);f.hero.TickMovement(f.space,0);Time.deltaTime=2;Call(f.combat,"Update");Check(f.Enemies[0].currentHP==f.Enemies[0].maxHP,"no damage before arrival");Time.deltaTime=1.2f;Call(f.combat,"Update");Check(f.Enemies[0].currentHP<f.Enemies[0].maxHP,"near hit");Check(f.Enemies[1].currentHP==f.Enemies[1].maxHP,"far untouched");
         });
         Run("charged magic waits for an eligible target without firing",()=>{
-            var f=new Field();f.hero.ChangeAttackMode(2);var m=f.Monster(-200);f.Battle(m);f.hero.TickMovement(f.space,0);Time.deltaTime=1.9f;Call(f.combat,"Update");f.space.SetPosition(m.Rect,new Vector2(-480,0));Time.deltaTime=0.2f;Call(f.combat,"Update");Check(f.Enemies[0].currentHP==f.Enemies[0].maxHP,"no ghost hit");Near(Get<float>(f.combat,"heroAttackTimer"),2,"charge held");
+            var f=new Field();f.hero.ChangeAttackMode(2);var m=f.Monster(-200);f.Battle(m);f.hero.TickMovement(f.space,0);Time.deltaTime=1.9f;Call(f.combat,"Update");f.space.SetPosition(m.Rect,new Vector2(-480,0));Time.deltaTime=0.2f;Call(f.combat,"Update");Check(f.Enemies[0].currentHP==f.Enemies[0].maxHP,"no ghost hit");Near(Get<float>(f.combat,"heroAttackTimer"),0,"charge resets when target leaves range");
         });
         Run("switching from magic to melee allows an immediate strike",()=>{
             var f=new Field();f.hero.ChangeAttackMode(2);var m=f.Monster(-20);f.Battle(m);f.hero.TickMovement(f.space,0);Time.deltaTime=1.9f;Call(f.combat,"Update");f.hero.ChangeAttackMode(0);Time.deltaTime=0.2f;Call(f.combat,"Update");Check(f.Enemies[0].currentHP<f.Enemies[0].maxHP,"immediate melee strike");
@@ -255,6 +255,7 @@ partial class MotionRegression
         Patch54bTests();
         Patch54cTests();
         Patch54dTests();
+        Patch54fTests();
         TerrainTests();
         MenuDifficultyTests();
         BalanceTests();

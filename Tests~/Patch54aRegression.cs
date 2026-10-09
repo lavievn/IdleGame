@@ -61,9 +61,9 @@ partial class MotionRegression
         Run("hero stats include HP, root attack splits, movement and actual attack frequency",()=>{
             var f=new Field();f.hero.atkStatusText=new GameObject(true).AddComponent<TextMeshProUGUI>();var d=HeroAt(1);d.baseDamage=100;
             d.spiritRoots=new List<ElementType>{ElementType.Hoa,ElementType.Thuy};d.rootTiers=new List<int>{3,4};d.rootWeights=new List<float>{.4f,.6f};
-            f.hero.UpdateStats(d,123,400);string text=f.hero.atkStatusText.text;
-            Check(text.Contains("123/400")&&text.Contains("ATK Hỏa: 40")&&text.Contains("ATK Thủy: 60")&&text.Contains("Di chuyển:")&&text.Contains("Tốc đánh:"),"full stats");
-            f.hero.ChangeAttackMode(1);f.hero.UpdateStats(d,123,400);Check(f.hero.atkStatusText.text!=text,"mode changes displayed frequency");
+            f.hero.UpdateStats(d,123,400);string text=f.hero.FullStatDetails;
+            Check(text.Contains("123/400")&&text.Contains("EXP:")&&text.Contains("ATK Hỏa: 40")&&text.Contains("ATK Thủy: 60")&&text.Contains("Di chuyển:")&&text.Contains("Tốc đánh:"),"full stats");
+            f.hero.ChangeAttackMode(1);f.hero.UpdateStats(d,123,400);Check(f.hero.FullStatDetails!=text,"mode changes displayed frequency");
         });
         Run("pause and info work through native-compatible dispatcher and pause freezes movement and launched shots",()=>{
             var f=new Field();SaveManager save;string dir;var gm=MenuManager(f,out save,out dir);
