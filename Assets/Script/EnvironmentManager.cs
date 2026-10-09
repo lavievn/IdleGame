@@ -71,12 +71,15 @@ public class EnvironmentManager : MonoBehaviour
     // All AI moves before CombatManager.Update. Camera presentation runs after both.
     void Update()
     {
-        if (battleArea == null || Width <= 0f) return;
+        if (Time.timeScale == 0f || battleArea == null || Width <= 0f) return;
         float dt = Time.deltaTime;
         foreach (var hero in HeroController.ActiveHeroes)
             if (hero != null && hero.IsDeployed) hero.TickMovement(this, dt);
+        float cameraPan, backgroundPan;
+        PresentationPan(out cameraPan, out backgroundPan);
+        float groundMinusCamera = backgroundPan - cameraPan;
         foreach (var monster in MonsterController.ActiveMonsters)
-            if (monster != null && monster.IsAlive) monster.TickMovement(this, dt);
+            if (monster != null && monster.IsAlive) monster.TickMovement(this, dt, groundMinusCamera);
         // Monsters may have entered a hero's range during this frame.
         foreach (var hero in HeroController.ActiveHeroes)
             if (hero != null && hero.IsDeployed) hero.RefreshCombatState(this);
@@ -87,7 +90,20 @@ public class EnvironmentManager : MonoBehaviour
         IsScrolling = false;
         CurrentCameraSpeed = 0f;
         CurrentBackgroundSpeed = 0f;
-        if (battleArea == null || Width <= 0f) return;
+        if (Time.timeScale == 0f || battleArea == null || Width <= 0f) return;
+        float pan, backgroundPan;
+        PresentationPan(out pan, out backgroundPan);
+        PanWorld(pan);
+        PanEnvironment(backgroundPan);
+        CurrentBackgroundSpeed = Time.deltaTime > 0f ? backgroundPan / Time.deltaTime : 0f;
+        CurrentCameraSpeed = Time.deltaTime > 0f ? pan / Time.deltaTime : 0f;
+        IsScrolling = Mathf.Abs(pan) > 0.01f;
+    }
+
+    private void PresentationPan(out float cameraPan, out float backgroundPan)
+    {
+        cameraPan = backgroundPan = 0f;
+        if (Time.timeScale == 0f || battleArea == null || Time.deltaTime <= 0f) return;
         if (cameraTarget == null || !cameraTarget.IsCameraSubject)
         {
             cameraTarget = null;
@@ -95,20 +111,10 @@ public class EnvironmentManager : MonoBehaviour
                 if (hero != null && hero.IsDeployed) { cameraTarget = hero; break; }
         }
         if (cameraTarget == null) return;
-
-        // No monster framing and no attraction to the centre. Equal hero/camera
-        // speeds preserve the hero's CURRENT screen position, even after a fight.
-        float pan = BattleMotion.ZoneCameraStep(Position(cameraTarget.heroRect).x,
+        cameraPan = BattleMotion.ZoneCameraStep(Position(cameraTarget.heroRect).x,
             ZoneLeftX, ZoneRightX, scrollSpeed, Time.deltaTime);
-        PanWorld(pan);
-        // Decorative scrolling follows real running distance; a stationary hero
-        // and the background instead receive exactly the same camera pan.
-        float backgroundPan = cameraTarget.IsDeployed && cameraTarget.MovementDistanceThisFrame > 0.001f
-            ? cameraTarget.MovementDistanceThisFrame : pan;
-        PanEnvironment(backgroundPan);
-        CurrentBackgroundSpeed = Time.deltaTime > 0f ? backgroundPan / Time.deltaTime : 0f;
-        CurrentCameraSpeed = Time.deltaTime > 0f ? pan / Time.deltaTime : 0f;
-        IsScrolling = Mathf.Abs(pan) > 0.01f;
+        backgroundPan = cameraTarget.IsDeployed && cameraTarget.MovementDistanceThisFrame > .001f
+            ? cameraTarget.MovementDistanceThisFrame : cameraPan;
     }
 
     public Vector2 Position(RectTransform rect)

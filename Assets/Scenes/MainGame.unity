@@ -3117,6 +3117,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a6410b583dd466240b01de972d2c14b8, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TransparentWindow
+  startupWidth: 800
+  startupHeight: 450
   modalUI:
   - {fileID: 723202596}
   - {fileID: 362515422}

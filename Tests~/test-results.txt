@@ -1,11 +1,11 @@
 PASS clamp approach in both directions, including long frame
 PASS equal melee range at 0.2/0.5/1/2 Canvas scale
 PASS camera pans all actors and ground equally
-PASS passive offscreen monster only follows world pan
+PASS offscreen monster advances right independently of world pan
 PASS ranged hero stops while melee monster keeps approaching
 PASS another attacker cannot halve approaching monster speed
 PASS melee hero approaches a stationary ranged monster
-PASS target remains stable until death
+PASS nearest target rescanned while approaching and retained during attack
 PASS hidden hero freezes exploration; respawn recovers
 PASS hero death stops AI and retry clears dead state
 PASS no crossing at low frame rate
@@ -49,6 +49,35 @@ PASS right menu trigger and scale panel get positive on-screen layout and deskto
 PASS scale child gets click before menu container irrespective of registration order
 PASS native clicks fire once per press and dragging preserves grab offset
 PASS native client coordinates match Unity game pixels after DPI or resolution scaling
+PASS composed names use original gender pool and one to three syllables
+PASS root count follows 60 25 10 5 and mixed race always has two distinct roots
+PASS all elemental counter pairs work both directions and legacy special roots stay neutral
+PASS five waves per map and five normal maps then one hard persist through two cycles
+PASS only clearing the last monster advances one wave, duplicate deaths do not advance
+PASS saved map progress survives load and legacy difficulty starts automatic cycle at map one
+PASS load continues immediately, preserves identity, corrupt slot leaves current battle intact
+PASS magic damage is calculated separately for each target's roots
+PASS identity tint mixes fifty percent without accumulating over pooled reuse
+PASS event log retains hero name race roots map and damage alongside EXP
+PASS all 25 tier matchups match approved counter and resistance table
+PASS weighted damage handles hybrid attacker and hybrid defender without multiplying base attack twice
+PASS generated profiles have bounded tiers, unique roots and normalized shares
+PASS animal names use dominant root, hybrid race marker and preserve human names
+PASS map names stay stable within wave and retry, change only on five wave transition
+PASS monster scaling reaches exact 20 map thresholds and caps at map 100
+PASS save round trip preserves tiers weights map names and legacy loads cannot retain stale profiles
+PASS void is standalone, never in hybrid, old mixed saves preserve remaining root grades
+PASS five maps share a region and five waves per map remain independent
+PASS habitat excludes forest fish and sea land beasts, desert large cats stay rare
+PASS hero never reverses right and monster never reverses left at varied range scale and long frames
+PASS hero stats include HP, root attack splits, movement and actual attack frequency
+PASS pause and info work through native-compatible dispatcher and pause freezes movement and launched shots
+PASS damage trace snapshots actual formula and only records projectile after impact
+PASS pause freezes pending wave even with zero configured delay
+PASS region and habitat data survive save and load alongside root repair
+PASS approaching monster moves at base speed plus current ground pan, without double camera
+PASS ground compensation uses current frame after hero speed changes and handles slower ground than camera
+PASS compensated monster clamps at attack range on long frames and stationary fighters share camera
 PASS terrain visual clone grows 1.2 while logical ground and hero stats stay unchanged
 PASS terrain loop covers complete viewport through long scroll and resize
 PASS all seven grass placeholders receive sprites and separate random positions
@@ -57,7 +86,7 @@ PASS continue asks before loading, cancel preserves save, confirmation loads lat
 PASS new game deletes all slots only after confirmation and resets hero
 PASS missing or corrupt save never starts a phantom continue
 PASS hard difficulty exactly doubles monster damage and triples kill EXP
-PASS map labels and click bindings select normal and hard
+PASS manual difficulty controls are hidden and cannot override map sequence
 PASS real save IO replaces existing file and clears legacy difficulty
 PASS runtime menu builds two buttons and blocks empty continue
 PASS exponential EXP increases and preserves excess across multiple levels
@@ -67,22 +96,40 @@ PASS level-up kill heals only 5 to 10 HP and never fills new maximum
 PASS ordinary kill healing is capped and there is no idle regeneration
 PASS monster HP and ATK scale at spawn and mode timing has correct order
 SIMULATION: 30 FPS, width 1000, initial HP full, 1..3 monsters per wave, max 120 simulated seconds, 20 seeds per row.
-SIM level=1 mode=Melee deaths=20/20 mean_observed_seconds=52.9 mean_spawned=6.0
-SIM level=1 mode=RangedPhysical deaths=19/20 mean_observed_seconds=83.2 mean_spawned=14.5
-SIM level=1 mode=RangedMagic deaths=20/20 mean_observed_seconds=74.4 mean_spawned=12.5
-SIM level=10 mode=Melee deaths=20/20 mean_observed_seconds=39.7 mean_spawned=5.8
-SIM level=10 mode=RangedPhysical deaths=19/20 mean_observed_seconds=87.6 mean_spawned=18.9
-SIM level=10 mode=RangedMagic deaths=20/20 mean_observed_seconds=70.9 mean_spawned=14.6
-SIM level=20 mode=Melee deaths=20/20 mean_observed_seconds=35.5 mean_spawned=5.9
-SIM level=20 mode=RangedPhysical deaths=20/20 mean_observed_seconds=74.3 mean_spawned=18.2
-SIM level=20 mode=RangedMagic deaths=20/20 mean_observed_seconds=59.6 mean_spawned=13.5
-SIM level=50 mode=Melee deaths=20/20 mean_observed_seconds=26.8 mean_spawned=4.8
-SIM level=50 mode=RangedPhysical deaths=20/20 mean_observed_seconds=71.1 mean_spawned=19.2
-SIM level=50 mode=RangedMagic deaths=20/20 mean_observed_seconds=60.6 mean_spawned=15.6
-SIM level=100 mode=Melee deaths=20/20 mean_observed_seconds=25.3 mean_spawned=5.0
-SIM level=100 mode=RangedPhysical deaths=20/20 mean_observed_seconds=60.7 mean_spawned=16.8
-SIM level=100 mode=RangedMagic deaths=20/20 mean_observed_seconds=55.4 mean_spawned=15.1
-SIM level=999 mode=Melee deaths=20/20 mean_observed_seconds=21.7 mean_spawned=4.5
-SIM level=999 mode=RangedPhysical deaths=20/20 mean_observed_seconds=59.8 mean_spawned=16.3
-SIM level=999 mode=RangedMagic deaths=20/20 mean_observed_seconds=50.5 mean_spawned=15.1
-PASS: 68 regression scenarios (Unity test doubles; not Play Mode).
+SIM mapVisit=1 level=1 mode=Melee deaths=15/20 mean_observed_seconds=100.2 mean_spawned=9.8
+SIM mapVisit=1 level=1 mode=RangedPhysical deaths=0/20 mean_observed_seconds=120.0 mean_spawned=20.5
+SIM mapVisit=1 level=1 mode=RangedMagic deaths=2/20 mean_observed_seconds=119.6 mean_spawned=20.9
+SIM mapVisit=1 level=10 mode=Melee deaths=19/20 mean_observed_seconds=85.6 mean_spawned=11.3
+SIM mapVisit=1 level=10 mode=RangedPhysical deaths=0/20 mean_observed_seconds=120.0 mean_spawned=26.0
+SIM mapVisit=1 level=10 mode=RangedMagic deaths=7/20 mean_observed_seconds=114.2 mean_spawned=25.1
+SIM mapVisit=1 level=20 mode=Melee deaths=20/20 mean_observed_seconds=64.9 mean_spawned=10.1
+SIM mapVisit=1 level=20 mode=RangedPhysical deaths=1/20 mean_observed_seconds=119.9 mean_spawned=29.2
+SIM mapVisit=1 level=20 mode=RangedMagic deaths=11/20 mean_observed_seconds=114.7 mean_spawned=26.1
+SIM mapVisit=1 level=50 mode=Melee deaths=20/20 mean_observed_seconds=55.4 mean_spawned=9.3
+SIM mapVisit=1 level=50 mode=RangedPhysical deaths=10/20 mean_observed_seconds=111.2 mean_spawned=30.3
+SIM mapVisit=1 level=50 mode=RangedMagic deaths=16/20 mean_observed_seconds=96.6 mean_spawned=24.2
+SIM mapVisit=1 level=100 mode=Melee deaths=20/20 mean_observed_seconds=45.2 mean_spawned=7.8
+SIM mapVisit=1 level=100 mode=RangedPhysical deaths=19/20 mean_observed_seconds=94.1 mean_spawned=25.8
+SIM mapVisit=1 level=100 mode=RangedMagic deaths=20/20 mean_observed_seconds=87.5 mean_spawned=24.1
+SIM mapVisit=1 level=999 mode=Melee deaths=20/20 mean_observed_seconds=40.2 mean_spawned=7.2
+SIM mapVisit=1 level=999 mode=RangedPhysical deaths=20/20 mean_observed_seconds=85.0 mean_spawned=23.5
+SIM mapVisit=1 level=999 mode=RangedMagic deaths=20/20 mean_observed_seconds=85.8 mean_spawned=25.1
+SIM mapVisit=100 level=1 mode=Melee deaths=20/20 mean_observed_seconds=48.5 mean_spawned=5.7
+SIM mapVisit=100 level=1 mode=RangedPhysical deaths=20/20 mean_observed_seconds=84.9 mean_spawned=14.9
+SIM mapVisit=100 level=1 mode=RangedMagic deaths=20/20 mean_observed_seconds=66.0 mean_spawned=12.2
+SIM mapVisit=100 level=10 mode=Melee deaths=20/20 mean_observed_seconds=40.6 mean_spawned=5.8
+SIM mapVisit=100 level=10 mode=RangedPhysical deaths=20/20 mean_observed_seconds=78.5 mean_spawned=17.5
+SIM mapVisit=100 level=10 mode=RangedMagic deaths=20/20 mean_observed_seconds=57.5 mean_spawned=12.8
+SIM mapVisit=100 level=20 mode=Melee deaths=20/20 mean_observed_seconds=34.3 mean_spawned=6.3
+SIM mapVisit=100 level=20 mode=RangedPhysical deaths=20/20 mean_observed_seconds=63.9 mean_spawned=16.1
+SIM mapVisit=100 level=20 mode=RangedMagic deaths=20/20 mean_observed_seconds=54.4 mean_spawned=12.6
+SIM mapVisit=100 level=50 mode=Melee deaths=20/20 mean_observed_seconds=28.3 mean_spawned=5.6
+SIM mapVisit=100 level=50 mode=RangedPhysical deaths=20/20 mean_observed_seconds=54.1 mean_spawned=15.5
+SIM mapVisit=100 level=50 mode=RangedMagic deaths=20/20 mean_observed_seconds=50.5 mean_spawned=13.2
+SIM mapVisit=100 level=100 mode=Melee deaths=20/20 mean_observed_seconds=22.2 mean_spawned=4.6
+SIM mapVisit=100 level=100 mode=RangedPhysical deaths=20/20 mean_observed_seconds=47.5 mean_spawned=13.7
+SIM mapVisit=100 level=100 mode=RangedMagic deaths=20/20 mean_observed_seconds=42.2 mean_spawned=12.8
+SIM mapVisit=100 level=999 mode=Melee deaths=20/20 mean_observed_seconds=20.5 mean_spawned=4.8
+SIM mapVisit=100 level=999 mode=RangedPhysical deaths=20/20 mean_observed_seconds=43.6 mean_spawned=12.9
+SIM mapVisit=100 level=999 mode=RangedMagic deaths=20/20 mean_observed_seconds=43.3 mean_spawned=13.0
+PASS: 97 regression scenarios (Unity test doubles; not Play Mode).
