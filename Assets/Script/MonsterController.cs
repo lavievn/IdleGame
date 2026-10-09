@@ -48,18 +48,15 @@ public class MonsterController : MonoBehaviour
     {
         if (!IsAlive) return;
         attackRange = space.AttackRange(attackMode, false);
-        if (CurrentTarget == null || !CurrentTarget.IsDeployed)
-        {
+        if (CurrentTarget == null || !CanAttack(CurrentTarget, space)) {
             CurrentTarget = null;
-            // Enter through the left edge before engaging; camera pans still carry
-            // passive monsters with the world while the hero is exploring.
-            if (space.IsVisible(rect)) FindTarget(space);
+            FindTarget(space);
         }
         if (CurrentTarget == null) { currentState = MonsterState.PassiveScroll; return; }
 
         Vector2 p = space.Position(rect);
         float targetX = space.Position(CurrentTarget.heroRect).x;
-        p.x = BattleMotion.Approach(p.x, targetX, attackRange, moveSpeed, dt);
+        p.x = BattleMotion.ForwardApproach(p.x, targetX, attackRange, moveSpeed, dt, 1);
         space.SetPosition(rect, p);
         currentState = CanAttack(CurrentTarget, space) ? MonsterState.Attacking : MonsterState.Approaching;
     }
@@ -79,7 +76,10 @@ public class MonsterController : MonoBehaviour
         foreach (var hero in HeroController.ActiveHeroes)
         {
             if (hero == null || !hero.IsDeployed) continue;
-            float distance = Mathf.Abs(space.Position(rect).x - space.Position(hero.heroRect).x);
+            float heroX = space.Position(hero.heroRect).x;
+            float monsterX = space.Position(rect).x;
+            if (heroX < monsterX && !CanAttack(hero, space)) continue;
+            float distance = Mathf.Abs(monsterX - heroX);
             if (distance < nearest) { nearest = distance; CurrentTarget = hero; }
         }
     }

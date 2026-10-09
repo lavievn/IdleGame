@@ -36,6 +36,13 @@ public class GameManager : MonoBehaviour
         heroController != null ? Mathf.Max(0f, heroController.moveSpeed) : 150f);
     private bool hasDeployed = false;
     private readonly Queue<string> recentEvents = new Queue<string>();
+    private readonly List<string> damageHistory = new List<string>();
+    public string[] DamageHistory => damageHistory.ToArray();
+    public void RecordDamage(string detail)
+    {
+        damageHistory.Insert(0, detail);
+        if (damageHistory.Count > 30) damageHistory.RemoveAt(damageHistory.Count - 1);
+    }
     public EntityDataSO HeroData => runtimeHeroData;
     private enum MenuChoice { None, Continue, NewGame }
     private MenuChoice pendingChoice;
@@ -67,6 +74,7 @@ public class GameManager : MonoBehaviour
     private void InitHeroData()
     {
         recentEvents.Clear();
+        damageHistory.Clear();
         if (runtimeHeroData != null) Destroy(runtimeHeroData);
         runtimeHeroData = Instantiate(heroDataSO);
         runtimeHeroData.currentLevel = 1;
@@ -76,7 +84,7 @@ public class GameManager : MonoBehaviour
         runtimeHeroData.balanceVersion = 0;
         runtimeHeroData.difficulty = 0;
         runtimeHeroData.mapNumber = 1; runtimeHeroData.completedWavesInMap = 0; runtimeHeroData.mapProgressVersion = 1;
-        runtimeHeroData.mapName = ""; WorldNames.AssignMap(runtimeHeroData);
+        runtimeHeroData.regionIndex = -1; runtimeHeroData.mapName = ""; WorldNames.AssignMap(runtimeHeroData);
 
         {
             runtimeHeroData.gender = Random.Range(0, 2) == 0 ? GenderType.Nam : GenderType.Nu;
@@ -104,8 +112,8 @@ public class GameManager : MonoBehaviour
         {
             var rect = eventLogText.GetComponent<RectTransform>();
             rect.anchorMin = Vector2.zero; rect.anchorMax = Vector2.one;
-            rect.pivot = new Vector2(.5f,.5f); rect.anchoredPosition = Vector2.zero;
-            rect.sizeDelta = new Vector2(-24,-16);
+            rect.pivot = new Vector2(.5f,.5f); rect.anchoredPosition = new Vector2(-52,0);
+            rect.sizeDelta = new Vector2(-136,-16);
             eventLogText.enableAutoSizing = true; eventLogText.fontSizeMin = 14; eventLogText.fontSizeMax = 26;
             eventLogText.alignment = TextAlignmentOptions.TopLeft; eventLogText.raycastTarget = false;
             eventLogText.color = new Color(1,1,1,1);
@@ -116,7 +124,7 @@ public class GameManager : MonoBehaviour
         if (!string.IsNullOrEmpty(message)) { recentEvents.Enqueue(message); while (recentEvents.Count > 2) recentEvents.Dequeue(); }
         if (eventLogText == null) return;
         string header = runtimeHeroData == null ? "" : IdentityDisplay.Describe(runtimeHeroData) +
-            " · Cấp " + runtimeHeroData.currentLevel + "\n" + runtimeHeroData.mapName + " · " + WorldNames.Terrain(runtimeHeroData.mapTerrain) +
+            " · Cấp " + runtimeHeroData.currentLevel + "\n" + WorldNames.Region(runtimeHeroData.regionTheme) + " [" + ((runtimeHeroData.mapNumber - 1) % 5 + 1) + "/5] · " + runtimeHeroData.mapName + " · " + WorldNames.Terrain(runtimeHeroData.mapTerrain) +
             (IsHardMode ? " (Khó)" : " (Thường)") + " · Đợt " + (runtimeHeroData.completedWavesInMap + 1) + "/5\n";
         eventLogText.text = header + string.Join("\n", recentEvents.ToArray());
     }
@@ -142,6 +150,7 @@ public class GameManager : MonoBehaviour
 
     private void DeployHero()
     {
+        if (UIManager.Instance != null) UIManager.Instance.SetPaused(false);
         if (hasDeployed) return;
         CancelNextWave();
         preGameUI.SetActive(false);
@@ -184,6 +193,7 @@ public class GameManager : MonoBehaviour
         if (runtimeHeroData != null) Destroy(runtimeHeroData);
         runtimeHeroData = loaded;
         recentEvents.Clear();
+        damageHistory.Clear();
         continueSlot = slot;
         manualSelection = true;
 
@@ -222,6 +232,7 @@ public class GameManager : MonoBehaviour
     public void OnRetryClicked()
     {
         if (hasDeployed || HasPendingConfirmation || runtimeHeroData == null) return;
+        if (UIManager.Instance != null) UIManager.Instance.SetPaused(false);
         CancelNextWave();
         if (gameOverPanel != null) gameOverPanel.SetActive(false);
         hasDeployed = true;
@@ -359,6 +370,7 @@ public class GameManager : MonoBehaviour
         {
             yield return null;
             if (!hasDeployed) { nextWaveCoroutine = null; yield break; }
+            if (Time.timeScale == 0f) continue;
             float delay = CurrentWaveDelay;
             if (delay <= 0f) break;
             progress += Time.deltaTime / delay;

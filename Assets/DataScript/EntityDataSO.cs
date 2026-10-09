@@ -24,10 +24,25 @@ public class EntityDataSO : ScriptableObject
     public string mapName = "";
     public TerrainType mapTerrain = TerrainType.DongBang;
 
+    public int regionIndex = -1;
+    public RegionTheme regionTheme = RegionTheme.SonLam;
+    public string monsterAnimal = "";
+    public MonsterClass monsterClass = MonsterClass.Thu;
+
     public void NormalizeRoots()
     {
         if (spiritRoots == null) spiritRoots = new List<ElementType>();
         bool changed = false;
+        // Preserve non-Vô roots and their matching tiers/weights from old invalid mixed saves.
+        if (spiritRoots.Contains(ElementType.Vo) && (spiritRoots.Count > 1 || race == RaceType.ConLai)) {
+            for (int i = spiritRoots.Count - 1; i >= 0; i--) if (spiritRoots[i] == ElementType.Vo) {
+                if (rootTiers != null && rootTiers.Count == spiritRoots.Count) rootTiers.RemoveAt(i);
+                if (rootWeights != null && rootWeights.Count == spiritRoots.Count) rootWeights.RemoveAt(i);
+                spiritRoots.RemoveAt(i);
+            }
+            if (spiritRoots.Count == 0) { spiritRoots.Add(ElementType.Kim); rootTiers = new List<int> { 3 }; rootWeights = new List<float> { 1f }; }
+            changed = true;
+        }
         if (rootTiers == null || rootTiers.Count != spiritRoots.Count) {
             rootTiers = new List<int>(); foreach (var root in spiritRoots) rootTiers.Add(3); changed = true;
         }
@@ -70,6 +85,8 @@ public class EntityDataSO : ScriptableObject
         mapNumber = System.Math.Max(1, mapNumber);
         completedWavesInMap = System.Math.Max(0, System.Math.Min(4, completedWavesInMap));
         difficulty = mapNumber % 6 == 0 ? 1 : 0;
+        if (!System.Enum.IsDefined(typeof(TerrainType), mapTerrain)) { mapTerrain = TerrainType.DongBang; mapName = ""; }
+        WorldNames.EnsureRegion(this, !string.IsNullOrEmpty(mapName));
         if (string.IsNullOrEmpty(mapName) || !System.Enum.IsDefined(typeof(TerrainType), mapTerrain)) WorldNames.AssignMap(this);
     }
     public bool CompleteWave()

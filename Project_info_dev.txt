@@ -18,18 +18,16 @@ bị dính xuống đáy. Sau bản vá Windows 0.0.4.51f, ngày 09/10/2026 ngư
 xác nhận đã thử: System Menu hoạt động, scale cửa sổ đúng logic và cho phép
 merge PR #1 vào main. Chưa có xác nhận riêng về kéo cửa sổ, DPI/màn hình phụ.
 
-CẬP NHẬT ĐANG PHÁT TRIỂN: 0.0.4.54, nền feature/0.0.4.52 (PR #2).
-Nhánh feature/0.0.4.54; chưa nghiệm thu Unity/Windows và chưa tự merge main.
-Hiện trạng mới nhất: Docs/Release_0.0.4.54.md; bản .52 bên dưới giữ lịch sử.
-Đã thêm Vô, Nhất–Ngũ trọng, sát thương khắc ±30% ngang trọng và bảng chênh
-trọng đã chốt; đã thay cách trung bình đều .52 bằng tỷ trọng linh căn.
-Hero/quái random độc lập, không tạo cha mẹ; chưa triển khai sinh sản F1/F2/F3.
-Thêm 30 tên map/6 địa hình giữ chỗ, 50 tên thú và tên quái theo căn trội.
-Quái map1 gây 50% sát thương chuẩn, tăng 10 điểm phần trăm tại các lượt map
-20/40/60/80/100, chặn100%. Tên lặp không làm reset bộ đếm. Giữ5đợt/map,
-5mapthường/1mapkhó; mapkhó vẫn ×2 sát thương quái và ×3 EXP.
-Save cũ mặc định Tam trọng/chia đều và gán tên map một lần; không random lại
-hero khi load. Chi tiết RNG, điểm chưa chốt và thứ tự thử nằm trong release .54.
+CẬP NHẬT ĐANG PHÁT TRIỂN: 0.0.4.54a, nền feature/0.0.4.54 (PR #3).
+Nhánh feature/0.0.4.54a, chưa nghiệm thu Unity/Windows và chưa merge main.
+Hiện trạng mới nhất: Docs/Release_0.0.4.54a.md, ưu tiên hơn ghi chép cũ bên dưới.
+Đã sửa Vô độc lập/không có trong ConLai; helper ngoại lệ sinh con chưa nối
+vào gameplay vì chưa có hệ sinh sản. Hero/quái vẫn random độc lập.
+Đã thêm Pause tại BuffIcon màu cam, Info cho30đònđãtrúng và bảng HP/ATK từng
+căn/tốcđộ hero. Sửa AI mộtchiều: hero−X,quái+X;camera vẫn dịch cảmap.
+Đã thêm hồ/biển, cụm5map theo6chủđề, phânloại/danh sáchloài theođịa hình.
+Giữ5đợt/map, chu kỳ5thường/1khó và giảmATKquái50% tăng bù ởmốc20…100.
+Sinh sảnF1/F2/F3, mô tảcha mẹ, sprite/bơi/bay/kỹnăngtheoloài chưa triểnkhai.
 
 Nhãn trạng thái dùng xuyên suốt:
 [ĐỊNH HƯỚNG] ý định thiết kế, chưa phải chức năng chạy được.
@@ -671,3 +669,8 @@ CẬP NHẬT CUỐI — 0.0.4.54 (ưu tiên hơn ghi chép .52 phía trên)
 tên quái, linh căn Vô/trọng/tỷ trọng và bảng khắc mới đã có mã. Quái và hero
 random độc lập; mô tả cha mẹ chỉ là dự định. Không dùng bảng ×1.25/×0.8 .52
 làm hiện trạng. Chưa có xác nhận Play Mode/Windows của người dùng cho .54.
+
+CẬP NHẬT CUỐI — 0.0.4.54a
+Đối chiếu Docs/Release_0.0.4.54a.md; các ghi chép .54/.52 phía trên là lịch sử.
+Vô không còn tham gia danh sách random nhiều căn; quái chọn loài theo địa hình.
+Cụm5map và5wave/map là hai cấp tiến trình riêng. Chưa nghiệm thu Unity/Windows.

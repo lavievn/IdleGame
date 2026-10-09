@@ -60,8 +60,8 @@ partial class MotionRegression
         Run("camera pans all actors and ground equally",()=>{
             foreach(float scale in new[]{0.2f,1f,2f}) { var f=new Field(scale);var m=f.Monster(-300);f.hero.TickMovement(f.space,0);m.TickMovement(f.space,0);float h=f.space.Position(f.hero.heroRect).x,b=f.space.Position(m.Rect).x,g=f.space.Position(f.grass).x;Time.deltaTime=0.1f;Call(f.space,"LateUpdate");float pan=f.space.Position(f.hero.heroRect).x-h;Check(pan>0,"base camera pan continues");Near(f.space.Position(m.Rect).x-b,pan,"monster pan");Near(f.space.Position(f.grass).x-g,pan,"ground pan"); }
         });
-        Run("passive offscreen monster only follows world pan",()=>{
-            var f=new Field();var m=f.Monster(-550);f.Step();Near(f.space.Position(m.Rect).x+550,f.space.Position(f.grass).x-100,"passive delta");Check(m.CurrentTarget==null,"not engaged outside viewport");
+        Run("offscreen monster advances right independently of world pan",()=>{
+            var f=new Field();var m=f.Monster(-550);f.Step();Near(f.space.Position(m.Rect).x+550,f.space.Position(f.grass).x-100+15,"forward movement plus camera");Check(m.CurrentTarget==f.hero,"scans hero at spawn");
         });
         Run("ranged hero stops while melee monster keeps approaching",()=>{
             var f=new Field();f.hero.ChangeAttackMode(1);var m=f.Monster(-300);f.hero.TickMovement(f.space,0.1f);float before=f.space.Position(f.hero.heroRect).x;f.hero.TickMovement(f.space,0.1f);Near(f.space.Position(f.hero.heroRect).x,before,"hero stays");m.TickMovement(f.space,0.1f);Near(f.space.Position(m.Rect).x,-285,"monster independent speed");
@@ -72,8 +72,8 @@ partial class MotionRegression
         Run("melee hero approaches a stationary ranged monster",()=>{
             var f=new Field();var m=f.Monster(-200,AttackMode.RangedMagic);f.hero.TickMovement(f.space,0.1f);m.TickMovement(f.space,0.1f);Near(f.space.Position(f.hero.heroRect).x,-15,"hero advances");Near(f.space.Position(m.Rect).x,-200,"ranged monster stays");
         });
-        Run("target remains stable until death",()=>{
-            var f=new Field();var a=f.Monster(-100);var b=f.Monster(-101);f.hero.TickMovement(f.space,0);f.space.SetPosition(b.Rect,new Vector2(-90,0));f.hero.TickMovement(f.space,0);Check(f.hero.CurrentTarget==a,"no target thrashing");a.MarkDead();f.hero.TickMovement(f.space,0);Check(f.hero.CurrentTarget==b,"reacquires on death");
+        Run("nearest target rescanned while approaching and retained during attack",()=>{
+            var f=new Field();var a=f.Monster(-100);var b=f.Monster(-101);f.hero.TickMovement(f.space,0);f.space.SetPosition(b.Rect,new Vector2(-90,0));f.hero.TickMovement(f.space,0);Check(f.hero.CurrentTarget==b,"closer target selected while approaching");f.space.SetPosition(b.Rect,new Vector2(-30,0));f.hero.TickMovement(f.space,0);f.space.SetPosition(a.Rect,new Vector2(-20,0));f.hero.TickMovement(f.space,0);Check(f.hero.CurrentTarget==b,"in-range target retained during strike");b.MarkDead();f.hero.TickMovement(f.space,0);Check(f.hero.CurrentTarget==a,"reacquires on death");
         });
         Run("hidden hero freezes exploration; respawn recovers",()=>{
             var f=new Field();var m=f.Monster(-550);f.hero.HideHero();float x=f.space.Position(m.Rect).x;f.Step();Near(f.space.Position(m.Rect).x,x,"no hidden camera");Check(HeroController.ActiveHeroes.Count==0,"unregistered");f.hero.SpawnHero();Check(f.hero.IsDeployed,"respawn");Near(f.space.Position(f.hero.heroRect).x,f.space.HomeX,"spawn centre");
@@ -249,6 +249,7 @@ partial class MotionRegression
         DesktopMenuTests();
         IdentityMapTests();
         ElementWorldTests();
+        Patch54aTests();
         TerrainTests();
         MenuDifficultyTests();
         BalanceTests();

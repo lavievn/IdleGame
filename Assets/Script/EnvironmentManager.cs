@@ -71,7 +71,7 @@ public class EnvironmentManager : MonoBehaviour
     // All AI moves before CombatManager.Update. Camera presentation runs after both.
     void Update()
     {
-        if (battleArea == null || Width <= 0f) return;
+        if (Time.timeScale == 0f || battleArea == null || Width <= 0f) return;
         float dt = Time.deltaTime;
         foreach (var hero in HeroController.ActiveHeroes)
             if (hero != null && hero.IsDeployed) hero.TickMovement(this, dt);
@@ -87,7 +87,7 @@ public class EnvironmentManager : MonoBehaviour
         IsScrolling = false;
         CurrentCameraSpeed = 0f;
         CurrentBackgroundSpeed = 0f;
-        if (battleArea == null || Width <= 0f) return;
+        if (Time.timeScale == 0f || battleArea == null || Width <= 0f) return;
         if (cameraTarget == null || !cameraTarget.IsCameraSubject)
         {
             cameraTarget = null;

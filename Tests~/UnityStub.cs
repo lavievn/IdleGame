@@ -128,6 +128,7 @@ namespace UnityEngine
         public static float Min(float a,float b) { return Math.Min(a,b); }
         public static float Clamp01(float a) { return Math.Max(0f,Math.Min(1f,a)); }
         public static int Max(int a,int b) { return Math.Max(a,b); }
+        public static float Clamp(float value,float min,float max) { return Math.Max(min,Math.Min(max,value)); }
         public static int Clamp(int a,int b,int c) { return Math.Max(b,Math.Min(a,c)); }
         public static float MoveTowards(float a,float b,float d) { return a+Math.Sign(b-a)*Math.Min(Math.Abs(b-a),d); }
         public static int RoundToInt(float a) { return (int)Math.Round(a); }
@@ -147,7 +148,7 @@ namespace UnityEngine
     public class CanvasRenderer : Component { }
     public class Sprite : Object { }
     public class Canvas { public static void ForceUpdateCanvases() { } }
-    public static class Time { public static float deltaTime=1f/60f,time; public static int frameCount; }
+    public static class Time { public static float deltaTime=1f/60f,time,timeScale=1f; public static int frameCount; }
     public class SerializeField : Attribute { }
     public class TooltipAttribute : Attribute { public TooltipAttribute(string s){} }
     public class HeaderAttribute : Attribute { public HeaderAttribute(string s) { } }

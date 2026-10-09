@@ -38,10 +38,10 @@ partial class MotionRegression
                 if(a.rootWeights[0]>.5f)Check(a.rootTiers[0]>a.rootTiers[1],"higher root has higher weight");
                 unequalSeen|=a.rootWeights[0]!=.5f;
             }
-            Check(voidSeen&&unequalSeen,"void and dominant root appear");
+            Check(!voidSeen&&unequalSeen,"hybrid has no void and dominant root appears");
         });
         Run("animal names use dominant root, hybrid race marker and preserve human names",()=>{
-            Check(WorldNames.AnimalNames.Length==50,"50 animals");
+            Check(WorldNames.AnimalNames.Length==51,"50 animals plus dragon");
             var a=HeroAt(1);a.race=RaceType.YeuThu;a.spiritRoots=new List<ElementType>{ElementType.Hoa};
             Check(WorldNames.MonsterName(a,"Trư")=="Hỏa Trư","pure beast example");
             a.race=RaceType.ConLai;a.hybridSecondaryRace=RaceType.LinhThe;
@@ -56,8 +56,8 @@ partial class MotionRegression
             a.NormalizeMapProgress();Check(a.mapName==name&&a.mapTerrain==terrain,"retry stable");
             for(int i=0;i<4;i++){a.CompleteWave();Check(a.mapName==name,"not changed mid map");}
             a.CompleteWave();Check(a.mapNumber==2&&a.mapName!=name,"transition gets new name");
-            var seen=new HashSet<TerrainType>();for(int i=0;i<200;i++){WorldNames.AssignMap(a);seen.Add(a.mapTerrain);}
-            Check(seen.Count==6,"all terrain placeholders selectable");
+            var seen=new HashSet<TerrainType>();for(int i=0;i<200;i++){a.mapNumber=i*5+1;WorldNames.AssignMap(a);seen.Add(a.mapTerrain);}
+            Check(seen.Count==8,"all terrain placeholders selectable across regions");
         });
         Run("monster scaling reaches exact 20 map thresholds and caps at map 100",()=>{
             int[] maps={1,19,20,39,40,59,60,79,80,99,100,101,int.MaxValue};

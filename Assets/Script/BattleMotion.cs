@@ -10,6 +10,13 @@ public static class BattleMotion
         return position + Math.Sign(target - position) * step;
     }
 
+    public static float ForwardApproach(float position, float target, float range, float speed, float dt, int direction)
+    {
+        float ahead = (target - position) * direction;
+        float step = Math.Min(Math.Max(0f, ahead - range), Math.Max(0f, speed) * Math.Max(0f, dt));
+        return position + direction * step;
+    }
+
     // heroX is sampled AFTER the hero's own movement, BEFORE camera translation.
     // Positive pan moves the entire world to the right. Camera speed is a base
     // speed, not a limit: the left zone edge can force a larger step.

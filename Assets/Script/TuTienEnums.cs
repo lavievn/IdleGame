@@ -5,7 +5,9 @@ namespace TuTienCore
 {
     public enum RaceType { NhanToc, YeuThu, MaToc, LinhThe, ConLai }
     public enum ElementType { Kim, Moc, Thuy, Hoa, Tho, Doc, Bang, Vo }
-    public enum TerrainType { DongBang, CaoNguyen, DamLay, RungRam, SaMac, DoiNui }
+    public enum TerrainType { DongBang, CaoNguyen, DamLay, RungRam, SaMac, DoiNui, HoNuoc, Bien }
+    public enum RegionTheme { SonLam, BinhNguyen, UTrach, HoangMac, HaiVuc, CaoSon }
+    public enum MonsterClass { Thu, BoSat, Chim, ThuySinh, ChanKhop, LuongCu, Long, Nhan }
     public enum WeaponType { Kiem, Dao, Quyen }
     public enum GenderType { Nam, Nu }
     public enum AttackMode { Melee, RangedPhysical, RangedMagic } // Đã chuyển vào đây
@@ -43,6 +45,8 @@ namespace TuTienCore
     public static class SynergyMath
     {
         public static RaceType GenerateRandomRace() => (RaceType)Random.Range(0, 5);
+        public static RaceType GenerateMonsterRace(TerrainType terrain)
+            => terrain == TerrainType.Bien ? (RaceType)Random.Range(1, 5) : GenerateRandomRace();
         public static int RootCount(int roll, RaceType race)
         {
             if (race == RaceType.ConLai) return 2;
@@ -52,7 +56,8 @@ namespace TuTienCore
         public static List<ElementType> GenerateRandomRoots(RaceType race)
         {
             int count = RootCount(Random.Range(0, 100), race);
-            var available = new List<ElementType> { ElementType.Kim, ElementType.Moc, ElementType.Hoa, ElementType.Thuy, ElementType.Tho, ElementType.Vo };
+            var available = new List<ElementType> { ElementType.Kim, ElementType.Moc, ElementType.Hoa, ElementType.Thuy, ElementType.Tho };
+            if (count == 1 && race != RaceType.ConLai) available.Add(ElementType.Vo);
             var roots = new List<ElementType>();
             for (int i = 0; i < count; i++)
             {
@@ -60,6 +65,17 @@ namespace TuTienCore
                 roots.Add(available[index]); available.RemoveAt(index);
             }
             return roots;
+        }
+        // Only the special Vô inheritance case is settled; ordinary breeding is not implemented.
+        public static bool TryResolveVoidInheritance(List<ElementType> parentA, List<ElementType> parentB, out List<ElementType> child)
+        {
+            bool a = parentA != null && parentA.Count == 1 && parentA[0] == ElementType.Vo;
+            bool b = parentB != null && parentB.Count == 1 && parentB[0] == ElementType.Vo;
+            child = null;
+            if (!a && !b) return false;
+            child = a && b ? new List<ElementType> { ElementType.Vo } : new List<ElementType>(a ? parentB ?? new List<ElementType>() : parentA ?? new List<ElementType>());
+            child.RemoveAll(root => root == ElementType.Vo && !(a && b));
+            return true;
         }
         public static float GetLevelAdvantageMultiplier(int attLvl, int defLvl) => attLvl <= defLvl ? 1.0f : 1.0f + ((attLvl - defLvl) * 0.05f);
         public static float GetWeaponLevelPenalty(int heroLvl, int weaponLvl) => heroLvl >= weaponLvl ? 1.0f : Mathf.Max(0.2f, 1.0f - ((weaponLvl - heroLvl) * 0.1f));
@@ -115,11 +131,49 @@ namespace TuTienCore
                         attacker.spiritRoots[a], attacker.rootTiers[a], defender.spiritRoots[d], defender.rootTiers[d]);
             return sum;
         }
-        public static int Damage(EntityDataSO attacker, EntityDataSO defender, AttackMode mode, float roll, int mapMultiplier = 1)
+        public static DamageTrace EvaluateDamage(EntityDataSO attacker, EntityDataSO defender, AttackMode mode, float roll)
         {
             float element = GetElementalMultiplier(attacker, defender);
-            // Race-specific bonuses have not been specified; all races use x1.
-            return Mathf.Max(1, Mathf.RoundToInt(CombatBalance.Damage(attacker.GetCalculatedDamage(), mode, roll) * element * mapMultiplier));
+            int attack = Mathf.Max(1, attacker.GetCalculatedDamage());
+            roll = Mathf.Clamp(roll, .85f, 1f);
+            var parts = new List<string>();
+            for (int a = 0; a < attacker.spiritRoots.Count; a++) for (int d = 0; d < defender.spiritRoots.Count; d++) {
+                float pair = GetElementalMultiplier(attacker.spiritRoots[a], attacker.rootTiers[a], defender.spiritRoots[d], defender.rootTiers[d]);
+                int gap = attacker.rootTiers[a] - defender.rootTiers[d];
+                string rule = Counters(attacker.spiritRoots[a], defender.spiritRoots[d])
+                    ? (gap >= 0 ? "+30% × (1 + 10% × " + gap + ")" : "+30% × max(25%, 1 + 25% × (" + gap + "))")
+                    : Counters(defender.spiritRoots[d], attacker.spiritRoots[a]) ? "−30% × (1 − 10% × (" + gap + "))" : "trung tính";
+                parts.Add(IdentityDisplay.Element(attacker.spiritRoots[a]) + " " + attacker.rootTiers[a] + " → " +
+                    IdentityDisplay.Element(defender.spiritRoots[d]) + " " + defender.rootTiers[d] + ": " +
+                    attacker.rootWeights[a].ToString("P3") + " × " + defender.rootWeights[d].ToString("P3") +
+                    " × " + pair.ToString("0.###") + " (" + ((pair - 1f) * 100f).ToString("+0.##;-0.##;0") + "%; " + rule + ")");
+            }
+            int basis = CombatBalance.Damage(attack, mode, roll);
+            return new DamageTrace { attacker = IdentityDisplay.Describe(attacker), defender = IdentityDisplay.Describe(defender),
+                pairs = parts.Count == 0 ? "Không có cặp linh căn: ×1" : string.Join("\n", parts.ToArray()),
+                attackRaw = attacker.baseDamage, attackAdded = attacker.addedDamage, attackBase = attack, modeMultiplier = mode == AttackMode.RangedMagic ? 1.8f : 1f, roll = roll,
+                rolledDamage = basis, elementMultiplier = element, elementDamage = Mathf.Max(1, Mathf.RoundToInt(basis * element)) };
+        }
+        public static int Damage(EntityDataSO attacker, EntityDataSO defender, AttackMode mode, float roll, int mapMultiplier = 1)
+        {
+            return Mathf.Max(1, Mathf.RoundToInt(EvaluateDamage(attacker, defender, mode, roll).elementDamage * mapMultiplier));
+        }
+    }
+
+    public sealed class DamageTrace
+    {
+        public string attacker, defender, pairs;
+        public int attackRaw, attackAdded, attackBase, rolledDamage, elementDamage;
+        public float modeMultiplier, roll, elementMultiplier;
+        private static string F(float value) => value.ToString("0.######", System.Globalization.CultureInfo.InvariantCulture);
+        public string Describe(float mapScale, int hardScale, int finalDamage)
+        {
+            return attacker + " → " + defender + "\n" +
+                "ATK cơ bản: " + attackRaw + "; cộng điểm: " + attackAdded + "; tổng: " + attackBase + "; kiểu đánh ×" + F(modeMultiplier) + "; dao động ×" + F(roll) + "\n" +
+                "Sát thương nền = làm tròn(" + attackBase + " × " + F(modeMultiplier) + " × " + F(roll) + ") = " + rolledDamage + "\n" +
+                pairs + "\nTổng hệ số linh căn = " + F(elementMultiplier) +
+                "; sau linh căn = làm tròn(" + rolledDamage + " × " + F(elementMultiplier) + ") = " + elementDamage + "\n" +
+                "Kết quả = tối thiểu 1, làm tròn(" + elementDamage + " × map " + F(mapScale) + " × khó " + hardScale + ") = " + finalDamage;
         }
     }
 
@@ -131,28 +185,80 @@ namespace TuTienCore
             new[] { "U Minh Trạch", "Hắc Thủy Trạch", "Độc Vụ Đầm", "Thanh Liên Trạch", "Vụ Ẩn Trạch" },
             new[] { "Vạn Mộc Lâm", "Thanh U Lâm", "Cổ Thụ Lâm", "Bích Ảnh Lâm", "Vân Ẩn Lâm" },
             new[] { "Xích Sa Mạc", "Hoàng Sa Hải", "Lưu Sa Mạc", "Viêm Dương Mạc", "Tịch Dương Sa Hải" },
-            new[] { "Thanh Vân Sơn", "Hắc Nham Lĩnh", "Bạch Thạch Khâu", "Liên Vân Lĩnh", "Cửu Phong Sơn" }
+            new[] { "Thanh Vân Sơn", "Hắc Nham Lĩnh", "Bạch Thạch Khâu", "Liên Vân Lĩnh", "Cửu Phong Sơn" },
+            new[] { "Bích Thủy Hồ", "Minh Nguyệt Hồ", "Thanh Liên Hồ", "Vân Kính Hồ", "Hàn Ngọc Hồ" },
+            new[] { "Thương Hải", "Bích Hải", "Vân Hải Vực", "Huyền Hải", "Thiên Lam Hải" }
         };
         public static readonly string[] AnimalNames = {
             "Trư", "Hổ", "Lang", "Hồ", "Thố", "Lộc", "Ngưu", "Mã", "Dương", "Hầu",
             "Viên", "Hùng", "Miêu", "Khuyển", "Thử", "Tượng", "Tê", "Báo", "Sư", "Ly",
             "Xà", "Mãng", "Quy", "Ngạc", "Thiềm", "Oa", "Ưng", "Điêu", "Hạc", "Ô",
             "Yến", "Tước", "Nhạn", "Áp", "Kê", "Khổng Tước", "Hải Âu", "Bức", "Lý", "Ngư",
-            "Kình", "Sa", "Chương", "Giải", "Hà", "Chu", "Hạt", "Ngô Công", "Phong", "Nghĩ"
+            "Kình", "Sa", "Chương", "Giải", "Hà", "Chu", "Hạt", "Ngô Công", "Phong", "Nghĩ", "Long"
+        };
+        private static readonly TerrainType[][] RegionTerrains = {
+            new[] { TerrainType.RungRam, TerrainType.DoiNui, TerrainType.HoNuoc },
+            new[] { TerrainType.DongBang, TerrainType.CaoNguyen, TerrainType.HoNuoc },
+            new[] { TerrainType.DamLay, TerrainType.RungRam, TerrainType.HoNuoc },
+            new[] { TerrainType.SaMac, TerrainType.CaoNguyen, TerrainType.DoiNui },
+            new[] { TerrainType.Bien },
+            new[] { TerrainType.DoiNui, TerrainType.CaoNguyen, TerrainType.RungRam }
         };
         public static string Terrain(TerrainType terrain)
+            => new[] { "Đồng bằng", "Cao nguyên", "Đầm lầy", "Rừng rậm", "Sa mạc", "Đồi núi", "Hồ nước", "Biển" }[(int)terrain];
+        public static string Region(RegionTheme theme)
+            => new[] { "Sơn Lâm", "Bình Nguyên", "U Trạch", "Hoang Mạc", "Hải Vực", "Cao Sơn" }[(int)theme];
+        public static bool AllowsTerrain(RegionTheme theme, TerrainType terrain)
+            => System.Array.IndexOf(RegionTerrains[(int)theme], terrain) >= 0;
+        public static void EnsureRegion(EntityDataSO data, bool preserveTerrain = false)
         {
-            return new[] { "Đồng bằng", "Cao nguyên", "Đầm lầy", "Rừng rậm", "Sa mạc", "Đồi núi" }[(int)terrain];
+            int index = (System.Math.Max(1, data.mapNumber) - 1) / 5;
+            if (data.regionIndex == index && System.Enum.IsDefined(typeof(RegionTheme), data.regionTheme)) return;
+            var choices = new List<RegionTheme>();
+            for (int i = 0; i < RegionTerrains.Length; i++)
+                if (!preserveTerrain || AllowsTerrain((RegionTheme)i, data.mapTerrain)) choices.Add((RegionTheme)i);
+            data.regionTheme = choices[Random.Range(0, choices.Count)];
+            data.regionIndex = index; data.isDirty = true;
         }
         public static void AssignMap(EntityDataSO data)
         {
+            EnsureRegion(data);
             string previous = data.mapName;
+            var terrains = RegionTerrains[(int)data.regionTheme];
             do {
-                data.mapTerrain = (TerrainType)Random.Range(0, MapNames.Length);
+                data.mapTerrain = terrains[Random.Range(0, terrains.Length)];
                 var names = MapNames[(int)data.mapTerrain];
                 data.mapName = names[Random.Range(0, names.Length)];
             } while (data.mapName == previous);
             data.isDirty = true;
+        }
+        private static readonly string[][] HabitatAnimals = {
+            new[] { "Trư", "Lang", "Hồ", "Thố", "Lộc", "Ngưu", "Mã", "Dương", "Khuyển", "Thử", "Xà", "Ưng", "Tước", "Kê", "Phong", "Nghĩ" },
+            new[] { "Lang", "Hồ", "Ngưu", "Mã", "Dương", "Thố", "Hùng", "Báo", "Ưng", "Điêu", "Hạc", "Xà", "Hạt" },
+            new[] { "Xà", "Mãng", "Quy", "Ngạc", "Thiềm", "Oa", "Chu", "Ngô Công", "Lý", "Ngư", "Hà", "Giải", "Hạc", "Áp", "Phong" },
+            new[] { "Xà", "Mãng", "Lang", "Hổ", "Hùng", "Lộc", "Hồ", "Hầu", "Viên", "Trư", "Tượng", "Tê", "Báo", "Ly", "Thố", "Ưng", "Điêu", "Ô", "Yến", "Tước", "Khổng Tước", "Bức", "Chu", "Ngô Công", "Phong", "Nghĩ" },
+            new[] { "Xà", "Mãng", "Chu", "Hạt", "Thử", "Ưng", "Điêu", "Ngô Công", "Nghĩ" },
+            new[] { "Dương", "Hùng", "Lang", "Hồ", "Báo", "Thố", "Lộc", "Xà", "Mãng", "Ưng", "Điêu", "Bức", "Hạt", "Ngô Công" },
+            new[] { "Lý", "Ngư", "Quy", "Ngạc", "Hà", "Giải", "Thiềm", "Oa", "Hạc", "Áp", "Nhạn", "Long" },
+            new[] { "Long", "Ngư", "Kình", "Sa", "Chương", "Giải", "Hà", "Hải Âu", "Nhạn", "Ưng" }
+        };
+        public static bool AnimalAllowed(TerrainType terrain, string animal)
+            => System.Array.IndexOf(HabitatAnimals[(int)terrain], animal) >= 0 || terrain == TerrainType.SaMac && (animal == "Hổ" || animal == "Báo");
+        public static string RandomAnimal(TerrainType terrain)
+        {
+            // Combined desert tiger/leopard rarity is 1%; no aquatic animal is eligible.
+            if (terrain == TerrainType.SaMac && Random.Range(0, 100) == 0) return Random.Range(0, 2) == 0 ? "Hổ" : "Báo";
+            var choices = HabitatAnimals[(int)terrain]; return choices[Random.Range(0, choices.Length)];
+        }
+        public static MonsterClass ClassifyAnimal(string animal)
+        {
+            if (animal == "Long") return MonsterClass.Long;
+            if (System.Array.IndexOf(new[] { "Lý", "Ngư", "Kình", "Sa", "Chương", "Giải", "Hà" }, animal) >= 0) return MonsterClass.ThuySinh;
+            if (System.Array.IndexOf(new[] { "Xà", "Mãng", "Quy", "Ngạc" }, animal) >= 0) return MonsterClass.BoSat;
+            if (System.Array.IndexOf(new[] { "Thiềm", "Oa" }, animal) >= 0) return MonsterClass.LuongCu;
+            if (System.Array.IndexOf(new[] { "Chu", "Hạt", "Ngô Công", "Phong", "Nghĩ" }, animal) >= 0) return MonsterClass.ChanKhop;
+            if (System.Array.IndexOf(new[] { "Ưng", "Điêu", "Hạc", "Ô", "Yến", "Tước", "Nhạn", "Áp", "Kê", "Khổng Tước", "Hải Âu" }, animal) >= 0) return MonsterClass.Chim;
+            return MonsterClass.Thu;
         }
         public static float MonsterDamageScale(int mapVisit)
             => Mathf.Min(1f, .5f + .1f * (System.Math.Max(1, mapVisit) / 20));
@@ -175,8 +281,13 @@ namespace TuTienCore
                 }
             return prefix + marker + " " + animal;
         }
-        public static string RandomMonsterName(EntityDataSO data)
-            => MonsterName(data, AnimalNames[Random.Range(0, AnimalNames.Length)]);
+        public static string RandomMonsterName(EntityDataSO data) => RandomMonsterName(data, TerrainType.DongBang);
+        public static string RandomMonsterName(EntityDataSO data, TerrainType terrain)
+        {
+            if (data.race == RaceType.NhanToc) { data.monsterAnimal = ""; data.monsterClass = MonsterClass.Nhan; return data.entityName; }
+            data.monsterAnimal = RandomAnimal(terrain); data.monsterClass = ClassifyAnimal(data.monsterAnimal);
+            return MonsterName(data, data.monsterAnimal);
+        }
     }
 
     public static class IdentityDisplay

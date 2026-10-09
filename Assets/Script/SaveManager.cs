@@ -80,6 +80,9 @@ public class SaveManager : MonoBehaviour
                 entityData.mapNumber = 1;
                 entityData.completedWavesInMap = 0;
                 entityData.mapProgressVersion = 0;
+                entityData.regionIndex = -1;
+                entityData.regionTheme = TuTienCore.RegionTheme.SonLam;
+                entityData.monsterAnimal = "";
                 entityData.mapName = "";
                 entityData.mapTerrain = TuTienCore.TerrainType.DongBang;
                 entityData.rootTiers = new System.Collections.Generic.List<int>();
