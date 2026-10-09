@@ -114,7 +114,7 @@ public class GameManager : MonoBehaviour
             rect.anchorMin = Vector2.zero; rect.anchorMax = Vector2.one;
             rect.pivot = new Vector2(.5f,.5f); rect.anchoredPosition = new Vector2(-52,0);
             rect.sizeDelta = new Vector2(-136,-16);
-            eventLogText.enableAutoSizing = true; eventLogText.fontSizeMin = 14; eventLogText.fontSizeMax = 26;
+            UIManager.ReadableText(eventLogText,14);
             eventLogText.alignment = TextAlignmentOptions.TopLeft; eventLogText.raycastTarget = false;
             eventLogText.color = new Color(1,1,1,1);
         }

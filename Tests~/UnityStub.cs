@@ -147,7 +147,8 @@ namespace UnityEngine
     }
     public class CanvasRenderer : Component { }
     public class Sprite : Object { }
-    public class Canvas { public static void ForceUpdateCanvases() { } }
+    public enum RenderMode { ScreenSpaceOverlay }
+    public class Canvas : Component { public RenderMode renderMode; public int sortingOrder; public float scaleFactor; public static void ForceUpdateCanvases() { } }
     public static class Time { public static float deltaTime=1f/60f,time,timeScale=1f; public static int frameCount; }
     public class SerializeField : Attribute { }
     public class TooltipAttribute : Attribute { public TooltipAttribute(string s){} }
@@ -163,6 +164,8 @@ namespace UnityEngine.UI
       public enum Type { Simple }
       public float fillAmount; public UnityEngine.Color color;public UnityEngine.Sprite sprite;public Type type;public bool preserveAspect,raycastTarget;
     }
+    public class GraphicRaycaster : UnityEngine.Component { }
+    public class RectMask2D : UnityEngine.Component { }
     public class Button : UnityEngine.MonoBehaviour { public bool interactable=true; public class ButtonClickedEvent:UnityEngine.Events.UnityEvent {} public ButtonClickedEvent onClick=new ButtonClickedEvent(); }
     public class MaskableGraphic : UnityEngine.MonoBehaviour
     {
@@ -182,8 +185,19 @@ namespace UnityEngine.UI
     }
 }
 namespace TMPro {
+ public enum FontStyles { Normal, Bold }
+ public enum FontWeight { Regular }
+ public enum TextOverflowModes { Ellipsis, Overflow }
+ public class TMP_FontAsset { public object material; }
+ public class TMP_InputField : UnityEngine.MonoBehaviour {
+  public enum ContentType { Standard, DecimalNumber } public enum LineType { SingleLine }
+  public string text; public bool isFocused; public ContentType contentType;public LineType lineType;
+  public int characterLimit;public float pointSize;public UnityEngine.UI.Image targetGraphic;
+  public UnityEngine.RectTransform textViewport;public TextMeshProUGUI textComponent;
+  public void ActivateInputField(){isFocused=true;}
+ }
  public enum TextAlignmentOptions { Center, TopLeft }
- public class TextMeshProUGUI : UnityEngine.Component { public object font,fontSharedMaterial; public string text; public float alpha,fontSize,fontSizeMin,fontSizeMax; public bool enableAutoSizing,raycastTarget; public UnityEngine.Color color; public TextAlignmentOptions alignment; }
+ public class TextMeshProUGUI : UnityEngine.Component { public TMP_FontAsset font=new TMP_FontAsset(); public object fontSharedMaterial; public FontStyles fontStyle; public FontWeight fontWeight;public TextOverflowModes overflowMode;public bool enableWordWrapping; public string text; public float alpha,fontSize,fontSizeMin,fontSizeMax; public bool enableAutoSizing,raycastTarget; public UnityEngine.Color color; public TextAlignmentOptions alignment; }
 }
 namespace UnityEngine.Pool
 {

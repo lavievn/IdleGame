@@ -25,6 +25,7 @@ partial class MotionRegression
         public Field(float scale=1f)
         {
             if (EnvironmentManager.Instance != null) Call(EnvironmentManager.Instance,"OnDestroy");
+            CombatBalance.ResetDevProfiles();
             HeroController.ActiveHeroes.Clear();MonsterController.ActiveMonsters.Clear();UnityEngine.Object.objects.Clear();
             ground=(RectTransform)new GameObject(true).transform;ground.sizeDelta=new Vector2(1000,100);ground.localScale=new Vector3(scale,scale,1);
             grass=(RectTransform)new GameObject(true).transform;grass.parent=ground;grass.anchoredPosition=new Vector2(600,0);grass.sizeDelta=new Vector2(200,100);
@@ -252,6 +253,7 @@ partial class MotionRegression
         Patch54aTests();
         GroundRelativeMotionTests();
         Patch54bTests();
+        Patch54cTests();
         TerrainTests();
         MenuDifficultyTests();
         BalanceTests();

@@ -19,27 +19,30 @@ bị dính xuống đáy. Sau bản vá Windows 0.0.4.51f, ngày 09/10/2026 ngư
 xác nhận đã thử: System Menu hoạt động, scale cửa sổ đúng logic và cho phép
 merge PR #1 vào main. Chưa có xác nhận riêng về kéo cửa sổ, DPI/màn hình phụ.
 
-CẬP NHẬT ĐANG PHÁT TRIỂN: 0.0.4.54b, nền toàn bộ .54a và sửa chuyển động quái theo ground.
-Nhánh feature/0.0.4.54b; chưa merge main, chưa nghiệm thu Unity/Windows.
-Hiện trạng mới nhất: Docs/Release_0.0.4.54b.md, ưu tiên hơn ghi chép lịch sử.
-Người dùng báo sát thương .54a về cơ bản ổn; .54b tối ưu ba thế đánh:
-- Cung giảm ngẫu nhiên 20–45% ATK mỗi đòn, giữ dao động 85–100% cũ.
-- Cận chiến/cung đánh ngay khi đủ tầm X, không đợi đối thủ dừng hoặc khớp Y.
-- Ranged nhắm vị trí lúc bắn, không homing; di chuyển có thể hụt. Camera dịch
-  cả điểm ngắm và đạn nên không tự gây hụt. Cung dùng dung sai 12 đơn vị.
-- Phép vận công trước mỗi đòn, bắn một quả cầu kích thước ×4 cũ, 250% ATK,
-  nổ bán kính 100 đơn vị tại điểm rơi, khắc hệ riêng từng đối thủ, bỏ volley.
-- Thanh vận công xanh phía trên HP cho hero/quái dùng phép: 0→100%, đầy mà
-  chưa có mục tiêu thì giữ đầy, bắn reset 0%; pause đóng băng; ẩn khi dùng cung
-  hoặc cận chiến. Vận công bắt đầu khi hero được triển khai, giữ qua wave thường;
-  load/reset/chết hủy chu kỳ cũ.
-Giữ Vô độc lập, random linh căn/tên/giới tính, cụm 5 map, habitat, 5 wave/map,
-5 map thường/1 map khó, damage quái 50% tăng bù mốc 20…100, heal 5–10 HP/kill,
-AI hero−X/quái+X và quái tiến tương đối trên ground như .54a.
-Sinh sản F1/F2/F3, mô tả cha mẹ, sprite/bơi/bay/kỹ năng theo loài chưa triển khai.
-114 kiểm tra hồi quy và 720 mô phỏng PASS dùng Unity API mô phỏng, không phải
-Play Mode. Phép mạnh hơn đáng kể ở cấp thấp trong fixture; đã ghi kết quả để
-nghiệm thu cân bằng. Chưa có build Windows native.
+CẬP NHẬT ĐANG PHÁT TRIỂN: 0.0.4.54c, nền toàn bộ .54b (GitHub 9514345).
+Nhánh feature/0.0.4.54c; chưa merge main, chưa kết thúc tiến trình 0.0.4.
+Hiện trạng mới nhất: Docs/Release_0.0.4.54c.md, ưu tiên hơn ghi chép lịch sử.
+Người dùng báo chữ nhỏ/đậm và cửa sổ nhảy hoặc dính mép dưới khi đổi kích thước.
+[CÓ MÃ] .54c tách UI theo điểm ảnh, chữ thường cỡ 14, số damage nổi tối thiểu 12;
+menu thích ứng 800/500/250, log/chỉ số/công thức dài chia trang thay vì thu chữ.
+[CÓ MÃ] Windows: nhấn-thả để bấm; giữ-kéo từ 5 pixel để di chuyển từ nút/log/
+popup/ground; ô nhập DEVB dành cho chọn chữ. Kéo không kích hoạt nút.
+[CÓ MÃ] Resize lưu góc trái trên, chờ Unity đổi độ phân giải, giữ tọa độ trong
+vùng làm việc trừ taskbar của màn hình hiện tại; sửa vị trí trễ trong 8 frame rồi
+ngừng giữ. [CẦN KIỂM THỬ] Windows native, DPI, nhiều màn hình, resize liên tục.
+[CÓ MÃ] DEVB cạnh Pause, tab Hero/Quái độc lập: ATK và ATK/cấp; tốc đánh và
+mức tăng/cấp; tốc di chuyển; tầm riêng cận chiến/cung/phép; HP và HP/cấp.
+OK áp dụng vào trận và tương lai, giữ cấp/linh căn/điểm/tỷ lệ HP; xóa đạn cũ và
+reset hồi chiêu/vận công. Gốc→OK khôi phục; Hủy bỏ bản nháp. Bảng tạm dừng khi
+mở, trả lại trạng thái pause trước đó khi đóng. Cấu hình lưu riêng với save game,
+restart/chơi mới vẫn dùng cấu hình DEVB đã lưu cho đến khi chọn Gốc→OK.
+Giữ toàn bộ sát thương/tấn công .54b, Vô độc lập, map/cụm/habitat,5 wave/map,
+5 map thường/1 map khó, damage map, heal 5–10/kill và chuyển động/camera/ground.
+Không thêm sinh sản, skill theo loài, accuracy item, interrupt hoặc ngắm đón.
+[ĐÃ THỬ]129 kiểm tra logic và 720 mô phỏng với Unity API mô phỏng; biên dịch nhánh
+Windows với API mô phỏng. Mô hình bố cục đã kiểm tra, chưa phải ảnh render Unity.
+[CẦN KIỂM THỬ] nét chữ/glyph, nhập số trong desktop, snap/drag/taskbar. Bản thử
+là source project để mở Unity, chưa có build executable Windows.
 
 Nhãn trạng thái dùng xuyên suốt:
 [ĐỊNH HƯỚNG] ý định thiết kế, chưa phải chức năng chạy được.
@@ -698,3 +701,9 @@ CẬP NHẬT CUỐI — 0.0.4.54b
 Các mô tả phép 1.8×/volley/homing/chờ đủ chu kỳ đòn đầu phía trên là lịch sử.
 Thanh xanh chỉ dùng phép, cả hero/quái; Info ghi đòn trúng và đòn hụt, không ghi
 hit lúc bắn. Chưa có item accuracy, interrupt, ngắm đón hoặc build Windows native.
+
+CẬP NHẬT CUỐI — 0.0.4.54c
+Đọc Docs/Release_0.0.4.54c.md cho UI theo điểm ảnh, kéo từ các UI và DEVB.
+Không gọi bản này là final: lỗi vị trí cửa sổ phải nghiệm thu trên Windows thật.
+DEVB thay thông số base/growth và motion/range; linh căn/điểm/map giữ nguyên.
+Cấu hình DEVB riêng với save game, khôi phục bằng Gốc→OK cho mỗi tab.

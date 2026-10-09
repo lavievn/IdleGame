@@ -62,6 +62,7 @@ public class CombatManager : MonoBehaviour
     {
         ClearProjectiles();
         runtimeHeroData = hData;
+        if (CombatBalance.HeroDev != null && heroController != null) heroController.moveSpeed = CombatBalance.HeroDev.movementSpeed;
         maxHeroHP = runtimeHeroData.GetCalculatedHealth();
         currentHeroHP = maxHeroHP;
         ResetHeroAttack();
@@ -86,7 +87,7 @@ public class CombatManager : MonoBehaviour
             info.data.currentLevel = Mathf.Clamp(runtimeHeroData.currentLevel + Random.Range(-spread, spread + 1), 1, 999);
             info.data.baseHealth = CombatBalance.MonsterHealth(info.data.currentLevel);
             info.data.baseDamage = CombatBalance.MonsterAttack(info.data.currentLevel);
-            info.data.baseAttackSpeed = CombatBalance.HeroSpeed(info.data.currentLevel);
+            info.data.baseAttackSpeed = CombatBalance.MonsterSpeed(info.data.currentLevel);
             info.data.addedHealth = 0;
             info.data.addedDamage = 0;
             info.data.gender = Random.Range(0,2) == 0 ? GenderType.Nam : GenderType.Nu;
@@ -97,10 +98,43 @@ public class CombatManager : MonoBehaviour
             info.maxHP = info.data.GetCalculatedHealth();
             info.currentHP = info.maxHP;
             if (info.controller != null) { info.controller.UpdateHealthBar(info.currentHP, info.maxHP); info.controller.SetIdentityVisual(info.data); }
+            if (info.controller != null && CombatBalance.MonsterDev != null) info.controller.moveSpeed = CombatBalance.MonsterDev.movementSpeed;
             info.cycleMode = info.controller != null ? info.controller.attackMode : AttackMode.Melee;
             activeMonsters.Add(info);
         }
         isBattling = activeMonsters.Count > 0;
+    }
+
+    public void ApplyDevBalance(bool monster)
+    {
+        // Changing balance cancels in-flight old power/cooldowns, not the wave or identity.
+        ClearProjectiles(); ResetHeroAttack();
+        if (!monster && runtimeHeroData != null)
+        {
+            float healthRatio = maxHeroHP > 0 ? (float)currentHeroHP / maxHeroHP : 1f;
+            runtimeHeroData.ApplyHeroBalance(); maxHeroHP = runtimeHeroData.GetCalculatedHealth();
+            currentHeroHP = currentHeroHP <= 0 ? 0 : Mathf.Clamp(Mathf.RoundToInt(healthRatio * maxHeroHP),1,maxHeroHP);
+            if (heroController != null) {
+                if (CombatBalance.HeroDev != null) heroController.moveSpeed = CombatBalance.HeroDev.movementSpeed;
+                heroController.UpdateHealthBar(currentHeroHP,maxHeroHP); heroController.UpdateStats(runtimeHeroData,currentHeroHP,maxHeroHP);
+            }
+        }
+        foreach (var info in activeMonsters)
+        {
+            info.attackTimer = 0f;
+            if (info.controller != null) info.controller.UpdateChargeBar(false,0);
+            if (!monster) continue;
+            float healthRatio = info.maxHP > 0 ? (float)info.currentHP / info.maxHP : 1f;
+            info.data.baseDamage = CombatBalance.MonsterAttack(info.data.currentLevel);
+            info.data.baseHealth = CombatBalance.MonsterHealth(info.data.currentLevel);
+            info.data.baseAttackSpeed = CombatBalance.MonsterSpeed(info.data.currentLevel);
+            info.maxHP = info.data.GetCalculatedHealth();
+            info.currentHP = info.currentHP <= 0 ? 0 : Mathf.Clamp(Mathf.RoundToInt(healthRatio * info.maxHP),1,info.maxHP);
+            if (info.controller != null) {
+                if (CombatBalance.MonsterDev != null) info.controller.moveSpeed = CombatBalance.MonsterDev.movementSpeed;
+                info.controller.UpdateHealthBar(info.currentHP,info.maxHP);
+            }
+        }
     }
 
     public int CurrentHeroHP => currentHeroHP;
@@ -130,7 +164,7 @@ public class CombatManager : MonoBehaviour
             if (info.controller == null || !info.controller.IsAlive) continue;
             AttackMode mode = info.controller.attackMode;
             if (info.cycleMode != mode) { info.cycleMode = mode; info.attackTimer = 0f; }
-            float duration = AttackDuration(mode, info.data.baseAttackSpeed);
+            float duration = AttackDuration(mode, info.data.baseAttackSpeed, true);
             bool ready = AdvanceCycle(ref info.attackTimer, mode, duration, dt);
             info.controller.UpdateChargeBar(mode == AttackMode.RangedMagic, info.attackTimer / duration);
             if (!ready || !info.controller.CanAttack(heroController, space)) continue;
@@ -191,9 +225,9 @@ public class CombatManager : MonoBehaviour
         return SynergyMath.EvaluateDamage(attacker, defender, mode, Random.Range(.85f, 1f), physicalFactor);
     }
 
-    private static float AttackDuration(AttackMode mode, float speed)
+    private static float AttackDuration(AttackMode mode, float speed, bool monster = false)
     {
-        return CombatBalance.AttackInterval(mode, speed);
+        return CombatBalance.AttackInterval(mode, speed, (monster ? CombatBalance.MonsterDev : CombatBalance.HeroDev) != null);
     }
 
     private void ResetHeroAttack()

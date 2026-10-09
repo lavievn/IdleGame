@@ -242,7 +242,7 @@ public class HeroController : MonoBehaviour
             lines.Add("ATK " + IdentityDisplay.Element(data.spiritRoots[i]) + ": " +
                 (data.GetCalculatedDamage() * data.rootWeights[i]).ToString("0.##") + " (" +
                 IdentityDisplay.Tier(data.rootTiers[i]) + ", " + data.rootWeights[i].ToString("P0") + ")");
-        float interval = CombatBalance.AttackInterval(attackMode, data.baseAttackSpeed);
+        float interval = CombatBalance.AttackInterval(attackMode, data.baseAttackSpeed, CombatBalance.HeroDev != null);
         lines.Add("Di chuyển: " + moveSpeed.ToString("0.##") + " đơn vị/giây");
         lines.Add("Tốc đánh: " + (1f / interval).ToString("0.##") + " đòn/giây · " + interval.ToString("0.##") + " giây/đòn");
         atkStatusText.text = string.Join("\n", lines.ToArray());
@@ -250,6 +250,7 @@ public class HeroController : MonoBehaviour
     public void ShowDamage(int damageAmount)
     {
         if (dmgTextPrototype == null) return;
+        UIManager.ReadableWorldText(dmgTextPrototype);
         dmgTextPrototype.text = $"-{damageAmount}";
         if (fadeDmgCoroutine != null) StopCoroutine(fadeDmgCoroutine);
         fadeDmgCoroutine = StartCoroutine(FadeDamageTextRoutine());

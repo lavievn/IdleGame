@@ -138,6 +138,11 @@ public class EnvironmentManager : MonoBehaviour
 
     public float AttackRange(AttackMode mode, bool hero)
     {
+        var profile = hero ? CombatBalance.HeroDev : CombatBalance.MonsterDev;
+        return profile != null ? profile.Range(mode) : DefaultAttackRange(mode,hero);
+    }
+    public float DefaultAttackRange(AttackMode mode, bool hero)
+    {
         float ratio = meleeRangeRatio;
         if (mode == AttackMode.RangedPhysical)
             ratio = hero ? heroPhysicalRangeRatio : monsterPhysicalRangeRatio;

@@ -131,7 +131,7 @@ public class EntityDataSO : ScriptableObject
         baseHealth = CombatBalance.HeroHealth(currentLevel);
         baseDamage = CombatBalance.HeroAttack(currentLevel);
         baseAttackSpeed = CombatBalance.HeroSpeed(currentLevel);
-        AddAttackSpeed = baseAttackSpeed - 1f;
+        AddAttackSpeed = baseAttackSpeed - (CombatBalance.HeroDev != null ? CombatBalance.HeroDev.attackSpeed : 1f);
         expToNextLevel = CombatBalance.RequiredExp(currentLevel);
     }
 

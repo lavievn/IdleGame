@@ -145,6 +145,7 @@ public class MonsterController : MonoBehaviour
     public void ShowDamage(int damageAmount)
     {
         if (dmgTextPrototype == null) return;
+        UIManager.ReadableWorldText(dmgTextPrototype);
         dmgTextPrototype.text = $"-{damageAmount}";
         if (fadeDmgCoroutine != null) StopCoroutine(fadeDmgCoroutine);
         fadeDmgCoroutine = StartCoroutine(FadeDamageTextRoutine());

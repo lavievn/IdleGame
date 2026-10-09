@@ -64,7 +64,7 @@ public class StartMenuUI : MonoBehaviour
         go.SetActive(true);
         Place(go.GetComponent<RectTransform>(),p,size);
         var label = go.GetComponent<TextMeshProUGUI>();
-        label.text=text; label.fontSize=fontSize; label.enableAutoSizing=true;
+        label.text=text; UIManager.ReadableText(label,14);
         label.fontSizeMin=16; label.fontSizeMax=fontSize; label.color=new Color(1,1,1,1);
         label.alignment=TextAlignmentOptions.Center; label.raycastTarget=false;
         return label;
@@ -75,7 +75,7 @@ public class StartMenuUI : MonoBehaviour
         Place(go.GetComponent<RectTransform>(),p,new Vector2(200,52));
         var button = go.GetComponent<Button>();
         var label = go.GetComponentInChildren<TextMeshProUGUI>(true);
-        if (label != null) { label.text=title; label.enableAutoSizing=true; label.fontSizeMin=16; label.fontSizeMax=26; label.alignment=TextAlignmentOptions.Center; }
+        if (label != null) { label.text=title; UIManager.ReadableText(label,14); label.alignment=TextAlignmentOptions.Center; }
         UnityAction click = () => {
             if (!button.interactable || lastClickFrame == Time.frameCount) return;
             lastClickFrame = Time.frameCount; action();
