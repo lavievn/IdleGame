@@ -14,17 +14,18 @@ public class TransparentWindow : MonoBehaviour
     [Tooltip("Kéo các nút bấm, kỹ năng, menu hệ thống vào đây. Ưu tiên thứ hai.")]
     public RectTransform[] clickableUI; 
     
-    [Tooltip("Kéo vùng nền (Ground) dùng để kéo thả cửa sổ vào đây. Ưu tiên thấp nhất.")]
+    [Tooltip("Vùng kéo bổ sung. Nút, log và các bảng UI cũng hỗ trợ giữ-kéo.")]
     public RectTransform[] draggableUI; 
 
     [Header("Windows startup window")]
-    public int startupWidth = 1000;
-    public int startupHeight = 563;
+    public int startupWidth = 800;
+    public int startupHeight = 450;
     private bool isCurrentlyClickable = false;
     private bool previousButtonDown;
+    private WindowPointerGesture gesture = new WindowPointerGesture();
+    private bool resizing;
+    private CLIENTRECT resizeWorkArea;
     private bool dragging;
-    private POINT dragCursor;
-    private POINT dragWindow;
     private POINT resizePosition;
     private bool hasResizePosition;
 
@@ -64,6 +65,12 @@ public class TransparentWindow : MonoBehaviour
 
     [DllImport("user32.dll")]
     private static extern bool GetClientRect(IntPtr hWnd, out CLIENTRECT rect);
+    [DllImport("user32.dll")] private static extern IntPtr MonitorFromWindow(IntPtr hwnd, uint flags);
+    [DllImport("user32.dll", CharSet = CharSet.Auto)] private static extern bool GetMonitorInfo(IntPtr monitor, ref MONITORINFO info);
+    [DllImport("user32.dll")] private static extern bool SetForegroundWindow(IntPtr hwnd);
+    [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Auto)]
+    private struct MONITORINFO { public int size; public CLIENTRECT monitor, work; public uint flags; }
+
     [StructLayout(LayoutKind.Sequential)]
     private struct CLIENTRECT { public int left, top, right, bottom; }
 
@@ -99,42 +106,39 @@ public class TransparentWindow : MonoBehaviour
     {
 #if UNITY_STANDALONE_WIN && !UNITY_EDITOR
         if (hWnd == IntPtr.Zero) return;
+        if (resizing) { previousButtonDown = NativeButtonDown(); return; }
         bool down = NativeButtonDown();
         bool pressed = ConsumePress(down, ref previousButtonDown);
         bool overClickable, overDraggable;
         CheckHitboxUI(out overClickable, out overDraggable);
-        if (!down) dragging = false;
-        bool wantsClicks = overClickable || overDraggable || dragging;
-        if (wantsClicks != isCurrentlyClickable) ToggleClickThrough(!wantsClicks);
-
-        if (pressed && overClickable)
+        POINT cursor;
+        if (!GetCursorPos(out cursor)) return;
+        Vector2 nativePoint = new Vector2(cursor.X, cursor.Y);
+        if (pressed && (overClickable || overDraggable))
+        {
+            CLIENTRECT rect; Vector2 gamePoint;
+            if (GetWindowRect(hWnd, out rect) && TryGetPointerPosition(out gamePoint))
+                gesture.Begin(new Vector2(rect.left, rect.top), nativePoint, gamePoint,
+                    UIManager.Instance == null || !UIManager.Instance.IsTextInputAt(gamePoint));
+        }
+        Vector2 position;
+        bool click = gesture.Step(down, nativePoint, out position);
+        dragging = gesture.IsDragging;
+        if (dragging && down)
+            SetWindowPos(hWnd, IntPtr.Zero, Mathf.RoundToInt(position.x), Mathf.RoundToInt(position.y),
+                0, 0, SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE | SWP_NOSENDCHANGING);
+        if (click && UIManager.Instance != null)
         {
             Vector2 point;
-            if (UIManager.Instance != null && TryGetPointerPosition(out point))
-                UIManager.Instance.HandleMouseClick(point);
-        }
-        else if (pressed && overDraggable)
-        {
-            CLIENTRECT rect;
-            if (GetCursorPos(out dragCursor) && GetWindowRect(hWnd, out rect))
+            if (TryGetPointerPosition(out point))
             {
-                dragWindow = new POINT { X = rect.left, Y = rect.top };
-                dragging = true;
+                if (UIManager.Instance.IsTextInputAt(point)) SetForegroundWindow(hWnd);
+                UIManager.Instance.HandlePointerClick(gesture.PressGamePoint, point);
             }
         }
-        if (dragging && down)
-        {
-            POINT cursor;
-            if (GetCursorPos(out cursor))
-            {
-                Vector2 position = DragPosition(new Vector2(dragWindow.X, dragWindow.Y),
-                    new Vector2(dragCursor.X, dragCursor.Y), new Vector2(cursor.X, cursor.Y));
-                // Move directly, preserving the grab offset. No caption drag,
-                // Aero Snap, taskbar docking, or forced bottom coordinate.
-                SetWindowPos(hWnd, IntPtr.Zero, Mathf.RoundToInt(position.x), Mathf.RoundToInt(position.y),
-                    0, 0, SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE);
-            }
-        }
+        bool wantsClicks = overClickable || overDraggable || gesture.IsPressed;
+        if (wantsClicks != isCurrentlyClickable) ToggleClickThrough(!wantsClicks);
+
 #endif
     }
 
@@ -235,6 +239,7 @@ public class TransparentWindow : MonoBehaviour
     const int SWP_NOACTIVATE = 0x0010;
     const int SWP_FRAMECHANGED = 0x0020; 
     const int SWP_SHOWWINDOW = 0x0040;
+    const int SWP_NOSENDCHANGING = 0x0400;
 
     void ToggleClickThrough(bool isTransparent)
     {
@@ -244,52 +249,104 @@ public class TransparentWindow : MonoBehaviour
         else
             SetWindowLong(hWnd, GWL_EXSTYLE, WS_EX_LAYERED);
 
-        SetWindowPos(hWnd, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE | SWP_FRAMECHANGED);
+        SetWindowPos(hWnd, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
         
         MARGINS margins = new MARGINS { cxLeftWidth = -1 };
         DwmExtendFrameIntoClientArea(hWnd, ref margins);
     }
 
     // --- KHỐI RESIZE BỌC THÉP TÁI THIẾT LẬP ---
+    public static Vector2 KeepInWorkArea(Vector2 position, float width, float height, Rect work)
+    {
+        return new Vector2(Mathf.Clamp(position.x, work.xMin, Mathf.Max(work.xMin, work.xMax - width)),
+            Mathf.Clamp(position.y, work.yMin, Mathf.Max(work.yMin, work.yMin + work.height - height)));
+    }
+    private CLIENTRECT WorkArea()
+    {
+        var info = new MONITORINFO { size = Marshal.SizeOf(typeof(MONITORINFO)) };
+        if (GetMonitorInfo(MonitorFromWindow(hWnd, 2), ref info)) return info.work;
+        return new CLIENTRECT { right = GetSystemMetrics(0), bottom = GetSystemMetrics(1) };
+    }
     public void ResizeWindow(int width, int height)
     {
 #if UNITY_STANDALONE_WIN && !UNITY_EDITOR
-        if (hWnd != IntPtr.Zero)
-        {
-            CLIENTRECT rect;
-            hasResizePosition = GetWindowRect(hWnd, out rect);
-            if (hasResizePosition) resizePosition = new POINT { X = rect.left, Y = rect.top };
-            dragging = false;
-            StopAllCoroutines();
-            Screen.SetResolution(width, height, FullScreenMode.Windowed);
-            StartCoroutine(ReapplyTransparencyDelay(width, height));
-        }
+        if (hWnd == IntPtr.Zero || resizing) return;
+        CLIENTRECT rect;
+        hasResizePosition = GetWindowRect(hWnd, out rect);
+        if (hasResizePosition) resizePosition = new POINT { X = rect.left, Y = rect.top };
+        resizeWorkArea = WorkArea();
+        resizing = true; dragging = false; gesture.Cancel();
+        Screen.SetResolution(width, height, FullScreenMode.Windowed);
+        StartCoroutine(ReapplyTransparencyDelay(width, height));
+#else
+        Screen.SetResolution(width, height, FullScreenMode.Windowed);
 #endif
     }
 
     private IEnumerator ReapplyTransparencyDelay(int width, int height, bool center = false)
     {
-        yield return new WaitForSecondsRealtime(0.2f);
-
 #if UNITY_STANDALONE_WIN && !UNITY_EDITOR
-        // Unity can recreate its native window while changing fullscreen mode.
+        resizing = true; gesture.Cancel();
+        if (center) resizeWorkArea = WorkArea();
+        // SetResolution completes asynchronously, at frame end. Wait for the
+        // requested render size rather than racing it with a fixed 0.2s timer.
+        yield return null; yield return null;
+        for (int frame = 0; frame < 60 && (Screen.width != width || Screen.height != height); frame++) yield return null;
         IntPtr current = System.Diagnostics.Process.GetCurrentProcess().MainWindowHandle;
         if (current != IntPtr.Zero) hWnd = current;
-        if (hWnd == IntPtr.Zero) yield break;
+        if (hWnd == IntPtr.Zero) { resizing = false; yield break; }
         SetWindowLong(hWnd, GWL_STYLE, WS_POPUP | WS_VISIBLE);
-
-        if (!isCurrentlyClickable)
-            SetWindowLong(hWnd, GWL_EXSTYLE, WS_EX_LAYERED | WS_EX_TRANSPARENT);
-        else
-            SetWindowLong(hWnd, GWL_EXSTYLE, WS_EX_LAYERED);
-
-        int x = center ? Math.Max(0, (GetSystemMetrics(0) - width) / 2) : resizePosition.X;
-        int y = center ? Math.Max(0, (GetSystemMetrics(1) - height) / 2) : resizePosition.Y;
-        SetWindowPos(hWnd, HWND_TOPMOST, x, y, width, height,
-            (center || hasResizePosition ? 0 : SWP_NOMOVE) | SWP_NOACTIVATE | SWP_SHOWWINDOW | SWP_FRAMECHANGED);
-        
+        SetWindowLong(hWnd, GWL_EXSTYLE, WS_EX_LAYERED | (isCurrentlyClickable ? 0u : WS_EX_TRANSPARENT));
+        var work = new Rect(resizeWorkArea.left, resizeWorkArea.top,
+            resizeWorkArea.right - resizeWorkArea.left, resizeWorkArea.bottom - resizeWorkArea.top);
+        Vector2 wanted = center || !hasResizePosition ? new Vector2(work.xMin + (work.width-width)/2,
+            work.yMin + (work.height-height)/2) : new Vector2(resizePosition.X, resizePosition.Y);
+        wanted = KeepInWorkArea(wanted, width, height, work);
+        SetWindowPos(hWnd, HWND_TOPMOST, Mathf.RoundToInt(wanted.x), Mathf.RoundToInt(wanted.y), width, height,
+            SWP_NOACTIVATE | SWP_SHOWWINDOW | SWP_FRAMECHANGED | SWP_NOSENDCHANGING);
         MARGINS margins = new MARGINS { cxLeftWidth = -1 };
         DwmExtendFrameIntoClientArea(hWnd, ref margins);
+        // Repair any delayed Unity placement once, without constantly pinning a
+        // user-dragged window. Pointer gestures are suspended only during settle.
+        for (int frame = 0; frame < 8; frame++)
+        {
+            yield return null;
+            CLIENTRECT actual;
+            if (GetWindowRect(hWnd, out actual) && (actual.left != Mathf.RoundToInt(wanted.x) || actual.top != Mathf.RoundToInt(wanted.y)))
+                SetWindowPos(hWnd, IntPtr.Zero, Mathf.RoundToInt(wanted.x), Mathf.RoundToInt(wanted.y), 0, 0,
+                    SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE | SWP_NOSENDCHANGING);
+        }
+        previousButtonDown = NativeButtonDown(); resizing = false;
+#else
+        yield break;
 #endif
     }
+}
+
+// Button activation is a completed click, never the beginning of a drag.
+public sealed class WindowPointerGesture
+{
+    public bool IsPressed { get; private set; }
+    public bool IsDragging { get; private set; }
+    public Vector2 PressGamePoint { get; private set; }
+    private Vector2 startWindow, startCursor;
+    private bool canDrag;
+    public void Begin(Vector2 window, Vector2 cursor, Vector2 gamePoint, bool allowDrag)
+    {
+        IsPressed = true; IsDragging = false; startWindow = window; startCursor = cursor;
+        PressGamePoint = gamePoint; canDrag = allowDrag;
+    }
+    public bool Step(bool down, Vector2 cursor, out Vector2 position)
+    {
+        position = startWindow;
+        if (!IsPressed) return false;
+        Vector2 delta = cursor - startCursor;
+        if (canDrag && delta.x * delta.x + delta.y * delta.y >= 25f) IsDragging = true;
+        if (IsDragging) position = TransparentWindow.DragPosition(startWindow, startCursor, cursor);
+        if (down) return false;
+        bool click = !IsDragging;
+        IsPressed = false; IsDragging = false;
+        return click;
+    }
+    public void Cancel() { IsPressed = false; IsDragging = false; }
 }

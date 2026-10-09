@@ -137,3 +137,39 @@ public class BattleEffects : MaskableGraphic
         vh.AddTriangle(i, i + 1, i + 2); vh.AddTriangle(i, i + 2, i + 3);
     }
 }
+
+// Runtime-created UI beside the existing HP bar; no scene/prefab rewiring needed.
+public sealed class MagicChargeBar
+{
+    public RectTransform Root { get; private set; }
+    public Image Fill { get; private set; }
+    public static MagicChargeBar Create(RectTransform actor, Image hpFill)
+    {
+        var go = new GameObject("Magic Charge", typeof(RectTransform), typeof(CanvasRenderer), typeof(Image));
+        var bar = new MagicChargeBar { Root = (RectTransform)go.transform };
+        RectTransform hp = hpFill != null ? hpFill.transform as RectTransform : null;
+        bar.Root.SetParent(hp != null ? hp.parent : actor, false);
+        bar.Root.anchorMin = hp != null ? hp.anchorMin : new Vector2(.5f, 1f);
+        bar.Root.anchorMax = hp != null ? hp.anchorMax : new Vector2(.5f, 1f);
+        bar.Root.pivot = hp != null ? hp.pivot : new Vector2(.5f, .5f);
+        bar.Root.anchoredPosition = (hp != null ? hp.anchoredPosition : Vector2.zero) + new Vector2(0f, 12f);
+        bar.Root.sizeDelta = new Vector2(hp != null ? hp.rect.width : Mathf.Max(40f, actor.rect.width), 5f);
+        var background = go.GetComponent<Image>();
+        background.color = new Color(.02f, .08f, .16f, .9f); background.raycastTarget = false;
+        var fillGO = new GameObject("Charge Fill", typeof(RectTransform), typeof(CanvasRenderer), typeof(Image));
+        var rect = (RectTransform)fillGO.transform; rect.SetParent(bar.Root, false);
+        rect.anchorMin = Vector2.zero; rect.anchorMax = new Vector2(0f, 1f);
+        rect.pivot = new Vector2(0f, .5f); rect.sizeDelta = Vector2.zero; rect.anchoredPosition = Vector2.zero;
+        bar.Fill = fillGO.GetComponent<Image>(); bar.Fill.raycastTarget = false;
+        bar.Fill.color = new Color(.1f, .55f, 1f, 1f);
+        bar.Set(false, 0f);
+        return bar;
+    }
+    public void Set(bool visible, float progress)
+    {
+        progress = visible ? Mathf.Clamp01(progress) : 0f;
+        Fill.fillAmount = progress;
+        ((RectTransform)Fill.transform).anchorMax = new Vector2(progress, 1f);
+        Root.gameObject.SetActive(visible);
+    }
+}
