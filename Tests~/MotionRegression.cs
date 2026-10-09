@@ -250,6 +250,7 @@ partial class MotionRegression
         IdentityMapTests();
         ElementWorldTests();
         Patch54aTests();
+        GroundRelativeMotionTests();
         TerrainTests();
         MenuDifficultyTests();
         BalanceTests();

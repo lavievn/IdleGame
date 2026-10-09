@@ -44,7 +44,8 @@ public class MonsterController : MonoBehaviour
         ResetFeedback();
     }
 
-    public void TickMovement(EnvironmentManager space, float dt)
+    public void TickMovement(EnvironmentManager space, float dt) { TickMovement(space, dt, 0f); }
+    public void TickMovement(EnvironmentManager space, float dt, float groundMinusCamera)
     {
         if (!IsAlive) return;
         attackRange = space.AttackRange(attackMode, false);
@@ -56,7 +57,7 @@ public class MonsterController : MonoBehaviour
 
         Vector2 p = space.Position(rect);
         float targetX = space.Position(CurrentTarget.heroRect).x;
-        p.x = BattleMotion.ForwardApproach(p.x, targetX, attackRange, moveSpeed, dt, 1);
+        p.x = BattleMotion.MonsterApproach(p.x, targetX, attackRange, moveSpeed, dt, groundMinusCamera);
         space.SetPosition(rect, p);
         currentState = CanAttack(CurrentTarget, space) ? MonsterState.Attacking : MonsterState.Approaching;
     }

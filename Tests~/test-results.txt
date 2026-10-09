@@ -75,6 +75,9 @@ PASS pause and info work through native-compatible dispatcher and pause freezes 
 PASS damage trace snapshots actual formula and only records projectile after impact
 PASS pause freezes pending wave even with zero configured delay
 PASS region and habitat data survive save and load alongside root repair
+PASS approaching monster moves at base speed plus current ground pan, without double camera
+PASS ground compensation uses current frame after hero speed changes and handles slower ground than camera
+PASS compensated monster clamps at attack range on long frames and stationary fighters share camera
 PASS terrain visual clone grows 1.2 while logical ground and hero stats stay unchanged
 PASS terrain loop covers complete viewport through long scroll and resize
 PASS all seven grass placeholders receive sprites and separate random positions
@@ -129,4 +132,4 @@ SIM mapVisit=100 level=100 mode=RangedMagic deaths=20/20 mean_observed_seconds=4
 SIM mapVisit=100 level=999 mode=Melee deaths=20/20 mean_observed_seconds=20.5 mean_spawned=4.8
 SIM mapVisit=100 level=999 mode=RangedPhysical deaths=20/20 mean_observed_seconds=43.6 mean_spawned=12.9
 SIM mapVisit=100 level=999 mode=RangedMagic deaths=20/20 mean_observed_seconds=43.3 mean_spawned=13.0
-PASS: 94 regression scenarios (Unity test doubles; not Play Mode).
+PASS: 97 regression scenarios (Unity test doubles; not Play Mode).

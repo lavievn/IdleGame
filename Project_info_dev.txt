@@ -674,3 +674,9 @@ CẬP NHẬT CUỐI — 0.0.4.54a
 Đối chiếu Docs/Release_0.0.4.54a.md; các ghi chép .54/.52 phía trên là lịch sử.
 Vô không còn tham gia danh sách random nhiều căn; quái chọn loài theo địa hình.
 Cụm5map và5wave/map là hai cấp tiến trình riêng. Chưa nghiệm thu Unity/Windows.
+
+BỔ SUNG .54a — chuyển động quái theo ground
+Đã sửa bước tiếp cận để tổng tốc độ nhìn thấy bằng tốc độ riêng của quái
++ tốc độ ground, bù phần ground−camera của cùng frame để không cộng camera
+hai lần. Khi đã đủ tầm đánh, không thêm bước tiếp cận. Xem phần cuối
+Docs/Release_0.0.4.54a.md và GroundRelativeMotionRegression.cs.

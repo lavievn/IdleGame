@@ -117,3 +117,27 @@ sát thương quái50%; không tự thay hồi5–10HP/kill hoặc độ khó ng
 Kết quả kiểm chứng: 94 kịch bản hồi quy PASS, 720 lượt mô phỏng chiến đấu,
 biên dịch UNITY_STANDALONE_WIN PASS với API mô phỏng. Chưa chạy Unity Editor
 hoặc Windows native, chưa xác nhận bố cục thực tế ở cửa sổ 250.
+
+## Bổ sung: tốc độ quái theo ground (09/10/2026)
+
+Bản .54a đầu cộng bước riêng của quái với dịch camera, trong khi ground đang
+trôi theo khoảng chạy thực tế của hero. Khi hero300/camera150/quái150, quái
+hiển thị300 và ground300: không có bước tiến tương đối trên nền.
+
+Đã bù groundPan−cameraPan vào bước quái đang tiếp cận, dùng khoảng dịch của
+cùng frame sau khi hero di chuyển, không dùng CurrentBackgroundSpeed của
+frame trước. Camera vẫn dịch toàn bộ đối tượng một lần ở LateUpdate.
+Tổng bước nhìn thấy = bước riêng + groundPan (trừ phần bị chặn khi tới tầm
+đánh). Ví dụ trên quái450, ground300, nên tiến150 tương đối trên ground.
+Không cộng nguyên tốc độ ground vào moveSpeed rồi cộng camera lần nữa.
+
+Khi ground chậm hơn camera, phần bù có thể âm trong tọa độ trước dịch camera;
+đây là sửa vận chuyển của nền, không đảo hướng chạy riêng của quái. Sau dịch
+camera, quái đang tiếp cận vẫn tiến phải với baseSpeed + groundSpeed. Khi đã
+đủ tầm đánh, không thêm bù tiếp cận; quái đứng đánh cùng dịch camera như hero.
+Giữ chặn tầm đánh, không vượt mục tiêu với frame dài và tạm dừng không dịch.
+
+97 kiểm tra hồi quy PASS; thử riêng ground75/150/300/600, camera150/1000,
+quái50/150/600, FPS30/60/144 và Canvas scale0.2/1/2. 720 lượt mô phỏng vẫn
+chạy, nhưng dùng tốc độ mặc định150 nên không thay kiểm tra tốc độ300 thực tế.
+Biên dịch nhánh Windows với API mô phỏng PASS; chưa kiểm thử Unity/Windows.
