@@ -22,6 +22,7 @@ public class MonsterController : MonoBehaviour
 
     private RectTransform rect;
     private Coroutine attackFeedbackCoroutine;
+    private MagicChargeBar chargeBar;
     private Coroutine fadeDmgCoroutine;
 
     void Awake() { rect = GetComponent<RectTransform>(); }
@@ -44,22 +45,20 @@ public class MonsterController : MonoBehaviour
         ResetFeedback();
     }
 
-    public void TickMovement(EnvironmentManager space, float dt)
+    public void TickMovement(EnvironmentManager space, float dt) { TickMovement(space, dt, 0f); }
+    public void TickMovement(EnvironmentManager space, float dt, float groundMinusCamera)
     {
         if (!IsAlive) return;
         attackRange = space.AttackRange(attackMode, false);
-        if (CurrentTarget == null || !CurrentTarget.IsDeployed)
-        {
+        if (CurrentTarget == null || !CanAttack(CurrentTarget, space)) {
             CurrentTarget = null;
-            // Enter through the left edge before engaging; camera pans still carry
-            // passive monsters with the world while the hero is exploring.
-            if (space.IsVisible(rect)) FindTarget(space);
+            FindTarget(space);
         }
         if (CurrentTarget == null) { currentState = MonsterState.PassiveScroll; return; }
 
         Vector2 p = space.Position(rect);
         float targetX = space.Position(CurrentTarget.heroRect).x;
-        p.x = BattleMotion.Approach(p.x, targetX, attackRange, moveSpeed, dt);
+        p.x = BattleMotion.MonsterApproach(p.x, targetX, attackRange, moveSpeed, dt, groundMinusCamera);
         space.SetPosition(rect, p);
         currentState = CanAttack(CurrentTarget, space) ? MonsterState.Attacking : MonsterState.Approaching;
     }
@@ -79,7 +78,10 @@ public class MonsterController : MonoBehaviour
         foreach (var hero in HeroController.ActiveHeroes)
         {
             if (hero == null || !hero.IsDeployed) continue;
-            float distance = Mathf.Abs(space.Position(rect).x - space.Position(hero.heroRect).x);
+            float heroX = space.Position(hero.heroRect).x;
+            float monsterX = space.Position(rect).x;
+            if (heroX < monsterX && !CanAttack(hero, space)) continue;
+            float distance = Mathf.Abs(monsterX - heroX);
             if (distance < nearest) { nearest = distance; CurrentTarget = hero; }
         }
     }
@@ -94,12 +96,14 @@ public class MonsterController : MonoBehaviour
     public void MarkDead()
     {
         currentState = MonsterState.Dead;
+        UpdateChargeBar(false, 0f);
         CurrentTarget = null;
         ActiveMonsters.Remove(this);
     }
 
     private void ResetFeedback()
     {
+        if (chargeBar != null) chargeBar.Set(false, 0f);
         if (attackFeedbackCoroutine != null) StopCoroutine(attackFeedbackCoroutine);
         if (fadeDmgCoroutine != null) StopCoroutine(fadeDmgCoroutine);
         attackFeedbackCoroutine = null;
@@ -108,6 +112,23 @@ public class MonsterController : MonoBehaviour
         if (dmgTextPrototype != null) dmgTextPrototype.alpha = 0f;
     }
 
+    private bool hasBodyColor;
+    private Color originalBodyColor;
+    public void SetIdentityVisual(EntityDataSO data)
+    {
+        if (Rect == null || data == null) return;
+        Image image = Rect.GetComponent<Image>();
+        if (image == null) return;
+        if (!hasBodyColor) { originalBodyColor = image.color; hasBodyColor = true; }
+        image.color = IdentityDisplay.Tint(originalBodyColor, data.spiritRoots);
+    }
+    public void UpdateChargeBar(bool visible, float progress)
+    {
+        visible = visible && IsAlive && attackMode == AttackMode.RangedMagic;
+        if (chargeBar == null && visible && Rect != null)
+            chargeBar = MagicChargeBar.Create(Rect, hpFillImage);
+        if (chargeBar != null) chargeBar.Set(visible, progress);
+    }
     public void PlayAttackFeedback()
     {
         if (attackFeedbackCoroutine != null) StopCoroutine(attackFeedbackCoroutine);

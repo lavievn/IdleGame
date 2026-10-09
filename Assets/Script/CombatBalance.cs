@@ -24,9 +24,13 @@ public static class CombatBalance
         // A corrupted/legacy speed must not restore exponential attack growth.
         return seconds / Math.Max(0.1f, Math.Min(1.25f, speed));
     }
-    public static int Damage(int attack, AttackMode mode, float roll)
+    public static float ModeMultiplier(AttackMode mode, float physicalFactor = .8f)
     {
-        float multiplier = mode == AttackMode.RangedMagic ? 1.8f : 1f;
+        return mode == AttackMode.RangedMagic ? 2.5f : mode == AttackMode.RangedPhysical ? Math.Max(.55f, Math.Min(.8f, physicalFactor)) : 1f;
+    }
+    public static int Damage(int attack, AttackMode mode, float roll, float physicalFactor = .8f)
+    {
+        float multiplier = ModeMultiplier(mode, physicalFactor);
         return Math.Max(1, (int)Math.Round(Math.Max(1, attack) * multiplier * Math.Max(0.85f, Math.Min(1f, roll))));
     }
 }
