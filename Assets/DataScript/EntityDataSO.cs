@@ -24,7 +24,28 @@ public class EntityDataSO : ScriptableObject
 
     // Old saves have no version field. Normalize once after every load.
     public int balanceVersion = 0;
+    public int mapNumber = 1;
+    public int completedWavesInMap = 0;
+    public int mapProgressVersion = 0;
     public int difficulty = 0; // 0: Bình thường, 1: Khó
+
+    public void NormalizeMapProgress()
+    {
+        if (mapProgressVersion == 0) { mapNumber = 1; completedWavesInMap = 0; mapProgressVersion = 1; isDirty = true; }
+        mapNumber = System.Math.Max(1, mapNumber);
+        completedWavesInMap = System.Math.Max(0, System.Math.Min(4, completedWavesInMap));
+        difficulty = mapNumber % 6 == 0 ? 1 : 0;
+    }
+    public bool CompleteWave()
+    {
+        NormalizeMapProgress();
+        completedWavesInMap++;
+        bool changed = completedWavesInMap == 5;
+        if (changed) { completedWavesInMap = 0; if (mapNumber < int.MaxValue) mapNumber++; }
+        difficulty = mapNumber % 6 == 0 ? 1 : 0;
+        isDirty = true;
+        return changed;
+    }
 
     public void ApplyHeroBalance()
     {

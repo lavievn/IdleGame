@@ -196,6 +196,16 @@ public class HeroController : MonoBehaviour
         Image img = heroRect.GetComponent<Image>();
         if (img != null) img.color = gender == GenderType.Nam ? new Color(0.2f, 0.8f, 0.2f) : new Color(1f, 0.4f, 0.4f);
     }
+    private bool hasBodyColor;
+    private Color originalBodyColor;
+    public void SetIdentityVisual(EntityDataSO data)
+    {
+        if (heroRect == null || data == null) return;
+        Image image = heroRect.GetComponent<Image>();
+        if (image == null) return;
+        if (!hasBodyColor) { originalBodyColor = image.color; hasBodyColor = true; }
+        image.color = IdentityDisplay.Tint(originalBodyColor, data.spiritRoots);
+    }
     public void PlayAttackFeedback()
     {
         if (heroRect == null) return;

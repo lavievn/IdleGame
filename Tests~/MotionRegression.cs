@@ -247,6 +247,7 @@ partial class MotionRegression
         });
         NewFeatureTests();
         DesktopMenuTests();
+        IdentityMapTests();
         TerrainTests();
         MenuDifficultyTests();
         BalanceTests();

@@ -27,23 +27,9 @@ public class UIManager : MonoBehaviour
     void Start()
     {
         ConfigureSystemMenu();
-        if (mapMenu == null) return;
-        var menuRect = mapMenu.GetComponent<RectTransform>();
-        if (menuRect != null) menuRect.sizeDelta = new Vector2(210, 120);
-        foreach (var item in mapMenu.GetComponentsInChildren<CustomInteractable>(true))
-        {
-            if (item.gameObject.name != "Map1" && item.gameObject.name != "Map2") continue;
-            int mode = item.gameObject.name == "Map2" ? 1 : 0;
-            var label = item.GetComponent<TMPro.TextMeshProUGUI>();
-            if (label != null) { label.text = mode == 1 ? "Khó" : "Bình thường"; label.enableAutoSizing = true; label.fontSizeMin = 14; label.fontSizeMax = 28; }
-            item.onClickEvent = new UnityEvent();
-            item.onClickEvent.AddListener(() => SetDifficulty(mode));
-            var rect = item.GetComponent<RectTransform>();
-            rect.anchorMin = rect.anchorMax = new Vector2(.5f,.5f);
-            rect.pivot = new Vector2(.5f,.5f);
-            rect.sizeDelta = new Vector2(190,50);
-            rect.anchoredPosition = new Vector2(0,mode == 0 ? 27 : -27);
-        }
+        if (mapMenu != null) mapMenu.SetActive(false);
+        foreach (var rect in Object.FindObjectsByType<RectTransform>(FindObjectsInactive.Include, FindObjectsSortMode.None))
+            if (rect.gameObject.name == "MapIcon") rect.gameObject.SetActive(false);
     }
     public void SetDifficulty(int mode)
     {
@@ -82,7 +68,7 @@ public class UIManager : MonoBehaviour
     {
         foreach (var item in interactables)
         {
-            if (item != null && item.gameObject.activeInHierarchy && RectTransformUtility.RectangleContainsScreenPoint(item.GetRect(), mousePos, null))
+            if (item != null && item.isActiveAndEnabled && RectTransformUtility.RectangleContainsScreenPoint(item.GetRect(), mousePos, null))
                 return true;
         }
         return false;
@@ -94,7 +80,7 @@ public class UIManager : MonoBehaviour
         CustomInteractable hit = null;
         foreach (var item in interactables)
         {
-            if (item == null || !item.gameObject.activeInHierarchy || item.GetRect() == null) continue;
+            if (item == null || !item.isActiveAndEnabled || item.GetRect() == null) continue;
             if (gm != null && gm.HasPendingConfirmation && !item.transform.IsChildOf(gm.confirmationPopup.transform)) continue;
             if (!RectTransformUtility.RectangleContainsScreenPoint(item.GetRect(), mousePos, null)) continue;
             // A menu container must not steal a click from its own scale buttons.
@@ -110,45 +96,34 @@ public class UIManager : MonoBehaviour
         var root = systemMenu.GetComponent<RectTransform>();
         root.anchorMin = root.anchorMax = new Vector2(1f,0f);
         root.pivot = new Vector2(1f,0f);
-        root.anchoredPosition = new Vector2(-16f,265f);
-        root.sizeDelta = new Vector2(640f,150f);
-        int other = 0;
-        foreach (Transform child in root)
-        {
-            var rect = child as RectTransform; if (rect == null) continue;
-            int column;
-            int row;
-            switch (child.gameObject.name)
-            {
-                case "Btn_Scale200": column=0;row=0;break;
-                case "Btn_Scale500": column=1;row=0;break;
-                case "Btn_Scale1000": column=2;row=0;break;
-                default: column=other++ % 3;row=1;break;
-            }
-            rect.anchorMin = rect.anchorMax = new Vector2(0f,1f);
-            rect.pivot = new Vector2(.5f,.5f);
-            rect.sizeDelta = new Vector2(200f,54f);
-            rect.anchoredPosition = new Vector2(110f+210f*column,-40f-65f*row);
-            var label = child.GetComponent<TMPro.TextMeshProUGUI>();
-            if (label != null) { label.enableAutoSizing=true;label.fontSizeMin=16;label.fontSizeMax=30; }
-            // The existing Save/Load wrappers contain labels with old off-screen offsets.
-            if (child.gameObject.name == "SaveUi" || child.gameObject.name == "loadUi")
-            {
-                foreach (Transform nested in child)
-                {
-                    var text = nested.GetComponent<TMPro.TextMeshProUGUI>();
-                    var textRect = nested as RectTransform;
-                    if (text == null || textRect == null) continue;
-                    textRect.anchorMin = Vector2.zero;
-                    textRect.anchorMax = Vector2.one;
-                    textRect.pivot = new Vector2(.5f,.5f);
-                    textRect.anchoredPosition = Vector2.zero;
-                    textRect.sizeDelta = Vector2.zero;
-                    text.enableAutoSizing = true;
-                    text.fontSizeMin = 16; text.fontSizeMax = 30;
-                }
-            }
-        }
+        root.anchoredPosition = new Vector2(-16f,220f);
+        root.sizeDelta = new Vector2(340f,310f);
+        var template = systemMenu.GetComponentInChildren<TMPro.TextMeshProUGUI>(true);
+        menuFontTemplate = template;
+        // Existing scene submenus are retained as hidden templates; only one new
+        // page is visible at a time. Old serialized events cannot leak into it.
+        foreach (Transform child in root) child.gameObject.SetActive(false);
+        foreach (var old in systemMenu.GetComponentsInChildren<SaveMenuUI>(true)) old.enabled = false;
+        var rootClick = systemMenu.GetComponent<CustomInteractable>();
+        if (rootClick != null) rootClick.onClickEvent = new UnityEvent();
+        mainPage = MakePage("SystemMain", "MENU HỆ THỐNG", root);
+        loadPage = MakePage("SystemLoad", "TẢI BẢN LƯU", root);
+        sizePage = MakePage("SystemSize", "KÍCH THƯỚC CỬA SỔ", root);
+        MakeMenuButton(mainPage, "Exit", "Thoát", 0, ConfirmExit);
+        MakeMenuButton(mainPage, "Load", "Tải bản lưu", 1, () => ShowPage(loadPage));
+        MakeMenuButton(mainPage, "Reset", "Đặt lại nhân vật", 2, () => {
+            CloseSystemMenu(); var gm = Object.FindFirstObjectByType<GameManager>(); if (gm != null) gm.OnResetClicked();
+        });
+        MakeMenuButton(mainPage, "WindowSize", "Kích thước cửa sổ", 3, () => ShowPage(sizePage));
+        MakeMenuButton(loadPage, "LoadSave1", "Save 1", 0, () => LoadSlot(SaveSlot.ManualSave1));
+        MakeMenuButton(loadPage, "LoadSave2", "Save 2", 1, () => LoadSlot(SaveSlot.ManualSave2));
+        MakeMenuButton(loadPage, "LoadAuto", "Auto", 2, () => LoadSlot(SaveSlot.AutoSave));
+        MakeMenuButton(loadPage, "LoadBack", "Quay lại", 3, () => ShowPage(mainPage));
+        MakeMenuButton(sizePage, "Size800", "800", 0, () => ExecuteScale(800));
+        MakeMenuButton(sizePage, "Size500", "500", 1, () => ExecuteScale(500));
+        MakeMenuButton(sizePage, "Size250", "250", 2, () => ExecuteScale(250));
+        MakeMenuButton(sizePage, "SizeBack", "Quay lại", 3, () => ShowPage(mainPage));
+        ShowPage(mainPage);
         // Scene lists can omit this trigger. Discover and register it explicitly.
         foreach (var rect in Object.FindObjectsByType<RectTransform>(FindObjectsInactive.Include, FindObjectsSortMode.None))
         {
@@ -175,19 +150,62 @@ public class UIManager : MonoBehaviour
         }
     }
 
+    private GameObject mainPage, loadPage, sizePage;
+    private TMPro.TextMeshProUGUI menuFontTemplate;
+    private GameObject MakePage(string name, string title, RectTransform parent)
+    {
+        var go = new GameObject(name, typeof(RectTransform));
+        var rect = (RectTransform)go.transform; rect.SetParent(parent, false);
+        rect.anchorMin = Vector2.zero; rect.anchorMax = Vector2.one;
+        rect.sizeDelta = Vector2.zero; rect.anchoredPosition = Vector2.zero;
+        MakeLabel(rect, title, new Vector2(170,-24), new Vector2(320,34));
+        return go;
+    }
+    private void MakeLabel(Transform parent, string title, Vector2 position, Vector2 size)
+    {
+        var go = new GameObject("Label", typeof(RectTransform), typeof(CanvasRenderer), typeof(TMPro.TextMeshProUGUI));
+        var rect = (RectTransform)go.transform; rect.SetParent(parent, false);
+        rect.anchorMin = rect.anchorMax = new Vector2(0,1); rect.pivot = new Vector2(.5f,.5f);
+        rect.anchoredPosition = position; rect.sizeDelta = size;
+        var text = go.GetComponent<TMPro.TextMeshProUGUI>();
+        if (menuFontTemplate != null) { text.font = menuFontTemplate.font; text.fontSharedMaterial = menuFontTemplate.fontSharedMaterial; }
+        text.text = title; text.color = new Color(1,1,1,1); text.raycastTarget = false;
+        text.alignment = TMPro.TextAlignmentOptions.Center; text.enableAutoSizing = true;
+        text.fontSizeMin = 16; text.fontSizeMax = 26;
+    }
+    private void MakeMenuButton(GameObject page, string name, string label, int row, UnityAction action)
+    {
+        var go = new GameObject(name, typeof(RectTransform), typeof(CanvasRenderer), typeof(Image), typeof(CustomInteractable));
+        var rect = (RectTransform)go.transform; rect.SetParent(page.transform, false);
+        rect.anchorMin = rect.anchorMax = new Vector2(0,1); rect.pivot = new Vector2(.5f,.5f);
+        rect.anchoredPosition = new Vector2(170,-74-60*row); rect.sizeDelta = new Vector2(300,50);
+        go.GetComponent<Image>().color = new Color(.12f,.18f,.26f,1); go.GetComponent<Image>().raycastTarget = false;
+        MakeLabel(rect, label, new Vector2(150,-25), new Vector2(284,44));
+        var click = go.GetComponent<CustomInteractable>(); click.onClickEvent = new UnityEvent(); click.onClickEvent.AddListener(action);
+        RegisterInteractable(click);
+    }
+    private void ShowPage(GameObject page)
+    {
+        if (mainPage != null) mainPage.SetActive(mainPage == page);
+        if (loadPage != null) loadPage.SetActive(loadPage == page);
+        if (sizePage != null) sizePage.SetActive(sizePage == page);
+    }
+    public void CloseSystemMenu() { if (systemMenu != null) systemMenu.SetActive(false); ShowPage(mainPage); }
+    private void LoadSlot(SaveSlot slot)
+    {
+        var gm = Object.FindFirstObjectByType<GameManager>();
+        if (gm != null && gm.LoadAndContinue(slot)) CloseSystemMenu();
+    }
+
     public void ToggleSystemMenu()
     {
         if (systemMenu == null) return;
         systemMenu.SetActive(!systemMenu.activeSelf);
-        if (systemMenu.activeSelf) systemMenu.transform.SetAsLastSibling();
+        if (systemMenu.activeSelf) { ShowPage(mainPage); systemMenu.transform.SetAsLastSibling(); }
         if (mapMenu != null) mapMenu.SetActive(false);
     }
 
-    public void ToggleMapMenu()
-    {
-        mapMenu.SetActive(!mapMenu.activeSelf);
-        systemMenu.SetActive(false);
-    }
+    public void ToggleMapMenu() { if (mapMenu != null) mapMenu.SetActive(false); }
 
     // --- LOGIC THOÁT GAME ---
     public void ClickExitButton()
@@ -208,7 +226,7 @@ public class UIManager : MonoBehaviour
 
     public void SetWindowScale(int size)
     {
-        if (transparentWindow != null) transparentWindow.ResizeWindow(size, size);
+        ExecuteScale(size);
         systemMenu.SetActive(false);
     }
 
@@ -230,10 +248,12 @@ public class UIManager : MonoBehaviour
             int height = Mathf.RoundToInt(width * (9f / 16f));
             transparentWindow.ResizeWindow(width, height);
         }
-        if (systemMenu != null) systemMenu.SetActive(false);
+        CloseSystemMenu();
     }
 
-    public void Scale200() { ExecuteScale(200); }
+    public void Scale250() { ExecuteScale(250); }
+    public void Scale800() { ExecuteScale(800); }
+    public void Scale200() { ExecuteScale(250); }
     public void Scale500() { ExecuteScale(500); }
-    public void Scale1000() { ExecuteScale(1000); }
+    public void Scale1000() { ExecuteScale(800); }
 }

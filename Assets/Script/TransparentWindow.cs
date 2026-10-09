@@ -18,8 +18,8 @@ public class TransparentWindow : MonoBehaviour
     public RectTransform[] draggableUI; 
 
     [Header("Windows startup window")]
-    public int startupWidth = 1000;
-    public int startupHeight = 563;
+    public int startupWidth = 800;
+    public int startupHeight = 450;
     private bool isCurrentlyClickable = false;
     private bool previousButtonDown;
     private bool dragging;
