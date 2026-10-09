@@ -21,21 +21,6 @@ public class EnvironmentManager : MonoBehaviour
     [Range(0f, 0.49f)] public float speedZoneInset = 0.25f;
     public float CurrentBackgroundSpeed { get; private set; }
 
-    [Header("CAMERA TRỄ KHI CHẠM BIÊN VÙNG ĐỎ")]
-    public bool delayedCameraReturn = true;
-    [Min(0f)] public float cameraEdgeDelay = 1f;
-    [Min(.01f)] public float cameraReturnSeconds = 1.25f;
-    [Range(.5f,.68f)] public float cameraReturnX = .62f;
-    private readonly CameraEdgeRecovery cameraRecovery = new CameraEdgeRecovery();
-    private bool framePanPrepared;
-    private float frameCameraPan, frameBackgroundPan;
-    public CameraReturnPhase CurrentCameraPhase => cameraRecovery.Phase;
-    public void ResetCameraRecovery()
-    {
-        cameraRecovery.Reset();
-        framePanPrepared = false;
-    }
-
     private GroundPresentation groundPresentation;
     private Canvas battleCanvas;
     private float logicalWidth;
@@ -116,11 +101,7 @@ public class EnvironmentManager : MonoBehaviour
     // Ground units/second actually applied this frame, including zone correction.
     public float CurrentCameraSpeed { get; private set; }
 
-    public void FollowHero(HeroController hero)
-    {
-        cameraTarget = hero;
-        ResetCameraRecovery(); // Also resets on respawn of the same Hero instance.
-    }
+    public void FollowHero(HeroController hero) { cameraTarget = hero; }
 
     void Awake()
     {
@@ -139,7 +120,6 @@ public class EnvironmentManager : MonoBehaviour
     // All AI moves before CombatManager.Update. Camera presentation runs after both.
     void Update()
     {
-        framePanPrepared = false;
         SyncBattleProjection(); // Also runs when paused or before deployment.
         if (Time.timeScale == 0f || battleArea == null || Width <= 0f) return;
         float dt = Time.deltaTime;
@@ -147,9 +127,6 @@ public class EnvironmentManager : MonoBehaviour
             if (hero != null && hero.IsDeployed) hero.TickMovement(this, dt);
         float cameraPan, backgroundPan;
         PresentationPan(out cameraPan, out backgroundPan);
-        frameCameraPan = cameraPan;
-        frameBackgroundPan = backgroundPan;
-        framePanPrepared = true;
         float groundMinusCamera = backgroundPan - cameraPan;
         foreach (var monster in MonsterController.ActiveMonsters)
             if (monster != null && monster.IsAlive) monster.TickMovement(this, dt, groundMinusCamera);
@@ -165,15 +142,7 @@ public class EnvironmentManager : MonoBehaviour
         CurrentBackgroundSpeed = 0f;
         if (Time.timeScale == 0f || battleArea == null || Width <= 0f) return;
         float pan, backgroundPan;
-        // Use EXACTLY the camera plan already used by monster Ground compensation
-        // in Update. Advancing recovery twice per frame would drift ranged quái.
-        if (framePanPrepared)
-        {
-            pan = frameCameraPan;
-            backgroundPan = frameBackgroundPan;
-        }
-        else PresentationPan(out pan, out backgroundPan);
-        framePanPrepared = false;
+        PresentationPan(out pan, out backgroundPan);
         PanWorld(pan);
         PanEnvironment(backgroundPan);
         CurrentBackgroundSpeed = Time.deltaTime > 0f ? backgroundPan / Time.deltaTime : 0f;
@@ -192,21 +161,8 @@ public class EnvironmentManager : MonoBehaviour
                 if (hero != null && hero.IsDeployed) { cameraTarget = hero; break; }
         }
         if (cameraTarget == null) return;
-        float heroX = Position(cameraTarget.heroRect).x;
-        if (delayedCameraReturn && cameraTarget.IsDeployed && !cameraTarget.IsDead)
-        {
-            cameraPan = cameraRecovery.Pan(heroX,ZoneLeftX,ZoneRightX,
-                battleArea.rect.xMin,battleArea.rect.xMax,scrollSpeed,Time.deltaTime,
-                cameraEdgeDelay,cameraReturnSeconds,cameraReturnX);
-        }
-        else
-        {
-            // Preserve the historical corpse/legacy camera rules for debugging
-            // and let old motion regression cases isolate other subsystems.
-            cameraRecovery.Reset();
-            cameraPan = BattleMotion.ZoneCameraStep(heroX,
-                ZoneLeftX, ZoneRightX, scrollSpeed, Time.deltaTime);
-        }
+        cameraPan = BattleMotion.ZoneCameraStep(Position(cameraTarget.heroRect).x,
+            ZoneLeftX, ZoneRightX, scrollSpeed, Time.deltaTime);
         backgroundPan = cameraTarget.IsDeployed && cameraTarget.MovementDistanceThisFrame > .001f
             ? cameraTarget.MovementDistanceThisFrame : cameraPan;
     }
