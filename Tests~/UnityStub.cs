@@ -86,7 +86,7 @@ namespace UnityEngine
     public class RectTransform : Transform
     {
         public Vector2 anchorMin, anchorMax, pivot = new Vector2(0.5f, 0f), sizeDelta = new Vector2(50f, 100f), anchoredPosition;
-        public Rect rect { get { return new Rect(-pivot.x*sizeDelta.x, -pivot.y*sizeDelta.y, sizeDelta.x, sizeDelta.y); } }
+        public Rect rect { get { var p=parent as RectTransform; float w=sizeDelta.x+(p==null?0:p.rect.width*(anchorMax.x-anchorMin.x)); float h=sizeDelta.y+(p==null?0:p.rect.height*(anchorMax.y-anchorMin.y)); return new Rect(-pivot.x*w,-pivot.y*h,w,h); } }
         private Vector3 anchor { get { var p = parent as RectTransform; return p == null ? Vector3.zero : new Vector3(p.rect.xMin+p.rect.width*(anchorMin.x+anchorMax.x)/2f,p.rect.yMin+p.rect.height*(anchorMin.y+anchorMax.y)/2f,0f); } }
         public override Vector3 localPosition { get { return anchor+(Vector3)anchoredPosition; } set { anchoredPosition = value-anchor; } }
     }
@@ -181,8 +181,8 @@ namespace UnityEngine.UI
     }
 }
 namespace TMPro {
- public enum TextAlignmentOptions { Center }
- public class TextMeshProUGUI : UnityEngine.Component { public string text; public float alpha,fontSize,fontSizeMin,fontSizeMax; public bool enableAutoSizing,raycastTarget; public UnityEngine.Color color; public TextAlignmentOptions alignment; }
+ public enum TextAlignmentOptions { Center, TopLeft }
+ public class TextMeshProUGUI : UnityEngine.Component { public object font,fontSharedMaterial; public string text; public float alpha,fontSize,fontSizeMin,fontSizeMax; public bool enableAutoSizing,raycastTarget; public UnityEngine.Color color; public TextAlignmentOptions alignment; }
 }
 namespace UnityEngine.Pool
 {
@@ -205,11 +205,16 @@ namespace UnityEngine {
  public static class Debug { public static void Log(string s){} public static void LogWarning(string s){} public static void LogError(string s){System.Console.Error.WriteLine(s); } }
  public static class ColorUtility { public static bool TryParseHtmlString(string s,out Color c){c=new Color();return true;} }
  public static class RectTransformUtility { public static bool RectangleContainsScreenPoint(RectTransform r,Vector2 p,object camera=null){ if(r==null)return false;var v=r.InverseTransformPoint(p);return v.x>=r.rect.xMin&&v.x<=r.rect.xMax&&v.y>=r.rect.yMin&&v.y<=r.rect.yMin+r.rect.height; } }
- // Primitive-field JSON double only; native Unity serialization needs Play Mode.
+ // Test JSON double for primitive fields and identity lists; not Unity serialization.
  public static class JsonUtility {
   public static string ToJson(object value,bool pretty){var fields=new List<string>();foreach(var f in value.GetType().GetFields()) {
-   if(f.FieldType==typeof(int)||f.FieldType==typeof(float)||f.FieldType.IsEnum)fields.Add("\""+f.Name+"\":"+Convert.ToString(f.FieldType.IsEnum?(object)Convert.ToInt32(f.GetValue(value)):f.GetValue(value),System.Globalization.CultureInfo.InvariantCulture)); }return "{"+string.Join(",",fields)+"}"; }
+   if(f.FieldType==typeof(int)||f.FieldType==typeof(float)||f.FieldType.IsEnum)fields.Add("\""+f.Name+"\":"+Convert.ToString(f.FieldType.IsEnum?(object)Convert.ToInt32(f.GetValue(value)):f.GetValue(value),System.Globalization.CultureInfo.InvariantCulture));
+   else if(f.FieldType==typeof(string)) fields.Add("\""+f.Name+"\":\""+f.GetValue(value)+"\"");
+   else if(f.FieldType==typeof(List<TuTienCore.ElementType>)) {var roots=(List<TuTienCore.ElementType>)f.GetValue(value);var nums=new List<string>();if(roots!=null)foreach(var root in roots)nums.Add(((int)root).ToString());fields.Add("\""+f.Name+"\":["+string.Join(",",nums.ToArray())+"]");}
+  }return "{"+string.Join(",",fields)+"}"; }
   public static void FromJsonOverwrite(string json,object value) { foreach(var f in value.GetType().GetFields()) {
+   if(f.FieldType==typeof(string)) {var str=System.Text.RegularExpressions.Regex.Match(json,"\""+f.Name+"\"\\s*:\\s*\"([^\"]*)\"");if(str.Success)f.SetValue(value,str.Groups[1].Value);continue;}
+   if(f.FieldType==typeof(List<TuTienCore.ElementType>)) {var arr=System.Text.RegularExpressions.Regex.Match(json,"\""+f.Name+"\"\\s*:\\s*\\[([^]]*)\\]");if(arr.Success){var roots=new List<TuTienCore.ElementType>();foreach(var item in arr.Groups[1].Value.Split(','))if(item.Trim().Length>0)roots.Add((TuTienCore.ElementType)int.Parse(item.Trim()));f.SetValue(value,roots);}continue;}
    var m=System.Text.RegularExpressions.Regex.Match(json,"\""+f.Name+"\"\\s*:\\s*(-?[0-9.]+)");if(!m.Success)continue;
    if(f.FieldType==typeof(int))f.SetValue(value,int.Parse(m.Groups[1].Value));
    else if(f.FieldType==typeof(float))f.SetValue(value,float.Parse(m.Groups[1].Value,System.Globalization.CultureInfo.InvariantCulture));

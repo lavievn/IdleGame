@@ -77,6 +77,9 @@ public class SaveManager : MonoBehaviour
                 if (!jsonData.TrimStart().StartsWith("{") || !jsonData.Contains("\"currentLevel\"")) return false;
                 entityData.balanceVersion = 0;
                 entityData.difficulty = 0;
+                entityData.mapNumber = 1;
+                entityData.completedWavesInMap = 0;
+                entityData.mapProgressVersion = 0;
                 JsonUtility.FromJsonOverwrite(jsonData, entityData);
                 return entityData.currentLevel >= 1;
             }

@@ -108,6 +108,16 @@ public class MonsterController : MonoBehaviour
         if (dmgTextPrototype != null) dmgTextPrototype.alpha = 0f;
     }
 
+    private bool hasBodyColor;
+    private Color originalBodyColor;
+    public void SetIdentityVisual(EntityDataSO data)
+    {
+        if (Rect == null || data == null) return;
+        Image image = Rect.GetComponent<Image>();
+        if (image == null) return;
+        if (!hasBodyColor) { originalBodyColor = image.color; hasBodyColor = true; }
+        image.color = IdentityDisplay.Tint(originalBodyColor, data.spiritRoots);
+    }
     public void PlayAttackFeedback()
     {
         if (attackFeedbackCoroutine != null) StopCoroutine(attackFeedbackCoroutine);
