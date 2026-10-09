@@ -237,7 +237,8 @@ public class HeroController : MonoBehaviour
     {
         if (atkStatusText == null || data == null) return;
         data.NormalizeRoots();
-        var lines = new List<string> { "HP: " + currentHP + "/" + maxHP,
+        var lines = new List<string> { "Cấp: " + data.currentLevel + " · " + (attackMode == AttackMode.Melee ? "Cận chiến" : attackMode == AttackMode.RangedPhysical ? "Cung" : "Phép"),
+            "HP: " + currentHP + "/" + maxHP,
             "EXP: " + data.currentExp + "/" + data.expToNextLevel,
             "ATK cơ bản: " + data.baseDamage + " + " + data.addedDamage + " = " + data.GetCalculatedDamage() };
         for (int i = 0; i < data.spiritRoots.Count; i++)
@@ -246,31 +247,38 @@ public class HeroController : MonoBehaviour
                 IdentityDisplay.Tier(data.rootTiers[i]) + ", " + data.rootWeights[i].ToString("P0") + ")");
         float interval = CombatBalance.AttackInterval(attackMode, data.baseAttackSpeed, CombatBalance.HeroDev != null);
         lines.Add("Di chuyển: " + moveSpeed.ToString("0.##") + " đơn vị/giây");
-        lines.Add("Tốc đánh: " + (1f / interval).ToString("0.##") + " đòn/giây · " + interval.ToString("0.##") + " giây/đòn");
-        FullStatDetails=string.Join("\n",lines.ToArray());
-        atkStatusText.text="HP: "+currentHP+"/"+maxHP+"\nATK: "+data.GetCalculatedDamage()+"  |  Cấp: "+data.currentLevel
-            +"\nEXP: "+data.currentExp+"/"+data.expToNextLevel;
+        lines.Add("Tốc đánh: " + (1f / interval).ToString("0.##") + " đòn/giây");
+        lines.Add("Nhịp đánh: " + interval.ToString("0.##") + " giây/đòn");
+        lines.Add("Tầm đánh: " + attackRange.ToString("0.##"));
+        FullStatDetails = string.Join("\n",lines.ToArray());
+        // Debug HUD intentionally keeps ALL calculated stats until a dedicated button exists.
+        atkStatusText.text = FullStatDetails;
     }
-    public void ShowDamage(int damageAmount)
+    public void ShowDamage(int damageAmount) { ShowDamage(damageAmount, 1f); }
+    public void ShowDamage(int damageAmount, float awaySign)
     {
         if (dmgTextPrototype == null) return;
         UIManager.ReadableWorldText(dmgTextPrototype);
-        dmgTextPrototype.text = $"-{damageAmount}";
+        dmgTextPrototype.text = "-" + damageAmount;
+        dmgTextPrototype.alpha = 1f;
+        dmgTextPrototype.transform.localPosition = damageTextHome;
         if (fadeDmgCoroutine != null) StopCoroutine(fadeDmgCoroutine);
-        fadeDmgCoroutine = StartCoroutine(FadeDamageTextRoutine());
+        fadeDmgCoroutine = StartCoroutine(FadeDamageTextRoutine(awaySign));
     }
-    private IEnumerator FadeDamageTextRoutine()
+    private IEnumerator FadeDamageTextRoutine(float awaySign)
     {
-        float duration = 0.8f; float elapsed = 0f;
-        Vector3 startPos = damageTextHome;
-        while (elapsed < duration)
+        float elapsed = 0f;
+        while (elapsed < DamagePopupMotion.Duration)
         {
-            elapsed += Time.deltaTime;
-            dmgTextPrototype.alpha = 1f - (elapsed / duration);
-            dmgTextPrototype.transform.localPosition = startPos + new Vector3(0, (elapsed / duration) * 30f, 0);
+            elapsed = Mathf.Min(DamagePopupMotion.Duration, elapsed + Time.deltaTime);
+            if (dmgTextPrototype == null) yield break;
+            dmgTextPrototype.transform.localPosition = damageTextHome + new Vector3(
+                DamagePopupMotion.X(elapsed, awaySign), DamagePopupMotion.Y(elapsed), 0f);
+            dmgTextPrototype.alpha = DamagePopupMotion.Alpha(elapsed);
             yield return null;
         }
-        dmgTextPrototype.transform.localPosition = startPos; fadeDmgCoroutine = null;
+        if (dmgTextPrototype != null) dmgTextPrototype.transform.localPosition = damageTextHome;
+        fadeDmgCoroutine = null;
     }
     public void HandleAnimation(bool isMoving, bool isFighting)
     {

@@ -193,7 +193,8 @@ public class CombatManager : MonoBehaviour
             if (mode == AttackMode.Melee)
             {
                 Impact(BodyPosition(heroController.heroRect, space), false);
-                ApplyIncomingDamage(trace.elementDamage, IdentityDisplay.Describe(info.data), trace);
+                ApplyIncomingDamage(trace.elementDamage, IdentityDisplay.Describe(info.data), trace,
+                    BodyPosition(info.controller.Rect, space).x);
             }
             else Launch(info, false, mode, trace, duration, space);
             if (!isBattling) return;
@@ -267,12 +268,12 @@ public class CombatManager : MonoBehaviour
         return RollDamageTrace(runtimeHeroData, defender, heroWindupMode);
     }
 
-    private void DealDamageToMonsterWithTrace(ActiveMonsterInfo target, DamageTrace trace)
+    private void DealDamageToMonsterWithTrace(ActiveMonsterInfo target, DamageTrace trace, float? impactSourceX = null)
     {
         if (gameManager != null) gameManager.RecordDamage(trace.Describe(1f, 1, trace.elementDamage));
-        DealDamageToMonster(target, trace.elementDamage);
+        DealDamageToMonster(target, trace.elementDamage, impactSourceX);
     }
-    private void DealDamageToMonster(ActiveMonsterInfo target, int finalDmg)
+    private void DealDamageToMonster(ActiveMonsterInfo target, int finalDmg, float? impactSourceX = null)
     {
         target.currentHP = Mathf.Max(0, target.currentHP - finalDmg);
         if (gameManager != null)
@@ -283,7 +284,14 @@ public class CombatManager : MonoBehaviour
         if (target.controller != null)
         {
             target.controller.UpdateHealthBar(target.currentHP, target.maxHP);
-            target.controller.ShowDamage(finalDmg);
+            var space = EnvironmentManager.Instance;
+            float away = -1f;
+            if (space != null && heroController != null && heroController.heroRect != null)
+            {
+                float fromX = impactSourceX.HasValue ? impactSourceX.Value : space.Position(heroController.heroRect).x;
+                away = DamagePopupMotion.AwaySign(space.Position(target.controller.Rect).x, fromX, -1f);
+            }
+            target.controller.ShowDamage(finalDmg, away);
         }
         if (target.currentHP == 0) HandleMonsterDeath(target);
     }
@@ -309,7 +317,7 @@ public class CombatManager : MonoBehaviour
     }
 
     private void DealDamageToHero(int damage) { ApplyIncomingDamage(damage, "Quái"); }
-    private void ApplyIncomingDamage(int damage, string source, DamageTrace trace = null)
+    private void ApplyIncomingDamage(int damage, string source, DamageTrace trace = null, float? impactSourceX = null)
     {
         float mapScale = WorldNames.MonsterDamageScale(runtimeHeroData.MapVisits);
         int hardScale = gameManager != null && gameManager.IsHardMode ? 2 : 1;
@@ -322,7 +330,11 @@ public class CombatManager : MonoBehaviour
             gameManager.UpdateEventLog(source + " gây " + damage + " sát thương cho " + runtimeHeroData.entityName + (currentHeroHP == 0 ? ": đã tử vong." : "."));
         }
         heroController.UpdateHealthBar(currentHeroHP, maxHeroHP);
-        heroController.ShowDamage(damage);
+        var space = EnvironmentManager.Instance;
+        float away = 1f;
+        if (space != null && heroController.heroRect != null && impactSourceX.HasValue)
+            away = DamagePopupMotion.AwaySign(space.Position(heroController.heroRect).x, impactSourceX.Value, 1f);
+        heroController.ShowDamage(damage, away);
         if (currentHeroHP > 0) return;
         heroController.Die();
         ForceClearAllMonsters();
@@ -392,18 +404,18 @@ public class CombatManager : MonoBehaviour
                     if (!activeMonsters.Contains(victim) || victim.controller == null || !victim.controller.IsAlive ||
                         !WithinImpact(BodyPosition(victim.controller.Rect, space), end, heroMagicImpactRadius)) continue;
                     hit = true;
-                    DealDamageToMonsterWithTrace(victim, SynergyMath.EvaluateSnapshot(shot.trace, victim.data));
+                    DealDamageToMonsterWithTrace(victim, SynergyMath.EvaluateSnapshot(shot.trace, victim.data), end.x);
                 }
             }
             else if (shot.fromHero)
             {
                 hit = WithinImpact(BodyPosition(shot.monster.controller.Rect, space), end, physicalHitRadius);
-                if (hit) DealDamageToMonsterWithTrace(shot.monster, SynergyMath.EvaluateSnapshot(shot.trace, shot.monster.data));
+                if (hit) DealDamageToMonsterWithTrace(shot.monster, SynergyMath.EvaluateSnapshot(shot.trace, shot.monster.data), shot.start.x);
             }
             else
             {
                 hit = WithinImpact(BodyPosition(heroController.heroRect, space), end, shot.magic ? magicImpactRadius : physicalHitRadius);
-                if (hit) { var trace = SynergyMath.EvaluateSnapshot(shot.trace, runtimeHeroData); ApplyIncomingDamage(trace.elementDamage, shot.source, trace); }
+                if (hit) { var trace = SynergyMath.EvaluateSnapshot(shot.trace, runtimeHeroData); ApplyIncomingDamage(trace.elementDamage, shot.source, trace, shot.magic ? shot.end.x : shot.start.x); }
             }
             if (!hit && gameManager != null)
             {

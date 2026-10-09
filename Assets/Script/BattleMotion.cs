@@ -62,3 +62,37 @@ public static class BattleMotion
         return min + ((position - min) % length + length) % length;
     }
 }
+
+
+// Presentation-only timing. Never feeds the world/camera/combat position system.
+public static class MapTitleMotion
+{
+    public const float HoldSeconds = 3f;
+    public const float TravelSeconds = 0.85f;
+    public static float Progress(float elapsed)
+    {
+        float t = Math.Max(0f,Math.Min(1f,(elapsed - HoldSeconds) / TravelSeconds));
+        return t*t*(3f-2f*t);
+    }
+}
+public static class DamagePopupMotion
+{
+    public const float Duration = 1f;
+    public static float AwaySign(float victimX,float attackerX,float fallback)
+    {
+        float d = victimX - attackerX;
+        return Math.Abs(d) < .001f ? (fallback >= 0f ? 1f : -1f) : (d > 0f ? 1f : -1f);
+    }
+    private static float T(float elapsed) { return Math.Max(0f,Math.Min(1f,elapsed/Duration)); }
+    public static float X(float elapsed,float sign)
+    {
+        float t=T(elapsed),pop=1f-(1f-t)*(1f-t)*(1f-t);
+        return (sign>=0f?1f:-1f)*48f*pop;
+    }
+    public static float Y(float elapsed)
+    {
+        float t=T(elapsed),pop=1f-(1f-t)*(1f-t)*(1f-t);
+        return 17f*pop + 20f*(float)Math.Sin(Math.PI*t);
+    }
+    public static float Alpha(float elapsed) { return 1f-T(elapsed); }
+}

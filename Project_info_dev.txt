@@ -731,3 +731,12 @@ Cận chiến: nhân phần HP nền x2, thêm HP riêng 50..100 mỗi lần nh�
 Cung: nhân HP nền x0.6; damage mode x0.7; đòn Hero 150% tốc độ so với các hệ khác ở tốc độ gốc (1.4/1.5s/đòn). Phép Hero cùng thời gian gốc 1.4s/đòn nhưng không vận sức trước khi có target sống trong tầm và hủy charge nếu mất target. AoE tính từ tâm nổ (Ground-local) bán kính250; monster vẫn radius100 và thời gian vận phép cũ.
 Chuyển chế độ đánh phải giữ %HP, không hồi máu do tăng maxHP. Cấp hiện tại và trang bị tương lai không được phụ thuộc vào chế độ đang đứng tại thời điểm save/load.
 Tất cả các giá trị này chỉ phục vụ thử nghiệm logic; tiếp theo cần chạy thực chiến 5 wave đầu, 25 wave/5 map và kiểm tra mất mục tiêu/resize mid-combat để đo độ khó thực tế.
+
+
+=== 0.0.4.54g_ui / GIAO DIỆN THEO DÕI CÂN BẰNG ===
+- GIỮ NGUYÊN toàn bộ công thức cân bằng/lưu nhân vật của .54f. .54g chỉ thay đổi hiển thị, các vị trí xuất phát và hướng bay popup sát thương; không thay HP/damage/EXP/AI/di chuyển/điều khiển cửa sổ.
+- Bảng chỉ số dùng HeroController.FullStatDetails đầy đủ (cấp/dạng đánh, HP, EXP, sát thương cơ bản và theo hệ, di chuyển, tốc đánh, nhịp đánh, tầm đánh). KHÔNG rút về 3 dòng. Đây là bảng theo dõi tạm thời; tương lai sẽ tách thành một nút riêng.
+- Bảng chỉ số neo phía trên bên phải ngay dưới bộ nút Chỉ số/DEVB/Tạm dừng, cùng hàng với log rút gọn phía trái. Ba nút Cận chiến/Cung/Phép nằm dưới log để không chồng lên bảng chỉ số.
+- Khi deploy hero hoặc đổi map sau wave 5, tên map xuất hiện lớn giữa cửa sổ, giữ vị trí đó đúng 3 giây rồi trong 0.85 giây vừa thu nhỏ vừa di chuyển đến nhãn ở dưới log và nút hệ đánh phía trái; giữ nhãn nhỏ đến khi đổi map. Khi chưa chơi, Game Over hoặc mở popup thì ẩn nhãn.
+- Popup sát thương Hero và quái bật ra về phía ngược nguồn gây sát thương (tọa độ Ground-local), đi theo một đường cong nhỏ rồi mờ dần tuyến tính trong 1 giây; không ảnh hưởng logic đạn/HP/hitbox, đặt lại vị trí cho quái được tái sử dụng từ pool.
+- Bất cứ thay đổi về gameplay/balance tiếp theo phải làm ở một phiên bản riêng sau khi UI .54g được kiểm tra.

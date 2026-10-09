@@ -24,8 +24,13 @@ public class MonsterController : MonoBehaviour
     private Coroutine attackFeedbackCoroutine;
     private MagicChargeBar chargeBar;
     private Coroutine fadeDmgCoroutine;
+    private Vector3 damageTextHome;
 
-    void Awake() { rect = GetComponent<RectTransform>(); }
+    void Awake()
+    {
+        rect = GetComponent<RectTransform>();
+        if (dmgTextPrototype != null) { damageTextHome = dmgTextPrototype.transform.localPosition; dmgTextPrototype.alpha = 0f; }
+    }
 
     void OnEnable()
     {
@@ -109,7 +114,11 @@ public class MonsterController : MonoBehaviour
         attackFeedbackCoroutine = null;
         fadeDmgCoroutine = null;
         transform.localScale = Vector3.one;
-        if (dmgTextPrototype != null) dmgTextPrototype.alpha = 0f;
+        if (dmgTextPrototype != null)
+        {
+            dmgTextPrototype.alpha = 0f;
+            dmgTextPrototype.transform.localPosition = damageTextHome;
+        }
     }
 
     private bool hasBodyColor;
@@ -142,19 +151,30 @@ public class MonsterController : MonoBehaviour
         transform.localScale = originalScale; attackFeedbackCoroutine = null;
     }
     public void UpdateHealthBar(int currentHP, int maxHP) { if (hpFillImage != null) hpFillImage.fillAmount = maxHP > 0 ? (float)currentHP / maxHP : 0f; }
-    public void ShowDamage(int damageAmount)
+    public void ShowDamage(int damageAmount) { ShowDamage(damageAmount, -1f); }
+    public void ShowDamage(int damageAmount, float awaySign)
     {
         if (dmgTextPrototype == null) return;
         UIManager.ReadableWorldText(dmgTextPrototype);
-        dmgTextPrototype.text = $"-{damageAmount}";
-        if (fadeDmgCoroutine != null) StopCoroutine(fadeDmgCoroutine);
-        fadeDmgCoroutine = StartCoroutine(FadeDamageTextRoutine());
-    }
-    private IEnumerator FadeDamageTextRoutine()
-    {
+        dmgTextPrototype.text = "-" + damageAmount;
         dmgTextPrototype.alpha = 1f;
-        yield return new WaitForSeconds(0.4f);
-        if (dmgTextPrototype != null) dmgTextPrototype.alpha = 0f;
+        dmgTextPrototype.transform.localPosition = damageTextHome;
+        if (fadeDmgCoroutine != null) StopCoroutine(fadeDmgCoroutine);
+        fadeDmgCoroutine = StartCoroutine(FadeDamageTextRoutine(awaySign));
+    }
+    private IEnumerator FadeDamageTextRoutine(float awaySign)
+    {
+        float elapsed = 0f;
+        while (elapsed < DamagePopupMotion.Duration)
+        {
+            elapsed = Mathf.Min(DamagePopupMotion.Duration,elapsed+Time.deltaTime);
+            if (dmgTextPrototype == null) yield break;
+            dmgTextPrototype.transform.localPosition = damageTextHome + new Vector3(
+                DamagePopupMotion.X(elapsed,awaySign),DamagePopupMotion.Y(elapsed),0f);
+            dmgTextPrototype.alpha = DamagePopupMotion.Alpha(elapsed);
+            yield return null;
+        }
+        if (dmgTextPrototype != null) dmgTextPrototype.transform.localPosition = damageTextHome;
         fadeDmgCoroutine = null;
     }
 }

@@ -256,6 +256,7 @@ partial class MotionRegression
         Patch54cTests();
         Patch54dTests();
         Patch54fTests();
+        Patch54gTests();
         TerrainTests();
         MenuDifficultyTests();
         BalanceTests();

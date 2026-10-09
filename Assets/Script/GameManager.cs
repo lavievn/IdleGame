@@ -171,6 +171,7 @@ public class GameManager : MonoBehaviour
 
     private void SetupPreGameUI()
     {
+        if (UIManager.Instance != null) UIManager.Instance.HideMapTitle();
         preGameUI.SetActive(true);
         preGameUI.transform.SetAsLastSibling();
         if (startMenu != null) startMenu.Refresh();
@@ -191,6 +192,7 @@ public class GameManager : MonoBehaviour
         if (combatManager != null) combatManager.SetupHeroInfo(runtimeHeroData);
         heroController.SpawnHero();
         RestoreProgress();
+        if (UIManager.Instance != null) UIManager.Instance.ShowMapTitle(runtimeHeroData.mapName);
         CallNextWave();
     }
 
@@ -256,6 +258,7 @@ public class GameManager : MonoBehaviour
     public void OnHeroDied()
     {
         if (!hasDeployed) return;
+        if (UIManager.Instance != null) UIManager.Instance.HideMapTitle();
         hasDeployed = false;
         CancelNextWave();
         activeMonsters.Clear();
@@ -279,6 +282,7 @@ public class GameManager : MonoBehaviour
         if (combatManager != null) combatManager.SetupHeroInfo(runtimeHeroData);
         heroController.SpawnHero();
         RestoreProgress();
+        if (UIManager.Instance != null) UIManager.Instance.ShowMapTitle(runtimeHeroData.mapName);
         CallNextWave();
     }
 
@@ -422,7 +426,11 @@ public class GameManager : MonoBehaviour
             {
                 bool changed = runtimeHeroData.CompleteWave();
                 RestoreProgress();
-                if (changed) UpdateEventLog("Đã tới " + runtimeHeroData.mapName + (IsHardMode ? ": quái gây sát thương ×2, EXP ×3." : ": bình thường."));
+                if (changed)
+                {
+                    UpdateEventLog("Đã tới " + runtimeHeroData.mapName + (IsHardMode ? ": quái gây sát thương ×2, EXP ×3." : ": bình thường."));
+                    if (UIManager.Instance != null) UIManager.Instance.ShowMapTitle(runtimeHeroData.mapName);
+                }
             }
             nextWaveCoroutine = StartCoroutine(WaitAndCallNextWave());
         }
