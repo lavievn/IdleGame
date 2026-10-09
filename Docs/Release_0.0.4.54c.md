@@ -122,7 +122,7 @@ hằng số cộng điểm. Các hằng số đó tiếp tục theo .54b.
 720 lượt mô phỏng chiến đấu khi chưa bật DEVB, giữ kết quả cân bằng của .54b.
 Biên dịch nhánh UNITY_STANDALONE_WIN PASS với API mô phỏng. Mô hình hình học
 DEVB được kiểm tra ở 800/500/250; không phải ảnh Unity thực tế.
-Chi tiết: Tests~/test-results.txt và Tests~/Patch 54 cRegression.cs.
+Chi tiết: Tests~/test-results.txt và Tests~/Patch54cRegression.cs.
 
 Chưa có Unity Editor/Windows native ở môi trường xử lý, nên chưa có executable
 Windows và không kết luận lỗi snap đã hết hoàn toàn.

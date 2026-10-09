@@ -78,6 +78,7 @@ public class SaveManager : MonoBehaviour
                 entityData.balanceVersion = 0;
                 entityData.difficulty = 0;
                 entityData.mapNumber = 1;
+                entityData.mapVisits = 0;
                 entityData.completedWavesInMap = 0;
                 entityData.mapProgressVersion = 0;
                 entityData.regionIndex = -1;

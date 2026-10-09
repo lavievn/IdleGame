@@ -19,30 +19,29 @@ bị dính xuống đáy. Sau bản vá Windows 0.0.4.51f, ngày 09/10/2026 ngư
 xác nhận đã thử: System Menu hoạt động, scale cửa sổ đúng logic và cho phép
 merge PR #1 vào main. Chưa có xác nhận riêng về kéo cửa sổ, DPI/màn hình phụ.
 
-CẬP NHẬT ĐANG PHÁT TRIỂN: 0.0.4.54c, nền toàn bộ .54b (GitHub 9514345).
-Nhánh feature/0.0.4.54c; chưa merge main, chưa kết thúc tiến trình 0.0.4.
-Hiện trạng mới nhất: Docs/Release_0.0.4.54c.md, ưu tiên hơn ghi chép lịch sử.
-Người dùng báo chữ nhỏ/đậm và cửa sổ nhảy hoặc dính mép dưới khi đổi kích thước.
-[CÓ MÃ] .54c tách UI theo điểm ảnh, chữ thường cỡ 14, số damage nổi tối thiểu 12;
-menu thích ứng 800/500/250, log/chỉ số/công thức dài chia trang thay vì thu chữ.
-[CÓ MÃ] Windows: nhấn-thả để bấm; giữ-kéo từ 5 pixel để di chuyển từ nút/log/
-popup/ground; ô nhập DEVB dành cho chọn chữ. Kéo không kích hoạt nút.
-[CÓ MÃ] Resize lưu góc trái trên, chờ Unity đổi độ phân giải, giữ tọa độ trong
-vùng làm việc trừ taskbar của màn hình hiện tại; sửa vị trí trễ trong 8 frame rồi
-ngừng giữ. [CẦN KIỂM THỬ] Windows native, DPI, nhiều màn hình, resize liên tục.
-[CÓ MÃ] DEVB cạnh Pause, tab Hero/Quái độc lập: ATK và ATK/cấp; tốc đánh và
-mức tăng/cấp; tốc di chuyển; tầm riêng cận chiến/cung/phép; HP và HP/cấp.
-OK áp dụng vào trận và tương lai, giữ cấp/linh căn/điểm/tỷ lệ HP; xóa đạn cũ và
-reset hồi chiêu/vận công. Gốc→OK khôi phục; Hủy bỏ bản nháp. Bảng tạm dừng khi
-mở, trả lại trạng thái pause trước đó khi đóng. Cấu hình lưu riêng với save game,
-restart/chơi mới vẫn dùng cấu hình DEVB đã lưu cho đến khi chọn Gốc→OK.
-Giữ toàn bộ sát thương/tấn công .54b, Vô độc lập, map/cụm/habitat,5 wave/map,
-5 map thường/1 map khó, damage map, heal 5–10/kill và chuyển động/camera/ground.
-Không thêm sinh sản, skill theo loài, accuracy item, interrupt hoặc ngắm đón.
-[ĐÃ THỬ]129 kiểm tra logic và 720 mô phỏng với Unity API mô phỏng; biên dịch nhánh
-Windows với API mô phỏng. Mô hình bố cục đã kiểm tra, chưa phải ảnh render Unity.
-[CẦN KIỂM THỬ] nét chữ/glyph, nhập số trong desktop, snap/drag/taskbar. Bản thử
-là source project để mở Unity, chưa có build executable Windows.
+CẬP NHẬT ĐANG PHÁT TRIỂN: 0.0.4.54.d_prefinal, nền toàn bộ .54c (GitHub a040937).
+Nhánh feature/0.0.4.54.d_prefinal; chưa merge main, chưa kết thúc tiến trình 0.0.4.
+Hiện trạng ưu tiên: README.MD và Docs/Release_0.0.4.54.d_prefinal.md.
+Người dùng báo resize dịch vị trí/tầm/điểm rơi, quái bị bỏ lại khiến wave kẹt.
+[CÓ MÃ] Ground cố định chiều rộng logic (MainGame 1920), Canvas chiến đấu riêng;
+resize chỉ đổi scaleFactor, giữ tọa độ hero/quái/đạn, tầm, mục tiêu và trang trí.
+[CÓ MÃ] Quái ra hẳn mép phải: hủy wave/đạn cũ, đưa hero về HomeX, chờ rồi replay
+wave cùng số quái, random lại quái; không cộng tiến trình/EXP hoặc hồi HP giả.
+Giữ EXP từ quái đã hạ, HP/cấp/điểm và map; hủy retry khi chết/load/reset.
+[CÓ MÃ] Chết quay về map đầu cụm 5 map, wave 1; giữ nhân vật/chủ đề, random lại
+map trong chủ đề đó. Autosave ghi checkpoint ngay khi chết, Retry đầy HP.
+[CÓ MÃ] mapVisits lưu riêng tổng lượt vào map, gồm quay về sau chết; damage quái
+không giảm do rewind mapNumber. Save cũ chuyển từ số map, cứu wave không cộng lượt.
+Giữ UI theo điểm ảnh/DEVB/pause, linh căn và ranged từ .54c. Xem ghi chú .54c
+trong lịch sử cuối file; không nhầm đó là phiên bản mới nhất.
+[ĐÃ THỬ]139 tình huống logic với API Unity mô phỏng; 720 mô phỏng mặc định giữ
+kết quả .54c, biên dịch nhánh Windows với API mô phỏng. Chưa chạy Unity/WinAPI.
+[CẦN KIỂM THỬ] Resize khi có đạn/vận công, wave replay, chết/checkpoint/save,
+render Ground/HUD, taskbar/DPI/input. Gói là source project, chưa có EXE mới.
+README.MD thay tài liệu overlay 0.0.4.51f. Theo yêu cầu mới, tổng tiến độ được
+ước lượng có trọng số: hình ảnh 60–70% khối lượng, hoàn thành 10–15% (user);
+phần còn lại hoàn thành 35–45% (ước lượng), tổng 17,5–27%, trung tâm khoảng 22%.
+Không coi phần trăm này là nghiệm thu hoặc lịch phát hành.
 
 Nhãn trạng thái dùng xuyên suốt:
 [ĐỊNH HƯỚNG] ý định thiết kế, chưa phải chức năng chạy được.
@@ -531,7 +530,8 @@ biên trước tích hợp, không gọi công thức CombatBalance tạm là th
 
 10. MA TRẬN TIẾN ĐỘ VÀ KẾ HOẠCH TIẾP THEO
 
-Không quy đổi thành % vì chưa có bộ tiêu chí nghiệm thu toàn sản phẩm.
+Ma trận dưới là ghi chép lịch sử .52; hiện trạng ưu tiên README.MD.
+Theo yêu cầu mới .54.d_prefinal, README có ước lượng trọng số, chưa phải đo nghiệm thu.
 Trạng thái ở cột dưới chỉ bộ vá đã chuẩn bị, trừ mục ghi riêng GitHub.
 
 Hạng mục                         Trạng thái                     Việc còn lại
@@ -707,3 +707,10 @@ CẬP NHẬT CUỐI — 0.0.4.54c
 Không gọi bản này là final: lỗi vị trí cửa sổ phải nghiệm thu trên Windows thật.
 DEVB thay thông số base/growth và motion/range; linh căn/điểm/map giữ nguyên.
 Cấu hình DEVB riêng với save game, khôi phục bằng Gốc→OK cho mỗi tab.
+
+CẬP NHẬT CUỐI — 0.0.4.54.d_prefinal
+Đọc README.MD và Docs/Release_0.0.4.54.d_prefinal.md. Ground không còn stretch
+để đổi chiều rộng logic theo cửa sổ; resize chỉ chiếu hình. Quái thoát phải
+replay wave, không CompleteWave. Chết lưu checkpoint đầu cụm, wave 1; mapVisits
+đếm lượt riêng giữ tăng damage. Các mô tả retry ngay map hiện tại đã hết hiệu lực.
+139 kiểm tra logic đạt, cần Unity/Windows kiểm thử trước final và merge.

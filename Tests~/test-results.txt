@@ -18,7 +18,7 @@ PASS clear battle cancels timers and pooled respawn resets state
 PASS in-range melee strikes without Y alignment, ranged keeps its lane
 PASS pending wave is unique and cancelled on manual load
 PASS lethal monster hit stops hero and clears battle
-PASS aspect resize recalculates home and range without Start cache
+PASS explicit battle geometry changes recalculate home and range (not window resize)
 PASS equal speed preserves off-centre position after combat
 PASS fast hero drifts left then pushes camera to its own speed
 PASS slow hero drifts right then camera slows to hero speed
@@ -110,6 +110,16 @@ PASS DEVB range changes feed both AI stop distance and attack eligibility
 PASS world damage labels keep readable pixel size and regular font on small windows
 PASS DEVB updating a dead hero never revives it and restoring loaded profiles uses original ranges
 PASS editing the original draft never discards small intentional growth changes
+PASS legacy stretched Ground changes opposing anchors and leaves shot endpoint behind
+PASS stable battle coordinates ranges target and decorations survive every resize and aspect ratio
+PASS resize preserves bow and magic endpoints flight time damage and monster life
+PASS paused projection resize changes no HP motion charge or pending projectiles
+PASS escaped wave clears old lives shots and targets without granting completion or HP
+PASS edge guard waits for entire body and does not reset spawn-left visible or paused monsters
+PASS cancel or death during escaped-wave wait cannot spawn a stale retry
+PASS defeat restarts first map of current five-map region and wave one, preserving character
+PASS death autosaves checkpoint before retry or application restart, with idempotent death
+PASS old saves migrate visits and replay does not rewind damage progression
 PASS terrain visual clone grows 1.2 while logical ground and hero stats stay unchanged
 PASS terrain loop covers complete viewport through long scroll and resize
 PASS all seven grass placeholders receive sprites and separate random positions
@@ -164,4 +174,4 @@ SIM mapVisit=100 level=100 mode=RangedMagic deaths=20/20 mean_observed_seconds=3
 SIM mapVisit=100 level=999 mode=Melee deaths=20/20 mean_observed_seconds=25.3 mean_spawned=5.5
 SIM mapVisit=100 level=999 mode=RangedPhysical deaths=20/20 mean_observed_seconds=21.5 mean_spawned=6.0
 SIM mapVisit=100 level=999 mode=RangedMagic deaths=20/20 mean_observed_seconds=27.0 mean_spawned=7.9
-PASS: 129 regression scenarios (Unity test doubles; not Play Mode).
+PASS: 139 regression scenarios (Unity test doubles; not Play Mode).

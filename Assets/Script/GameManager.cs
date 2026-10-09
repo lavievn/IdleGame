@@ -31,6 +31,7 @@ public class GameManager : MonoBehaviour
 
     public List<GameObject> activeMonsters = new List<GameObject>();
     private Coroutine nextWaveCoroutine;
+    private int waveSpawnCount, retryWaveSize;
     [Min(0f)] public float waveDelay = 1.5f;
     public float CurrentWaveDelay => BattleMotion.WaveDelay(waveDelay,
         heroController != null ? Mathf.Max(0f, heroController.moveSpeed) : 150f);
@@ -84,6 +85,7 @@ public class GameManager : MonoBehaviour
         runtimeHeroData.balanceVersion = 0;
         runtimeHeroData.difficulty = 0;
         runtimeHeroData.mapNumber = 1; runtimeHeroData.completedWavesInMap = 0; runtimeHeroData.mapProgressVersion = 1;
+        runtimeHeroData.mapVisits = 1;
         runtimeHeroData.regionIndex = -1; runtimeHeroData.mapName = ""; WorldNames.AssignMap(runtimeHeroData);
 
         {
@@ -222,10 +224,17 @@ public class GameManager : MonoBehaviour
 
     public void OnHeroDied()
     {
-        if (saveManager != null && runtimeHeroData != null) saveManager.SaveGame(runtimeHeroData, SaveSlot.AutoSave);
+        if (!hasDeployed) return;
         hasDeployed = false;
         CancelNextWave();
         activeMonsters.Clear();
+        if (runtimeHeroData != null)
+        {
+            runtimeHeroData.RestartRegionAfterDefeat();
+            RestoreProgress();
+            UpdateEventLog("Thất bại: quay về map đầu của " + WorldNames.Region(runtimeHeroData.regionTheme) + ", đợt 1/5. Giữ cấp và chỉ số nhân vật.");
+            if (saveManager != null) saveManager.SaveGame(runtimeHeroData, SaveSlot.AutoSave);
+        }
         if (gameOverPanel != null) gameOverPanel.SetActive(true);
     }
 
@@ -331,7 +340,9 @@ public class GameManager : MonoBehaviour
         activeMonsters.Clear();
 
         RestoreProgress();
-        int spawnCount = Random.Range(1, 4);
+        int spawnCount = retryWaveSize > 0 ? retryWaveSize : Random.Range(1, 4);
+        retryWaveSize = 0;
+        waveSpawnCount = spawnCount;
         for (int i = 0; i < spawnCount; i++)
         {
             GameObject m = monsterSpawner.SpawnMonster();
@@ -344,6 +355,30 @@ public class GameManager : MonoBehaviour
         }
 
         if (combatManager != null) combatManager.StartBattle(activeMonsters, currentMonsterDataSO);
+    }
+
+    void LateUpdate()
+    {
+        if (!hasDeployed || Time.timeScale == 0f || heroController == null || !heroController.IsDeployed ||
+            environmentManager == null || nextWaveCoroutine != null || activeMonsters.Count == 0) return;
+        foreach (var monster in activeMonsters)
+        {
+            if (monster == null || environmentManager.HasEscapedRight(monster.GetComponent<RectTransform>()))
+            { RecoverEscapedWave(); return; }
+        }
+    }
+
+    private void RecoverEscapedWave()
+    {
+        CancelNextWave();
+        if (combatManager != null) combatManager.ForceClearAllMonsters();
+        activeMonsters.Clear();
+        // Keep HP/EXP/map progress. Cancel old life identities and aim points,
+        // then replay the unfinished wave after the normal delay.
+        heroController.SpawnHero();
+        retryWaveSize = Mathf.Clamp(waveSpawnCount, 1, 3);
+        UpdateEventLog("Quái thoát mép phải: sinh lại đợt đang dở, không cộng tiến trình map.");
+        nextWaveCoroutine = StartCoroutine(WaitAndCallNextWave());
     }
 
     public void OnMonsterDied(GameObject deadMonster)
@@ -383,6 +418,7 @@ public class GameManager : MonoBehaviour
     {
         if (nextWaveCoroutine != null) StopCoroutine(nextWaveCoroutine);
         nextWaveCoroutine = null;
+        retryWaveSize = 0;
     }
 
     private void OnDisable() { CancelNextWave(); }

@@ -148,7 +148,7 @@ namespace UnityEngine
     public class CanvasRenderer : Component { }
     public class Sprite : Object { }
     public enum RenderMode { ScreenSpaceOverlay }
-    public class Canvas : Component { public RenderMode renderMode; public int sortingOrder; public float scaleFactor; public static void ForceUpdateCanvases() { } }
+    public class Canvas : Component { public RenderMode renderMode; public int sortingOrder,sortingLayerID,targetDisplay,additionalShaderChannels; public float scaleFactor; public static void ForceUpdateCanvases() { } }
     public static class Time { public static float deltaTime=1f/60f,time,timeScale=1f; public static int frameCount; }
     public class SerializeField : Attribute { }
     public class TooltipAttribute : Attribute { public TooltipAttribute(string s){} }
@@ -160,6 +160,10 @@ namespace UnityEngine
 }
 namespace UnityEngine.UI
 {
+    public class CanvasScaler : UnityEngine.MonoBehaviour {
+      public enum ScaleMode { ConstantPixelSize, ScaleWithScreenSize, ConstantPhysicalSize }
+      public ScaleMode uiScaleMode; public UnityEngine.Vector2 referenceResolution;
+    }
     public class Image : UnityEngine.MonoBehaviour {
       public enum Type { Simple }
       public float fillAmount; public UnityEngine.Color color;public UnityEngine.Sprite sprite;public Type type;public bool preserveAspect,raycastTarget;

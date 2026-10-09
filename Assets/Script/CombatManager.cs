@@ -280,7 +280,7 @@ public class CombatManager : MonoBehaviour
     private void DealDamageToHero(int damage) { ApplyIncomingDamage(damage, "Quái"); }
     private void ApplyIncomingDamage(int damage, string source, DamageTrace trace = null)
     {
-        float mapScale = WorldNames.MonsterDamageScale(runtimeHeroData.mapNumber);
+        float mapScale = WorldNames.MonsterDamageScale(runtimeHeroData.MapVisits);
         int hardScale = gameManager != null && gameManager.IsHardMode ? 2 : 1;
         damage = Mathf.Max(1, Mathf.RoundToInt(damage * mapScale * hardScale));
         if (gameManager != null && trace != null) gameManager.RecordDamage(trace.Describe(mapScale, hardScale, damage));

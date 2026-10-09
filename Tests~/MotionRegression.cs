@@ -126,7 +126,7 @@ partial class MotionRegression
             var f=new Field();var m=f.Monster(-20);f.Battle(m);m.TickMovement(f.space,0);Set(f.combat,"currentHeroHP",1);
             Time.deltaTime=2;Call(f.combat,"Update");Check(f.hero.IsDead,"Die called");Check(!f.hero.IsDeployed,"AI disabled");Check(f.Enemies.Count==0,"wave cleared");
         });
-        Run("aspect resize recalculates home and range without Start cache",()=>{
+        Run("explicit battle geometry changes recalculate home and range (not window resize)",()=>{
             var f=new Field();f.hero.ChangeAttackMode(1);float before=f.space.AttackRange(AttackMode.RangedPhysical,true);
             f.ground.sizeDelta=new Vector2(1600,100);Near(f.space.AttackRange(AttackMode.RangedPhysical,true),before*1.6f,"live width");
             f.space.explorationHeroX=0.6f;Near(f.space.HomeX,160,"live home");
@@ -254,6 +254,7 @@ partial class MotionRegression
         GroundRelativeMotionTests();
         Patch54bTests();
         Patch54cTests();
+        Patch54dTests();
         TerrainTests();
         MenuDifficultyTests();
         BalanceTests();
