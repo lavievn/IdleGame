@@ -25,6 +25,7 @@ partial class MotionRegression
         public Field(float scale=1f)
         {
             if (EnvironmentManager.Instance != null) Call(EnvironmentManager.Instance,"OnDestroy");
+            CombatBalance.ResetDevProfiles();
             HeroController.ActiveHeroes.Clear();MonsterController.ActiveMonsters.Clear();UnityEngine.Object.objects.Clear();
             ground=(RectTransform)new GameObject(true).transform;ground.sizeDelta=new Vector2(1000,100);ground.localScale=new Vector3(scale,scale,1);
             grass=(RectTransform)new GameObject(true).transform;grass.parent=ground;grass.anchoredPosition=new Vector2(600,0);grass.sizeDelta=new Vector2(200,100);
@@ -60,8 +61,8 @@ partial class MotionRegression
         Run("camera pans all actors and ground equally",()=>{
             foreach(float scale in new[]{0.2f,1f,2f}) { var f=new Field(scale);var m=f.Monster(-300);f.hero.TickMovement(f.space,0);m.TickMovement(f.space,0);float h=f.space.Position(f.hero.heroRect).x,b=f.space.Position(m.Rect).x,g=f.space.Position(f.grass).x;Time.deltaTime=0.1f;Call(f.space,"LateUpdate");float pan=f.space.Position(f.hero.heroRect).x-h;Check(pan>0,"base camera pan continues");Near(f.space.Position(m.Rect).x-b,pan,"monster pan");Near(f.space.Position(f.grass).x-g,pan,"ground pan"); }
         });
-        Run("passive offscreen monster only follows world pan",()=>{
-            var f=new Field();var m=f.Monster(-550);f.Step();Near(f.space.Position(m.Rect).x+550,f.space.Position(f.grass).x-100,"passive delta");Check(m.CurrentTarget==null,"not engaged outside viewport");
+        Run("offscreen monster advances right independently of world pan",()=>{
+            var f=new Field();var m=f.Monster(-550);f.Step();Near(f.space.Position(m.Rect).x+550,f.space.Position(f.grass).x-100+15,"forward movement plus camera");Check(m.CurrentTarget==f.hero,"scans hero at spawn");
         });
         Run("ranged hero stops while melee monster keeps approaching",()=>{
             var f=new Field();f.hero.ChangeAttackMode(1);var m=f.Monster(-300);f.hero.TickMovement(f.space,0.1f);float before=f.space.Position(f.hero.heroRect).x;f.hero.TickMovement(f.space,0.1f);Near(f.space.Position(f.hero.heroRect).x,before,"hero stays");m.TickMovement(f.space,0.1f);Near(f.space.Position(m.Rect).x,-285,"monster independent speed");
@@ -72,8 +73,8 @@ partial class MotionRegression
         Run("melee hero approaches a stationary ranged monster",()=>{
             var f=new Field();var m=f.Monster(-200,AttackMode.RangedMagic);f.hero.TickMovement(f.space,0.1f);m.TickMovement(f.space,0.1f);Near(f.space.Position(f.hero.heroRect).x,-15,"hero advances");Near(f.space.Position(m.Rect).x,-200,"ranged monster stays");
         });
-        Run("target remains stable until death",()=>{
-            var f=new Field();var a=f.Monster(-100);var b=f.Monster(-101);f.hero.TickMovement(f.space,0);f.space.SetPosition(b.Rect,new Vector2(-90,0));f.hero.TickMovement(f.space,0);Check(f.hero.CurrentTarget==a,"no target thrashing");a.MarkDead();f.hero.TickMovement(f.space,0);Check(f.hero.CurrentTarget==b,"reacquires on death");
+        Run("nearest target rescanned while approaching and retained during attack",()=>{
+            var f=new Field();var a=f.Monster(-100);var b=f.Monster(-101);f.hero.TickMovement(f.space,0);f.space.SetPosition(b.Rect,new Vector2(-90,0));f.hero.TickMovement(f.space,0);Check(f.hero.CurrentTarget==b,"closer target selected while approaching");f.space.SetPosition(b.Rect,new Vector2(-30,0));f.hero.TickMovement(f.space,0);f.space.SetPosition(a.Rect,new Vector2(-20,0));f.hero.TickMovement(f.space,0);Check(f.hero.CurrentTarget==b,"in-range target retained during strike");b.MarkDead();f.hero.TickMovement(f.space,0);Check(f.hero.CurrentTarget==a,"reacquires on death");
         });
         Run("hidden hero freezes exploration; respawn recovers",()=>{
             var f=new Field();var m=f.Monster(-550);f.hero.HideHero();float x=f.space.Position(m.Rect).x;f.Step();Near(f.space.Position(m.Rect).x,x,"no hidden camera");Check(HeroController.ActiveHeroes.Count==0,"unregistered");f.hero.SpawnHero();Check(f.hero.IsDeployed,"respawn");Near(f.space.Position(f.hero.heroRect).x,f.space.HomeX,"spawn centre");
@@ -95,20 +96,20 @@ partial class MotionRegression
         Run("wrapping waits for full decoration to exit and preserves overshoot",()=>{
             var f=new Field();f.space.SetPosition(f.grass,new Vector2(610,0));f.space.PanEnvironment(5);Near(f.space.Position(f.grass).x,615,"still partly visible within padding");f.space.PanEnvironment(10);Near(f.space.Position(f.grass).x,-615,"wrapped with overshoot");
         });
-        Run("AoE cannot hit off-range monsters",()=>{
+        Run("AoE leaves enemies outside the impact radius untouched",()=>{
             var f=new Field();f.hero.ChangeAttackMode(2);var near=f.Monster(-200);var far=f.Monster(-480);f.Battle(near,far);f.hero.TickMovement(f.space,0);Time.deltaTime=2;Call(f.combat,"Update");Check(f.Enemies[0].currentHP==f.Enemies[0].maxHP,"no damage before arrival");Time.deltaTime=1.2f;Call(f.combat,"Update");Check(f.Enemies[0].currentHP<f.Enemies[0].maxHP,"near hit");Check(f.Enemies[1].currentHP==f.Enemies[1].maxHP,"far untouched");
         });
-        Run("leaving range cancels windup before damage",()=>{
-            var f=new Field();f.hero.ChangeAttackMode(2);var m=f.Monster(-200);f.Battle(m);f.hero.TickMovement(f.space,0);Time.deltaTime=1.9f;Call(f.combat,"Update");f.space.SetPosition(m.Rect,new Vector2(-480,0));Time.deltaTime=0.2f;Call(f.combat,"Update");Check(f.Enemies[0].currentHP==f.Enemies[0].maxHP,"no ghost hit");Near(Get<float>(f.combat,"heroAttackTimer"),0,"windup reset");
+        Run("charged magic waits for an eligible target without firing",()=>{
+            var f=new Field();f.hero.ChangeAttackMode(2);var m=f.Monster(-200);f.Battle(m);f.hero.TickMovement(f.space,0);Time.deltaTime=1.9f;Call(f.combat,"Update");f.space.SetPosition(m.Rect,new Vector2(-480,0));Time.deltaTime=0.2f;Call(f.combat,"Update");Check(f.Enemies[0].currentHP==f.Enemies[0].maxHP,"no ghost hit");Near(Get<float>(f.combat,"heroAttackTimer"),2,"charge held");
         });
-        Run("changing attack mode restarts windup",()=>{
-            var f=new Field();f.hero.ChangeAttackMode(2);var m=f.Monster(-20);f.Battle(m);f.hero.TickMovement(f.space,0);Time.deltaTime=1.9f;Call(f.combat,"Update");f.hero.ChangeAttackMode(0);Time.deltaTime=0.2f;Call(f.combat,"Update");Check(f.Enemies[0].currentHP==f.Enemies[0].maxHP,"no inherited magic timer");
+        Run("switching from magic to melee allows an immediate strike",()=>{
+            var f=new Field();f.hero.ChangeAttackMode(2);var m=f.Monster(-20);f.Battle(m);f.hero.TickMovement(f.space,0);Time.deltaTime=1.9f;Call(f.combat,"Update");f.hero.ChangeAttackMode(0);Time.deltaTime=0.2f;Call(f.combat,"Update");Check(f.Enemies[0].currentHP<f.Enemies[0].maxHP,"immediate melee strike");
         });
         Run("clear battle cancels timers and pooled respawn resets state",()=>{
             var f=new Field();f.hero.ChangeAttackMode(2);var m=f.Monster(-200);f.Battle(m);f.hero.TickMovement(f.space,0);Time.deltaTime=1.9f;Call(f.combat,"Update");f.combat.ForceClearAllMonsters();Near(Get<float>(f.combat,"heroAttackTimer"),0,"cleared timer");Check(MonsterController.ActiveMonsters.Count==0,"pool removed");m.gameObject.SetActive(true);Check(m.currentState==MonsterState.PassiveScroll&&m.CurrentTarget==null,"pool reset");f.Battle(m);f.hero.TickMovement(f.space,0);Time.deltaTime=0.2f;Call(f.combat,"Update");Check(f.Enemies[0].currentHP==f.Enemies[0].maxHP,"fresh windup");
         });
-        Run("melee aligns Y, ranged stays in own lane",()=>{
-            var f=new Field();var m=f.Monster(-35,AttackMode.Melee,80);f.hero.TickMovement(f.space,0.1f);Near(f.space.Position(f.hero.heroRect).y,15,"melee lane");Check(!f.hero.CanAttack(m,f.space),"not aligned yet");f.hero.ChangeAttackMode(1);f.hero.TickMovement(f.space,0.1f);Near(f.space.Position(f.hero.heroRect).y,15,"ranged keeps lane");
+        Run("in-range melee strikes without Y alignment, ranged keeps its lane",()=>{
+            var f=new Field();var m=f.Monster(-35,AttackMode.Melee,80);f.hero.TickMovement(f.space,0.1f);Near(f.space.Position(f.hero.heroRect).y,0,"in range keeps lane");Check(f.hero.CanAttack(m,f.space),"Y does not delay melee");f.hero.ChangeAttackMode(1);f.hero.TickMovement(f.space,0.1f);Near(f.space.Position(f.hero.heroRect).y,0,"ranged keeps lane");
         });
         Run("pending wave is unique and cancelled on manual load",()=>{
             var f=new Field();var gm=new GameObject().AddComponent<GameManager>();
@@ -247,6 +248,12 @@ partial class MotionRegression
         });
         NewFeatureTests();
         DesktopMenuTests();
+        IdentityMapTests();
+        ElementWorldTests();
+        Patch54aTests();
+        GroundRelativeMotionTests();
+        Patch54bTests();
+        Patch54cTests();
         TerrainTests();
         MenuDifficultyTests();
         BalanceTests();

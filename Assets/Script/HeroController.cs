@@ -36,6 +36,7 @@ public class HeroController : MonoBehaviour
     private bool deployed;
     private Coroutine fadeDmgCoroutine;
     private Coroutine attackFeedbackCoroutine;
+    private MagicChargeBar chargeBar;
     private Vector3 damageTextHome;
 
     void Awake()
@@ -70,6 +71,7 @@ public class HeroController : MonoBehaviour
     {
         if (modeIndex < 0 || modeIndex > 2) return;
         attackMode = (AttackMode)modeIndex;
+        UpdateChargeBar(false, 0f);
         if (!IsDead) CurrentState = HeroState.Idle;
     }
 
@@ -78,10 +80,8 @@ public class HeroController : MonoBehaviour
         MovementDistanceThisFrame = 0f;
         if (!IsDeployed) return;
         attackRange = space.AttackRange(attackMode, true);
-        // Retain the selected enemy until it dies; do not alternate between nearly
-        // equidistant enemies (and their Y lanes) every frame.
-        if (CurrentTarget == null || !CurrentTarget.IsAlive)
-            CurrentTarget = FindClosestMonster(space);
+        // Keep an in-range target during a strike; otherwise rescan the closest eligible opponent.
+        if (CurrentTarget == null || !CanAttack(CurrentTarget, space)) CurrentTarget = FindClosestMonster(space);
         Vector2 p = space.Position(heroRect);
         float startX = p.x;
         if (CurrentTarget == null)
@@ -97,8 +97,8 @@ public class HeroController : MonoBehaviour
         }
 
         Vector2 target = space.Position(CurrentTarget.Rect);
-        p.x = BattleMotion.Approach(p.x, target.x, attackRange, moveSpeed, dt);
-        if (attackMode == AttackMode.Melee)
+        p.x = BattleMotion.ForwardApproach(p.x, target.x, attackRange, moveSpeed, dt, -1);
+        if (attackMode == AttackMode.Melee && Mathf.Abs(target.x - p.x) > attackRange + .1f)
             p.y = Mathf.MoveTowards(p.y, target.y, laneSpeed * dt);
         MovementDistanceThisFrame = Mathf.Abs(p.x - startX);
         space.SetPosition(heroRect, p);
@@ -117,8 +117,7 @@ public class HeroController : MonoBehaviour
         if (!IsDeployed || target == null || !target.IsAlive || space == null || space.BattleArea == null) return false;
         Vector2 delta = space.Position(target.Rect) - space.Position(heroRect);
         float range = space.AttackRange(attackMode, true);
-        return Mathf.Abs(delta.x) <= range + 0.1f &&
-            (attackMode != AttackMode.Melee || Mathf.Abs(delta.y) <= 15f);
+        return Mathf.Abs(delta.x) <= range + 0.1f;
     }
 
     private MonsterController FindClosestMonster(EnvironmentManager space)
@@ -128,8 +127,10 @@ public class HeroController : MonoBehaviour
         float x = space.Position(heroRect).x;
         foreach (var monster in MonsterController.ActiveMonsters)
         {
-            if (monster == null || !monster.IsAlive || !space.IsVisible(monster.Rect)) continue;
-            float d = Mathf.Abs(x - space.Position(monster.Rect).x);
+            if (monster == null || !monster.IsAlive) continue;
+            float targetX = space.Position(monster.Rect).x;
+            if (targetX > x && !CanAttack(monster, space)) continue;
+            float d = Mathf.Abs(x - targetX);
             if (d < distance) { distance = d; closest = monster; }
         }
         return closest;
@@ -178,6 +179,7 @@ public class HeroController : MonoBehaviour
 
     private void ResetFeedback()
     {
+        if (chargeBar != null) chargeBar.Set(false, 0f);
         if (fadeDmgCoroutine != null) StopCoroutine(fadeDmgCoroutine);
         if (attackFeedbackCoroutine != null) StopCoroutine(attackFeedbackCoroutine);
         fadeDmgCoroutine = null;
@@ -196,6 +198,23 @@ public class HeroController : MonoBehaviour
         Image img = heroRect.GetComponent<Image>();
         if (img != null) img.color = gender == GenderType.Nam ? new Color(0.2f, 0.8f, 0.2f) : new Color(1f, 0.4f, 0.4f);
     }
+    private bool hasBodyColor;
+    private Color originalBodyColor;
+    public void SetIdentityVisual(EntityDataSO data)
+    {
+        if (heroRect == null || data == null) return;
+        Image image = heroRect.GetComponent<Image>();
+        if (image == null) return;
+        if (!hasBodyColor) { originalBodyColor = image.color; hasBodyColor = true; }
+        image.color = IdentityDisplay.Tint(originalBodyColor, data.spiritRoots);
+    }
+    public void UpdateChargeBar(bool visible, float progress)
+    {
+        visible = visible && IsDeployed && attackMode == AttackMode.RangedMagic;
+        if (chargeBar == null && visible && heroRect != null)
+            chargeBar = MagicChargeBar.Create(heroRect, hpFillImage);
+        if (chargeBar != null) chargeBar.Set(visible, progress);
+    }
     public void PlayAttackFeedback()
     {
         if (heroRect == null) return;
@@ -213,9 +232,25 @@ public class HeroController : MonoBehaviour
     }
     public void UpdateHealthBar(int currentHP, int maxHP) { if (hpFillImage != null) hpFillImage.fillAmount = maxHP > 0 ? (float)currentHP / maxHP : 0f; }
     public void UpdateAtkUI(int currentAtk) { if (atkStatusText != null) atkStatusText.text = $"ATK: {currentAtk}"; }
+    public void UpdateStats(EntityDataSO data, int currentHP, int maxHP)
+    {
+        if (atkStatusText == null || data == null) return;
+        data.NormalizeRoots();
+        var lines = new List<string> { "HP: " + currentHP + "/" + maxHP,
+            "ATK cơ bản: " + data.baseDamage + " + " + data.addedDamage + " = " + data.GetCalculatedDamage() };
+        for (int i = 0; i < data.spiritRoots.Count; i++)
+            lines.Add("ATK " + IdentityDisplay.Element(data.spiritRoots[i]) + ": " +
+                (data.GetCalculatedDamage() * data.rootWeights[i]).ToString("0.##") + " (" +
+                IdentityDisplay.Tier(data.rootTiers[i]) + ", " + data.rootWeights[i].ToString("P0") + ")");
+        float interval = CombatBalance.AttackInterval(attackMode, data.baseAttackSpeed, CombatBalance.HeroDev != null);
+        lines.Add("Di chuyển: " + moveSpeed.ToString("0.##") + " đơn vị/giây");
+        lines.Add("Tốc đánh: " + (1f / interval).ToString("0.##") + " đòn/giây · " + interval.ToString("0.##") + " giây/đòn");
+        atkStatusText.text = string.Join("\n", lines.ToArray());
+    }
     public void ShowDamage(int damageAmount)
     {
         if (dmgTextPrototype == null) return;
+        UIManager.ReadableWorldText(dmgTextPrototype);
         dmgTextPrototype.text = $"-{damageAmount}";
         if (fadeDmgCoroutine != null) StopCoroutine(fadeDmgCoroutine);
         fadeDmgCoroutine = StartCoroutine(FadeDamageTextRoutine());
