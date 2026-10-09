@@ -36,6 +36,7 @@ public class HeroController : MonoBehaviour
     private bool deployed;
     private Coroutine fadeDmgCoroutine;
     private Coroutine attackFeedbackCoroutine;
+    private MagicChargeBar chargeBar;
     private Vector3 damageTextHome;
 
     void Awake()
@@ -70,6 +71,7 @@ public class HeroController : MonoBehaviour
     {
         if (modeIndex < 0 || modeIndex > 2) return;
         attackMode = (AttackMode)modeIndex;
+        UpdateChargeBar(false, 0f);
         if (!IsDead) CurrentState = HeroState.Idle;
     }
 
@@ -96,7 +98,7 @@ public class HeroController : MonoBehaviour
 
         Vector2 target = space.Position(CurrentTarget.Rect);
         p.x = BattleMotion.ForwardApproach(p.x, target.x, attackRange, moveSpeed, dt, -1);
-        if (attackMode == AttackMode.Melee)
+        if (attackMode == AttackMode.Melee && Mathf.Abs(target.x - p.x) > attackRange + .1f)
             p.y = Mathf.MoveTowards(p.y, target.y, laneSpeed * dt);
         MovementDistanceThisFrame = Mathf.Abs(p.x - startX);
         space.SetPosition(heroRect, p);
@@ -115,8 +117,7 @@ public class HeroController : MonoBehaviour
         if (!IsDeployed || target == null || !target.IsAlive || space == null || space.BattleArea == null) return false;
         Vector2 delta = space.Position(target.Rect) - space.Position(heroRect);
         float range = space.AttackRange(attackMode, true);
-        return Mathf.Abs(delta.x) <= range + 0.1f &&
-            (attackMode != AttackMode.Melee || Mathf.Abs(delta.y) <= 15f);
+        return Mathf.Abs(delta.x) <= range + 0.1f;
     }
 
     private MonsterController FindClosestMonster(EnvironmentManager space)
@@ -178,6 +179,7 @@ public class HeroController : MonoBehaviour
 
     private void ResetFeedback()
     {
+        if (chargeBar != null) chargeBar.Set(false, 0f);
         if (fadeDmgCoroutine != null) StopCoroutine(fadeDmgCoroutine);
         if (attackFeedbackCoroutine != null) StopCoroutine(attackFeedbackCoroutine);
         fadeDmgCoroutine = null;
@@ -205,6 +207,13 @@ public class HeroController : MonoBehaviour
         if (image == null) return;
         if (!hasBodyColor) { originalBodyColor = image.color; hasBodyColor = true; }
         image.color = IdentityDisplay.Tint(originalBodyColor, data.spiritRoots);
+    }
+    public void UpdateChargeBar(bool visible, float progress)
+    {
+        visible = visible && IsDeployed && attackMode == AttackMode.RangedMagic;
+        if (chargeBar == null && visible && heroRect != null)
+            chargeBar = MagicChargeBar.Create(heroRect, hpFillImage);
+        if (chargeBar != null) chargeBar.Set(visible, progress);
     }
     public void PlayAttackFeedback()
     {

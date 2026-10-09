@@ -22,6 +22,7 @@ public class MonsterController : MonoBehaviour
 
     private RectTransform rect;
     private Coroutine attackFeedbackCoroutine;
+    private MagicChargeBar chargeBar;
     private Coroutine fadeDmgCoroutine;
 
     void Awake() { rect = GetComponent<RectTransform>(); }
@@ -95,12 +96,14 @@ public class MonsterController : MonoBehaviour
     public void MarkDead()
     {
         currentState = MonsterState.Dead;
+        UpdateChargeBar(false, 0f);
         CurrentTarget = null;
         ActiveMonsters.Remove(this);
     }
 
     private void ResetFeedback()
     {
+        if (chargeBar != null) chargeBar.Set(false, 0f);
         if (attackFeedbackCoroutine != null) StopCoroutine(attackFeedbackCoroutine);
         if (fadeDmgCoroutine != null) StopCoroutine(fadeDmgCoroutine);
         attackFeedbackCoroutine = null;
@@ -118,6 +121,13 @@ public class MonsterController : MonoBehaviour
         if (image == null) return;
         if (!hasBodyColor) { originalBodyColor = image.color; hasBodyColor = true; }
         image.color = IdentityDisplay.Tint(originalBodyColor, data.spiritRoots);
+    }
+    public void UpdateChargeBar(bool visible, float progress)
+    {
+        visible = visible && IsAlive && attackMode == AttackMode.RangedMagic;
+        if (chargeBar == null && visible && Rect != null)
+            chargeBar = MagicChargeBar.Create(Rect, hpFillImage);
+        if (chargeBar != null) chargeBar.Set(visible, progress);
     }
     public void PlayAttackFeedback()
     {

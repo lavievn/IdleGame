@@ -95,20 +95,20 @@ partial class MotionRegression
         Run("wrapping waits for full decoration to exit and preserves overshoot",()=>{
             var f=new Field();f.space.SetPosition(f.grass,new Vector2(610,0));f.space.PanEnvironment(5);Near(f.space.Position(f.grass).x,615,"still partly visible within padding");f.space.PanEnvironment(10);Near(f.space.Position(f.grass).x,-615,"wrapped with overshoot");
         });
-        Run("AoE cannot hit off-range monsters",()=>{
+        Run("AoE leaves enemies outside the impact radius untouched",()=>{
             var f=new Field();f.hero.ChangeAttackMode(2);var near=f.Monster(-200);var far=f.Monster(-480);f.Battle(near,far);f.hero.TickMovement(f.space,0);Time.deltaTime=2;Call(f.combat,"Update");Check(f.Enemies[0].currentHP==f.Enemies[0].maxHP,"no damage before arrival");Time.deltaTime=1.2f;Call(f.combat,"Update");Check(f.Enemies[0].currentHP<f.Enemies[0].maxHP,"near hit");Check(f.Enemies[1].currentHP==f.Enemies[1].maxHP,"far untouched");
         });
-        Run("leaving range cancels windup before damage",()=>{
-            var f=new Field();f.hero.ChangeAttackMode(2);var m=f.Monster(-200);f.Battle(m);f.hero.TickMovement(f.space,0);Time.deltaTime=1.9f;Call(f.combat,"Update");f.space.SetPosition(m.Rect,new Vector2(-480,0));Time.deltaTime=0.2f;Call(f.combat,"Update");Check(f.Enemies[0].currentHP==f.Enemies[0].maxHP,"no ghost hit");Near(Get<float>(f.combat,"heroAttackTimer"),0,"windup reset");
+        Run("charged magic waits for an eligible target without firing",()=>{
+            var f=new Field();f.hero.ChangeAttackMode(2);var m=f.Monster(-200);f.Battle(m);f.hero.TickMovement(f.space,0);Time.deltaTime=1.9f;Call(f.combat,"Update");f.space.SetPosition(m.Rect,new Vector2(-480,0));Time.deltaTime=0.2f;Call(f.combat,"Update");Check(f.Enemies[0].currentHP==f.Enemies[0].maxHP,"no ghost hit");Near(Get<float>(f.combat,"heroAttackTimer"),2,"charge held");
         });
-        Run("changing attack mode restarts windup",()=>{
-            var f=new Field();f.hero.ChangeAttackMode(2);var m=f.Monster(-20);f.Battle(m);f.hero.TickMovement(f.space,0);Time.deltaTime=1.9f;Call(f.combat,"Update");f.hero.ChangeAttackMode(0);Time.deltaTime=0.2f;Call(f.combat,"Update");Check(f.Enemies[0].currentHP==f.Enemies[0].maxHP,"no inherited magic timer");
+        Run("switching from magic to melee allows an immediate strike",()=>{
+            var f=new Field();f.hero.ChangeAttackMode(2);var m=f.Monster(-20);f.Battle(m);f.hero.TickMovement(f.space,0);Time.deltaTime=1.9f;Call(f.combat,"Update");f.hero.ChangeAttackMode(0);Time.deltaTime=0.2f;Call(f.combat,"Update");Check(f.Enemies[0].currentHP<f.Enemies[0].maxHP,"immediate melee strike");
         });
         Run("clear battle cancels timers and pooled respawn resets state",()=>{
             var f=new Field();f.hero.ChangeAttackMode(2);var m=f.Monster(-200);f.Battle(m);f.hero.TickMovement(f.space,0);Time.deltaTime=1.9f;Call(f.combat,"Update");f.combat.ForceClearAllMonsters();Near(Get<float>(f.combat,"heroAttackTimer"),0,"cleared timer");Check(MonsterController.ActiveMonsters.Count==0,"pool removed");m.gameObject.SetActive(true);Check(m.currentState==MonsterState.PassiveScroll&&m.CurrentTarget==null,"pool reset");f.Battle(m);f.hero.TickMovement(f.space,0);Time.deltaTime=0.2f;Call(f.combat,"Update");Check(f.Enemies[0].currentHP==f.Enemies[0].maxHP,"fresh windup");
         });
-        Run("melee aligns Y, ranged stays in own lane",()=>{
-            var f=new Field();var m=f.Monster(-35,AttackMode.Melee,80);f.hero.TickMovement(f.space,0.1f);Near(f.space.Position(f.hero.heroRect).y,15,"melee lane");Check(!f.hero.CanAttack(m,f.space),"not aligned yet");f.hero.ChangeAttackMode(1);f.hero.TickMovement(f.space,0.1f);Near(f.space.Position(f.hero.heroRect).y,15,"ranged keeps lane");
+        Run("in-range melee strikes without Y alignment, ranged keeps its lane",()=>{
+            var f=new Field();var m=f.Monster(-35,AttackMode.Melee,80);f.hero.TickMovement(f.space,0.1f);Near(f.space.Position(f.hero.heroRect).y,0,"in range keeps lane");Check(f.hero.CanAttack(m,f.space),"Y does not delay melee");f.hero.ChangeAttackMode(1);f.hero.TickMovement(f.space,0.1f);Near(f.space.Position(f.hero.heroRect).y,0,"ranged keeps lane");
         });
         Run("pending wave is unique and cancelled on manual load",()=>{
             var f=new Field();var gm=new GameObject().AddComponent<GameManager>();
@@ -251,6 +251,7 @@ partial class MotionRegression
         ElementWorldTests();
         Patch54aTests();
         GroundRelativeMotionTests();
+        Patch54bTests();
         TerrainTests();
         MenuDifficultyTests();
         BalanceTests();

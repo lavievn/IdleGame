@@ -11,11 +11,11 @@ PASS hero death stops AI and retry clears dead state
 PASS no crossing at low frame rate
 PASS zone camera holds speed across 30/60/144 FPS
 PASS wrapping waits for full decoration to exit and preserves overshoot
-PASS AoE cannot hit off-range monsters
-PASS leaving range cancels windup before damage
-PASS changing attack mode restarts windup
+PASS AoE leaves enemies outside the impact radius untouched
+PASS charged magic waits for an eligible target without firing
+PASS switching from magic to melee allows an immediate strike
 PASS clear battle cancels timers and pooled respawn resets state
-PASS melee aligns Y, ranged stays in own lane
+PASS in-range melee strikes without Y alignment, ranged keeps its lane
 PASS pending wave is unique and cancelled on manual load
 PASS lethal monster hit stops hero and clears battle
 PASS aspect resize recalculates home and range without Start cache
@@ -37,7 +37,7 @@ PASS stationary combat background and hero share camera displacement
 PASS wave delay inverse speed has hard quarter floor
 PASS pending wave reacts to speed changes and pauses at zero
 PASS physical shot damages one target only at impact
-PASS magic fans curved fireballs to in-range targets only
+PASS magic launches one curved fireball and explodes within radius
 PASS flight duration remains below attack interval even at extreme attack speed
 PASS projectile and particles pan with camera rather than independent scenery
 PASS cleared shots cannot damage pooled monster reused in new wave
@@ -78,6 +78,23 @@ PASS region and habitat data survive save and load alongside root repair
 PASS approaching monster moves at base speed plus current ground pan, without double camera
 PASS ground compensation uses current frame after hero speed changes and handles slower ground than camera
 PASS compensated monster clamps at attack range on long frames and stationary fighters share camera
+PASS both sides strike immediately on horizontal range entry despite different Y
+PASS bow per-shot factor stays in 55 to 80 percent and appears in damage trace
+PASS moving physical target is missed at fixed launch point, X and Y
+PASS physical stationary target hit after camera pan across Canvas scales
+PASS enemy bow can miss a moving hero and uses same damage reduction
+PASS magic charges before first cast, launches only one enlarged fireball
+PASS magic charges on approach and holds full until an enemy enters range
+PASS magic explosion uses radius100 at impact, including enemies outside shooter range
+PASS magic is fixed aim, moving primary can escape but a new arrival can be hit
+PASS magic retains launch power and roots even if hero stats change in flight
+PASS hero magic persists after primary dies while physical never retargets
+PASS charge UI is blue, nonblocking, reused and hidden for other attacks and death
+PASS monster magic charge matches its interval, pause freezes both bars and bolts
+PASS enemy magic fixed endpoint can hit a nearby moved hero but miss beyond radius
+PASS enemy source death cancels its projectile and stale pooled life cannot deal damage
+PASS physical misses are recorded as zero damage without false hit formula
+PASS next wave preserves hero charge but explicit reset clears it
 PASS terrain visual clone grows 1.2 while logical ground and hero stats stay unchanged
 PASS terrain loop covers complete viewport through long scroll and resize
 PASS all seven grass placeholders receive sprites and separate random positions
@@ -96,40 +113,40 @@ PASS level-up kill heals only 5 to 10 HP and never fills new maximum
 PASS ordinary kill healing is capped and there is no idle regeneration
 PASS monster HP and ATK scale at spawn and mode timing has correct order
 SIMULATION: 30 FPS, width 1000, initial HP full, 1..3 monsters per wave, max 120 simulated seconds, 20 seeds per row.
-SIM mapVisit=1 level=1 mode=Melee deaths=15/20 mean_observed_seconds=100.2 mean_spawned=9.8
-SIM mapVisit=1 level=1 mode=RangedPhysical deaths=0/20 mean_observed_seconds=120.0 mean_spawned=20.5
-SIM mapVisit=1 level=1 mode=RangedMagic deaths=2/20 mean_observed_seconds=119.6 mean_spawned=20.9
-SIM mapVisit=1 level=10 mode=Melee deaths=19/20 mean_observed_seconds=85.6 mean_spawned=11.3
-SIM mapVisit=1 level=10 mode=RangedPhysical deaths=0/20 mean_observed_seconds=120.0 mean_spawned=26.0
-SIM mapVisit=1 level=10 mode=RangedMagic deaths=7/20 mean_observed_seconds=114.2 mean_spawned=25.1
-SIM mapVisit=1 level=20 mode=Melee deaths=20/20 mean_observed_seconds=64.9 mean_spawned=10.1
-SIM mapVisit=1 level=20 mode=RangedPhysical deaths=1/20 mean_observed_seconds=119.9 mean_spawned=29.2
-SIM mapVisit=1 level=20 mode=RangedMagic deaths=11/20 mean_observed_seconds=114.7 mean_spawned=26.1
-SIM mapVisit=1 level=50 mode=Melee deaths=20/20 mean_observed_seconds=55.4 mean_spawned=9.3
-SIM mapVisit=1 level=50 mode=RangedPhysical deaths=10/20 mean_observed_seconds=111.2 mean_spawned=30.3
-SIM mapVisit=1 level=50 mode=RangedMagic deaths=16/20 mean_observed_seconds=96.6 mean_spawned=24.2
-SIM mapVisit=1 level=100 mode=Melee deaths=20/20 mean_observed_seconds=45.2 mean_spawned=7.8
-SIM mapVisit=1 level=100 mode=RangedPhysical deaths=19/20 mean_observed_seconds=94.1 mean_spawned=25.8
-SIM mapVisit=1 level=100 mode=RangedMagic deaths=20/20 mean_observed_seconds=87.5 mean_spawned=24.1
-SIM mapVisit=1 level=999 mode=Melee deaths=20/20 mean_observed_seconds=40.2 mean_spawned=7.2
-SIM mapVisit=1 level=999 mode=RangedPhysical deaths=20/20 mean_observed_seconds=85.0 mean_spawned=23.5
-SIM mapVisit=1 level=999 mode=RangedMagic deaths=20/20 mean_observed_seconds=85.8 mean_spawned=25.1
-SIM mapVisit=100 level=1 mode=Melee deaths=20/20 mean_observed_seconds=48.5 mean_spawned=5.7
-SIM mapVisit=100 level=1 mode=RangedPhysical deaths=20/20 mean_observed_seconds=84.9 mean_spawned=14.9
-SIM mapVisit=100 level=1 mode=RangedMagic deaths=20/20 mean_observed_seconds=66.0 mean_spawned=12.2
-SIM mapVisit=100 level=10 mode=Melee deaths=20/20 mean_observed_seconds=40.6 mean_spawned=5.8
-SIM mapVisit=100 level=10 mode=RangedPhysical deaths=20/20 mean_observed_seconds=78.5 mean_spawned=17.5
-SIM mapVisit=100 level=10 mode=RangedMagic deaths=20/20 mean_observed_seconds=57.5 mean_spawned=12.8
-SIM mapVisit=100 level=20 mode=Melee deaths=20/20 mean_observed_seconds=34.3 mean_spawned=6.3
-SIM mapVisit=100 level=20 mode=RangedPhysical deaths=20/20 mean_observed_seconds=63.9 mean_spawned=16.1
-SIM mapVisit=100 level=20 mode=RangedMagic deaths=20/20 mean_observed_seconds=54.4 mean_spawned=12.6
-SIM mapVisit=100 level=50 mode=Melee deaths=20/20 mean_observed_seconds=28.3 mean_spawned=5.6
-SIM mapVisit=100 level=50 mode=RangedPhysical deaths=20/20 mean_observed_seconds=54.1 mean_spawned=15.5
-SIM mapVisit=100 level=50 mode=RangedMagic deaths=20/20 mean_observed_seconds=50.5 mean_spawned=13.2
-SIM mapVisit=100 level=100 mode=Melee deaths=20/20 mean_observed_seconds=22.2 mean_spawned=4.6
-SIM mapVisit=100 level=100 mode=RangedPhysical deaths=20/20 mean_observed_seconds=47.5 mean_spawned=13.7
-SIM mapVisit=100 level=100 mode=RangedMagic deaths=20/20 mean_observed_seconds=42.2 mean_spawned=12.8
-SIM mapVisit=100 level=999 mode=Melee deaths=20/20 mean_observed_seconds=20.5 mean_spawned=4.8
-SIM mapVisit=100 level=999 mode=RangedPhysical deaths=20/20 mean_observed_seconds=43.6 mean_spawned=12.9
-SIM mapVisit=100 level=999 mode=RangedMagic deaths=20/20 mean_observed_seconds=43.3 mean_spawned=13.0
-PASS: 97 regression scenarios (Unity test doubles; not Play Mode).
+SIM mapVisit=1 level=1 mode=Melee deaths=11/20 mean_observed_seconds=110.7 mean_spawned=11.8
+SIM mapVisit=1 level=1 mode=RangedPhysical deaths=11/20 mean_observed_seconds=112.2 mean_spawned=14.7
+SIM mapVisit=1 level=1 mode=RangedMagic deaths=1/20 mean_observed_seconds=119.9 mean_spawned=21.8
+SIM mapVisit=1 level=10 mode=Melee deaths=18/20 mean_observed_seconds=95.6 mean_spawned=13.6
+SIM mapVisit=1 level=10 mode=RangedPhysical deaths=17/20 mean_observed_seconds=93.8 mean_spawned=15.5
+SIM mapVisit=1 level=10 mode=RangedMagic deaths=3/20 mean_observed_seconds=119.2 mean_spawned=28.9
+SIM mapVisit=1 level=20 mode=Melee deaths=20/20 mean_observed_seconds=85.3 mean_spawned=13.6
+SIM mapVisit=1 level=20 mode=RangedPhysical deaths=20/20 mean_observed_seconds=81.7 mean_spawned=15.2
+SIM mapVisit=1 level=20 mode=RangedMagic deaths=17/20 mean_observed_seconds=102.8 mean_spawned=24.1
+SIM mapVisit=1 level=50 mode=Melee deaths=20/20 mean_observed_seconds=59.9 mean_spawned=11.1
+SIM mapVisit=1 level=50 mode=RangedPhysical deaths=20/20 mean_observed_seconds=61.3 mean_spawned=13.1
+SIM mapVisit=1 level=50 mode=RangedMagic deaths=20/20 mean_observed_seconds=75.8 mean_spawned=19.8
+SIM mapVisit=1 level=100 mode=Melee deaths=20/20 mean_observed_seconds=53.4 mean_spawned=10.3
+SIM mapVisit=1 level=100 mode=RangedPhysical deaths=20/20 mean_observed_seconds=50.0 mean_spawned=11.5
+SIM mapVisit=1 level=100 mode=RangedMagic deaths=20/20 mean_observed_seconds=66.5 mean_spawned=16.9
+SIM mapVisit=1 level=999 mode=Melee deaths=20/20 mean_observed_seconds=46.8 mean_spawned=9.1
+SIM mapVisit=1 level=999 mode=RangedPhysical deaths=20/20 mean_observed_seconds=46.7 mean_spawned=10.8
+SIM mapVisit=1 level=999 mode=RangedMagic deaths=20/20 mean_observed_seconds=56.4 mean_spawned=15.3
+SIM mapVisit=100 level=1 mode=Melee deaths=20/20 mean_observed_seconds=57.5 mean_spawned=6.7
+SIM mapVisit=100 level=1 mode=RangedPhysical deaths=20/20 mean_observed_seconds=54.3 mean_spawned=7.7
+SIM mapVisit=100 level=1 mode=RangedMagic deaths=20/20 mean_observed_seconds=66.1 mean_spawned=12.3
+SIM mapVisit=100 level=10 mode=Melee deaths=20/20 mean_observed_seconds=46.2 mean_spawned=7.3
+SIM mapVisit=100 level=10 mode=RangedPhysical deaths=20/20 mean_observed_seconds=41.9 mean_spawned=7.9
+SIM mapVisit=100 level=10 mode=RangedMagic deaths=20/20 mean_observed_seconds=62.3 mean_spawned=15.1
+SIM mapVisit=100 level=20 mode=Melee deaths=20/20 mean_observed_seconds=39.7 mean_spawned=7.2
+SIM mapVisit=100 level=20 mode=RangedPhysical deaths=20/20 mean_observed_seconds=39.3 mean_spawned=8.0
+SIM mapVisit=100 level=20 mode=RangedMagic deaths=20/20 mean_observed_seconds=45.7 mean_spawned=12.1
+SIM mapVisit=100 level=50 mode=Melee deaths=20/20 mean_observed_seconds=28.0 mean_spawned=6.2
+SIM mapVisit=100 level=50 mode=RangedPhysical deaths=20/20 mean_observed_seconds=29.8 mean_spawned=7.1
+SIM mapVisit=100 level=50 mode=RangedMagic deaths=20/20 mean_observed_seconds=36.7 mean_spawned=10.1
+SIM mapVisit=100 level=100 mode=Melee deaths=20/20 mean_observed_seconds=25.7 mean_spawned=5.4
+SIM mapVisit=100 level=100 mode=RangedPhysical deaths=20/20 mean_observed_seconds=25.1 mean_spawned=6.7
+SIM mapVisit=100 level=100 mode=RangedMagic deaths=20/20 mean_observed_seconds=31.2 mean_spawned=8.4
+SIM mapVisit=100 level=999 mode=Melee deaths=20/20 mean_observed_seconds=25.3 mean_spawned=5.5
+SIM mapVisit=100 level=999 mode=RangedPhysical deaths=20/20 mean_observed_seconds=21.5 mean_spawned=6.0
+SIM mapVisit=100 level=999 mode=RangedMagic deaths=20/20 mean_observed_seconds=27.0 mean_spawned=7.9
+PASS: 114 regression scenarios (Unity test doubles; not Play Mode).

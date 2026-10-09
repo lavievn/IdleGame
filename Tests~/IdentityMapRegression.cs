@@ -80,8 +80,10 @@ partial class MotionRegression
             foreach(var enemy in f.Enemies){enemy.data.rootTiers.Clear();enemy.data.rootWeights.Clear();}
             f.hero.TickMovement(f.space,0);Time.deltaTime=2;Call(f.combat,"Update");
             var shots=(System.Collections.IList)typeof(CombatManager).GetField("projectiles",System.Reflection.BindingFlags.NonPublic|System.Reflection.BindingFlags.Instance).GetValue(f.combat);
-            Check(shots.Count==2,"two targets launched");int min=int.MaxValue,max=0;foreach(var shot in shots){int damage=(int)shot.GetType().GetField("damage").GetValue(shot);min=Math.Min(min,damage);max=Math.Max(max,damage);}
-            Check(min>=153&&min<=180&&max>=198&&max<=234,"neutral and countered target use independent damage");
+            Check(shots.Count==1,"one explosion instead of per-target volley");
+            foreach(var e in f.Enemies)e.currentHP=e.maxHP=10000;
+            CombatStep(f,1.2f);int counter=10000-f.Enemies[0].currentHP,neutral=10000-f.Enemies[1].currentHP;
+            Check(neutral>=212&&neutral<=250&&counter==Mathf.RoundToInt(neutral*1.3f),"one cast evaluates counter matrix separately per victim");
         });
         Run("identity tint mixes fifty percent without accumulating over pooled reuse",()=>{
             var f=new Field();var image=f.hero.heroRect.gameObject.AddComponent<Image>();image.color=new Color(.2f,.4f,.6f,.75f);

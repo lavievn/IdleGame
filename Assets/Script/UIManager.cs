@@ -291,7 +291,7 @@ public class UIManager : MonoBehaviour
     private void RefreshDamageInfo()
     {
         if (damageText == null) return;
-        damageText.text = displayedDamage.Length == 0 ? "CHI TIẾT SÁT THƯƠNG\nChưa có đòn đánh gây sát thương." :
+        damageText.text = displayedDamage.Length == 0 ? "CHI TIẾT SÁT THƯƠNG\nChưa có đòn đánh hoàn tất." :
             "CHI TIẾT SÁT THƯƠNG · " + (damagePage+1) + "/" + displayedDamage.Length + " (mới nhất trước)\n" + displayedDamage[damagePage];
     }
 

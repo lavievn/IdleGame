@@ -131,28 +131,43 @@ namespace TuTienCore
                         attacker.spiritRoots[a], attacker.rootTiers[a], defender.spiritRoots[d], defender.rootTiers[d]);
             return sum;
         }
-        public static DamageTrace EvaluateDamage(EntityDataSO attacker, EntityDataSO defender, AttackMode mode, float roll)
+        public static DamageTrace EvaluateDamage(EntityDataSO attacker, EntityDataSO defender, AttackMode mode, float roll, float physicalFactor = .8f)
         {
-            float element = GetElementalMultiplier(attacker, defender);
+            attacker.NormalizeRoots();
             int attack = Mathf.Max(1, attacker.GetCalculatedDamage());
             roll = Mathf.Clamp(roll, .85f, 1f);
-            var parts = new List<string>();
-            for (int a = 0; a < attacker.spiritRoots.Count; a++) for (int d = 0; d < defender.spiritRoots.Count; d++) {
-                float pair = GetElementalMultiplier(attacker.spiritRoots[a], attacker.rootTiers[a], defender.spiritRoots[d], defender.rootTiers[d]);
-                int gap = attacker.rootTiers[a] - defender.rootTiers[d];
-                string rule = Counters(attacker.spiritRoots[a], defender.spiritRoots[d])
+            var snapshot = new DamageTrace { attacker = IdentityDisplay.Describe(attacker),
+                attackRaw = attacker.baseDamage, attackAdded = attacker.addedDamage, attackBase = attack,
+                modeMultiplier = CombatBalance.ModeMultiplier(mode, physicalFactor), roll = roll,
+                rolledDamage = CombatBalance.Damage(attack, mode, roll, physicalFactor),
+                sourceRoots = new List<ElementType>(attacker.spiritRoots), sourceTiers = new List<int>(attacker.rootTiers),
+                sourceWeights = new List<float>(attacker.rootWeights) };
+            return EvaluateSnapshot(snapshot, defender);
+        }
+        public static DamageTrace EvaluateSnapshot(DamageTrace snapshot, EntityDataSO defender)
+        {
+            defender.NormalizeRoots();
+            var parts = new List<string>();float element = 0f;
+            for (int a = 0; a < snapshot.sourceRoots.Count; a++) for (int d = 0; d < defender.spiritRoots.Count; d++) {
+                ElementType root = snapshot.sourceRoots[a];int tier = snapshot.sourceTiers[a];
+                float pair = GetElementalMultiplier(root, tier, defender.spiritRoots[d], defender.rootTiers[d]);
+                element += snapshot.sourceWeights[a] * defender.rootWeights[d] * pair;
+                int gap = tier - defender.rootTiers[d];
+                string rule = Counters(root, defender.spiritRoots[d])
                     ? (gap >= 0 ? "+30% × (1 + 10% × " + gap + ")" : "+30% × max(25%, 1 + 25% × (" + gap + "))")
-                    : Counters(defender.spiritRoots[d], attacker.spiritRoots[a]) ? "−30% × (1 − 10% × (" + gap + "))" : "trung tính";
-                parts.Add(IdentityDisplay.Element(attacker.spiritRoots[a]) + " " + attacker.rootTiers[a] + " → " +
+                    : Counters(defender.spiritRoots[d], root) ? "−30% × (1 − 10% × (" + gap + "))" : "trung tính";
+                parts.Add(IdentityDisplay.Element(root) + " " + tier + " → " +
                     IdentityDisplay.Element(defender.spiritRoots[d]) + " " + defender.rootTiers[d] + ": " +
-                    attacker.rootWeights[a].ToString("P3") + " × " + defender.rootWeights[d].ToString("P3") +
+                    snapshot.sourceWeights[a].ToString("P3") + " × " + defender.rootWeights[d].ToString("P3") +
                     " × " + pair.ToString("0.###") + " (" + ((pair - 1f) * 100f).ToString("+0.##;-0.##;0") + "%; " + rule + ")");
             }
-            int basis = CombatBalance.Damage(attack, mode, roll);
-            return new DamageTrace { attacker = IdentityDisplay.Describe(attacker), defender = IdentityDisplay.Describe(defender),
+            if (parts.Count == 0) element = 1f;
+            return new DamageTrace { attacker = snapshot.attacker, defender = IdentityDisplay.Describe(defender),
                 pairs = parts.Count == 0 ? "Không có cặp linh căn: ×1" : string.Join("\n", parts.ToArray()),
-                attackRaw = attacker.baseDamage, attackAdded = attacker.addedDamage, attackBase = attack, modeMultiplier = mode == AttackMode.RangedMagic ? 1.8f : 1f, roll = roll,
-                rolledDamage = basis, elementMultiplier = element, elementDamage = Mathf.Max(1, Mathf.RoundToInt(basis * element)) };
+                attackRaw = snapshot.attackRaw, attackAdded = snapshot.attackAdded, attackBase = snapshot.attackBase,
+                modeMultiplier = snapshot.modeMultiplier, roll = snapshot.roll, rolledDamage = snapshot.rolledDamage,
+                elementMultiplier = element, elementDamage = Mathf.Max(1, Mathf.RoundToInt(snapshot.rolledDamage * element)),
+                sourceRoots = snapshot.sourceRoots, sourceTiers = snapshot.sourceTiers, sourceWeights = snapshot.sourceWeights };
         }
         public static int Damage(EntityDataSO attacker, EntityDataSO defender, AttackMode mode, float roll, int mapMultiplier = 1)
         {
@@ -163,6 +178,9 @@ namespace TuTienCore
     public sealed class DamageTrace
     {
         public string attacker, defender, pairs;
+        public List<ElementType> sourceRoots;
+        public List<int> sourceTiers;
+        public List<float> sourceWeights;
         public int attackRaw, attackAdded, attackBase, rolledDamage, elementDamage;
         public float modeMultiplier, roll, elementMultiplier;
         private static string F(float value) => value.ToString("0.######", System.Globalization.CultureInfo.InvariantCulture);

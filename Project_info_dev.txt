@@ -9,8 +9,9 @@ Tài liệu này là điểm nạp bối cảnh cho các phiên phát triển ti
 các bản tóm tắt cũ làm bằng chứng rằng một tính năng đã hoạt động trên bản build.
 Mỗi lần làm việc phải kiểm tra nhánh, commit, scene và bản lưu đang dùng.
 
-Nền mã mới nhất người dùng đã push: 0.0.4.51f, main tại commit
-b33bb1d8d3dedf7ad887cec7ca69b3f660e003ae. Đã đối chiếu trực tiếp scene,
+Nền người dùng đã push trước tiến trình này: 0.0.4.51f tại commit
+b33bb1d8d3dedf7ad887cec7ca69b3f660e003ae. Main hiện tại đã merge PR #1,
+commit f6140282c29149669366a2acde1b10de20649e89 (đối chiếu 09/10/2026). Đã đối chiếu trực tiếp scene,
 TransparentWindow, UIManager và PlayerSettings. Main đã chứa các sửa gameplay,
 cân bằng, UI và terrain trước đó; mô tả main 0.0.4.4 trong bàn giao cũ đã hết hạn.
 Ở nền này người dùng từng báo menu không mở, cửa sổ phủ màn hình và kéo
@@ -18,16 +19,27 @@ bị dính xuống đáy. Sau bản vá Windows 0.0.4.51f, ngày 09/10/2026 ngư
 xác nhận đã thử: System Menu hoạt động, scale cửa sổ đúng logic và cho phép
 merge PR #1 vào main. Chưa có xác nhận riêng về kéo cửa sổ, DPI/màn hình phụ.
 
-CẬP NHẬT ĐANG PHÁT TRIỂN: 0.0.4.54a, nền feature/0.0.4.54 (PR #3).
-Nhánh feature/0.0.4.54a, chưa nghiệm thu Unity/Windows và chưa merge main.
-Hiện trạng mới nhất: Docs/Release_0.0.4.54a.md, ưu tiên hơn ghi chép cũ bên dưới.
-Đã sửa Vô độc lập/không có trong ConLai; helper ngoại lệ sinh con chưa nối
-vào gameplay vì chưa có hệ sinh sản. Hero/quái vẫn random độc lập.
-Đã thêm Pause tại BuffIcon màu cam, Info cho30đònđãtrúng và bảng HP/ATK từng
-căn/tốcđộ hero. Sửa AI mộtchiều: hero−X,quái+X;camera vẫn dịch cảmap.
-Đã thêm hồ/biển, cụm5map theo6chủđề, phânloại/danh sáchloài theođịa hình.
-Giữ5đợt/map, chu kỳ5thường/1khó và giảmATKquái50% tăng bù ởmốc20…100.
-Sinh sảnF1/F2/F3, mô tảcha mẹ, sprite/bơi/bay/kỹnăngtheoloài chưa triểnkhai.
+CẬP NHẬT ĐANG PHÁT TRIỂN: 0.0.4.54b, nền toàn bộ .54a và sửa chuyển động quái theo ground.
+Nhánh feature/0.0.4.54b; chưa merge main, chưa nghiệm thu Unity/Windows.
+Hiện trạng mới nhất: Docs/Release_0.0.4.54b.md, ưu tiên hơn ghi chép lịch sử.
+Người dùng báo sát thương .54a về cơ bản ổn; .54b tối ưu ba thế đánh:
+- Cung giảm ngẫu nhiên 20–45% ATK mỗi đòn, giữ dao động 85–100% cũ.
+- Cận chiến/cung đánh ngay khi đủ tầm X, không đợi đối thủ dừng hoặc khớp Y.
+- Ranged nhắm vị trí lúc bắn, không homing; di chuyển có thể hụt. Camera dịch
+  cả điểm ngắm và đạn nên không tự gây hụt. Cung dùng dung sai 12 đơn vị.
+- Phép vận công trước mỗi đòn, bắn một quả cầu kích thước ×4 cũ, 250% ATK,
+  nổ bán kính 100 đơn vị tại điểm rơi, khắc hệ riêng từng đối thủ, bỏ volley.
+- Thanh vận công xanh phía trên HP cho hero/quái dùng phép: 0→100%, đầy mà
+  chưa có mục tiêu thì giữ đầy, bắn reset 0%; pause đóng băng; ẩn khi dùng cung
+  hoặc cận chiến. Vận công bắt đầu khi hero được triển khai, giữ qua wave thường;
+  load/reset/chết hủy chu kỳ cũ.
+Giữ Vô độc lập, random linh căn/tên/giới tính, cụm 5 map, habitat, 5 wave/map,
+5 map thường/1 map khó, damage quái 50% tăng bù mốc 20…100, heal 5–10 HP/kill,
+AI hero−X/quái+X và quái tiến tương đối trên ground như .54a.
+Sinh sản F1/F2/F3, mô tả cha mẹ, sprite/bơi/bay/kỹ năng theo loài chưa triển khai.
+114 kiểm tra hồi quy và 720 mô phỏng PASS dùng Unity API mô phỏng, không phải
+Play Mode. Phép mạnh hơn đáng kể ở cấp thấp trong fixture; đã ghi kết quả để
+nghiệm thu cân bằng. Chưa có build Windows native.
 
 Nhãn trạng thái dùng xuyên suốt:
 [ĐỊNH HƯỚNG] ý định thiết kế, chưa phải chức năng chạy được.
@@ -680,3 +692,9 @@ BỔ SUNG .54a — chuyển động quái theo ground
 + tốc độ ground, bù phần ground−camera của cùng frame để không cộng camera
 hai lần. Khi đã đủ tầm đánh, không thêm bước tiếp cận. Xem phần cuối
 Docs/Release_0.0.4.54a.md và GroundRelativeMotionRegression.cs.
+
+CẬP NHẬT CUỐI — 0.0.4.54b
+Đọc Docs/Release_0.0.4.54b.md cho quy tắc ranged/vận công mới và danh sách test.
+Các mô tả phép 1.8×/volley/homing/chờ đủ chu kỳ đòn đầu phía trên là lịch sử.
+Thanh xanh chỉ dùng phép, cả hero/quái; Info ghi đòn trúng và đòn hụt, không ghi
+hit lúc bắn. Chưa có item accuracy, interrupt, ngắm đón hoặc build Windows native.

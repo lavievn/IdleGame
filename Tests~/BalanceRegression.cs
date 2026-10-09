@@ -66,7 +66,7 @@ partial class MotionRegression
             Check(f.Enemies[0].maxHP==CombatBalance.MonsterHealth(data.currentLevel),"monster health scales");
             Near(CombatBalance.AttackInterval(AttackMode.Melee,1),1.4f,"slower melee");
             Near(CombatBalance.AttackInterval(AttackMode.RangedPhysical,1),.7f,"faster physical");
-            Check(CombatBalance.Damage(10,AttackMode.RangedMagic,1)==18,"magic 1.8x damage");
+            Check(CombatBalance.Damage(10,AttackMode.RangedMagic,1)==25,"magic 2.5x damage");
         });
     }
 
