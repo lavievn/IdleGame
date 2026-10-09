@@ -21,6 +21,7 @@ public class CombatManager : MonoBehaviour
         public Vector2 start;
         public float elapsed, duration, arc;
         public int damage;
+        public string source;
         public BattleEffects.Bolt visual;
     }
     private readonly List<Projectile> projectiles = new List<Projectile>();
@@ -85,9 +86,14 @@ public class CombatManager : MonoBehaviour
             info.data.baseAttackSpeed = CombatBalance.HeroSpeed(info.data.currentLevel);
             info.data.addedHealth = 0;
             info.data.addedDamage = 0;
+            info.data.gender = Random.Range(0,2) == 0 ? GenderType.Nam : GenderType.Nu;
+            info.data.entityName = NameDatabase.GetRandomName(info.data.gender);
+            info.data.race = SynergyMath.GenerateRandomRace();
+            SynergyMath.GenerateRootProfile(info.data);
+            info.data.entityName = WorldNames.RandomMonsterName(info.data);
             info.maxHP = info.data.GetCalculatedHealth();
             info.currentHP = info.maxHP;
-            if (info.controller != null) info.controller.UpdateHealthBar(info.currentHP, info.maxHP);
+            if (info.controller != null) { info.controller.UpdateHealthBar(info.currentHP, info.maxHP); info.controller.SetIdentityVisual(info.data); }
             activeMonsters.Add(info);
         }
         isBattling = activeMonsters.Count > 0;
@@ -122,12 +128,12 @@ public class CombatManager : MonoBehaviour
             // Revalidate immediately before damage; there are no suspended coroutines
             // that can wake up after a load/retry or a pooled object is reused.
             if (!info.controller.CanAttack(heroController, space)) continue;
-            int finalDmg = CombatBalance.Damage(info.data.GetCalculatedDamage(), info.controller.attackMode, Random.Range(0.85f, 1f));
+            int finalDmg = SynergyMath.Damage(info.data, runtimeHeroData, info.controller.attackMode, Random.Range(0.85f, 1f));
             info.controller.PlayAttackFeedback();
             if (info.controller.attackMode == AttackMode.Melee)
             {
                 Impact(BodyPosition(heroController.heroRect, space), false);
-                DealDamageToHero(finalDmg);
+                ApplyIncomingDamage(finalDmg, IdentityDisplay.Describe(info.data));
             }
             else Launch(info, false, info.controller.attackMode, finalDmg, duration, space, 0);
             if (!isBattling) return;
@@ -162,7 +168,7 @@ public class CombatManager : MonoBehaviour
             {
                 var victim = activeMonsters[i];
                 if (heroController.CanAttack(victim.controller, space))
-                    Launch(victim, true, heroWindupMode, RollHeroDamage(),
+                    Launch(victim, true, heroWindupMode, RollHeroDamage(victim.data),
                         AttackDuration(heroWindupMode, runtimeHeroData.baseAttackSpeed), space, i);
             }
         }
@@ -171,9 +177,9 @@ public class CombatManager : MonoBehaviour
             if (heroWindupMode == AttackMode.Melee)
             {
                 Impact(BodyPosition(target.controller.Rect, space), false);
-                DealDamageToMonster(target, RollHeroDamage());
+                DealDamageToMonster(target, RollHeroDamage(target.data));
             }
-            else Launch(target, true, heroWindupMode, RollHeroDamage(),
+            else Launch(target, true, heroWindupMode, RollHeroDamage(target.data),
                 AttackDuration(heroWindupMode, runtimeHeroData.baseAttackSpeed), space, 0);
         }
     }
@@ -185,14 +191,15 @@ public class CombatManager : MonoBehaviour
 
     private void ResetHeroAttack() { heroAttackTimer = 0f; heroWindupTarget = null; }
 
-    private int RollHeroDamage()
+    private int RollHeroDamage(EntityDataSO defender)
     {
-        return CombatBalance.Damage(runtimeHeroData.GetCalculatedDamage(), heroWindupMode, Random.Range(0.85f, 1f));
+        return SynergyMath.Damage(runtimeHeroData, defender, heroWindupMode, Random.Range(0.85f, 1f));
     }
 
     private void DealDamageToMonster(ActiveMonsterInfo target, int finalDmg)
     {
         target.currentHP = Mathf.Max(0, target.currentHP - finalDmg);
+        if (gameManager != null) gameManager.UpdateEventLog(IdentityDisplay.Describe(target.data) + " nhận " + finalDmg + " sát thương.");
         if (target.controller != null)
         {
             target.controller.UpdateHealthBar(target.currentHP, target.maxHP);
@@ -213,17 +220,20 @@ public class CombatManager : MonoBehaviour
         currentHeroHP = Mathf.Clamp(currentHeroHP + Random.Range(5, 11), 0, maxHeroHP);
         heroController.UpdateHealthBar(currentHeroHP, maxHeroHP);
         heroController.UpdateAtkUI(runtimeHeroData.GetCalculatedDamage());
-        if (gameManager != null) gameManager.UpdateEventLog($"Đánh bại quái. Nhận {exp} EXP!");
+        if (gameManager != null) gameManager.UpdateEventLog($"Hạ {IdentityDisplay.Describe(target.data)}. Nhận {exp} EXP!");
         monsterSpawner.DespawnMonster(target.go);
         if (target.data != null) Destroy(target.data);
         if (gameManager != null) gameManager.OnMonsterDied(target.go);
         if (activeMonsters.Count == 0) { isBattling = false; ResetHeroAttack(); }
     }
 
-    private void DealDamageToHero(int damage)
+    private void DealDamageToHero(int damage) { ApplyIncomingDamage(damage, "Quái"); }
+    private void ApplyIncomingDamage(int damage, string source)
     {
-        damage *= gameManager != null && gameManager.IsHardMode ? 2 : 1;
+        float mapScale = WorldNames.MonsterDamageScale(runtimeHeroData.mapNumber);
+        damage = Mathf.Max(1, Mathf.RoundToInt(damage * mapScale * (gameManager != null && gameManager.IsHardMode ? 2 : 1)));
         currentHeroHP = Mathf.Max(0, currentHeroHP - damage);
+        if (gameManager != null) gameManager.UpdateEventLog(source + " gây " + damage + " sát thương cho " + runtimeHeroData.entityName + (currentHeroHP == 0 ? ": đã tử vong." : "."));
         heroController.UpdateHealthBar(currentHeroHP, maxHeroHP);
         heroController.ShowDamage(damage);
         if (currentHeroHP > 0) return;
@@ -244,7 +254,7 @@ public class CombatManager : MonoBehaviour
         bool magic = mode == AttackMode.RangedMagic;
         Vector2 start = BodyPosition(fromHero ? heroController.heroRect : monster.controller.Rect, space);
         var shot = new Projectile { monster = monster, fromHero = fromHero, magic = magic,
-            start = start, damage = damage,
+            start = start, damage = damage, source = IdentityDisplay.Describe(fromHero ? runtimeHeroData : monster.data),
             duration = BattleMotion.FlightDuration(magic ? magicFlightTime : physicalFlightTime, interval),
             arc = magic ? Mathf.Max(0f, magicArcHeight) * (1f + (spread % 3) * 0.22f) : 0f };
         if (effects != null)
@@ -279,7 +289,7 @@ public class CombatManager : MonoBehaviour
             RemoveProjectile(i); // remove BEFORE callbacks can clear the entire battle
             Impact(end, shot.magic);
             if (shot.fromHero) DealDamageToMonster(shot.monster, shot.damage);
-            else DealDamageToHero(shot.damage);
+            else ApplyIncomingDamage(shot.damage, shot.source);
             if (!isBattling) { ClearProjectiles(false); return; }
         }
     }

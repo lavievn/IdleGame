@@ -35,6 +35,8 @@ public class GameManager : MonoBehaviour
     public float CurrentWaveDelay => BattleMotion.WaveDelay(waveDelay,
         heroController != null ? Mathf.Max(0f, heroController.moveSpeed) : 150f);
     private bool hasDeployed = false;
+    private readonly Queue<string> recentEvents = new Queue<string>();
+    public EntityDataSO HeroData => runtimeHeroData;
     private enum MenuChoice { None, Continue, NewGame }
     private MenuChoice pendingChoice;
     private SaveSlot continueSlot;
@@ -57,12 +59,14 @@ public class GameManager : MonoBehaviour
 
         // Do not load or overwrite a save until the player confirms a choice.
         startMenu = StartMenuUI.Install(this);
+        ConfigureEventLog();
         SetupPreGameUI();
         StartCoroutine(AutoSaveRoutine());
     }
 
     private void InitHeroData()
     {
+        recentEvents.Clear();
         if (runtimeHeroData != null) Destroy(runtimeHeroData);
         runtimeHeroData = Instantiate(heroDataSO);
         runtimeHeroData.currentLevel = 1;
@@ -71,19 +75,59 @@ public class GameManager : MonoBehaviour
         runtimeHeroData.addedHealth = runtimeHeroData.addedDamage = runtimeHeroData.statPoints = 0;
         runtimeHeroData.balanceVersion = 0;
         runtimeHeroData.difficulty = 0;
+        runtimeHeroData.mapNumber = 1; runtimeHeroData.completedWavesInMap = 0; runtimeHeroData.mapProgressVersion = 1;
+        runtimeHeroData.mapName = ""; WorldNames.AssignMap(runtimeHeroData);
 
         {
             runtimeHeroData.gender = Random.Range(0, 2) == 0 ? GenderType.Nam : GenderType.Nu;
             runtimeHeroData.entityName = NameDatabase.GetRandomName(runtimeHeroData.gender);
-            runtimeHeroData.spiritRoots = SynergyMath.GenerateRandomRoots();
+            runtimeHeroData.race = SynergyMath.GenerateRandomRace();
+            SynergyMath.GenerateRootProfile(runtimeHeroData);
         }
 
         runtimeHeroData.ApplyHeroBalance();
-        if (heroController != null) heroController.SetGenderVisual(runtimeHeroData.gender);
+        if (heroController != null) heroController.SetIdentityVisual(runtimeHeroData);
         SetupPreGameUI();
     }
 
-    public void UpdateEventLog(string message) { if (eventLogText != null) eventLogText.text = message; }
+    private void ConfigureEventLog()
+    {
+        if (eventLog != null)
+        {
+            var rect = eventLog.GetComponent<RectTransform>();
+            rect.anchorMin = new Vector2(.1f,1f); rect.anchorMax = new Vector2(.9f,1f);
+            rect.pivot = new Vector2(.5f,1f); rect.anchoredPosition = new Vector2(0,-18);
+            rect.sizeDelta = new Vector2(0,180); eventLog.raycastTarget = false;
+            eventLog.color = new Color(.06f,.08f,.12f,.85f);
+        }
+        if (eventLogText != null)
+        {
+            var rect = eventLogText.GetComponent<RectTransform>();
+            rect.anchorMin = Vector2.zero; rect.anchorMax = Vector2.one;
+            rect.pivot = new Vector2(.5f,.5f); rect.anchoredPosition = Vector2.zero;
+            rect.sizeDelta = new Vector2(-24,-16);
+            eventLogText.enableAutoSizing = true; eventLogText.fontSizeMin = 14; eventLogText.fontSizeMax = 26;
+            eventLogText.alignment = TextAlignmentOptions.TopLeft; eventLogText.raycastTarget = false;
+            eventLogText.color = new Color(1,1,1,1);
+        }
+    }
+    public void UpdateEventLog(string message)
+    {
+        if (!string.IsNullOrEmpty(message)) { recentEvents.Enqueue(message); while (recentEvents.Count > 2) recentEvents.Dequeue(); }
+        if (eventLogText == null) return;
+        string header = runtimeHeroData == null ? "" : IdentityDisplay.Describe(runtimeHeroData) +
+            " · Cấp " + runtimeHeroData.currentLevel + "\n" + runtimeHeroData.mapName + " · " + WorldNames.Terrain(runtimeHeroData.mapTerrain) +
+            (IsHardMode ? " (Khó)" : " (Thường)") + " · Đợt " + (runtimeHeroData.completedWavesInMap + 1) + "/5\n";
+        eventLogText.text = header + string.Join("\n", recentEvents.ToArray());
+    }
+    private void RestoreProgress()
+    {
+        runtimeHeroData.NormalizeMapProgress();
+        runtimeHeroData.NormalizeRoots();
+        if (UIManager.Instance != null) UIManager.Instance.ApplyDifficultyVisual(IsHardMode);
+        UpdateEventLog(null);
+    }
+
 
     private void SetupPreGameUI()
     {
@@ -104,6 +148,7 @@ public class GameManager : MonoBehaviour
         hasDeployed = true;
         if (combatManager != null) combatManager.SetupHeroInfo(runtimeHeroData);
         heroController.SpawnHero();
+        RestoreProgress();
         CallNextWave();
     }
 
@@ -118,14 +163,15 @@ public class GameManager : MonoBehaviour
         }
     }
 
-    public void ForceManualLoad(int slotIndex)
+    public void ForceManualLoad(int slotIndex) { TryLoadSlot((SaveSlot)slotIndex, false); }
+    public bool LoadAndContinue(SaveSlot slot) { return TryLoadSlot(slot, true); }
+    private bool TryLoadSlot(SaveSlot slot, bool deploy)
     {
-        if (HasPendingConfirmation) return;
-        SaveSlot slot = (SaveSlot)slotIndex;
-        if (saveManager == null || !saveManager.HasSave(slot)) return;
+        if (HasPendingConfirmation) return false;
+        if (saveManager == null || !saveManager.HasSave(slot)) { UpdateEventLog("Ô lưu này chưa có dữ liệu."); return false; }
 
         var loaded = Instantiate(heroDataSO != null ? heroDataSO : runtimeHeroData);
-        if (!saveManager.LoadGame(loaded, slot)) { Destroy(loaded); UpdateEventLog("Không đọc được bản lưu."); return; }
+        if (!saveManager.LoadGame(loaded, slot)) { Destroy(loaded); UpdateEventLog("Không đọc được bản lưu."); return false; }
         // 1. Dọn dẹp sạch sẽ chiến trường tránh kẹt Coroutine
         hasDeployed = false;
         CancelNextWave();
@@ -137,14 +183,18 @@ public class GameManager : MonoBehaviour
         // 2. Nạp dữ liệu mới
         if (runtimeHeroData != null) Destroy(runtimeHeroData);
         runtimeHeroData = loaded;
+        recentEvents.Clear();
         continueSlot = slot;
         manualSelection = true;
 
         // 3. Đưa người chơi về Màn Hình Chờ an toàn
         runtimeHeroData.ApplyHeroBalance();
-        if (heroController != null) heroController.SetGenderVisual(runtimeHeroData.gender);
+        if (heroController != null) heroController.SetIdentityVisual(runtimeHeroData);
         SetupPreGameUI();
+        RestoreProgress();
         UpdateEventLog($"Đã tải dữ liệu từ: {slot}");
+        if (deploy) DeployHero();
+        return true;
     }
     // ------------------------------------------
 
@@ -177,6 +227,7 @@ public class GameManager : MonoBehaviour
         hasDeployed = true;
         if (combatManager != null) combatManager.SetupHeroInfo(runtimeHeroData);
         heroController.SpawnHero();
+        RestoreProgress();
         CallNextWave();
     }
 
@@ -198,7 +249,12 @@ public class GameManager : MonoBehaviour
         if (startMenu != null) startMenu.ShowConfirmation(message);
         else if (confirmationPopup != null) confirmationPopup.SetActive(true);
     }
-    public void OnResetClicked() { OnNewGameClicked(); }
+    public void OnResetClicked()
+    {
+        if (HasPendingConfirmation) return;
+        OnNewGameClicked();
+        ShowConfirmation("Đặt lại nhân vật sẽ xóa bản lưu tự động và hai ô lưu tay, tạo nhân vật mới từ cấp 1. Bạn có muốn tiếp tục?");
+    }
     public void OnConfirmResetClicked()
     {
         var choice = pendingChoice;
@@ -217,6 +273,7 @@ public class GameManager : MonoBehaviour
             }
             if (runtimeHeroData != null) Destroy(runtimeHeroData);
             runtimeHeroData = loaded;
+            recentEvents.Clear();
             runtimeHeroData.ApplyHeroBalance();
         }
         else
@@ -234,7 +291,7 @@ public class GameManager : MonoBehaviour
         }
         manualSelection = false;
         if (gameOverPanel != null) gameOverPanel.SetActive(false);
-        if (heroController != null) heroController.SetGenderVisual(runtimeHeroData.gender);
+        if (heroController != null) heroController.SetIdentityVisual(runtimeHeroData);
         if (UIManager.Instance != null) UIManager.Instance.ApplyDifficultyVisual(IsHardMode);
         DeployHero();
         if (saveManager != null && !saveManager.SaveGame(runtimeHeroData, SaveSlot.AutoSave))
@@ -245,14 +302,8 @@ public class GameManager : MonoBehaviour
         pendingChoice = MenuChoice.None;
         if (confirmationPopup != null) confirmationPopup.SetActive(false);
     }
-    public void SetDifficulty(int mode)
-    {
-        if (HasPendingConfirmation || runtimeHeroData == null) return;
-        runtimeHeroData.difficulty = mode == 1 ? 1 : 0;
-        runtimeHeroData.isDirty = true;
-        if (UIManager.Instance != null) UIManager.Instance.ApplyDifficultyVisual(IsHardMode);
-        UpdateEventLog(IsHardMode ? "Khó: sát thương quái ×2, EXP nhận ×3." : "Bình thường: sát thương quái ×1, EXP nhận ×1.");
-    }
+    // Legacy scene bindings cannot override the automatic map sequence.
+    public void SetDifficulty(int mode) { if (runtimeHeroData != null) RestoreProgress(); }
 
     public void SetHeroAttackMode(int modeIndex)
     {
@@ -268,6 +319,7 @@ public class GameManager : MonoBehaviour
         if (!hasDeployed || monsterSpawner == null) return;
         activeMonsters.Clear();
 
+        RestoreProgress();
         int spawnCount = Random.Range(1, 4);
         for (int i = 0; i < spawnCount; i++)
         {
@@ -287,7 +339,15 @@ public class GameManager : MonoBehaviour
     {
         if (!activeMonsters.Remove(deadMonster)) return;
         if (hasDeployed && activeMonsters.Count == 0 && nextWaveCoroutine == null)
+        {
+            if (runtimeHeroData != null)
+            {
+                bool changed = runtimeHeroData.CompleteWave();
+                RestoreProgress();
+                if (changed) UpdateEventLog("Đã tới " + runtimeHeroData.mapName + (IsHardMode ? ": quái gây sát thương ×2, EXP ×3." : ": bình thường."));
+            }
             nextWaveCoroutine = StartCoroutine(WaitAndCallNextWave());
+        }
     }
 
     private IEnumerator WaitAndCallNextWave()

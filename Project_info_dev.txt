@@ -18,6 +18,19 @@ bị dính xuống đáy. Sau bản vá Windows 0.0.4.51f, ngày 09/10/2026 ngư
 xác nhận đã thử: System Menu hoạt động, scale cửa sổ đúng logic và cho phép
 merge PR #1 vào main. Chưa có xác nhận riêng về kéo cửa sổ, DPI/màn hình phụ.
 
+CẬP NHẬT ĐANG PHÁT TRIỂN: 0.0.4.54, nền feature/0.0.4.52 (PR #2).
+Nhánh feature/0.0.4.54; chưa nghiệm thu Unity/Windows và chưa tự merge main.
+Hiện trạng mới nhất: Docs/Release_0.0.4.54.md; bản .52 bên dưới giữ lịch sử.
+Đã thêm Vô, Nhất–Ngũ trọng, sát thương khắc ±30% ngang trọng và bảng chênh
+trọng đã chốt; đã thay cách trung bình đều .52 bằng tỷ trọng linh căn.
+Hero/quái random độc lập, không tạo cha mẹ; chưa triển khai sinh sản F1/F2/F3.
+Thêm 30 tên map/6 địa hình giữ chỗ, 50 tên thú và tên quái theo căn trội.
+Quái map1 gây 50% sát thương chuẩn, tăng 10 điểm phần trăm tại các lượt map
+20/40/60/80/100, chặn100%. Tên lặp không làm reset bộ đếm. Giữ5đợt/map,
+5mapthường/1mapkhó; mapkhó vẫn ×2 sát thương quái và ×3 EXP.
+Save cũ mặc định Tam trọng/chia đều và gán tên map một lần; không random lại
+hero khi load. Chi tiết RNG, điểm chưa chốt và thứ tự thử nằm trong release .54.
+
 Nhãn trạng thái dùng xuyên suốt:
 [ĐỊNH HƯỚNG] ý định thiết kế, chưa phải chức năng chạy được.
 [CÓ MÃ] đã đối chiếu hiện thực trong mã; chưa đủ để kết luận build hoạt động.
@@ -124,7 +137,8 @@ TransparentWindow.cs:
   Windows player nhận cạnh nhấn bằng GetAsyncKeyState; UIManager tránh phát
   click lần hai. Editor vẫn dùng InputSystem Mouse.leftButton.wasPressedThisFrame.
 UIManager.cs + CustomInteractable.cs:
-  Đăng ký/hủy vùng tương tác, gọi UnityEvent, bật/tắt menu, chọn độ khó/scale.
+  Đăng ký/hủy vùng tương tác, gọi UnityEvent, menu phân trang tải/reset/scale.
+  0.0.4.52 bỏ chọn độ khó tay; chỉ hiện trang con đang chọn.
   Bản sửa ưu tiên nút con trước container cha; cache RectTransform khi cần.
 StartMenuUI.cs:
   Tạo Tiếp tục/Chơi mới và hộp xác nhận từ mẫu UI hiện có; chặn lựa chọn
@@ -265,8 +279,11 @@ Vật lý xa               0.7 giây/S             1
 Phép xa                 2.0 giây/S             1.8
 Cả hero/quái dùng công thức chu kỳ này. Không gọi S là số giây chờ.
 Sát thương hiện tại = max(1, round(ATK * hệ số kiểu * random(0.85,1))).
-Khó nhân 2 sát thương quái ở lúc nhận đòn. ATK trong UI là chỉ số đã cộng điểm,
-không phải kết quả cuối của mỗi đòn. Chưa tích hợp phòng thủ/crit/khắc hệ vào đây.
+Từ 0.0.4.52, sát thương cơ sở trên được nhân hệ số khắc ngũ hành (xem 9.2),
+rồi làm tròn, tối thiểu 1. Map khó nhân 2 sát thương quái ở lúc nhận đòn.
+ATK trong UI là chỉ số đã cộng điểm,
+không phải kết quả cuối của mỗi đòn. Chưa tích hợp phòng thủ/crit; khắc
+ngũ hành đã được nối vào tất cả kiểu đánh cho cả hai bên từ 0.0.4.52.
 
 Mục tiêu cân bằng mới: hero yếu hơn rõ rệt, không bất tử từ cấp 20; mọi cấp có
 rủi ro chết trong các tình huống phù hợp. Không có cơ chế ép chết ở một thời điểm.
@@ -377,6 +394,22 @@ mở lại sau resize, kéo ground lên/xuống/trái/phải, thả ngoài cửa
 DPI 100/125/150% và màn hình phụ nếu có. Không ghi là đã fix hoàn toàn trước
 khi nhận kết quả này. Các script camera/hero/monster/cân bằng không thay đổi.
 
+[CÓ MÃ, CẦN THỬ — MENU/MAP 0.0.4.52]
+Menu chính: Thoát; Tải bản lưu; Đặt lại nhân vật; Kích thước cửa sổ.
+Tải -> Save 1/Save 2/Auto/Quay lại; tải thành công vào chơi ngay; slot trống
+hoặc hỏng báo trên log và không xóa trận hiện tại. API lưu tay vẫn còn nhưng
+menu mới không có nút lưu tay theo danh sách người dùng yêu cầu.
+Đặt lại -> hỏi Có/Không; Có xóa cả 3 save và tạo nhân vật cấp 1, Không giữ
+nguyên. Thoát dùng Application.Quit và cơ chế autosave hiện có.
+Kích thước ->800/500/250/Quay lại; mở menu lại trở về trang chính.
+Startup Windowed800x450, scale rộng800/500/250 cao450/281/141 (làm tròn9/16).
+Bỏ MapIcon và nút độ khó; legacy SetDifficulty không ghi đè chu kỳ.
+Mỗi map 5 đợt quái, mỗi đợt 1–3 quái; chỉ hạ hết đợt mới tính hoàn thành.
+Map6/12/18… khó, xanh như màu map khó cũ: sát thương quái x2, EXP x3.
+Qua map khó trở về thường. Save giữ mapNumber/completedWavesInMap; chết
+không tính thắng đợt, retry/load chơi lại đợt đang dở. Save trước0.0.4.52
+không có tiến độ map thì bắt đầu map1/đợt1, giữ cấp/EXP/tên/tộc/linh căn.
+
 Khoảng trống overlay chưa được ghi là hoàn thiện:
 - Bản TransparentWindow hiện không có thuật toán clamp Virtual Screen như
   lời bàn giao rất cũ. Hỗ trợ đa màn hình/DPI khác nhau vẫn phải thử và bổ sung.
@@ -415,9 +448,20 @@ Cần chốt bảng hoặc công thức duy nhất, linh căn trùng có đượ
 cách chọn hai hệ khi cha/mẹ đã có nhiều căn, và vai trò Độc/Băng so với ngũ hành.
 [CÓ MÃ]
 ElementType có Kim, Moc, Thuy, Hoa, Tho, Doc, Bang.
-GenerateRandomRoots hiện chọn NGẪU NHIÊN 1–2 căn trong 7 hệ, có thể trùng.
-Chưa thực hiện 60/25/10/5, chưa có giảm buff theo số căn.
-GetElementalMultiplier hiện trả 1.0; không có tương khắc thực tế trong combat.
+Trước 0.0.4.52: GenerateRandomRoots chọn 1–2 căn trong 7 hệ, có thể trùng;
+GetElementalMultiplier luôn trả 1, chưa áp khắc vào combat.
+0.0.4.52: hero mới và từng đời quái random tộc đều trong 5 enum hiện có;
+đây là mặc định triển khai, không phải tỷ lệ tộc đã được chốt trong chat cũ.
+Sinh linh căn ngũ hành theo 60/25/10/5; ConLai luôn 2 căn; không lặp hệ.
+Giữ ID enum và Độc/Băng trong bản lưu cũ, không sinh mới hai hệ này.
+Ngũ hành: Kim khắc Mộc, Mộc khắc Thổ, Thổ khắc Thủy, Thủy khắc Hỏa,
+Hỏa khắc Kim. Khắc x1.25, bị khắc x0.8, cặp khác x1 (người dùng chọn).
+Độc/Băng tạm trung tính vì chưa chốt. Nhiều căn lấy trung bình các cặp;
+không cộng dồn hệ số theo số căn. Không áp bảng 75/70/60 lên ATK nền:
+bảng này là định hướng hiệu suất buff từng hệ, chưa có hệ buff để áp.
+Màu Kim/Mộc/Hỏa/Thủy/Thổ: vàng/xanh lá/đỏ/xanh biển/nâu. Pha trung bình
+màu các căn rồi trộn 50% với màu gốc, giữ alpha; không chồng màu qua pool.
+Bonus tộc riêng, cấu trúc cha/mẹ và linh thể nguồn gốc vẫn chưa triển khai.
 
 9.3 Vũ khí thay hệ phái cứng
 [ĐỊNH HƯỚNG]
@@ -452,8 +496,11 @@ biên trước tích hợp, không gọi công thức CombatBalance tạm là th
   linh căn hero. Chưa có bảng cốt truyện đầy đủ trong bộ mã đã đọc.
 - Ngoại hình thử: khối đơn giản, phân biệt giới tính và màu hệ trước khi có
   asset thật; hero nam xanh lá, nữ đỏ nhạt đã có SetGenderVisual.
-- Từng yêu cầu khoảng 50 tên có giới tính. Hiện NameDatabase có 10 tên nam
-  và 10 tên nữ; chọn giới tính rồi tên cùng nhóm, chưa đủ danh sách 50.
+- Nguồn NameDatabase vẫn 10 tên nam/10 tên nữ, chưa mở rộng danh sách 50.
+  Từ 0.0.4.52, random 1–3 âm tiết; mỗi âm tiết lấy trong tối đa 3 âm tiết
+  của một tên nguồn khác nhau, giữ nhóm giới tính. Tên đã lưu không reroll.
+- Nhật ký trên: tên hero, tộc, linh căn, cấp/map/đợt và 2 sự kiện gần nhất;
+  sự kiện đòn đánh/hạ quái ghi tên/tộc/hệ quái, sát thương và EXP.
 - RankDatabase: Luyện Khí, Trúc Cơ, Kết Đan, Nguyên Anh, Hoá Thần, Luyện Hư,
   Hợp Thể, Đại Thừa, Độ Kiếp, Chân Tiên; mỗi 10 cấp đổi nhóm, sau đó trả Tiên Đế.
   Đây chỉ là ánh xạ tên hiện tại, chưa hệ đột phá/cảnh giới thật.
@@ -478,14 +525,14 @@ Hạng mục                         Trạng thái                     Việc c�
 Camera vùng đỏ/AI riêng           Có mã; user thử camera tốt      Kiểm tra hồi quy khi thêm đội/đồ
 1–3 quái, ba thế, đạn/VFX          Có mã; kiểm tra logic đạt       Thử hình/nhịp trong Unity build
 Cân bằng EXP/HP/ATK/tốc đánh       Có mã; mô phỏng, Play Mode      Chốt nhịp chơi sau thêm hệ sâu
-Tiếp tục/Chơi mới/Khó             Có mã; user báo Play Mode ổn    Windows và save hỏng/gián đoạn
+Tiếp tục/Chơi mới/chu kỳ map       0.0.4.52 tự chọn độ khó          5 đợt/map, mỗi map 6 là khó
 Ground 1.2/Grass1 loop/trang trí   Có mã; hình học đạt             Thử texture/render/resize
-Nút menu đỏ + scale desktop       Người dùng xác nhận hoạt động   Kéo/DPI/màn hình phụ chưa xác nhận
+Nút menu đỏ + scale desktop       0.0.4.51f user xác nhận          0.0.4.52 menu mới cần thử
 Manual Save/Load/Exit popup       Có mã, nối scene chưa đủ        Rà null/ref/layout/modal
 Phân bổ điểm                     Có API và điểm trong dữ liệu    Chưa có UI dùng được xác nhận
-Linh căn/tộc                      Enum/RNG nền đơn giản           Luật xác suất/buff/chủng tộc
+Linh căn/tộc/tên                   0.0.4.52 RNG và ghép tên         Bonus tộc/buff/huyết thống chưa có
 Vũ khí/võ học/trang bị             Enum/helper/ý tưởng             Chốt dữ liệu, làm vòng tối thiểu
-Khắc hệ/phòng thủ/crit             Chưa tích hợp vào combat        Chốt thứ tự tính và test
+Khắc hệ/phòng thủ/crit             Ngũ hành đã nối 0.0.4.52         Phòng thủ/crit chưa triển khai
 Boss/elite/block/cancel            Định hướng                      Chưa làm
 Đội hình/nhiều hero                Có danh sách thực thể nền       Chưa có quản lý đội/dữ liệu đội
 Luân Hồi/ngoại tuyến/Lò Bát Quái    Định hướng                      Chưa có đặc tả/mã xác nhận
@@ -512,7 +559,7 @@ P3. Kho/rơi đồ/đội hình/boss, rồi đặc tả Luân Hồi/ngoại tuy�
 11. KIỂM THỬ ĐÃ CÓ VÀ NHỮNG ĐIỀU KHÔNG ĐƯỢC SUY RA
 
 Tests~ dùng Unity test doubles, không phải Unity engine thực.
-Bộ gần nhất: 68 tình huống regression đạt, kết quả Tests~/test-results.txt.
+Bộ gần nhất: 78 tình huống regression đạt, kết quả Tests~/test-results.txt.
 Bao gồm AI/tầm, frame dài, các Canvas scale, camera nhanh/chậm/đứng/chết,
 nhịp đợt, đạn tới đích/hủy/pool, cân bằng/chuyển save, lựa chọn khởi đầu/độ
 khó, phủ nền và menu desktop. Nhánh UNITY_STANDALONE_WIN biên dịch được
@@ -571,7 +618,8 @@ Các mô tả đã bị thay thế:
 - Hồi5HP/giây/hồi đầy khi lên cấp -> chỉ5–10 khi giết.
 - battleLockCount/tâm giao tranh/minmax anchor -> vùng đỏ và không gian Ground.
 - Save bên cạnh exe/SaveData, nền đa luồng ->persistentDataPath/Saves, đồng bộ.
-- "Đã làm tương khắc" -> helper hiện trả1, chưa nối combat.
+- Trước0.0.4.52, tuyên bố "đã làm tương khắc" không khớp helper trả1;
+  từ0.0.4.52 đã nối ngũ hành theo hệ số người dùng chọn.
 - "UI quái thường tối giản xong" -> vẫn HP/damage để thử.
 
 13. QUY ƯỚC LÀM VIỆC VÀ BÀN GIAO VỀ SAU
@@ -605,17 +653,21 @@ Các mô tả đã bị thay thế:
 
 14. ĐIỂM BÀN GIAO HIỆN TẠI
 
-Phiên bản hiện tại: 0.0.4.51f, giữ nguyên; nền GitHub b33bb1d8.
-Việc gần nhất: vá lại MenuArea Button, input native, startup window và kéo.
-Gói: IdleGame_0.0.4.51f_WindowsOverlayFix.zip; có mã nền mới nhất và hướng dẫn.
-Kết quả:68 regression logic đạt; Windows branch biên dịch bằng stubs.
-Chưa chạy Unity/WinAPI thực tế ở môi trường sửa. Người dùng đã thử và xác
-nhận System Menu/scale hoạt động, cho phép merge PR #1 vào main ngày
-09/10/2026. Kéo cửa sổ/DPI/màn hình phụ còn chờ xác nhận riêng.
-Chưa triển khai boss/đội/ngoại tuyến/đồ trong lượt này.
+Phiên bản đang thử:0.0.4.52, nềnmainf6140282; feature/0.0.4.52.
+Tên ghép/tộc/linh căn/khắc hệ/log, menu phân trang và chu kỳ map đã có mã.
+78 regression đạt với Unity test doubles; nhánh Windows đã biên dịch bằng
+stubs. Người dùng cần thử Unity/Windows thực tế trước khi nghiệm thu/merge.
+Bản0.0.4.51f menu/scale đã được user thử; không suy ra UI0.0.4.52 đã đạt.
+Thống kê/hướng dẫn chi tiết:Docs/Release_0.0.4.52.md.
 
 Khi mở phiên tiếp theo:
 1. Đọc file này; xác định local đã nhập gói nào và main đã thay đổi chưa.
 2. Đọc script/scene liên quan tới yêu cầu mới và phản hồi test Windows.
 3. Giữ camera vùng đỏ làm chuẩn; xử lý đúng lỗi hiện hữu trước hệ sâu mới.
 4. Sau thay đổi, cập nhật ma trận tiến độ, lịch sử và điểm bàn giao này.
+
+CẬP NHẬT CUỐI — 0.0.4.54 (ưu tiên hơn ghi chép .52 phía trên)
+Đối chiếu Docs/Release_0.0.4.54.md và mã tại feature/0.0.4.54. Tên map/địa hình,
+tên quái, linh căn Vô/trọng/tỷ trọng và bảng khắc mới đã có mã. Quái và hero
+random độc lập; mô tả cha mẹ chỉ là dự định. Không dùng bảng ×1.25/×0.8 .52
+làm hiện trạng. Chưa có xác nhận Play Mode/Windows của người dùng cho .54.

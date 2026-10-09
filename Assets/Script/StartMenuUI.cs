@@ -39,8 +39,8 @@ public class StartMenuUI : MonoBehaviour
         popupRect.sizeDelta = Vector2.zero; popupRect.anchoredPosition = Vector2.zero;
         popup.GetComponent<Image>().color = new Color(0,0,0,.9f);
         menu.message = menu.Label(textTemplate, popupRect, "", new Vector2(0,55), new Vector2(410,145), 24);
-        menu.MakeButton(template, popupRect, "Xác nhận", new Vector2(-110,-65), gm.OnConfirmResetClicked);
-        menu.MakeButton(template, popupRect, "Hủy", new Vector2(110,-65), gm.OnCancelResetClicked);
+        menu.MakeButton(template, popupRect, "Có", new Vector2(-110,-65), gm.OnConfirmResetClicked);
+        menu.MakeButton(template, popupRect, "Không", new Vector2(110,-65), gm.OnCancelResetClicked);
         gm.confirmationPopup = popup;
         popup.SetActive(false);
         // Register the new modal with the existing transparent-window hit testing.
