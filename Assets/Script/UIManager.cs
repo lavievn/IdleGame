@@ -386,7 +386,7 @@ public class UIManager : MonoBehaviour
         string stats=hero!=null ? hero.FullStatDetails : "Chưa có nhân vật.";
         if (gm!=null)
         {
-            if (gm.HeroData!=null) stats=IdentityDisplay.Describe(gm.HeroData)+" · Cấp "+gm.HeroData.currentLevel+"\n"+stats;
+            if (gm.HeroData!=null) stats=TuTienCore.IdentityDisplay.Describe(gm.HeroData)+" · Cấp "+gm.HeroData.currentLevel+"\n"+stats;
             stats+="\n\nSỰ KIỆN\n"+gm.FullEventHistory;
             var details=gm.DamageHistory;
             stats+="\n\nCHI TIẾT SÁT THƯƠNG\n"+(details.Length==0?"Chưa có đòn đánh.":string.Join("\n\n",details));
