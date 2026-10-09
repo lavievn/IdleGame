@@ -37,12 +37,31 @@ public class GameManager : MonoBehaviour
         heroController != null ? Mathf.Max(0f, heroController.moveSpeed) : 150f);
     private bool hasDeployed = false;
     private readonly Queue<string> recentEvents = new Queue<string>();
+    private readonly Queue<string> recentDamage = new Queue<string>();
+    private readonly List<string> fullEventHistory = new List<string>();
+    public string FullEventHistory => fullEventHistory.Count==0 ? "Chưa có sự kiện." : string.Join("\n",fullEventHistory.ToArray());
     private readonly List<string> damageHistory = new List<string>();
     public string[] DamageHistory => damageHistory.ToArray();
     public void RecordDamage(string detail)
     {
         damageHistory.Insert(0, detail);
         if (damageHistory.Count > 30) damageHistory.RemoveAt(damageHistory.Count - 1);
+    }
+    public void RecordDamageEvent(string source,string target,int damage)
+    {
+        recentDamage.Enqueue(ShortName(source)+" → "+ShortName(target)+" - "+damage);
+        while(recentDamage.Count>2) recentDamage.Dequeue();
+        RefreshCompactLog();
+    }
+    private static string ShortName(string s)
+    {
+        s=string.IsNullOrWhiteSpace(s)?"?":s.Trim();
+        return s.Length<=16?s:s.Substring(0,15)+"…";
+    }
+    private void RefreshCompactLog()
+    {
+        if (eventLogText!=null) eventLogText.text=recentDamage.Count==0
+            ?"Chưa có sát thương":string.Join("\n",recentDamage.ToArray());
     }
     public EntityDataSO HeroData => runtimeHeroData;
     private enum MenuChoice { None, Continue, NewGame }
@@ -74,7 +93,7 @@ public class GameManager : MonoBehaviour
 
     private void InitHeroData()
     {
-        recentEvents.Clear();
+        recentEvents.Clear(); recentDamage.Clear(); fullEventHistory.Clear();
         damageHistory.Clear();
         if (runtimeHeroData != null) Destroy(runtimeHeroData);
         runtimeHeroData = Instantiate(heroDataSO);
@@ -116,19 +135,22 @@ public class GameManager : MonoBehaviour
             rect.anchorMin = Vector2.zero; rect.anchorMax = Vector2.one;
             rect.pivot = new Vector2(.5f,.5f); rect.anchoredPosition = new Vector2(-52,0);
             rect.sizeDelta = new Vector2(-136,-16);
-            UIManager.ReadableText(eventLogText,14);
+            UIManager.ReadableText(eventLogText,16);
             eventLogText.alignment = TextAlignmentOptions.TopLeft; eventLogText.raycastTarget = false;
             eventLogText.color = new Color(1,1,1,1);
         }
     }
     public void UpdateEventLog(string message)
     {
-        if (!string.IsNullOrEmpty(message)) { recentEvents.Enqueue(message); while (recentEvents.Count > 2) recentEvents.Dequeue(); }
-        if (eventLogText == null) return;
-        string header = runtimeHeroData == null ? "" : IdentityDisplay.Describe(runtimeHeroData) +
-            " · Cấp " + runtimeHeroData.currentLevel + "\n" + WorldNames.Region(runtimeHeroData.regionTheme) + " [" + ((runtimeHeroData.mapNumber - 1) % 5 + 1) + "/5] · " + runtimeHeroData.mapName + " · " + WorldNames.Terrain(runtimeHeroData.mapTerrain) +
-            (IsHardMode ? " (Khó)" : " (Thường)") + " · Đợt " + (runtimeHeroData.completedWavesInMap + 1) + "/5\n";
-        eventLogText.text = header + string.Join("\n", recentEvents.ToArray());
+        if (!string.IsNullOrEmpty(message))
+        {
+            recentEvents.Enqueue(message);
+            while(recentEvents.Count>2)recentEvents.Dequeue();
+            fullEventHistory.Insert(0,message);
+            if(fullEventHistory.Count>80)fullEventHistory.RemoveAt(fullEventHistory.Count-1);
+        }
+        // Only compact damage lines are shown on the battlefield.
+        RefreshCompactLog();
     }
     private void RestoreProgress()
     {
@@ -194,7 +216,7 @@ public class GameManager : MonoBehaviour
         // 2. Nạp dữ liệu mới
         if (runtimeHeroData != null) Destroy(runtimeHeroData);
         runtimeHeroData = loaded;
-        recentEvents.Clear();
+        recentEvents.Clear(); recentDamage.Clear(); fullEventHistory.Clear();
         damageHistory.Clear();
         continueSlot = slot;
         manualSelection = true;
@@ -293,7 +315,7 @@ public class GameManager : MonoBehaviour
             }
             if (runtimeHeroData != null) Destroy(runtimeHeroData);
             runtimeHeroData = loaded;
-            recentEvents.Clear();
+            recentEvents.Clear(); recentDamage.Clear(); fullEventHistory.Clear();
             runtimeHeroData.ApplyHeroBalance();
         }
         else

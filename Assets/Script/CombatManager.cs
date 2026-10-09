@@ -249,7 +249,11 @@ public class CombatManager : MonoBehaviour
     private void DealDamageToMonster(ActiveMonsterInfo target, int finalDmg)
     {
         target.currentHP = Mathf.Max(0, target.currentHP - finalDmg);
-        if (gameManager != null) gameManager.UpdateEventLog(IdentityDisplay.Describe(target.data) + " nhận " + finalDmg + " sát thương.");
+        if (gameManager != null)
+        {
+            gameManager.RecordDamageEvent(runtimeHeroData!=null?runtimeHeroData.entityName:"Hero",target.data!=null?target.data.entityName:"Quái",finalDmg);
+            gameManager.UpdateEventLog(IdentityDisplay.Describe(target.data) + " nhận " + finalDmg + " sát thương.");
+        }
         if (target.controller != null)
         {
             target.controller.UpdateHealthBar(target.currentHP, target.maxHP);
@@ -285,7 +289,11 @@ public class CombatManager : MonoBehaviour
         damage = Mathf.Max(1, Mathf.RoundToInt(damage * mapScale * hardScale));
         if (gameManager != null && trace != null) gameManager.RecordDamage(trace.Describe(mapScale, hardScale, damage));
         currentHeroHP = Mathf.Max(0, currentHeroHP - damage);
-        if (gameManager != null) gameManager.UpdateEventLog(source + " gây " + damage + " sát thương cho " + runtimeHeroData.entityName + (currentHeroHP == 0 ? ": đã tử vong." : "."));
+        if (gameManager != null)
+        {
+            gameManager.RecordDamageEvent(source,runtimeHeroData!=null?runtimeHeroData.entityName:"Hero",damage);
+            gameManager.UpdateEventLog(source + " gây " + damage + " sát thương cho " + runtimeHeroData.entityName + (currentHeroHP == 0 ? ": đã tử vong." : "."));
+        }
         heroController.UpdateHealthBar(currentHeroHP, maxHeroHP);
         heroController.ShowDamage(damage);
         if (currentHeroHP > 0) return;

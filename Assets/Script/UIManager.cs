@@ -134,9 +134,9 @@ public class UIManager : MonoBehaviour
         MakeMenuButton(loadPage, "LoadSave2", "Save 2", 1, () => LoadSlot(SaveSlot.ManualSave2));
         MakeMenuButton(loadPage, "LoadAuto", "Auto", 2, () => LoadSlot(SaveSlot.AutoSave));
         MakeMenuButton(loadPage, "LoadBack", "Quay lại", 3, () => ShowPage(mainPage));
-        MakeMenuButton(sizePage, "Size800", "800", 0, () => ExecuteScale(800));
-        MakeMenuButton(sizePage, "Size500", "500", 1, () => ExecuteScale(500));
-        MakeMenuButton(sizePage, "Size250", "250", 2, () => ExecuteScale(250));
+        MakeMenuButton(sizePage, "Size600", "Nhỏ · 600", 0, () => ExecuteScale(600));
+        MakeMenuButton(sizePage, "Size800", "Vừa · 800", 1, () => ExecuteScale(800));
+        MakeMenuButton(sizePage, "Size1150", "Lớn · 1150", 2, () => ExecuteScale(1150));
         MakeMenuButton(sizePage, "SizeBack", "Quay lại", 3, () => ShowPage(mainPage));
         ShowPage(mainPage);
         // Scene lists can omit this trigger. Discover and register it explicitly.
@@ -203,6 +203,8 @@ public class UIManager : MonoBehaviour
     public bool IsPaused { get; private set; }
     private TMPro.TextMeshProUGUI pauseText, damageText;
     private GameObject damagePanel;
+    private HeroController heroForUI;
+    private readonly RectTransform[] attackButtons = new RectTransform[3];
     private string[] displayedDamage = new string[0];
     private int damagePage;
     public void SetPaused(bool paused)
@@ -255,6 +257,8 @@ public class UIManager : MonoBehaviour
         devButton = SmallButton(canvas,"DEVBButton","DEVB",new Vector2(1,1),new Vector2(1,1),new Vector2(-120,-4),new Vector2(56,24),OpenDevBalance);
         statsButton = SmallButton(canvas,"StatsButton","Chỉ số",new Vector2(1,1),new Vector2(1,1),new Vector2(-180,-4),new Vector2(60,24),OpenHeroStats);
         devUI = new DevBalanceUI(this, hudCanvas);
+        heroForUI = hero;
+        InstallAttackModeButtons();
         SetPaused(false);
         if (gm != null && gm.eventLog != null) {
             // Reserve space at the right of the log so Info cannot obscure a formula/name.
@@ -273,9 +277,9 @@ public class UIManager : MonoBehaviour
             var rect = (RectTransform)panel.transform;rect.SetParent(canvas,false);
             rect.anchorMin = rect.anchorMax = Vector2.zero;rect.pivot = Vector2.zero;
             rect.anchoredPosition = new Vector2(16,166);rect.sizeDelta = new Vector2(440,256);
-            panel.GetComponent<Image>().color = new Color(.04f,.06f,.1f,.8f);panel.GetComponent<Image>().raycastTarget = false;
+            panel.GetComponent<Image>().color = new Color(.04f,.06f,.1f,.95f);panel.GetComponent<Image>().raycastTarget = false;
             var text = MakeLabel(rect,"",new Vector2(220,-128),new Vector2(416,236));
-            text.alignment = TMPro.TextAlignmentOptions.TopLeft;text.fontSizeMin = 16;text.fontSizeMax = 24;
+            text.alignment = TMPro.TextAlignmentOptions.TopLeft; ReadableText(text,16);
             hero.atkStatusText = text; statsPanel = rect;
             if (transparentWindow != null) transparentWindow.RegisterClickable(rect);
         }
@@ -295,6 +299,43 @@ public class UIManager : MonoBehaviour
         SmallButton(body,"DamageClose","Đóng",new Vector2(1,0),new Vector2(1,0),new Vector2(-18,12),new Vector2(160,54),CloseDamageInfo);
         if (transparentWindow != null) transparentWindow.RegisterClickable(body);
         damagePanel.SetActive(false);
+    }
+    private void InstallAttackModeButtons()
+    {
+        string[] names = { "Kiếm", "Cung", "Phép" };
+        string[] captions = { "Cận chiến", "Cung", "Phép" };
+        foreach (var rect in Object.FindObjectsByType<RectTransform>(FindObjectsInactive.Include, FindObjectsSortMode.None))
+            for (int i=0;i<3;i++)
+                if (rect.gameObject.name == names[i] && attackButtons[i] == null)
+                {
+                    // Old scene controls have x~1760; preserve original UnityEvent callbacks.
+                    rect.SetParent(hudCanvas,false);
+                    rect.gameObject.SetActive(true);
+                    var click = rect.GetComponent<CustomInteractable>();
+                    if (click != null) RegisterInteractable(click);
+                    if (transparentWindow != null) transparentWindow.RegisterClickable(rect);
+                    var caption=rect.GetComponentInChildren<TMPro.TextMeshProUGUI>(true);
+                    if (caption != null)
+                    {
+                        caption.gameObject.SetActive(true); caption.text=captions[i];
+                        caption.alignment=TMPro.TextAlignmentOptions.Center;
+                        var rt=(RectTransform)caption.transform;
+                        rt.anchorMin=Vector2.zero;rt.anchorMax=Vector2.one;rt.pivot=new Vector2(.5f,.5f);
+                        rt.anchoredPosition=Vector2.zero;rt.sizeDelta=new Vector2(-4,-2);ReadableText(caption,14);
+                    }
+                    attackButtons[i]=rect;
+                }
+    }
+    private void RefreshAttackModeSelection()
+    {
+        if (heroForUI==null) return;
+        for(int i=0;i<attackButtons.Length;i++)
+        {
+            if (attackButtons[i]==null) continue;
+            var bg=attackButtons[i].GetComponent<Image>();
+            if (bg!=null) bg.color=(int)heroForUI.attackMode==i
+                ? new Color(.55f,.34f,.08f,.96f) : new Color(.14f,.24f,.34f,.95f);
+        }
     }
     public void OpenDamageInfo()
     {
@@ -341,12 +382,21 @@ public class UIManager : MonoBehaviour
     public void OpenHeroStats()
     {
         var hero = Object.FindFirstObjectByType<HeroController>();
-        OpenTextDetail(1,hero != null && hero.atkStatusText != null ? hero.atkStatusText.text : "Chưa có nhân vật.");
+        var gm=Object.FindFirstObjectByType<GameManager>();
+        string stats=hero!=null ? hero.FullStatDetails : "Chưa có nhân vật.";
+        if (gm!=null)
+        {
+            if (gm.HeroData!=null) stats=IdentityDisplay.Describe(gm.HeroData)+" · Cấp "+gm.HeroData.currentLevel+"\n"+stats;
+            stats+="\n\nSỰ KIỆN\n"+gm.FullEventHistory;
+            var details=gm.DamageHistory;
+            stats+="\n\nCHI TIẾT SÁT THƯƠNG\n"+(details.Length==0?"Chưa có đòn đánh.":string.Join("\n\n",details));
+        }
+        OpenTextDetail(1,stats);
     }
     public void OpenLogInfo()
     {
         var gm = Object.FindFirstObjectByType<GameManager>();
-        OpenTextDetail(2,gm != null && gm.eventLogText != null ? gm.eventLogText.text : "Chưa có nhật ký.");
+        OpenTextDetail(2,gm != null ? gm.FullEventHistory : "Chưa có nhật ký.");
     }
     private void OpenTextDetail(int kind,string text)
     {
@@ -411,6 +461,7 @@ public class UIManager : MonoBehaviour
             RegisterInteractable(item); if (transparentWindow != null) transparentWindow.RegisterClickable(item.GetRect()); button.enabled = false;
         }
         if (controlsChanged || Screen.width != layoutWidth || Screen.height != layoutHeight) LayoutReadableUI();
+        RefreshAttackModeSelection();
     }
     private static void PlaceUI(RectTransform rect,Vector2 anchor,Vector2 pivot,Vector2 position,Vector2 size)
     {
@@ -429,6 +480,8 @@ public class UIManager : MonoBehaviour
         PlaceUI(pauseRect,new Vector2(1,1),new Vector2(1,1),new Vector2(-4,-4),new Vector2(76,24));
         PlaceUI(devButton,new Vector2(1,1),new Vector2(1,1),new Vector2(-84,-4),new Vector2(52,24));
         PlaceUI(statsButton,new Vector2(1,1),new Vector2(1,1),new Vector2(-140,-4),new Vector2(60,24));
+        for(int i=0;i<3;i++) PlaceUI(attackButtons[i],new Vector2(1,1),new Vector2(1,1),
+            new Vector2(-6-(2-i)*78,-112),new Vector2(74,30));
         foreach(var rect in Object.FindObjectsByType<RectTransform>(FindObjectsInactive.Include,FindObjectsSortMode.None))
             if (rect.gameObject.name == "MenuArea") PlaceUI(rect,new Vector2(1,0),new Vector2(1,0),new Vector2(-4,4),new Vector2(64,24));
         if (systemMenu != null) {
@@ -445,12 +498,12 @@ public class UIManager : MonoBehaviour
         }
         if (gm != null && gm.eventLog != null) {
             var log = (RectTransform)gm.eventLog.transform;
-            PlaceUI(log,new Vector2(.5f,1),new Vector2(.5f,1),new Vector2(0,-32),new Vector2(w-12,h<200?54:84));
+            PlaceUI(log,new Vector2(.5f,1),new Vector2(.5f,1),new Vector2(0,-32),new Vector2(w-12,Mathf.Min(66,h*.19f)));
             if (transparentWindow != null) transparentWindow.RegisterClickable(log);
             if (gm.eventLogText != null) { var rt = (RectTransform)gm.eventLogText.transform; rt.anchorMin = Vector2.zero; rt.anchorMax = Vector2.one; rt.pivot = new Vector2(.5f,.5f); rt.sizeDelta = new Vector2(-58,-8); rt.anchoredPosition = new Vector2(-22,0); gm.eventLogText.overflowMode = TMPro.TextOverflowModes.Ellipsis; }
             var info = FindNamedRect("DamageInfoButton"); PlaceUI(info,new Vector2(1,1),new Vector2(1,1),new Vector2(-3,-3),new Vector2(42,22));
         }
-        if (statsPanel != null) { PlaceUI(statsPanel,Vector2.zero,Vector2.zero,new Vector2(6,34),new Vector2(Mathf.Min(400,w-12),142)); statsPanel.gameObject.SetActive(h>=360);
+        if (statsPanel != null) { PlaceUI(statsPanel,new Vector2(0,1),new Vector2(0,1),new Vector2(6,-112),new Vector2(Mathf.Min(315,Mathf.Max(180,w*.52f)),76)); statsPanel.gameObject.SetActive(h>=290);
             var stat = statsPanel.GetComponentInChildren<TMPro.TextMeshProUGUI>(true); if (stat != null) {var rt=(RectTransform)stat.transform;rt.anchorMin=Vector2.zero;rt.anchorMax=Vector2.one;rt.sizeDelta=new Vector2(-12,-12);rt.anchoredPosition=Vector2.zero;rt.pivot=new Vector2(.5f,.5f);}
         }
         if (damagePanel != null) {
@@ -471,7 +524,7 @@ public class UIManager : MonoBehaviour
         // readable pixel font, rather than shrinking a 1920px canvas to 250px.
         foreach(var text in Object.FindObjectsByType<TMPro.TextMeshProUGUI>(FindObjectsInactive.Include,FindObjectsSortMode.None)) {
             if (!text.transform.IsChildOf(hudCanvas)) continue;
-            ReadableText(text,14);
+            ReadableText(text,w>=1000?18f:w>=750?16f:14f);
             if (text.transform.parent != null && text.transform.parent.GetComponent<CustomInteractable>() != null && text != (gm != null ? gm.eventLogText : null)) {
                 var rt = (RectTransform)text.transform; rt.anchorMin=Vector2.zero;rt.anchorMax=Vector2.one;rt.sizeDelta=new Vector2(-8,-4);rt.anchoredPosition=Vector2.zero;rt.pivot=new Vector2(.5f,.5f);
             }
@@ -559,9 +612,9 @@ public class UIManager : MonoBehaviour
         CloseSystemMenu();
     }
 
-    public void Scale250() { ExecuteScale(250); }
+    public void Scale250() { ExecuteScale(600); }
     public void Scale800() { ExecuteScale(800); }
-    public void Scale200() { ExecuteScale(250); }
-    public void Scale500() { ExecuteScale(500); }
-    public void Scale1000() { ExecuteScale(800); }
+    public void Scale200() { ExecuteScale(600); }
+    public void Scale500() { ExecuteScale(600); }
+    public void Scale1000() { ExecuteScale(1150); }
 }

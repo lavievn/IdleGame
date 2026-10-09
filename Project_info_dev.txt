@@ -714,3 +714,11 @@ CẬP NHẬT CUỐI — 0.0.4.54.d_prefinal
 replay wave, không CompleteWave. Chết lưu checkpoint đầu cụm, wave 1; mapVisits
 đếm lượt riêng giữ tăng damage. Các mô tả retry ngay map hiện tại đã hết hiệu lực.
 139 kiểm tra logic đạt, cần Unity/Windows kiểm thử trước final và merge.
+
+
+=== NGUYÊN TẮC THIẾT KẾ NHÂN VẬT (09/10/2026) ===
+HP cơ bản 400 hiện tại chỉ là giá trị kiểm thử logic, KHÔNG phải giá trị cố định trong thiết kế cuối.
+Hướng phát triển: khởi tạo nhân vật ngẫu nhiên theo bối cảnh, cốt truyện, hoàn cảnh xuất hiện; linh căn, tâm pháp, võ học và trang bị đều có thể ảnh hưởng các chỉ số.
+Kiến trúc phải giữ nguyên dữ liệu nền của mỗi nhân vật, cho phép nhiều tầng chỉ số; không khóa hệ thống vào chỉ 3 kiểu tấn công hay gán cứng base HP 400.
+Các thay đổi sau này cần phân biệt base theo nhân vật, hệ số theo lối đánh, thưởng mỗi cấp, hiệu ứng và chỉ số trang bị. Khi thêm random vĩnh viễn nên lưu kết quả vào save, có kế hoạch tương thích save cũ.
+54e chỉ sửa UI. Dự kiến 54f (CHƯA TRIỂN KHAI): Cận chiến HP khởi điểm gấp 2 base thử nghiệm, hồi 3~5*(1+5%*(cấp-1)) khi hạ địch, random +50..100 HP mỗi cấp; cung tốc đánh 150%, sát thương 70%, HP 60%; phép chỉ vận sức khi có mục tiêu, bán kính AoE từ 150 tăng thành 250 theo tọa độ Ground. Thử sức mạnh 5 wave đầu và map khó sau 25 wave.

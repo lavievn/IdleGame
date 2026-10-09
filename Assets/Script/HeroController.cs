@@ -232,11 +232,13 @@ public class HeroController : MonoBehaviour
     }
     public void UpdateHealthBar(int currentHP, int maxHP) { if (hpFillImage != null) hpFillImage.fillAmount = maxHP > 0 ? (float)currentHP / maxHP : 0f; }
     public void UpdateAtkUI(int currentAtk) { if (atkStatusText != null) atkStatusText.text = $"ATK: {currentAtk}"; }
+    public string FullStatDetails { get; private set; } = "Chưa có nhân vật.";
     public void UpdateStats(EntityDataSO data, int currentHP, int maxHP)
     {
         if (atkStatusText == null || data == null) return;
         data.NormalizeRoots();
         var lines = new List<string> { "HP: " + currentHP + "/" + maxHP,
+            "EXP: " + data.currentExp + "/" + data.expToNextLevel,
             "ATK cơ bản: " + data.baseDamage + " + " + data.addedDamage + " = " + data.GetCalculatedDamage() };
         for (int i = 0; i < data.spiritRoots.Count; i++)
             lines.Add("ATK " + IdentityDisplay.Element(data.spiritRoots[i]) + ": " +
@@ -245,7 +247,9 @@ public class HeroController : MonoBehaviour
         float interval = CombatBalance.AttackInterval(attackMode, data.baseAttackSpeed, CombatBalance.HeroDev != null);
         lines.Add("Di chuyển: " + moveSpeed.ToString("0.##") + " đơn vị/giây");
         lines.Add("Tốc đánh: " + (1f / interval).ToString("0.##") + " đòn/giây · " + interval.ToString("0.##") + " giây/đòn");
-        atkStatusText.text = string.Join("\n", lines.ToArray());
+        FullStatDetails=string.Join("\n",lines.ToArray());
+        atkStatusText.text="HP: "+currentHP+"/"+maxHP+"\nATK: "+data.GetCalculatedDamage()+"  |  Cấp: "+data.currentLevel
+            +"\nEXP: "+data.currentExp+"/"+data.expToNextLevel;
     }
     public void ShowDamage(int damageAmount)
     {
