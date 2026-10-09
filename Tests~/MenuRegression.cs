@@ -24,7 +24,7 @@ partial class MotionRegression
         Run("continue asks before loading, cancel preserves save, confirmation loads latest",()=>{
             var f=new Field();SaveManager save;string dir;var gm=MenuManager(f,out save,out dir);
             try {
-                var data=HeroAt(20);data.difficulty=1;Check(save.SaveGame(data,SaveSlot.ManualSave2),"save written");
+                var data=HeroAt(20);data.difficulty=1;data.mapProgressVersion=1;data.mapNumber=6;data.completedWavesInMap=2;Check(save.SaveGame(data,SaveSlot.ManualSave2),"save written");
                 gm.OnContinueClicked();Check(gm.HasPendingConfirmation,"asked first");Check(Get<EntityDataSO>(gm,"runtimeHeroData")==null,"not loaded early");
                 gm.OnCancelResetClicked();Check(save.HasSave(SaveSlot.ManualSave2),"cancel keeps file");
                 gm.OnContinueClicked();gm.OnConfirmResetClicked();
@@ -57,26 +57,25 @@ partial class MotionRegression
             foreach(int mode in new[]{0,1}) {
                 var f=new Field();SaveManager save;string dir;var gm=MenuManager(f,out save,out dir);
                 try {
-                    var hero=HeroAt(20);Set(gm,"runtimeHeroData",hero);f.combat.SetupHeroInfo(hero);gm.SetDifficulty(mode);
+                    var hero=HeroAt(20);hero.mapProgressVersion=1;hero.mapNumber=mode==1?6:1;hero.difficulty=mode;Set(gm,"runtimeHeroData",hero);f.combat.SetupHeroInfo(hero);
                     Set(f.combat,"currentHeroHP",200);
                     typeof(CombatManager).GetMethod("DealDamageToHero",BindingFlags.NonPublic|BindingFlags.Instance).Invoke(f.combat,new object[]{10});
-                    Check(Get<int>(f.combat,"currentHeroHP")==200-(mode==1?20:10),"damage multiplier");
+                    Check(Get<int>(f.combat,"currentHeroHP")==200-(mode==1?10:5),"damage multiplier");
                     var m=f.Monster(-20);f.Battle(m);int expected=CombatBalance.KillExp(f.Enemies[0].data.currentLevel)*(mode==1?3:1);
                     typeof(CombatManager).GetMethod("HandleMonsterDeath",BindingFlags.NonPublic|BindingFlags.Instance).Invoke(f.combat,new object[]{f.Enemies[0]});
                     Check(hero.currentExp==expected,"EXP multiplier");
-                    gm.SetDifficulty(0);Check(!gm.IsHardMode,"switch back normal");
+                    gm.SetDifficulty(0);Check(gm.IsHardMode==(mode==1),"legacy switch cannot change map difficulty");
                 } finally {Directory.Delete(dir,true);}
             }
         });
-        Run("map labels and click bindings select normal and hard",()=>{
+        Run("manual difficulty controls are hidden and cannot override map sequence",()=>{
             var f=new Field();SaveManager save;string dir;var gm=MenuManager(f,out save,out dir);
             try {
-                Set(gm,"runtimeHeroData",HeroAt(1));
+                var data=HeroAt(1);data.mapProgressVersion=1;data.mapNumber=6;data.difficulty=1;Set(gm,"runtimeHeroData",data);
                 var ui=new GameObject().AddComponent<UIManager>();UIManager.Instance=ui;ui.mapMenu=new GameObject(true);
-                var normal=new GameObject(true);normal.name="Map1";normal.transform.parent=ui.mapMenu.transform;normal.AddComponent<TextMeshProUGUI>();var n=normal.AddComponent<CustomInteractable>();
-                var hard=new GameObject(true);hard.name="Map2";hard.transform.parent=ui.mapMenu.transform;hard.AddComponent<TextMeshProUGUI>();var h=hard.AddComponent<CustomInteractable>();
-                Call(ui,"Start");Check(normal.GetComponent<TextMeshProUGUI>().text=="Bình thường"&&hard.GetComponent<TextMeshProUGUI>().text=="Khó","labels replaced");
-                h.onClickEvent.Invoke();Check(gm.IsHardMode,"hard click connected");n.onClickEvent.Invoke();Check(!gm.IsHardMode,"normal click connected");
+                var icon=new GameObject(true);icon.name="MapIcon";
+                Call(ui,"Start");Check(!ui.mapMenu.activeSelf&&!icon.activeSelf,"difficulty menu and icon hidden");
+                gm.SetDifficulty(0);Check(gm.IsHardMode,"legacy difficulty action does not override map");
             } finally {UIManager.Instance=null;Directory.Delete(dir,true);}
         });
         Run("real save IO replaces existing file and clears legacy difficulty",()=>{
@@ -84,7 +83,7 @@ partial class MotionRegression
             try {
                 var data=HeroAt(5);data.difficulty=1;Check(save.SaveGame(data,SaveSlot.AutoSave),"first write");
                 data.currentLevel=8;Check(save.SaveGame(data,SaveSlot.AutoSave),"replace existing file");
-                var read=HeroAt(1);Check(save.LoadGame(read,SaveSlot.AutoSave)&&read.currentLevel==8&&read.difficulty==1,"read replaced content");
+                var read=HeroAt(1);Check(save.LoadGame(read,SaveSlot.AutoSave)&&read.currentLevel==8&&read.difficulty==0,"read replaced content");
                 File.WriteAllText(Path.Combine(dir,"AutoSave.json"),"{\"currentLevel\":2,\"currentExp\":0}");
                 Check(save.LoadGame(read,SaveSlot.AutoSave)&&read.difficulty==0&&read.balanceVersion==0,"legacy absent fields reset");
             } finally {Directory.Delete(dir,true);}

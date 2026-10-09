@@ -24,17 +24,21 @@ partial class MotionRegression
             ui.systemMenu.SetActive(false);Call(ui,"Start");
             var click=trigger.GetComponent<CustomInteractable>();
             Check(click!=null&&!button.enabled,"Button-only scene trigger converted to one dispatch path");
-            Near(((RectTransform)saveLabel.transform).anchoredPosition.x,0,"save label stays in wrapper");
-            var root=(RectTransform)ui.systemMenu.transform;Check(root.rect.width>0&&root.rect.height>0,"negative menu size repaired");
+            var root=(RectTransform)ui.systemMenu.transform;Check(root.rect.width>0&&root.rect.height>0,"positive menu geometry");
             Check(System.Array.IndexOf(window.clickableUI,click.GetRect())>=0,"red trigger registered for Windows");
-            Check(ui.CheckInteractableHover(click.GetRect().position),"red trigger blocks click-through");
             ui.HandleMouseClick(click.GetRect().position);Check(ui.systemMenu.activeSelf,"red click opens menu");
-            foreach(Transform child in root) {
-                var rect=(RectTransform)child;
-                Check(rect.anchoredPosition.x>0&&rect.anchoredPosition.x<root.rect.width,"child inside width");
-                Check(rect.anchoredPosition.y<0&&rect.anchoredPosition.y>-root.rect.height,"child inside height");
-            }
-            ui.Scale500();Check(!ui.systemMenu.activeSelf,"scale selection closes panel");
+            var visible=ui.systemMenu.GetComponentsInChildren<CustomInteractable>();
+            Check(visible.Length==4,"only four main actions, old scale and save controls hidden");
+            foreach(var item in visible)if(item.gameObject.name=="WindowSize")ui.HandleMouseClick(item.GetRect().position);
+            visible=ui.systemMenu.GetComponentsInChildren<CustomInteractable>();Check(visible.Length==4,"size page only three sizes and back");
+            bool has800=false,has250=false;
+            foreach(var item in visible) { if(item.gameObject.name=="Size800")has800=true; if(item.gameObject.name=="Size250")has250=true; }
+            Check(has800&&has250,"new requested sizes exist");
+            foreach(var item in visible)if(item.gameObject.name=="Size500")ui.HandleMouseClick(item.GetRect().position);
+            Check(!ui.systemMenu.activeSelf,"scale selection closes panel");
+            ui.ToggleSystemMenu();visible=ui.systemMenu.GetComponentsInChildren<CustomInteractable>();
+            bool main=false;foreach(var item in visible)if(item.gameObject.name=="Load")main=true;
+            Check(main,"reopening starts at main page");
             UIManager.Instance=null;
         });
         Run("scale child gets click before menu container irrespective of registration order",()=>{

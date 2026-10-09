@@ -70,9 +70,9 @@ partial class MotionRegression
             Check(f.Enemies[1].currentHP==f.Enemies[1].maxHP,"other target untouched");
             int hp=f.Enemies[0].currentHP;CombatStep(f,.1f);Check(f.Enemies[0].currentHP==hp,"exactly once");
         });
-        Run("magic fans curved fireballs to in-range targets only",()=>{
+        Run("magic launches one curved fireball and explodes within radius",()=>{
             var f=new Field();f.hero.ChangeAttackMode(2);var a=f.Monster(-200);var b=f.Monster(-300);var c=f.Monster(-480);f.Battle(a,b,c);f.hero.TickMovement(f.space,0);
-            CombatStep(f,2f);Check(f.combat.PendingProjectileCount==2,"two in range");
+            CombatStep(f,2f);Check(f.combat.PendingProjectileCount==1,"one cast, one fireball");
             CombatStep(f,.6f);foreach(var bolt in Bolts(f))Check(bolt.magic&&bolt.position.y>50,"curved above straight path");
             Check(f.Enemies[0].currentHP==f.Enemies[0].maxHP,"wait for arrival");
             CombatStep(f,.61f);Check(f.Enemies[0].currentHP<f.Enemies[0].maxHP&&f.Enemies[1].currentHP<f.Enemies[1].maxHP,"both arrived");

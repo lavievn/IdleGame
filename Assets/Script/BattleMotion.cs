@@ -10,6 +10,23 @@ public static class BattleMotion
         return position + Math.Sign(target - position) * step;
     }
 
+    public static float ForwardApproach(float position, float target, float range, float speed, float dt, int direction)
+    {
+        float ahead = (target - position) * direction;
+        float step = Math.Min(Math.Max(0f, ahead - range), Math.Max(0f, speed) * Math.Max(0f, dt));
+        return position + direction * step;
+    }
+
+    public static float MonsterApproach(float position, float target, float range, float speed, float dt, float groundMinusCamera)
+    {
+        if (dt <= 0f) return position;
+        float gap = target - position - range;
+        if (gap <= 0f) return position;
+        // This signed offset changes the ground's carrier motion, not the monster's own heading.
+        // The subsequent common camera pan yields base movement + ground pan on screen.
+        return position + Math.Min(gap, Math.Max(0f, speed) * dt + groundMinusCamera);
+    }
+
     // heroX is sampled AFTER the hero's own movement, BEFORE camera translation.
     // Positive pan moves the entire world to the right. Camera speed is a base
     // speed, not a limit: the left zone edge can force a larger step.

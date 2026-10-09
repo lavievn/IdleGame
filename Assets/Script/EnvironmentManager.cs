@@ -1,6 +1,7 @@
 using UnityEngine;
 using TuTienCore;
 
+[DefaultExecutionOrder(-200)]
 public class EnvironmentManager : MonoBehaviour
 {
     public static EnvironmentManager Instance { get; private set; }
@@ -21,6 +22,53 @@ public class EnvironmentManager : MonoBehaviour
     public float CurrentBackgroundSpeed { get; private set; }
 
     private GroundPresentation groundPresentation;
+    private Canvas battleCanvas;
+    private float logicalWidth;
+    private int presentationWidth;
+
+    // The battle keeps one coordinate system for its entire lifetime. Resizing
+    // changes only the screen-space projection, never anchors/ranges/shot endpoints.
+    private void InstallStableBattleCanvas()
+    {
+        if (battleArea == null) return;
+        Canvas sourceCanvas = null;
+        UnityEngine.UI.CanvasScaler sourceScaler = null;
+        for (Transform p = battleArea.parent; p != null; p = p.parent)
+        {
+            var canvas = p.GetComponent<Canvas>();
+            if (canvas == null) continue;
+            sourceCanvas = canvas;
+            sourceScaler = p.GetComponent<UnityEngine.UI.CanvasScaler>();
+            break;
+        }
+        logicalWidth = sourceScaler != null && sourceScaler.uiScaleMode == UnityEngine.UI.CanvasScaler.ScaleMode.ScaleWithScreenSize
+            ? sourceScaler.referenceResolution.x : Width;
+        if (logicalWidth <= 0f) logicalWidth = 1920f;
+        float height = battleArea.rect.height;
+        if (sourceCanvas != null)
+        {
+            var go = new GameObject("Stable Battle Canvas", typeof(RectTransform), typeof(Canvas));
+            battleCanvas = go.GetComponent<Canvas>();
+            battleCanvas.renderMode = RenderMode.ScreenSpaceOverlay;
+            battleCanvas.sortingOrder = sourceCanvas.sortingOrder;
+            battleCanvas.sortingLayerID = sourceCanvas.sortingLayerID;
+            battleCanvas.targetDisplay = sourceCanvas.targetDisplay;
+            battleCanvas.additionalShaderChannels = sourceCanvas.additionalShaderChannels;
+            battleArea.SetParent(go.transform, false);
+        }
+        battleArea.anchorMin = battleArea.anchorMax = new Vector2(.5f, 0f);
+        battleArea.sizeDelta = new Vector2(logicalWidth, height);
+        if (battleCanvas != null) battleArea.anchoredPosition = Vector2.zero;
+        SyncBattleProjection();
+    }
+
+    public void SyncBattleProjection()
+    {
+        if (battleCanvas == null || Screen.width <= 0 || presentationWidth == Screen.width) return;
+        presentationWidth = Screen.width;
+        battleCanvas.scaleFactor = Screen.width / logicalWidth;
+        // Unity owns the Canvas rect. Do not resize/reposition Ground or actors here.
+    }
 
     public bool HasLoopingTerrain => groundPresentation != null;
     public void SetTerrainTint(Color color) { EnsureGroundPresentation(); if (groundPresentation != null) groundPresentation.SetTerrainTint(color); }
@@ -64,6 +112,7 @@ public class EnvironmentManager : MonoBehaviour
             foreach (var detail in groundDetails)
                 if (detail != null) { battleArea = detail.parent as RectTransform; break; }
         }
+        InstallStableBattleCanvas();
     }
 
     void OnDestroy() { if (Instance == this) Instance = null; }
@@ -71,12 +120,16 @@ public class EnvironmentManager : MonoBehaviour
     // All AI moves before CombatManager.Update. Camera presentation runs after both.
     void Update()
     {
-        if (battleArea == null || Width <= 0f) return;
+        SyncBattleProjection(); // Also runs when paused or before deployment.
+        if (Time.timeScale == 0f || battleArea == null || Width <= 0f) return;
         float dt = Time.deltaTime;
         foreach (var hero in HeroController.ActiveHeroes)
             if (hero != null && hero.IsDeployed) hero.TickMovement(this, dt);
+        float cameraPan, backgroundPan;
+        PresentationPan(out cameraPan, out backgroundPan);
+        float groundMinusCamera = backgroundPan - cameraPan;
         foreach (var monster in MonsterController.ActiveMonsters)
-            if (monster != null && monster.IsAlive) monster.TickMovement(this, dt);
+            if (monster != null && monster.IsAlive) monster.TickMovement(this, dt, groundMinusCamera);
         // Monsters may have entered a hero's range during this frame.
         foreach (var hero in HeroController.ActiveHeroes)
             if (hero != null && hero.IsDeployed) hero.RefreshCombatState(this);
@@ -87,7 +140,20 @@ public class EnvironmentManager : MonoBehaviour
         IsScrolling = false;
         CurrentCameraSpeed = 0f;
         CurrentBackgroundSpeed = 0f;
-        if (battleArea == null || Width <= 0f) return;
+        if (Time.timeScale == 0f || battleArea == null || Width <= 0f) return;
+        float pan, backgroundPan;
+        PresentationPan(out pan, out backgroundPan);
+        PanWorld(pan);
+        PanEnvironment(backgroundPan);
+        CurrentBackgroundSpeed = Time.deltaTime > 0f ? backgroundPan / Time.deltaTime : 0f;
+        CurrentCameraSpeed = Time.deltaTime > 0f ? pan / Time.deltaTime : 0f;
+        IsScrolling = Mathf.Abs(pan) > 0.01f;
+    }
+
+    private void PresentationPan(out float cameraPan, out float backgroundPan)
+    {
+        cameraPan = backgroundPan = 0f;
+        if (Time.timeScale == 0f || battleArea == null || Time.deltaTime <= 0f) return;
         if (cameraTarget == null || !cameraTarget.IsCameraSubject)
         {
             cameraTarget = null;
@@ -95,20 +161,10 @@ public class EnvironmentManager : MonoBehaviour
                 if (hero != null && hero.IsDeployed) { cameraTarget = hero; break; }
         }
         if (cameraTarget == null) return;
-
-        // No monster framing and no attraction to the centre. Equal hero/camera
-        // speeds preserve the hero's CURRENT screen position, even after a fight.
-        float pan = BattleMotion.ZoneCameraStep(Position(cameraTarget.heroRect).x,
+        cameraPan = BattleMotion.ZoneCameraStep(Position(cameraTarget.heroRect).x,
             ZoneLeftX, ZoneRightX, scrollSpeed, Time.deltaTime);
-        PanWorld(pan);
-        // Decorative scrolling follows real running distance; a stationary hero
-        // and the background instead receive exactly the same camera pan.
-        float backgroundPan = cameraTarget.IsDeployed && cameraTarget.MovementDistanceThisFrame > 0.001f
-            ? cameraTarget.MovementDistanceThisFrame : pan;
-        PanEnvironment(backgroundPan);
-        CurrentBackgroundSpeed = Time.deltaTime > 0f ? backgroundPan / Time.deltaTime : 0f;
-        CurrentCameraSpeed = Time.deltaTime > 0f ? pan / Time.deltaTime : 0f;
-        IsScrolling = Mathf.Abs(pan) > 0.01f;
+        backgroundPan = cameraTarget.IsDeployed && cameraTarget.MovementDistanceThisFrame > .001f
+            ? cameraTarget.MovementDistanceThisFrame : cameraPan;
     }
 
     public Vector2 Position(RectTransform rect)
@@ -130,7 +186,20 @@ public class EnvironmentManager : MonoBehaviour
         return x >= battleArea.rect.xMin && x <= battleArea.rect.xMax;
     }
 
+    public bool HasEscapedRight(RectTransform rect)
+    {
+        if (rect == null || battleArea == null) return false;
+        // Wait until the entire body has passed the edge, not just its pivot.
+        Vector3 leftFoot = rect.TransformPoint(new Vector3(rect.rect.xMin, 0f, 0f));
+        return battleArea.InverseTransformPoint(leftFoot).x > battleArea.rect.xMax + 32f;
+    }
+
     public float AttackRange(AttackMode mode, bool hero)
+    {
+        var profile = hero ? CombatBalance.HeroDev : CombatBalance.MonsterDev;
+        return profile != null ? profile.Range(mode) : DefaultAttackRange(mode,hero);
+    }
+    public float DefaultAttackRange(AttackMode mode, bool hero)
     {
         float ratio = meleeRangeRatio;
         if (mode == AttackMode.RangedPhysical)
