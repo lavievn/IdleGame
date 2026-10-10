@@ -7,52 +7,81 @@ partial class MotionRegression
 {
     static void CameraFollowTests()
     {
-        Run("54g soft camera accelerates for 1s AFTER crossing the red LEFT edge",()=>{
+        Run("54g soft camera accelerates on LEFT breach, then releases to normal scroll",()=>{
             var camera = new SoftZoneCamera();
             float x = -205f;
             float initialSpeed=0f, speedAfterOneSecond=0f;
             for(int i=0;i<10;i++)
             {
-                x -= 20f; // Hero moves faster than the normal 50-unit camera.
+                x -= 20f; // Hero faster than the default camera.
                 float pan=camera.Pan(x,20f,-200f,200f,-500f,500f,50f,
                     .1f,1f,.62f);
                 x += pan;
                 if (i==0) initialSpeed=pan/.1f;
                 if (i==9) speedAfterOneSecond=pan/.1f;
-                if (i==0) Check(x < -200f,"Hero passes red line, not pinned at it");
+                if (i==0) Check(x < -200f,"red border is NOT a hard clamp");
             }
-            Check(camera.Phase == SoftCameraPhase.Accelerating,
-                "a catch-up is triggered at the red boundary");
+            Check(camera.Phase == SoftCameraPhase.Accelerating,"first chase active");
             Near(camera.AccelerationElapsed,1f,"one-second acceleration window",.001f);
-            Check(speedAfterOneSecond > initialSpeed+100f,
-                "camera accelerates progressively instead of an instant hard clamp");
-            for(int i=0;i<30;i++)
+            Check(speedAfterOneSecond > initialSpeed+100f,"speed ramps gradually");
+
+            bool sawRelease=false, sawNormal=false;
+            for(int i=0;i<80;i++)
             {
                 x-=20f;
                 x+=camera.Pan(x,20f,-200f,200f,-500f,500f,50f,.1f,1f,.62f);
+                if (camera.Phase==SoftCameraPhase.Releasing) sawRelease=true;
+                if (sawRelease && camera.Phase==SoftCameraPhase.Normal) { sawNormal=true; break; }
             }
-            Check(camera.Phase==SoftCameraPhase.Following,"catch-up completes");
-            Near(x,120f,"Hero rests around 62% of 1000-unit view",.5f);
+            Check(sawRelease&&sawNormal,"chase ends and restores baseline camera mode");
+            float previous=x;
             x-=20f;
-            x+=camera.Pan(x,20f,-200f,200f,-500f,500f,50f,.1f,1f,.62f);
-            Near(x,120f,"camera keeps pace after catch-up, no loop",.5f);
+            float restoredPan=camera.Pan(x,20f,-200f,200f,-500f,500f,50f,.1f,1f,.62f);
+            x+=restoredPan;
+            Near(restoredPan,5f,"back to ORIGINAL 50-units/s scroll");
+            Check(x<previous-10f,"Hero is free to drift after recovery");
+
+            bool secondChase=false;
+            for(int i=0;i<70;i++)
+            {
+                x-=20f;
+                x+=camera.Pan(x,20f,-200f,200f,-500f,500f,50f,.1f,1f,.62f);
+                if(camera.Phase==SoftCameraPhase.Accelerating){secondChase=true;break;}
+            }
+            Check(secondChase,"next red-border crossing triggers another catch-up");
         });
 
-        Run("54g soft camera handles right edge without a hard red clamp",()=>{
+        Run("54g RIGHT breach returns smoothly, then camera scrolls again",()=>{
             var camera = new SoftZoneCamera();
             float x=205f;
-            bool crossedFartherRight=false;
-            for(int i=0;i<50;i++)
+            bool crossedFartherRight=false, sawRelease=false, sawNormal=false;
+            for(int i=0;i<100;i++)
             {
-                float pan=camera.Pan(x,0f,-200f,200f,-500f,500f,150f,.1f,1f,.62f);
-                x+=pan;
+                x+=camera.Pan(x,0f,-200f,200f,-500f,500f,150f,.1f,1f,.62f);
                 if(x>210f) crossedFartherRight=true;
+                if(camera.Phase==SoftCameraPhase.Releasing) sawRelease=true;
+                if(sawRelease&&camera.Phase==SoftCameraPhase.Normal){sawNormal=true;break;}
             }
-            Check(crossedFartherRight,"stationary Hero can pass the red right edge");
-            Check(camera.Phase==SoftCameraPhase.Following,"reached stable position");
-            Near(x,120f,"right-side recovery also ends near 62%",.5f);
-            Near(camera.Pan(x,0f,-200f,200f,-500f,500f,150f,.1f,1f,.62f),
-                0f,"camera stops when Hero is stationary",.01f);
+            Check(crossedFartherRight,"Hero can move beyond red right edge");
+            Check(sawRelease&&sawNormal,"right-side recovery has a finite end");
+            float position=x;
+            float normalPan=camera.Pan(x,0f,-200f,200f,-500f,500f,150f,.1f,1f,.62f);
+            Near(normalPan,15f,"idle Hero does not freeze camera forever");
+            Check(position+normalPan>position,"Hero drifts right as normal scrolling resumes");
+        });
+
+        Run("54g slower Hero reaches return target without asymptotic Following lock",()=>{
+            var camera=new SoftZoneCamera();
+            float x=205f;
+            bool released=false, normalAgain=false;
+            for(int i=0;i<100;i++)
+            {
+                x-=4f; // 40 units/s movement against 150 units/s scrolling.
+                x+=camera.Pan(x,4f,-200,200,-500,500,150,.1f,1f,.62f);
+                if(camera.Phase==SoftCameraPhase.Releasing) released=true;
+                if(released&&camera.Phase==SoftCameraPhase.Normal){normalAgain=true;break;}
+            }
+            Check(released&&normalAgain,"corrected pre-walk error eventually ends chase");
         });
 
         Run("54g normal scroll stays unchanged while Hero remains inside red",()=>{

@@ -104,17 +104,24 @@ public static class DamagePopupMotion
 
 // Camera velocity control in Ground-local units. The red zone is a soft trigger,
 // NEVER a hard clamp on hero position. The physical screen edges remain safety bounds.
-public enum SoftCameraPhase { Normal, Accelerating, Following }
+public enum SoftCameraPhase { Normal, Accelerating, Releasing }
 
 public sealed class SoftZoneCamera
 {
     public SoftCameraPhase Phase { get; private set; } = SoftCameraPhase.Normal;
     public float AccelerationElapsed { get; private set; }
+    // Brief velocity blend after recovery. Unlike the old Following state,
+    // Releasing ALWAYS ends: it never locks the Hero to one screen position.
+    public const float ReleaseSeconds = .4f;
+    private float releaseElapsed;
+    private float releaseStartSpeed;
 
     public void Reset()
     {
         Phase = SoftCameraPhase.Normal;
         AccelerationElapsed = 0f;
+        releaseElapsed = 0f;
+        releaseStartSpeed = 0f;
     }
 
     private static float Clamp(float x, float lo, float hi)
@@ -148,25 +155,31 @@ public sealed class SoftZoneCamera
             AccelerationElapsed += dt;
             float t = Clamp(AccelerationElapsed / Math.Max(.001f,accelerationSeconds),0f,1f);
             float ramp = t*t*(3f - 2f*t);
-            // Feed-forward matches the hero's actual walking distance; proportional
-            // error then brings them back toward ~62% of the stable Ground viewport.
+            // heroX is ALREADY sampled after the Hero's walking step.
+            // Using goal-heroX together with walking feed-forward double-counts
+            // that step and can make the recovery converge just past the goal,
+            // never exit Accelerating. Correct against the pre-walk position.
             float walkSpeed = Math.Max(0f,heroWalkDistance) / dt;
-            float desiredSpeed = walkSpeed + (goal - heroX) * 2f;
+            float preWalkHeroX = heroX + Math.Max(0f,heroWalkDistance);
+            float desiredSpeed = walkSpeed + (goal - preWalkHeroX) * 2f;
             float speed = normalSpeed + (desiredSpeed - normalSpeed) * ramp;
             pan = speed * dt;
 
-            // No snapping to the RED boundary. Stop only at the desired resting
-            // position and then track the hero at their actual pace.
+            // No snapping to the RED boundary. Ease toward the preferred
+            // position, then RELEASE back to normal scroll instead of locking.
             float error = goal - heroX;
             if (error > 0f && pan > error) pan = error;
             if (error < 0f && pan < error) pan = error;
         }
-        else if (Phase == SoftCameraPhase.Following)
+        else if (Phase == SoftCameraPhase.Releasing)
         {
-            // Prevent an endless "drift → red edge → chase → drift" loop.
-            // Once caught, matching walk keeps the hero near the resting point;
-            // if they stand to attack the camera also rests.
-            pan = Math.Max(0f,heroWalkDistance);
+            // End the catch-up smoothly over a short fixed interval and return
+            // to normal scrolling. The Hero is free to drift again in the red
+            // zone. A later edge crossing initiates a NEW catch-up cycle.
+            releaseElapsed += dt;
+            float t = Clamp(releaseElapsed / ReleaseSeconds,0f,1f);
+            float eased = t*t*(3f - 2f*t);
+            pan = (releaseStartSpeed + (normalSpeed - releaseStartSpeed) * eased) * dt;
         }
 
         // A hero may pass the red boundary; only the *physical* viewport is
@@ -174,8 +187,16 @@ public sealed class SoftZoneCamera
         float safety = Math.Min(32f,(viewRight-viewLeft)*.03f);
         pan = Clamp(pan,viewLeft+safety-heroX,viewRight-safety-heroX);
 
-        if (Phase == SoftCameraPhase.Accelerating && Math.Abs(goal - (heroX+pan)) <= .3f)
-            Phase = SoftCameraPhase.Following;
+        if (Phase == SoftCameraPhase.Accelerating && Math.Abs(goal - (heroX+pan)) <= 1f)
+        {
+            Phase = SoftCameraPhase.Releasing;
+            releaseStartSpeed = pan / dt;
+            releaseElapsed = 0f;
+        }
+        else if (Phase == SoftCameraPhase.Releasing && releaseElapsed >= ReleaseSeconds)
+        {
+            Reset(); // Critical: no permanent Following state.
+        }
 
         return pan;
     }

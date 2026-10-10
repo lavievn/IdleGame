@@ -47,9 +47,14 @@ bị trôi chậm theo camera khi Hero cận di chuyển tới. Không đổi ba
 [CÓ MÃ — TINH CHỈNH CAMERA MỀM CUỐI .54g, 10/10/2026] Vùng đỏ không
 còn là ranh giới khóa tọa độ Hero: khi vượt biên, camera ngay lập tức bắt
 đầu đuổi và tăng/điều chỉnh tốc độ trong 1 giây (smoothstep), đưa Hero về
-khoảng 62% chiều ngang Ground. Sau khi đuổi kịp camera theo nhịp chuyển
-động Hero (dừng Hero thì camera dừng) để không gây vòng lặp đuổi. Không
-có bước chờ bất động 1 giây: cách thử cũ đã bị người dùng yêu cầu revert.
+khoảng 62% chiều ngang Ground. Bản 9733a4d có LỖI GIỮ CỐ ĐỊNH HERO:
+Following đặt cameraPan=heroWalkDistance vô hạn, khiến Hero khóa ở 62%;
+đã được người dùng báo ngày 10/10/2026. BẢN SỬA HIỆN TẠI không có trạng
+thái Following vô hạn: sau khi về đích, hòa camera về scrollSpeed trong
+0.4 giây rồi trở lại Normal. Hero tiếp tục trôi tự nhiên, vượt biên lần
+nữa sẽ khởi tạo lượt đuổi mới. Công thức sai số mục tiêu cũng được sửa:
+tính từ vị trí Hero trước bước di chuyển, không cộng bước walk hai lần.
+Không có bước chờ 1 giây: cách thử cũ đã được revert.
 Camera giới hạn mềm chỉ với mép đỏ, giới hạn cứng an toàn chỉ là mép cửa
 sổ thực. EnvironmentManager dùng một cặp pan tính ở Update cho cả
 monster compensation và LateUpdate, không nhân đôi tăng tốc; phần camera
@@ -829,16 +834,19 @@ camera tăng tốc đuổi Hero khi Hero vượt ngưỡng.
 - Camera **tăng tốc dần TRONG 1 GIÂY**, bắt đầu ngay khi vượt ranh giới;
 KHÔNG chờ 1 giây rồi mới dịch chuyển camera.
 - Khi bắt kịp thì hướng đến khoảng 62% chiều ngang Ground (hơi lệch phải
-tâm); ngừng điều chỉnh bổ sung, duy trì theo nhịp Hero. Trường hợp Hero
-đứng yên, camera dừng thay vì lặp đuổi/camera trôi vào biên lại.
+tâm); HOÀ TRỞ LẠI tốc độ cuộn mặc định trong 0,4 giây rồi NGỪNG ĐUỔI.
+Camera tiếp tục cuộn thông thường ngay cả khi Hero đứng đánh. Hero lại
+trôi trong vùng đỏ, sau đó có thể kích hoạt đuổi lần hai và lần tiếp.
+Không dùng cơ chế Following giữ Hero cố định nữa.
 - Trong vùng đỏ trước khi có truy đuổi, giữ cuộn nền như logic hiện hành;
 ngoài vùng đỏ không ghim ngay ở biên đỏ. Chỉ mép thực của cửa sổ giữ an toàn.
 
 Thiết kế kỹ thuật triển khai:
-- BattleMotion.cs: SoftZoneCamera (Normal/Accelerating/Following). Khi Hero
-vượt ranh giới, nội suy smoothstep 1 giây từ scrollSpeed về tốc độ đuổi,
-xác định theo quãng di chuyển thật Hero + sai số với x mong muốn. Camera
-không viết lại tọa độ logic Hero; chỉ tính pan toàn cảnh.
+- BattleMotion.cs: SoftZoneCamera (Normal/Accelerating/Releasing). Khi Hero
+vượt ranh giới, nội suy smoothstep 1 giây từ scrollSpeed về tốc độ đuổi;
+sai số mục tiêu tính theo vị trí trước bước Hero đi. Khi gần x=.62 thì
+Releasing=0,4 giây chuyển về scrollSpeed, trả trạng thái Normal. Không
+viết lại tọa độ Hero hay giới hạn tại biên đỏ, chỉ tính pan toàn cảnh.
 - EnvironmentManager.cs: option useSoftZoneCamera mặc định true, mốc 1 giây
 và x=.62 có thể chỉnh trong Inspector; dùng cùng plannedCameraPan và
 plannedBackgroundPan cho AI trong Update và PanWorld/PanEnvironment của
@@ -846,9 +854,9 @@ LateUpdate, để quái đang đứng đánh vẫn bám Ground trong lúc tăng 
 - FollowHero/Retry reset trạng thái camera, không tích lũy đồng hồ gia tốc
 khi pause. Hero chết tiếp tục dùng nhánh camera trước đó.
 - Tests~/MotionRegression.cs bảo tồn kiểm thử camera cũ bằng cách chọn
-useSoftZoneCamera=false trong fixture; CameraFollowRegression.cs gồm 5
-trường hợp mới (trái/phải, tốc tăng trong 1s, trạng thái bám khi Hero dừng,
-pause/respawn, đồng bộ quái và Ground).
+useSoftZoneCamera=false trong fixture; CameraFollowRegression.cs gồm 6
+trường hợp (trái/phải, tốc tăng trong 1s, THOÁT TRẠNG THÁI ĐUỔI, TRÔI
+TRỞ LẠI VÀ ĐUỔI LẦN HAI, Hero chậm, pause/respawn, đồng bộ quái và Ground).
 - Đã thử mô phỏng các tình huống toán học để xem chuyển động không bị nhảy
 ngay ở biên đỏ, nhưng KHÔNG có Unity Editor, Windows build hay Play Mode
 thực nghiệm trong môi trường sửa; chưa tuyên bố đã hoàn thành nghiệm thu.
@@ -862,3 +870,33 @@ quái, wave, UI. Main không tự động cập nhật khi sửa nhánh .54g.
 vào mép vùng đỏ; cần đo theo từng frame các giá trị heroWorldX,
 scrollSpeed, heroWalkDistance, plannedCameraPan, plannedBackgroundPan,
 trạng thái SoftZoneCamera và deltaTime rồi mới điều chỉnh hệ số bám.
+
+
+17. SỬA LỖI KHÓA CAMERA SAU LẦN ĐUỔI ĐẦU TIÊN — 11/10/2026
+
+Phản hồi thực tế từ user: lượt đầu Hero tới biên trái chạy tạm ổn, sau
+đó Hero bị cố định tại vị trí lệch phải gần 62%, camera không còn cuộn
+theo quy tắc tốc độ nền thông thường. Kiểm tra mã 9733a4d xác nhận
+SoftCameraPhase.Following không hề có lối thoát và tính pan mỗi khung bằng
+MovementDistanceThisFrame của Hero. Đây là bug implement của assistant,
+không phải thay đổi yêu cầu.
+
+Đã thay Following bằng Releasing 0.4 giây, rồi Reset() sang Normal.
+Camera trở về scrollSpeed mặc định, Hero không bị khóa vị trí. Khi Hero
+đi nhanh/chậm hơn scrollSpeed, vị trí tương đối phải tiếp tục đổi
+trong vùng đỏ và vùng đỏ sẽ kích hoạt thêm nhiều lượt đuổi khi vượt
+biên. Khi tốc hai bên bằng nhau thì nhân vật có thể đứng yên TƯƠNG ĐỐI
+do vận tốc triệt tiêu, không có trạng thái khóa trong mã.
+
+Sửa thêm công thức sai số camera: tọa độ heroX tại thời điểm Pan() đã
+bao gồm bước đi của Hero. Kết hợp với walk feed-forward phải sử dụng
+preWalkHeroX=heroX+heroWalkDistance khi kiểm tra sai số goal; nếu dùng
+goal-heroX sẽ đếm bước đi hai lần và có thể khiến camera nằm gần 62%
+vĩnh viễn mà không kết thúc đuổi, rõ nhất khi Hero chạy chậm.
+
+Các bài mô phỏng thử fps 30/60/144, Hero nhanh/chậm/đứng; các trường hợp
+có chênh tốc đều có thể tái kích hoạt camera sau khi một lượt kết thúc.
+CameraFollowRegression.cs cập nhật 6 test, trong đó kiểm tra tốc cuộn
+trở lại và đuổi lần hai. Không thay mã Enemy/Melee/Projectile/World.
+Mọi nhận định về thực tế Unity/Windows vẫn chờ user test; đừng tuyên bố
+đã nghiệm thu chỉ từ test giả lập hoặc kiểm tra cấu trúc mã.
