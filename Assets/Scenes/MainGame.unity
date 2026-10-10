@@ -960,6 +960,7 @@ MonoBehaviour:
   cameraPreferredX: 0.5
   cameraIdleRestX: 0.4
   cameraIdleSmoothTime: 0.6
+  cameraUseCombatCenter: 1
   meleeRangeRatio: 0.035
   heroPhysicalRangeRatio: 0.36
   heroMagicRangeRatio: 0.42

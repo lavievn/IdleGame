@@ -32,6 +32,12 @@ public class EnvironmentManager : MonoBehaviour
     [Header("CAMERA KHI HERO DỪNG ĐÁNH")]
     [Range(.3f,.5f)] public float cameraIdleRestX = .4f;
     [Min(.05f)] public float cameraIdleSmoothTime = .6f;
+    [Header("CAMERA — THEO TÂM NHÓM NHÂN VẬT")]
+    // OFF compares against the previous single-Hero camera without a revert.
+    public bool cameraUseCombatCenter = true;
+    public float CurrentCameraFocusX { get; private set; }
+    public int CurrentCameraFocusCount { get; private set; }
+    private bool previousCombatCenterMode = true;
     private readonly DeadzoneCamera deadzoneCamera = new DeadzoneCamera();
     private float plannedCameraPan, plannedBackgroundPan;
     private bool hasPlannedPan;
@@ -183,6 +189,31 @@ public class EnvironmentManager : MonoBehaviour
         IsScrolling = Mathf.Abs(pan) > 0.01f;
     }
 
+    // Equal-weight center of all deployed Heroes and living, ON-SCREEN monsters.
+    // Ignore terrain, effects, projectiles, pooled bodies and distant off-screen
+    // spawn points. Sampling before Monster.TickMovement adds at most one frame
+    // of lag but preserves the established Update/LateUpdate shared pan contract.
+    private float CombatCenterX(float fallbackX, out int count)
+    {
+        float sum = 0f;
+        count = 0;
+        foreach (var hero in HeroController.ActiveHeroes)
+        {
+            if (hero == null || !hero.IsDeployed || hero.heroRect == null) continue;
+            sum += Position(hero.heroRect).x;
+            count++;
+        }
+        foreach (var monster in MonsterController.ActiveMonsters)
+        {
+            if (monster == null || !monster.IsAlive || monster.Rect == null) continue;
+            float x = Position(monster.Rect).x;
+            if (x < battleArea.rect.xMin || x > battleArea.rect.xMax) continue;
+            sum += x;
+            count++;
+        }
+        return count == 0 ? fallbackX : sum / count;
+    }
+
     private void PresentationPan(out float cameraPan, out float backgroundPan)
     {
         cameraPan = backgroundPan = 0f;
@@ -193,19 +224,44 @@ public class EnvironmentManager : MonoBehaviour
             foreach (var hero in HeroController.ActiveHeroes)
                 if (hero != null && hero.IsDeployed) { cameraTarget = hero; break; }
         }
-        if (cameraTarget == null) { deadzoneCamera.Reset(); return; }
+        if (cameraTarget == null)
+        {
+            CurrentCameraFocusX = 0f;
+            CurrentCameraFocusCount = 0;
+            deadzoneCamera.Reset();
+            return;
+        }
         float heroX = Position(cameraTarget.heroRect).x;
+        CurrentCameraFocusX = heroX;
+        CurrentCameraFocusCount = 1;
         if (useSoftZoneCamera && cameraTarget.IsDeployed && !cameraTarget.IsDead)
         {
-            // Running: broad 38% deadzone with 0.2s SmoothDamp.
-            // Stopped after walking: ease to 40% if Hero is farther LEFT,
-            // never recenter a newly spawned idle Hero or force slow Heroes
-            // to slide backwards when they stop near the camera center.
-            cameraPan = deadzoneCamera.Pan(heroX,ZoneLeftX,ZoneRightX,
+            int actorCount = 1;
+            float focusX = cameraUseCombatCenter
+                ? CombatCenterX(heroX, out actorCount) : heroX;
+            CurrentCameraFocusX = focusX;
+            CurrentCameraFocusCount = actorCount;
+            if (previousCombatCenterMode != cameraUseCombatCenter)
+            {
+                // Inspector A/B comparison must not inherit velocity or an idle
+                // return from a completely different camera subject.
+                deadzoneCamera.Reset();
+                previousCombatCenterMode = cameraUseCombatCenter;
+            }
+            bool anyHeroMoved = cameraTarget.MovementDistanceThisFrame > .001f;
+            if (cameraUseCombatCenter && !anyHeroMoved)
+                foreach (var hero in HeroController.ActiveHeroes)
+                    if (hero != null && hero.IsDeployed &&
+                        hero.MovementDistanceThisFrame > .001f)
+                    { anyHeroMoved = true; break; }
+
+            // Only the camera SUBJECT changes. Keep the established 38%
+            // deadzone, 0.2s follow, and 40% / 0.6s stop-recovery behavior.
+            // The original Hero position still protects the real screen edge.
+            cameraPan = deadzoneCamera.Pan(focusX,ZoneLeftX,ZoneRightX,
                 battleArea.rect.xMin,battleArea.rect.xMax,Time.deltaTime,
                 cameraSmoothTime,cameraDeadzoneRatio,cameraPreferredX,
-                cameraTarget.MovementDistanceThisFrame > .001f,
-                cameraIdleRestX,cameraIdleSmoothTime);
+                anyHeroMoved,cameraIdleRestX,cameraIdleSmoothTime,heroX);
         }
         else
         {

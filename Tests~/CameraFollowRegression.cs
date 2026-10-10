@@ -136,6 +136,7 @@ partial class MotionRegression
 
         Run("54g Environment: Hero idle and inside deadzone keeps entire Ground still",()=>{
             var f=new Field();f.space.useSoftZoneCamera=true;
+            f.space.cameraUseCombatCenter=false; // Preserve previous single-Hero behavior.
             f.space.cameraSmoothTime=.2f;f.space.cameraDeadzoneRatio=.38f;
             f.space.cameraPreferredX=.5f;
             f.space.cameraIdleRestX=.4f;
@@ -233,6 +234,7 @@ partial class MotionRegression
         Run("54g scene camera recovery: stationary Hero and Ground move together",()=>{
             var f=new Field();
             f.space.useSoftZoneCamera=true;
+            f.space.cameraUseCombatCenter=false;
             f.space.cameraDeadzoneRatio=.38f;
             f.space.cameraIdleRestX=.4f;
             f.space.cameraIdleSmoothTime=.6f;
@@ -254,9 +256,132 @@ partial class MotionRegression
             Near(f.space.CurrentCameraSpeed,0f,"camera stops after return",.2f);
         });
 
+        Run("54g combat center averages visible heroes and alive monsters ONLY",()=>{
+            var f=new Field();f.space.useSoftZoneCamera=true;
+            f.space.cameraUseCombatCenter=true;f.hero.moveSpeed=0f;
+            f.Monster(-100f,AttackMode.RangedMagic);
+            f.Monster(-350f,AttackMode.RangedMagic);
+            f.Monster(-600f,AttackMode.RangedMagic); // Outside viewport, excluded.
+            f.Step(1f/60f);
+            Check(f.space.CurrentCameraFocusCount==3,"Hero + two visible monsters");
+            Near(f.space.CurrentCameraFocusX,-150f,
+                "arithmetic mean (0 -100 -350) / 3; no terrain/projectile",.05f);
+        });
+
+        Run("54g combat center includes multiple deployed Heroes with equal weight",()=>{
+            var f=new Field();f.space.useSoftZoneCamera=true;
+            f.space.cameraUseCombatCenter=true;
+            f.hero.moveSpeed=0f;
+            var hero2=new GameObject().AddComponent<HeroController>();
+            hero2.heroRect=(RectTransform)new GameObject(true).transform;
+            hero2.heroRect.parent=f.ground;
+            Call(hero2,"Awake");
+            hero2.SpawnHero();
+            hero2.moveSpeed=0f;
+            f.space.SetPosition(hero2.heroRect,new Vector2(-100f,0f));
+            f.Monster(-300f,AttackMode.RangedMagic);
+            f.Step(1f/60f);
+            Check(f.space.CurrentCameraFocusCount==3,
+                "two Heroes + one visible monster");
+            Near(f.space.CurrentCameraFocusX,-400f/3f,
+                "all living combatants are equal contributors",.05f);
+            hero2.HideHero();
+            f.Step(1f/60f);
+            Check(f.space.CurrentCameraFocusCount==2,"hidden Hero excluded");
+        });
+
+        Run("54g camera focus toggle restores single-Hero camera exactly",()=>{
+            var group=new Field();group.space.useSoftZoneCamera=true;
+            group.space.cameraUseCombatCenter=true;group.hero.moveSpeed=0f;
+            group.space.SetPosition(group.hero.heroRect,new Vector2(-170f,0f));
+            group.Monster(-330f,AttackMode.RangedMagic);
+            group.Step(.1f);
+            Near(group.space.CurrentCameraFocusX,-250f,"Hero + monster mean");
+            Check(group.space.CurrentCameraSpeed>0f,
+                "group outside deadzone triggers camera correction");
+            Near(group.space.CurrentBackgroundSpeed,group.space.CurrentCameraSpeed,
+                "group camera keeps Ground and world in sync");
+            group.space.cameraUseCombatCenter=false;
+            group.Step(.1f);
+            Check(group.space.CurrentCameraFocusCount==1,
+                "switching modes immediately selects only Hero");
+            Near(group.space.CurrentCameraSpeed,0f,
+                "changing camera mode clears old velocity and idle recovery",.01f);
+
+            var single=new Field();single.space.useSoftZoneCamera=true;
+            single.space.cameraUseCombatCenter=false;single.hero.moveSpeed=0f;
+            single.space.SetPosition(single.hero.heroRect,new Vector2(-170f,0f));
+            single.Monster(-330f,AttackMode.RangedMagic);
+            single.Step(.1f);
+            Near(single.space.CurrentCameraFocusX,-170f,"single-Hero focus");
+            Check(single.space.CurrentCameraFocusCount==1,"toggle disables group sampling");
+            Near(single.space.CurrentCameraSpeed,0f,
+                "Hero still inside old deadzone: camera must stand still",.01f);
+        });
+
+        Run("54g secondary Hero movement participates in group camera stop transition",()=>{
+            var f=new Field();
+            f.space.useSoftZoneCamera=true;
+            f.space.cameraUseCombatCenter=true;
+            var stationary=new GameObject().AddComponent<HeroController>();
+            stationary.heroRect=(RectTransform)new GameObject(true).transform;
+            stationary.heroRect.parent=f.ground;
+            Call(stationary,"Awake");
+            stationary.SpawnHero(); // Becomes cameraTarget, but does not walk.
+            stationary.moveSpeed=0f;
+            f.hero.moveSpeed=700f;
+            for(int i=0;i<6;i++)f.Step(.1f);
+            Check(f.space.CurrentCameraFocusCount==2,
+                "group camera includes both active Heroes");
+            f.hero.moveSpeed=0f;
+            f.Step(.1f);
+            var camera=Get<DeadzoneCamera>(f.space,"deadzoneCamera");
+            Check(camera.IsIdleRecovering,
+                "stopping the OTHER moving Hero triggers 40% group recovery");
+        });
+
+        Run("54g dead or offscreen monsters stop influencing camera center",()=>{
+            var f=new Field();f.space.useSoftZoneCamera=true;
+            f.space.cameraUseCombatCenter=true;f.hero.moveSpeed=0f;
+            var m=f.Monster(-450f,AttackMode.RangedMagic);
+            f.Step(1f/60f);
+            Check(f.space.CurrentCameraFocusCount==2,"visible monster counted");
+            Near(f.space.CurrentCameraFocusX,-225f,"live center before defeat",.05f);
+            float before=f.space.Position(f.hero.heroRect).x;
+            m.MarkDead();
+            f.Step(1f/60f);
+            Check(f.space.CurrentCameraFocusCount==1,"defeated monster excluded");
+            Near(f.space.CurrentCameraFocusX,before,"center returns to Hero before pan",.1f);
+            Check(Math.Abs(f.space.CurrentCameraSpeed)<100f,
+                "removing an actor does not teleport/instantly pan the scene");
+        });
+
+        Run("54g combat center protects Hero and synchronizes Ground during centering",()=>{
+            var f=new Field();f.space.useSoftZoneCamera=true;
+            f.space.cameraUseCombatCenter=true;f.hero.moveSpeed=0f;
+            f.space.SetPosition(f.hero.heroRect,new Vector2(-180f,0f));
+            var m=f.Monster(-320f,AttackMode.RangedMagic);
+            float startH=f.space.Position(f.hero.heroRect).x;
+            float startM=f.space.Position(m.Rect).x;
+            float startG=f.space.Position(f.grass).x;
+            f.Step(.1f);
+            float heroDelta=f.space.Position(f.hero.heroRect).x-startH;
+            Near(f.space.Position(m.Rect).x-startM,heroDelta,
+                "stationary ranged monster follows the shared view pan",.05f);
+            Near(f.space.Position(f.grass).x-startG,heroDelta,
+                "decorative Ground follows the same view pan",.05f);
+            Check(heroDelta>0f,"combat center -250 triggers rightward follow");
+            f.space.SetPosition(f.hero.heroRect,new Vector2(466f,0f));
+            f.space.SetPosition(m.Rect,new Vector2(-450f,0f));
+            f.Step(.1f);
+            Check(f.space.Position(f.hero.heroRect).x <= 470.01f,
+                "centroid cannot push real Hero beyond right screen safety edge");
+        });
+
         Run("54g melee Hero approaching ranged quái: both share the same Ground pan",()=>{
             var f=new Field();
             f.space.useSoftZoneCamera=true;
+            f.space.cameraUseCombatCenter=false;
             f.space.cameraSmoothTime=.2f;f.space.cameraDeadzoneRatio=.38f;
             f.hero.ChangeAttackMode(0);f.hero.moveSpeed=600f;
             var ranged=f.Monster(-110f,AttackMode.RangedPhysical);

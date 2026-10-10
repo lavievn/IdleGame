@@ -19,6 +19,24 @@ bị dính xuống đáy. Sau bản vá Windows 0.0.4.51f, ngày 09/10/2026 ngư
 xác nhận đã thử: System Menu hoạt động, scale cửa sổ đúng logic và cho phép
 merge PR #1 vào main. Chưa có xác nhận riêng về kéo cửa sổ, DPI/màn hình phụ.
 
+CAMERA THỬ NGHIỆM TÂM TẤT CẢ NHÂN VẬT ĐANG GIAO TRANH (11/10/2026)
+Theo yêu cầu mới: GIỮ Deadzone 38%, theo 0.2s, hồi mốc 40%
+sau Hero chạy rồi dừng (0.6s); thay mục tiêu camera là trung bình
+tọa độ X các Hero sống/đang hoạt động + quái còn sống ĐANG TRONG
+viewport. Không tính Ground/texture/cây/cỏ, đạn/VFX, xác/quái pool,
+quái vừa spawn còn ngoài khung hình. Equal weights: nhiều quái có thể
+kéo camera về phía chúng; phải thử wave spawn/death và nhiều quái.
+EnvironmentManager có cờ cameraUseCombatCenter=true (MainGame.unity
+ghi rõ); tắt cờ là trở về camera Hero trước khi chỉnh này.
+CurrentCameraFocusX và CurrentCameraFocusCount là thuộc tính quan sát.
+DeadzoneCamera.Pan có overload bảo vệ rìa thật theo Hero thực tế,
+không phải tâm quái, tránh để nhiều quái kéo Hero ra khỏi màn hình.
+Tâm nhóm được tính sau Hero TickMovement trước Monster TickMovement;
+độ trễ quái tối đa 1 khung nhưng giữ Update/LateUpdate + Ground/đạn.
+Tests~/CameraFollowRegression.cs mở rộng lên 19 bài hồi quy (thêm 6
+case tâm nhóm, chuyển mode, quái chết/ngoài khung, nhiều Hero, Ground).
+CHƯA có nghiệm thu Unity/Windows, main KHÔNG được merge tự động.
+
 TINH CHỈNH CAMERA TỪ VIDEO MẪU — HỒI VỊ TRÍ 40% (11/10/2026)
 User đồng ý thử mốc nghỉ 40% màn hình. Đã thêm vào DeadzoneCamera
 một lượt hồi sau khi Hero chạy -> dừng, CHỈ KHI Hero đứng bên trái
@@ -1001,3 +1019,15 @@ khai báo tường minh trong MainGame.unity. Mọi việc chọn khoảng ngh�
 và khoảng thời gian này vẫn là GIẢ ĐỊNH CẦN USER PLAY MODE NGHIỆM THU.
 Không triển khai camera multi-Hero hoặc điều chỉnh Deadzone tùy vận tốc
 cho đến khi người dùng kiểm tra bản này.
+
+
+21. THỬ NGHIỆM COMBAT CENTROID — GIỮ CAMERA DEADZONE 40% CŨ
+Mục tiêu mới là trung bình các nhân vật đang chiến đấu, không phải
+trung điểm hai Hero và không phải trung tâm của terrain. Dùng danh
+sách ActiveHeroes/ActiveMonsters không cấp phát mỗi frame; bỏ quái chết
+hoặc ngoài viewport, bỏ all scenery/effects. Tuy nguồn camera đổi,
+các giới hạn đỏ, tốc 0.2s, idle 40%/0.6s và Ground cùng pan vẫn giữ.
+Bảo vệ Hero gốc theo mép thực, không dùng centroid làm viewport clamp.
+Khi chưa có quái và một Hero thì kết quả trùng camera Hero cũ.
+Thử ít quái/nhiều quái/đứng bắn/wave mới/quái chết; tắt cờ
+cameraUseCombatCenter trong Inspector để A/B ngay, không revert.

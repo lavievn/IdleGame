@@ -30,7 +30,7 @@
 
 ### Mốc A — Chốt nền 0.0.4.54g, nghiệm thu thay vì thêm cơ chế mới
 
-**Phạm vi:** Camera Deadzone mặc định 38%, SmoothDamp lúc chạy giữ 0.2s; thử hồi mềm khi Hero dừng (mốc 40% từ trái, SmoothDamp 0.6s, chỉ sau khi đã chạy tới bên trái mốc); kiểm tra scene Inspector tương ứng. Chạy Hero đi/dừng/bắn rồi lại đi, riêng tốc độ 700 và cận→quái xa; quái sát Ground và không có đạn mất đích khi resize. Chạy đủ 25 wave (một cụm 5 map), chết/retry và load/save, thử UI/overlay Windows 600/800/1150, DPI và kéo/thu phóng. Sao lưu save trước thử migration.
+**Phạm vi:** Camera Deadzone mặc định 38%, SmoothDamp lúc chạy giữ 0.2s; thử hồi mềm khi Hero dừng (mốc 40% từ trái, SmoothDamp 0.6s, chỉ sau khi đã chạy tới bên trái mốc). **Đang thử thêm `cameraUseCombatCenter`:** tâm trung bình Hero đang hoạt động + quái sống trong vùng màn hình; so sánh bật/tắt cờ trong Inspector, nhất là khi quái mới xuất hiện hoặc chết; kiểm tra scene Inspector tương ứng. Chạy Hero đi/dừng/bắn rồi lại đi, riêng tốc độ 700 và cận→quái xa; quái sát Ground và không có đạn mất đích khi resize. Chạy đủ 25 wave (một cụm 5 map), chết/retry và load/save, thử UI/overlay Windows 600/800/1150, DPI và kéo/thu phóng. Sao lưu save trước thử migration.
 
 **Đủ chuyển bước khi:** không còn lỗi Console nghiêm trọng, không có camera tự trôi vô hạn sau khi Hero dừng, hồi đúng mốc 40% và ngừng hẳn, wave không kẹt, quái/đạn đúng Ground sau resize, save/load an toàn, người dùng chấp nhận cảm giác camera trong Unity và xác nhận có thể merge `.54g` vào `main`. Chưa cần polish ảnh, SFX, balance ba thế hoặc FPS tối ưu cuối cùng.
 
@@ -75,7 +75,7 @@ Boss/elite, luật khắc sâu, crit/phòng thủ/buff/debuff, hiệu ứng theo
 - **Độ đúng dữ liệu:** version save, backup, migrator, atomic write và ID thực thể xuyên qua object pool; chú ý cập nhật tất cả nơi còn truy cập heroController đơn lẻ.
 - **Độ ổn định theo thời gian:** đo phân bổ bộ nhớ/coroutine/projectile/UI; kiểm tra ít nhất một phiên chạy kéo dài ở Windows, ghi lỗi tăng dần theo thời gian thay vì chỉ xem FPS tức thời. Chưa có benchmark thực để kết luận hiện tại nhanh/chậm.
 - **Khả năng kiểm thử:** bảo tồn Tests~ dùng stub/Mono, bổ sung đường kiểm thử Unity Play Mode/Windows smoke và CI khi điều kiện cho phép. Không khẳng định `Tests~/test-results.txt` cũ là kết quả dành cho camera mới.
-- **Vị trí chỉnh camera:** giữ Deadzone đơn Hero ổn; khi đến Mốc E chỉ đổi bộ chọn **mục tiêu camera** sang tâm nhóm, không viết lại toàn bộ phép dịch thế giới và cơ chế đạn.
+- **Vị trí chỉnh camera:** bộ chọn camera đã có chế độ **tâm trung bình Hero + quái trong viewport** thử nghiệm ở Mốc A, với công tắc quay về theo Hero. Đây không đồng nghĩa đã triển khai camera tổ đội nhiều Hero; khi đến Mốc E sẽ cần đánh giá lại trọng số Hero/quái, giới hạn khoảng cách đội hình và bảo vệ các Hero. Không viết lại toàn bộ phép dịch thế giới và cơ chế đạn.
 - **Giảm ghép nối:** các lớp lớn UIManager/GameManager/CombatManager chỉ nên điều phối những module chuyên trách; không ưu tiên tái cấu trúc mỹ thuật toàn bộ trước khi có use case.
 
 ## 5. Quyết định cần người dùng duyệt trước khi thực hiện mốc tiếp theo

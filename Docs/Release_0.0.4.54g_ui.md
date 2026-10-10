@@ -109,3 +109,21 @@ Hero nhanh hơn/tương đương/chậm hơn `scrollSpeed`, Hero dừng khi đá
 - Bổ sung 3 regression trong `Tests~/CameraFollowRegression.cs` (tổng 13): Hero chậm đứng yên không bị kéo; đang hồi mà chạy tiếp; kiểm tra Hero và Ground cùng lùi trong runtime stub. Các test đã có thay kỳ vọng dừng về mốc 40%. Thử mô phỏng số học 30/60/144 FPS, nhưng **chưa có kết quả Unity Editor/Windows build thực**.
 
 **Nghiệm thu:** kiểm tra Hero tốc độ 700 đi tới gần biên trái rồi dừng đánh: Hero và Ground trượt về bên phải rồi dừng, không trượt đến mép đỏ phải; Hero tốc độ thấp dừng gần tâm không bị camera ép sang trái; Hero đang hồi mà đi tiếp không gây giật hoặc đảo chiều; quái tầm xa và đạn vẫn cùng Ground khi camera hồi. Nếu thời gian 0.6s chưa giống video, chỉ tinh chỉnh `cameraIdleSmoothTime` trước khi đổi các quy tắc khác.
+
+
+## Camera .54g — Thử mục tiêu tâm trung bình mọi nhân vật đang giao tranh
+
+**Yêu cầu:** giữ Deadzone 38%, follow SmoothDamp 0,2s, hồi vị trí 40% trong 0,6s theo cơ chế đã xác nhận từ trước; chỉ đổi tọa độ mục tiêu camera từ Hero đơn lẻ sang tâm mọi đối tượng chiến đấu.
+
+**Định nghĩa thực tế để tránh nền làm camera sai:** `CombatCenterX` lấy **trung bình cộng tọa độ Ground X** của tất cả Hero đang được triển khai và quái còn sống **nằm trong khung hiển thị thật**. Mỗi nhân vật trọng số bằng nhau. Không tính cỏ/texture/terrain, VFX/đạn, xác, đối tượng bị pool tắt, hoặc quái vừa sinh còn ngoài màn hình. Không cấp phát mảng hoặc tìm GameObject mỗi khung: dùng `HeroController.ActiveHeroes` và `MonsterController.ActiveMonsters`.
+
+**Các bảo đảm:**
+- Có công tắc `EnvironmentManager.cameraUseCombatCenter`, mặc định **true** và khai báo rõ trong `MainGame.unity`. Tắt → chạy đúng cơ chế nhắm Hero cũ mà không phải revert mã. Có thể kiểm tra vị trí và số thành viên tính vào tâm qua `CurrentCameraFocusX` và `CurrentCameraFocusCount`.
+- `DeadzoneCamera.Pan` giữ overload cũ, thêm overload mới có `protectedHeroX`. Độ lệch Deadzone, smooth follow, hồi 40% tính từ **tọa độ tâm nhóm**; nhưng mép an toàn của màn hình vẫn giới hạn dựa vào **vị trí Hero thật**. Không buộc Hero vào mép đỏ.
+- Tâm được lấy sau khi di chuyển Hero và trước khi quái TickMovement, có thể trễ quái một khung hình, nhằm giữ nguyên thứ tự AI và cặp pan chung của Update/LateUpdate. Không thay combat, AI, Ground/đạn, save hay tốc độ các nhân vật.
+- Khi số quái tham gia khác nhau, trung bình cộng có thể lệch về phía có nhiều quái: **đây là phép thử**, không phải khẳng định luôn đem lại bố cục đẹp. Spawn/despawn và quái băng qua mép hiển thị khiến tâm mục tiêu thay đổi; SmoothDamp làm mềm dịch chuyển camera nhưng không thể triệt tiêu mọi chuyển động đó. Hãy thử nhiều quái / sinh wave / chết đồng thời và so sánh với chế độ theo Hero.
+- Khi không còn quái, tâm chỉ là trung bình các Hero sống; nếu chỉ có một Hero thì giống thuật toán cũ. Camera xác chết giữ cơ chế lịch sử.
+
+**Hồi quy:** có thêm 6 bài thử về phép trung bình, nhiều Hero, công tắc quay về camera Hero, quái ra/vào viewport hoặc chết, và giới hạn Hero + đồng bộ Ground. Bộ camera có tổng **19 bài hồi quy** trong Tests~/CameraFollowRegression.cs. Việc qua kiểm tra nguồn/mô phỏng không thay cho Unity Play Mode/Windows thực tế.
+
+**Cách thử nhanh:** `Fetch/Pull` nhánh feature/0.0.4.54g, trong Scene MainGame mở `EnvironmentManager`, bật/tắt `Camera Use Combat Center`; chạy một Hero vs một quái, nhiều quái, quái cung đứng đánh, Hero 700 dừng bắn, đổi 600/800/1150 và hết wave. Quan sát Hero có ra mép thật, Ground và quái có bị lệch, hoặc camera xoay chiều khi quái chết không.

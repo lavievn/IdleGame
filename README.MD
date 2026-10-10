@@ -59,6 +59,8 @@ Không lấy việc mã chạy trong test doubles làm bằng chứng đã hết
 
 **Tinh chỉnh tham khảo video gameplay (11/10/2026):** chạy giữ Deadzone 38% + SmoothDamp 0,2 giây. Khi Hero đang đi rồi **dừng ở phía trái vị trí 40%**, camera tiếp tục dịch Ground/Hero nhẹ về phải, nội suy SmoothDamp **0,6 giây**, rồi dừng. Hero xuất hiện đứng yên hoặc Hero chậm dừng gần tâm không bị ép sang 40%; nếu đi trở lại giữa lúc đang hồi, hủy hồi và dùng lại Deadzone. Cấu hình `cameraIdleRestX=0.4`, `cameraIdleSmoothTime=0.6` ghi cả trong scene; đây là thông số thử, chưa nghiệm thu bản Windows/Unity. 
 
+**Thử nghiệm tâm chung các đối tượng (.54g, chưa nghiệm thu):** bật `cameraUseCombatCenter=true` trong `EnvironmentManager` để dùng **trung bình X của các Hero đang hoạt động + quái còn sống nằm trong viewport** làm mục tiêu bám. Không tính Ground/cỏ, vật trang trí, đạn, VFX, quái chết/ngoài cửa sổ. Cùng thuật toán **Deadzone 38%, SmoothDamp 0,2s và hồi mốc 40%/0,6s khi Hero dừng**; Hero thật vẫn được bảo vệ tại mép màn hình. **Tắt `cameraUseCombatCenter`** để so sánh lại bản camera theo Hero trước đó, không cần revert. Có nhiều quái ở một phía thì phép trung bình sẽ bị nghiêng về phía đông quái — mục đích hiện tại là thử cảm giác, chưa phải quy tắc camera đội hình đã chốt.
+
 **Kế hoạch phát triển sau bản camera:** xem [Docs/Development_Roadmap.md](Docs/Development_Roadmap.md) để phân biệt tình trạng mã thực, rủi ro kiến trúc và các mốc nghiệm thu trước khi chuyển từ lõi chiến đấu → trang bị → kỹ năng tự động → đội hình nhiều Hero → công cụ nội dung. Đây là đề xuất cần thống nhất, không phải cam kết phát hành.
 
 ## Hướng tiếp theo — CHƯA triển khai

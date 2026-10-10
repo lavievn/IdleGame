@@ -128,10 +128,25 @@ public sealed class DeadzoneCamera
     // All inputs use the stable Ground-local coordinate system. Hero movement
     // is already applied before this call. Return ONE shared pan for actors,
     // attacks and environment; zero when idle inside the deadzone.
-    public float Pan(float heroScreenX, float redLeft, float redRight,
+    // Compatibility overload for existing single-Hero camera tests and users.
+    public float Pan(float focusScreenX, float redLeft, float redRight,
         float viewLeft, float viewRight, float dt, float smoothTime,
         float deadzoneWidthRatio, float deadzoneCenterRatio,
         bool heroMovedThisFrame, float idleRestRatio, float idleSmoothTime)
+    {
+        return Pan(focusScreenX,redLeft,redRight,viewLeft,viewRight,dt,
+            smoothTime,deadzoneWidthRatio,deadzoneCenterRatio,
+            heroMovedThisFrame,idleRestRatio,idleSmoothTime,focusScreenX);
+    }
+
+    // The focus may be a multi-combatant center while safety still protects
+    // the actual Hero. Decoupling these prevents an off-center monster group
+    // from pushing the Hero beyond the physical screen edge.
+    public float Pan(float focusScreenX, float redLeft, float redRight,
+        float viewLeft, float viewRight, float dt, float smoothTime,
+        float deadzoneWidthRatio, float deadzoneCenterRatio,
+        bool heroMovedThisFrame, float idleRestRatio, float idleSmoothTime,
+        float protectedHeroX)
     {
         if (dt <= 0f || viewRight <= viewLeft) return 0f;
         float width = viewRight - viewLeft;
@@ -158,21 +173,21 @@ public sealed class DeadzoneCamera
         else if (wasWalking)
         {
             wasWalking = false;
-            idleRecovering = heroScreenX < idleRestX - 1f;
+            idleRecovering = focusScreenX < idleRestX - 1f;
         }
 
-        float correction = heroScreenX < left ? left - heroScreenX
-            : heroScreenX > right ? right - heroScreenX : 0f;
+        float correction = focusScreenX < left ? left - focusScreenX
+            : focusScreenX > right ? right - focusScreenX : 0f;
         if (idleRecovering)
         {
             // Ground and Hero drift RIGHT together after the Hero stops
             // attacking. SmoothDamp retains existing velocity and eases
             // the recovery to a finite rest position; no autonomous scroll.
-            correction = Math.Max(0f, idleRestX - heroScreenX);
+            correction = Math.Max(0f, idleRestX - focusScreenX);
             smoothTime = Math.Max(.05f, idleSmoothTime);
         }
-        else if (heroScreenX < Math.Min(redLeft, redRight)
-            || heroScreenX > Math.Max(redLeft, redRight))
+        else if (focusScreenX < Math.Min(redLeft, redRight)
+            || focusScreenX > Math.Max(redLeft, redRight))
         {
             // The red boundary only increases follow responsiveness.
             smoothTime = Math.Max(.08f, smoothTime * .55f);
@@ -186,15 +201,15 @@ public sealed class DeadzoneCamera
             idleRecovering = false;
         }
 
-        // Red-zone boundaries are NOT a clamp. Protect only the actual
-        // screen edges when the Hero is too fast for a soft camera response.
+        // Red-zone boundaries are NOT a clamp. Protect the actual Hero,
+        // rather than the centroid, at the real physical screen edges.
         float safety = Math.Min(30f, width * .03f);
         float clampedPan = Clamp(pan,
-            viewLeft + safety - heroScreenX,
-            viewRight - safety - heroScreenX);
+            viewLeft + safety - protectedHeroX,
+            viewRight - safety - protectedHeroX);
         if (Math.Abs(clampedPan - pan) > .0001f)
             velocity = 0f; // Don't retain momentum from a physically clipped step.
-        if (idleRecovering && idleRestX - (heroScreenX + clampedPan) <= .5f
+        if (idleRecovering && idleRestX - (focusScreenX + clampedPan) <= .5f
             && Math.Abs(velocity) < 2f)
         {
             // Stop once, without repeated re-centering every idle frame.
