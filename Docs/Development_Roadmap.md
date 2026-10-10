@@ -26,6 +26,8 @@
 - Khi phát sinh lỗi P0 (mất tiến trình, sai target, wave kẹt, Crash, camera mất đối tượng), **tạm dừng tính năng mới để sửa nguyên nhân**. Lỗi VFX/UI nhỏ có thể ghi backlog và xử lý ở vòng polish.
 - Phân biệt: có mã, mô phỏng toán học, chạy Mono/stub, Unity Editor Play Mode và Windows build thật.
 
+**Cập nhật khi bắt đầu B1:** người phát triển đã yêu cầu triển khai lát cắt B1. Nhánh đang thực hiện: `feature/b1-hero-combat-state`, bắt đầu từ checkpoint `.54g`. Chỉ tách trạng thái HP/timer/data của Hero ra khỏi `CombatManager`, **chưa thay gameplay một Hero**, chưa thực hiện B2, trang bị, kỹ năng hay đội hình. Xem `Docs/B1_HeroCombatState.md` để biết cấu trúc mã, test và điều kiện nghiệm thu. Các bước P1/P2/P3 chưa được duyệt triển khai.
+
 ## 3. Bảng ưu tiên sau khi chốt .54g — ngày 11/10/2026
 
 | Thứ tự | Mức | Hạng mục | Chỉ làm đến mức nào trong lượt đầu | Phụ thuộc |
@@ -41,7 +43,7 @@
 
 **P0** = khóa kỹ thuật cần vượt trước khi mở gameplay khác; **P1** = trực tiếp mở vòng chơi hoàn chỉnh; **P2** = mở rộng quy mô và nội dung; **P3** = nâng chiều sâu/chất lượng. Đây là xếp hạng *phụ thuộc kỹ thuật*, không phải độ hấp dẫn người chơi.
 
-**Việc đầu tiên cụ thể — Mốc B, lát cắt B1:** tách **trạng thái chiến đấu của Hero** (máu hiện tại/tối đa, dữ liệu chỉ số, nhịp đánh, thế đánh) khỏi các biến đơn lẻ trong `CombatManager`, để bước tiếp theo có thể quản lý mỗi Hero một trạng thái. Làm từng phần và thêm kiểm thử trước khi thay logic gây sát thương; **không thêm Hero thứ hai vào Scene, không đổi UI/damage/balance/camera/save đang chạy ổn** trong B1.
+**Việc đầu tiên cụ thể — Mốc B, lát cắt B1 (đã bắt đầu, chưa nghiệm thu Unity):** tách **trạng thái chiến đấu của Hero** (máu hiện tại/tối đa, dữ liệu chỉ số, nhịp đánh, thế đánh) khỏi các biến đơn lẻ trong `CombatManager`, để bước tiếp theo có thể quản lý mỗi Hero một trạng thái. Làm từng phần và thêm kiểm thử trước khi thay logic gây sát thương; **không thêm Hero thứ hai vào Scene, không đổi UI/damage/balance/camera/save đang chạy ổn** trong B1.
 
 **Điều kiện dừng B1:** code gameplay một Hero vẫn có cùng kết quả cận/cung/phép, hồi chiêu, chết/retry và wave; có thể tạo hai trạng thái chiến đấu **độc lập trong kiểm thử** mà không trùng HP/timer; các đường truy cập cũ vẫn tương thích. Sau đó mới thực hiện B2: chọn mục tiêu và áp sát thương đúng từng thực thể. Chưa có yêu cầu xây đầy đủ hệ thống đa nhân vật.
 
@@ -101,6 +103,6 @@ Boss/elite, luật khắc sâu, crit/phòng thủ/buff/debuff, hiệu ứng theo
 
 ## 6. Quyết định cần người dùng duyệt trước khi thực hiện mốc tiếp theo
 
-1. `.54g` đã được chốt theo phản hồi người phát triển. **Đề xuất đang chờ duyệt:** bắt đầu mốc B1 (tách trạng thái chiến đấu Hero ở mức tối thiểu, không đổi gameplay) trước khi làm item/skill. Chưa tự tạo nhánh tiếp theo hoặc merge main.
+1. `.54g` đã được chốt và người phát triển đã chấp thuận bắt đầu **B1 trên nhánh riêng**. Điều kiện tiếp theo là chạy Mono/stub, Unity Editor và kiểm thử thực tế rồi mới quyết định merge; **chưa cho phép thực hiện B2, item hay skill**. Không tự merge main.
 2. Với đội hình sau này, tạm chấp nhận camera lấy trung điểm `(minX+maxX)/2` khi toàn đội đủ nằm trong khung. Quy tắc đội hình tách quá rộng để chốt ngay trước Mốc E.
 3. Số slot, loại item, bảng hiệu ứng vật phẩm, kiểu kỹ năng và hình ảnh/sound chưa cần chốt ở Mốc A/B; chỉ chốt contract khi triển khai lát cắt tương ứng.

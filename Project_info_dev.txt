@@ -3,6 +3,27 @@ Tài liệu thiết kế, hiện trạng và bàn giao phát triển của lavie
 Ngày đối chiếu: 09/10/2026, múi giờ Việt Nam (UTC+7).
 Đổi tên và thay thế AI_Prompt_Master.txt; lịch sử tài liệu cũ vẫn ở Git.
 
+B1 — NHÁNH MỚI feature/b1-hero-combat-state (ĐANG TRIỂN KHAI, CHƯA UNITY NGHIỆM THU)
+User đã đồng ý "bắt đầu B1" sau khi chốt gameplay .54g. Tạo nhánh
+feature/b1-hero-combat-state từ 02801dd2b1fe4ca46ce2402ffdbe93de590a2b58
+(chỉ là commit chốt tài liệu, gameplay từ c86201b). KHÔNG sửa .54g/main.
+Scope B1: thêm Assets/Script/HeroCombatState.cs và .meta; mỗi instance
+có riêng Controller, Data, CurrentHP, MaxHP, AttackTimer, WindupMode,
+SelectedMode, BeginLife/ResetAttack. CombatManager bỏ các FIELD scalar
+chỉ một Hero; giữ THUỘC TÍNH chuyển tiếp tới primaryHeroState duy nhất
+(nguồn dữ liệu thật, không có bản sao HP/timer) để bảo toàn toàn bộ
+logic damage/wave/UI/camera/save hiện tại. AdvanceCycle(ref...) đổi dùng
+trực tiếp field AttackTimer trong primaryHeroState. B1 CHƯA điều phối
+nhiều Hero trong trận. Bộ helper reflection ở Tests~/MotionRegression
+được đổi để các test cũ đọc đúng HeroCombatState; thêm 6 test
+Tests~/HeroCombatStateRegression.cs và cập nhật Tests~/run.sh.
+Cần chạy bash Tests~/run.sh với mcs/mono, Unity Editor và Windows thật;
+tool GitHub hiện tại chưa thể chạy biên dịch/Play Mode trực tiếp.
+Xem Docs/B1_HeroCombatState.md để nghiệm thu. Không gộp bất kỳ nhánh
+nào nếu chưa có kết quả test và xác nhận của user.
+Lộ trình sau B1 là B2 routing source/target theo từng Hero; không
+vội triển khai item/skill/đội hình vào B1.
+
 CHỐT CHECKPOINT 0.0.4.54g — NGÀY 11/10/2026 (ƯU TIÊN ĐỌC TRƯỚC)
 User đã trực tiếp thử game và xác nhận camera/gameplay dùng được với
 Hero CẬN CHIẾN/ĐÁNH XA và tốc độ NHANH/CHẬM. Cảm giác camera vẫn chưa
