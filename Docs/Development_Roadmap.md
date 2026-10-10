@@ -1,7 +1,7 @@
 # IdleGame — Rà soát kiến trúc và lộ trình theo giai đoạn
 
 **Thời điểm rà soát:** 11/10/2026. **Mốc mã:** nhánh `feature/0.0.4.54g`, trên nền commit `7341e5269f51ce66bfdb7b4d962d674958a0f369`; tinh chỉnh Deadzone 38% được phát triển sau mốc này.
-**Trạng thái:** ĐỀ XUẤT THẢO LUẬN, không phải quyết định sản phẩm đã chốt hay nghiệm thu Unity.
+**Trạng thái:** `.54g` đã được người phát triển **chấp nhận sử dụng và tuyên bố kết thúc vòng phát triển tính năng** (11/10/2026). Phần camera *chưa đạt hoàn toàn cảm giác mong muốn*, nhưng kiểm thử thực tế do người phát triển báo đạt với Hero đánh gần/xa, tốc độ nhanh/chậm. Các mục chưa được xác nhận riêng (save cũ, DPI, Play Mode tự động, Windows dài giờ...) vẫn là kiểm thử còn mở. **Lộ trình sau `.54g` là đề xuất kỹ thuật, không phải đã được duyệt triển khai.** `main` không tự được merge.
 **Cơ sở:** kiểm tra cây Git 233 tệp, 39 tệp C# (21 nguồn runtime/dữ liệu, 18 trong Tests~), README, Project_info_dev và các mô-đun quản lý màn hình, Hero, quái, chiến đấu, dữ liệu, lưu, camera, nền, UI, Windows overlay. Không thể thay thế việc chạy bản Unity/Windows ở máy phát triển.
 
 ## 1. Kết luận có căn cứ trong mã
@@ -26,13 +26,34 @@
 - Khi phát sinh lỗi P0 (mất tiến trình, sai target, wave kẹt, Crash, camera mất đối tượng), **tạm dừng tính năng mới để sửa nguyên nhân**. Lỗi VFX/UI nhỏ có thể ghi backlog và xử lý ở vòng polish.
 - Phân biệt: có mã, mô phỏng toán học, chạy Mono/stub, Unity Editor Play Mode và Windows build thật.
 
-## 3. Các cổng chuyển giai đoạn (đề xuất)
+## 3. Bảng ưu tiên sau khi chốt .54g — ngày 11/10/2026
 
-### Mốc A — Chốt nền 0.0.4.54g, nghiệm thu thay vì thêm cơ chế mới
+| Thứ tự | Mức | Hạng mục | Chỉ làm đến mức nào trong lượt đầu | Phụ thuộc |
+|---|---|---|---|---|
+| **1** | **P0** | **Lõi chiến đấu theo từng thực thể** | Trạng thái HP/timer/đòn theo Hero; giữ nguyên hành vi 1 Hero và kiểm thử 2 trạng thái độc lập; không làm UI tổ đội ngay | Checkpoint gameplay .54g |
+| **2** | **P1 (xuyên suốt)** | **Schema dữ liệu/lưu phiên bản hóa** | Định danh bền vững, đường nâng cấp bản lưu cũ, 2 ca save mới/cũ; chỉ thêm trường khi tính năng cần | Lõi combat và từng lát cắt item/skill |
+| **3** | **P1** | **Trang bị + kho tối thiểu** | 1 slot + 1–2 item HP/ATK cộng trực tiếp, trang bị/tháo, save/load | Trạng thái combat + schema |
+| **4** | **P1** | **Kỹ năng tự động** | 2 chiêu mẫu tầm gần/xa, thứ tự ưu tiên, hồi chiêu, đòn thường dự phòng | Combat + dữ liệu stat |
+| **5** | **P2** | **2 Hero và đội hình** | HP/đòn/đích riêng; thử camera theo đội và xử lý cả đội chết | Combat + lưu từng Hero + skill tối thiểu |
+| **6** | **P2** | **Kết nối nội dung/VFX/SFX và công cụ nhập asset** | 1 skill, 1 quái mẫu có thể thay asset bằng dữ liệu; không xây cả editor trước schema | Hệ kỹ năng và cấu hình ổn |
+| **7** | **P3** | **Mở rộng cơ chế** | Thêm từng lát cắt: boss/elite, buff/debuff, drop/độ hiếm, luân hồi, ngoại tuyến | Có gameplay và schema đủ để thử |
+| **8** | **P3** | **Polish UI, tối ưu camera, hiệu năng sâu** | Backlog cải thiện theo dữ liệu kiểm thử; không mở lại camera .54g nếu không có lỗi cản trở | Tính năng tích hợp thực |
+
+**P0** = khóa kỹ thuật cần vượt trước khi mở gameplay khác; **P1** = trực tiếp mở vòng chơi hoàn chỉnh; **P2** = mở rộng quy mô và nội dung; **P3** = nâng chiều sâu/chất lượng. Đây là xếp hạng *phụ thuộc kỹ thuật*, không phải độ hấp dẫn người chơi.
+
+**Việc đầu tiên cụ thể — Mốc B, lát cắt B1:** tách **trạng thái chiến đấu của Hero** (máu hiện tại/tối đa, dữ liệu chỉ số, nhịp đánh, thế đánh) khỏi các biến đơn lẻ trong `CombatManager`, để bước tiếp theo có thể quản lý mỗi Hero một trạng thái. Làm từng phần và thêm kiểm thử trước khi thay logic gây sát thương; **không thêm Hero thứ hai vào Scene, không đổi UI/damage/balance/camera/save đang chạy ổn** trong B1.
+
+**Điều kiện dừng B1:** code gameplay một Hero vẫn có cùng kết quả cận/cung/phép, hồi chiêu, chết/retry và wave; có thể tạo hai trạng thái chiến đấu **độc lập trong kiểm thử** mà không trùng HP/timer; các đường truy cập cũ vẫn tương thích. Sau đó mới thực hiện B2: chọn mục tiêu và áp sát thương đúng từng thực thể. Chưa có yêu cầu xây đầy đủ hệ thống đa nhân vật.
+
+**Công việc hậu kiểm không chặn bắt đầu B1:** tiếp tục giữ danh sách cần thử ở Windows về DPI, resize, save/load, quái/đạn và phiên chạy dài. Nếu phát hiện lỗi P0 hoặc mất tiến trình, tạm dừng B1 để sửa.
+
+## 4. Các cổng chuyển giai đoạn (đề xuất)
+
+### Mốc A — 0.0.4.54g đã chốt theo nghiệm thu có giới hạn của người phát triển
 
 **Phạm vi:** Camera Deadzone mặc định 38%, SmoothDamp lúc chạy giữ 0.2s; thử hồi mềm khi Hero dừng (mốc 40% từ trái, SmoothDamp 0.6s, chỉ sau khi đã chạy tới bên trái mốc). **Đang thử thêm `cameraUseCombatCenter`:** tâm trung bình Hero đang hoạt động + quái sống trong vùng màn hình; so sánh bật/tắt cờ trong Inspector, nhất là khi quái mới xuất hiện hoặc chết; kiểm tra scene Inspector tương ứng. Chạy Hero đi/dừng/bắn rồi lại đi, riêng tốc độ 700 và cận→quái xa; quái sát Ground và không có đạn mất đích khi resize. Chạy đủ 25 wave (một cụm 5 map), chết/retry và load/save, thử UI/overlay Windows 600/800/1150, DPI và kéo/thu phóng. Sao lưu save trước thử migration.
 
-**Đủ chuyển bước khi:** không còn lỗi Console nghiêm trọng, không có camera tự trôi vô hạn sau khi Hero dừng, hồi đúng mốc 40% và ngừng hẳn, wave không kẹt, quái/đạn đúng Ground sau resize, save/load an toàn, người dùng chấp nhận cảm giác camera trong Unity và xác nhận có thể merge `.54g` vào `main`. Chưa cần polish ảnh, SFX, balance ba thế hoặc FPS tối ưu cuối cùng.
+**Kết quả và giới hạn:** người phát triển đã xác nhận `.54g` dùng ổn với Hero cận/xa, tốc độ nhanh/chậm và muốn kết thúc phiên bản; không yêu cầu hoàn thiện camera trước khi làm tiếp. Các tình huống Console, DPI/Windows build, save/load cũ, wave đủ cụm, phép thử tự động và chạy lâu chưa được xác nhận trong lượt nghiệm thu này — giữ trong backlog QA. **Việc chốt phiên bản không phải yêu cầu merge `main` hoặc tạo release/tag**. Không cần polish ảnh/SFX/balance hoặc FPS tối ưu cuối cùng trước mốc B.
 
 ### Mốc B — Lõi combat có thể mở rộng, giữ nguyên gameplay 1 Hero
 
@@ -70,7 +91,7 @@
 
 Boss/elite, luật khắc sâu, crit/phòng thủ/buff/debuff, hiệu ứng theo hệ, thừa kế tộc/linh căn, luân hồi, ngoại tuyến và Lò Bát Quái. Chỉ triển khai một vòng đầy đủ mỗi lần sau khi vòng chiến đấu + dữ liệu + kỹ năng đã đủ ổn để đo cân bằng thật.
 
-## 4. Kỹ thuật cần theo dõi xuyên suốt
+## 5. Kỹ thuật cần theo dõi xuyên suốt
 
 - **Độ đúng dữ liệu:** version save, backup, migrator, atomic write và ID thực thể xuyên qua object pool; chú ý cập nhật tất cả nơi còn truy cập heroController đơn lẻ.
 - **Độ ổn định theo thời gian:** đo phân bổ bộ nhớ/coroutine/projectile/UI; kiểm tra ít nhất một phiên chạy kéo dài ở Windows, ghi lỗi tăng dần theo thời gian thay vì chỉ xem FPS tức thời. Chưa có benchmark thực để kết luận hiện tại nhanh/chậm.
@@ -78,8 +99,8 @@ Boss/elite, luật khắc sâu, crit/phòng thủ/buff/debuff, hiệu ứng theo
 - **Vị trí chỉnh camera:** bộ chọn camera đã có chế độ **tâm trung bình Hero + quái trong viewport** thử nghiệm ở Mốc A, với công tắc quay về theo Hero. Đây không đồng nghĩa đã triển khai camera tổ đội nhiều Hero; khi đến Mốc E sẽ cần đánh giá lại trọng số Hero/quái, giới hạn khoảng cách đội hình và bảo vệ các Hero. Không viết lại toàn bộ phép dịch thế giới và cơ chế đạn.
 - **Giảm ghép nối:** các lớp lớn UIManager/GameManager/CombatManager chỉ nên điều phối những module chuyên trách; không ưu tiên tái cấu trúc mỹ thuật toàn bộ trước khi có use case.
 
-## 5. Quyết định cần người dùng duyệt trước khi thực hiện mốc tiếp theo
+## 6. Quyết định cần người dùng duyệt trước khi thực hiện mốc tiếp theo
 
-1. Khi đã nghiệm thu camera .54g và gộp main, có đồng ý **Mốc B: tách lõi chiến đấu tối thiểu** (không đổi gameplay) trước khi xây item/skill hay muốn làm một demo item trước?
+1. `.54g` đã được chốt theo phản hồi người phát triển. **Đề xuất đang chờ duyệt:** bắt đầu mốc B1 (tách trạng thái chiến đấu Hero ở mức tối thiểu, không đổi gameplay) trước khi làm item/skill. Chưa tự tạo nhánh tiếp theo hoặc merge main.
 2. Với đội hình sau này, tạm chấp nhận camera lấy trung điểm `(minX+maxX)/2` khi toàn đội đủ nằm trong khung. Quy tắc đội hình tách quá rộng để chốt ngay trước Mốc E.
 3. Số slot, loại item, bảng hiệu ứng vật phẩm, kiểu kỹ năng và hình ảnh/sound chưa cần chốt ở Mốc A/B; chỉ chốt contract khi triển khai lát cắt tương ứng.

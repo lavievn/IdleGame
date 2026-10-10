@@ -1,13 +1,13 @@
 # IdleGame — game tu tiên tự động trên desktop Windows
 
-**Trạng thái hiện tại: 0.0.4.54g (bản thử nghiệm; đang chuẩn bị gộp từ nhánh `feature/0.0.4.54g` vào `main`).**  
-**Đã có mã ≠ đã kiểm thử hoàn chỉnh trong Unity/Windows.** Các thay đổi mới cần được chạy thực tế ở Unity Editor và bản build Windows trước khi nghiệm thu.
+**Trạng thái hiện tại: 0.0.4.54g — ĐÃ CHỐT VÒNG PHÁT TRIỂN (11/10/2026), theo nghiệm thu có giới hạn của người phát triển.** Nhánh `feature/0.0.4.54g` vẫn lưu mốc này; **chưa gộp `main`**.
+**Người phát triển xác nhận gameplay/camera đang sử dụng được** với Hero cận/xa, tốc độ chạy nhanh/chậm; cảm giác camera chưa đạt 100% nhưng đã đủ để chuyển sang tính năng mới. Điều này **không đồng nghĩa mọi hệ thống, save, DPI và Windows build đều đã được kiểm thử đầy đủ**.
 
 Game idle RPG tu tiên 2D/2.5D dạng **desktop overlay trong suốt**, chơi tự động trong một cửa sổ nhỏ. Hero đi tìm quái, chiến đấu theo các dạng cận chiến/cung/phép, tăng cấp, lưu tiến độ và chuyển bản đồ. Game hiện ở giai đoạn **xây dựng khung gameplay, độ ổn định, UI và thông số thử nghiệm**; chưa phải sản phẩm hoàn thiện.
 
 ## Phiên bản hiện tại và đường dẫn
 
-- **Nhánh đang hoàn thiện:** [feature/0.0.4.54g](https://github.com/lavievn/IdleGame/tree/feature/0.0.4.54g). `main` chỉ được cập nhật khi người phát triển chủ động gộp nhánh.
+- **Nhánh đã chốt mốc gameplay:** [feature/0.0.4.54g](https://github.com/lavievn/IdleGame/tree/feature/0.0.4.54g). Không tự merge vào `main` hoặc đặt tag/release; phiên bản tiếp theo sẽ được tách nhánh riêng khi thống nhất phạm vi.
 - [Ghi chú giao diện và sửa lỗi .54g](Docs/Release_0.0.4.54g_ui.md).
 - [Ghi chú cân bằng .54f](Docs/Release_0.0.4.54f.md) · [Ghi chú .54e](Docs/Release_0.0.4.54e.md) · [Nền ổn định tọa độ .54d](Docs/Release_0.0.4.54.d_prefinal.md).
 - [Project_info_dev.txt](Project_info_dev.txt) là tài liệu **bàn giao kỹ thuật và định hướng**. Các mục .54a/.54b/.54c/.54d trong đó là lịch sử nếu xung đột với mục mới.
@@ -28,7 +28,7 @@ Game idle RPG tu tiên 2D/2.5D dạng **desktop overlay trong suốt**, chơi t�
 | Hiệu ứng hiển thị | Tên map chữ lớn ở giữa trong **3 giây**, sau đó thu nhỏ và di chuyển thành nhãn cố định trong **0,85 giây**. Nhãn gọn kèm **Bản đồ N, Wave hiện tại/5, địa hình** để debug. Chữ damage Hero/quái được đặt vào chính đối tượng nhận sát thương, nảy ngược hướng đòn đánh và mờ trong **1 giây**. |
 | DEVB | Bảng kiểm tra thông số Hero và quái, cân bằng nền/growth/range và dữ liệu cài đặt riêng. Đây là công cụ debug, không phải UI hoàn chỉnh cho người chơi. |
 
-**Cần phân biệt:** những dòng trên mô tả mã đã sửa. Nhánh .54g vẫn cần người phát triển xác nhận bằng Play Mode và bản Windows; chưa có bằng chứng toàn bộ bảng chỉ số, hiệu ứng, kéo cửa sổ, DPI và di chuyển được nghiệm thu trong EXE thực.
+**Cần phân biệt:** người phát triển đã kiểm thử ổn **các chế độ Hero cận/xa và tốc độ di chuyển nhanh/chậm** và chốt `.54g`. Chưa có xác nhận mọi tổ hợp tính năng, save cũ, DPI, cửa sổ Windows kéo dài hoặc tất cả hiệu ứng đều đã được nghiệm thu trong EXE.
 
 ## Vấn đề đã sửa trong chuỗi .54d → .54g
 
@@ -59,13 +59,13 @@ Không lấy việc mã chạy trong test doubles làm bằng chứng đã hết
 
 **Tinh chỉnh tham khảo video gameplay (11/10/2026):** chạy giữ Deadzone 38% + SmoothDamp 0,2 giây. Khi Hero đang đi rồi **dừng ở phía trái vị trí 40%**, camera tiếp tục dịch Ground/Hero nhẹ về phải, nội suy SmoothDamp **0,6 giây**, rồi dừng. Hero xuất hiện đứng yên hoặc Hero chậm dừng gần tâm không bị ép sang 40%; nếu đi trở lại giữa lúc đang hồi, hủy hồi và dùng lại Deadzone. Cấu hình `cameraIdleRestX=0.4`, `cameraIdleSmoothTime=0.6` ghi cả trong scene; đây là thông số thử, chưa nghiệm thu bản Windows/Unity. 
 
-**Thử nghiệm tâm chung các đối tượng (.54g, chưa nghiệm thu):** bật `cameraUseCombatCenter=true` trong `EnvironmentManager` để dùng **trung bình X của các Hero đang hoạt động + quái còn sống nằm trong viewport** làm mục tiêu bám. Không tính Ground/cỏ, vật trang trí, đạn, VFX, quái chết/ngoài cửa sổ. Cùng thuật toán **Deadzone 38%, SmoothDamp 0,2s và hồi mốc 40%/0,6s khi Hero dừng**; Hero thật vẫn được bảo vệ tại mép màn hình. **Tắt `cameraUseCombatCenter`** để so sánh lại bản camera theo Hero trước đó, không cần revert. Có nhiều quái ở một phía thì phép trung bình sẽ bị nghiêng về phía đông quái — mục đích hiện tại là thử cảm giác, chưa phải quy tắc camera đội hình đã chốt.
+**Camera tâm chung (.54g, đã chốt mức dùng được, còn dư địa cải thiện):** bật `cameraUseCombatCenter=true` trong `EnvironmentManager` để dùng **trung bình X của các Hero đang hoạt động + quái còn sống nằm trong viewport** làm mục tiêu bám. Không tính Ground/cỏ, vật trang trí, đạn, VFX, quái chết/ngoài cửa sổ. Cùng thuật toán **Deadzone 38%, SmoothDamp 0,2s và hồi mốc 40%/0,6s khi Hero dừng**; Hero thật vẫn được bảo vệ tại mép màn hình. **Tắt `cameraUseCombatCenter`** để so sánh lại bản camera theo Hero trước đó, không cần revert. Có nhiều quái ở một phía thì phép trung bình sẽ bị nghiêng về phía đông quái — mục đích hiện tại là thử cảm giác, chưa phải quy tắc camera đội hình đã chốt.
 
-**Kế hoạch phát triển sau bản camera:** xem [Docs/Development_Roadmap.md](Docs/Development_Roadmap.md) để phân biệt tình trạng mã thực, rủi ro kiến trúc và các mốc nghiệm thu trước khi chuyển từ lõi chiến đấu → trang bị → kỹ năng tự động → đội hình nhiều Hero → công cụ nội dung. Đây là đề xuất cần thống nhất, không phải cam kết phát hành.
+**Ưu tiên sau khi chốt `.54g`:** xem [Docs/Development_Roadmap.md](Docs/Development_Roadmap.md). **P0 trước tiên: tách trạng thái chiến đấu theo từng Hero (mốc B1) nhưng chưa thay gameplay một Hero**, rồi P1: save/schema → trang bị tối thiểu → kỹ năng tự động; P2: hai Hero + đội hình → asset/VFX/SFX; P3: boss/luân hồi/ngoại tuyến/polish camera. Đây là **đề xuất cần người phát triển duyệt**, chưa bắt đầu mã phiên bản kế tiếp.
 
 ## Hướng tiếp theo — CHƯA triển khai
 
-**Trước tiên:** nghiệm thu UI/damage/di chuyển; sau đó **đo lại cân bằng chiến đấu** bằng thực chiến, đặc biệt 5 wave đầu và cụm 25 wave, thay vì điều chỉnh chỉ dựa vào cảm nhận.
+**Trước tiên (đề xuất phiên bản tiếp theo):** tách riêng trạng thái chiến đấu Hero (HP/timer/dữ liệu thế đánh), giữ nguyên hành vi hiện tại và kiểm thử hai trạng thái độc lập mà không tạo đội hình thật. **Song song:** để lại danh sách hậu kiểm UI/damage/di chuyển, save, toàn cụm 25 wave và Windows; chỉ ngắt phát triển nếu gặp lỗi nghiêm trọng. Việc đo lại cân bằng sẽ có ích sau khi có trang bị/kỹ năng đầu tiên.
 
 **Tiếp theo, theo ưu tiên dự kiến:**
 

@@ -3,6 +3,42 @@ Tài liệu thiết kế, hiện trạng và bàn giao phát triển của lavie
 Ngày đối chiếu: 09/10/2026, múi giờ Việt Nam (UTC+7).
 Đổi tên và thay thế AI_Prompt_Master.txt; lịch sử tài liệu cũ vẫn ở Git.
 
+CHỐT CHECKPOINT 0.0.4.54g — NGÀY 11/10/2026 (ƯU TIÊN ĐỌC TRƯỚC)
+User đã trực tiếp thử game và xác nhận camera/gameplay dùng được với
+Hero CẬN CHIẾN/ĐÁNH XA và tốc độ NHANH/CHẬM. Cảm giác camera vẫn chưa
+đạt toàn bộ kỳ vọng nhưng user chủ động tuyên bố KẾT THÚC .54g và
+CHUYỂN SANG TÍNH NĂNG MỚI. Đây là nghiệm thu GIỚI HẠN THEO PHẢN HỒI,
+không được suy diễn đã thử toàn bộ DPI, save/load cũ, build Windows,
+mọi wave, CI/Unity PlayMode. Khi chưa có lỗi nghiêm trọng, ĐÓNG BĂNG
+tối ưu camera của .54g và đưa polish vào backlog P3.
+
+MỐC SOURCE: feature/0.0.4.54g tại c86201b364b21d6a195e3ebd51668067427d04eb
+là gameplay đã được user chấp nhận trước commit tài liệu chốt mốc.
+Camera mặc định lấy trung bình X Hero đang hoạt động + quái sống đang
+trong viewport (cameraUseCombatCenter=true); tắt cờ để theo một Hero.
+Deadzone 38%, SmoothDamp chạy .2s, hồi nghỉ về 40%/.6s khi Hero đã
+tiến sâu sang trái rồi dừng; mã Ground/quái/đạn dùng cùng camera pan.
+Không tự merge main, gán tag, tạo release hoặc nhánh kế tiếp trước
+khi có yêu cầu rõ ràng. Giữ nhánh đã chốt làm điểm đối chiếu.
+
+ƯU TIÊN PHÁT TRIỂN SAU .54g (ĐỀ XUẤT, CHƯA ĐƯỢC USER CHỐT TRIỂN KHAI):
+P0: TÁCH LÕI CHIẾN ĐẤU THEO TỪNG THỰC THỂ (CombatManager hiện dùng
+heroController/currentHeroHP/maxHeroHP/heroAttackTimer chung 1 Hero).
+B1 đầu tiên chỉ tạo state HP/timer/stat theo Hero mà GIỮ gameplay một
+Hero hoạt động y như .54g; 2 state độc lập trong test, không đổi UI/save.
+B2 về sau đổi chọn mục tiêu và áp sát thương theo đúng thực thể.
+P1a: Schema/save có phiên bản và migration tối thiểu, thêm theo lát cắt.
+P1b: Trang bị tối thiểu 1 slot + 1-2 item HP/ATK có equip/unequip/save.
+P1c: Hai kỹ năng tự động theo ưu tiên, cooldown/tầm đánh khác nhau.
+P2a: 2 Hero chiến đấu độc lập + đội hình/camera nhóm sau khi combat đủ.
+P2b: Asset/SFX/VFX kết nối theo schema và tool nhập nội dung.
+P3: Boss/elite, buff/debuff, độ hiếm, luân hồi/offline, polish camera/UI.
+Không buộc làm đủ 100% item/skill/art trước khi tiếp tục; phải đạt
+tiêu chí giao tiếp và hồi quy ở Docs/Development_Roadmap.md.
+Chưa được user yêu cầu thực hiện mốc B1 ngay; hiện chỉ ghi chú/xếp ưu tiên.
+QA mở: 25 wave, save cũ, DPI, resize, Windows runtime dài giờ; nếu có lỗi
+P0 nghiêm trọng thì sửa trước khi thêm tính năng.
+
 0. ĐỌC TRƯỚC: PHẠM VI, NGUỒN VÀ ĐỘ TIN CẬY
 
 Tài liệu này là điểm nạp bối cảnh cho các phiên phát triển tiếp theo. Không dùng

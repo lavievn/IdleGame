@@ -127,3 +127,15 @@ Hero nhanh hơn/tương đương/chậm hơn `scrollSpeed`, Hero dừng khi đá
 **Hồi quy:** có thêm 6 bài thử về phép trung bình, nhiều Hero, công tắc quay về camera Hero, quái ra/vào viewport hoặc chết, và giới hạn Hero + đồng bộ Ground. Bộ camera có tổng **19 bài hồi quy** trong Tests~/CameraFollowRegression.cs. Việc qua kiểm tra nguồn/mô phỏng không thay cho Unity Play Mode/Windows thực tế.
 
 **Cách thử nhanh:** `Fetch/Pull` nhánh feature/0.0.4.54g, trong Scene MainGame mở `EnvironmentManager`, bật/tắt `Camera Use Combat Center`; chạy một Hero vs một quái, nhiều quái, quái cung đứng đánh, Hero 700 dừng bắn, đổi 600/800/1150 và hết wave. Quan sát Hero có ra mép thật, Ground và quái có bị lệch, hoặc camera xoay chiều khi quái chết không.
+
+## Chốt phiên bản 0.0.4.54g — xác nhận của người phát triển (11/10/2026)
+
+**Trạng thái chính thức của vòng tính năng:** NGƯỜI PHÁT TRIỂN ĐÃ KIỂM THỬ VÀ CHẤP NHẬN SỬ DỤNG. Camera chưa giống hoàn toàn video tham khảo nhưng đạt ngưỡng chấp nhận, đã thử ổn với Hero cận chiến, đánh xa, di chuyển nhanh/chậm. **Ngừng tinh chỉnh camera ở .54g; chuyển sang phát triển tính năng khác.**
+
+**Bản gameplay được xác nhận:** commit `c86201b364b21d6a195e3ebd51668067427d04eb` trên nhánh `feature/0.0.4.54g`, với cameraUseCombatCenter mặc định bật, có thể quay về Hero-only bằng Inspector. Những commit sau mốc này, nếu có, chỉ để cập nhật tài liệu chốt mốc; không sửa thêm gameplay trong .54g.
+
+**Không suy rộng phạm vi nghiệm thu:** chưa có bằng chứng kiểm thử tự động C#/Unity mới nhất, mọi kích thước DPI, EXE Windows chạy dài giờ, tương thích toàn bộ bản lưu cũ, toàn chuỗi 25 wave hoặc tất cả tổ hợp combat. Giữ các hạng mục đó ở danh sách hậu kiểm; gặp lỗi nghiêm trọng thì sửa theo mức độ ưu tiên.
+
+**Không tự gộp vào main, gắn tag/release hoặc tạo nhánh sau** nếu chưa có yêu cầu rõ ràng.
+
+**Ưu tiên phiên bản tiếp theo:** P0 — tách trạng thái HP/nhịp đánh/dữ liệu của từng nhân vật ra khỏi CombatManager một-Hero; B1 chỉ thay kiến trúc và bảo đảm hành vi 1 Hero như .54g, hai state độc lập được kiểm thử. P1 — schema/save theo phiên bản, trang bị thật một slot, kỹ năng tự động mẫu; P2 — 2 Hero độc lập, asset/VFX/SFX theo dữ liệu; P3 — boss/luân hồi/offline/polish camera. Chi tiết ràng buộc và cổng chuyển bước xem `Docs/Development_Roadmap.md`. Đây là thứ tự đề xuất, **chưa phải lệnh bắt đầu code**.
