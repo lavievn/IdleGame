@@ -12,8 +12,45 @@ partial class MotionRegression
     static void Near(float a,float b,string message,float tolerance=0.002f) { Check(Math.Abs(a-b)<=tolerance,message+": "+a+" != "+b); }
     static void Run(string name,Action test) { test(); tests++; Console.WriteLine("PASS "+name); }
     static void Call(object value,string method) { value.GetType().GetMethod(method,BindingFlags.NonPublic|BindingFlags.Instance).Invoke(value,null); }
-    static void Set(object value,string field,object data) { value.GetType().GetField(field,BindingFlags.NonPublic|BindingFlags.Instance).SetValue(value,data); }
-    static T Get<T>(object value,string field) { return (T)value.GetType().GetField(field,BindingFlags.NonPublic|BindingFlags.Instance).GetValue(value); }
+    // Legacy regression cases refer to the old CombatManager scalar field
+    // names. Resolve them to HeroCombatState instead of keeping duplicate
+    // mutable HP/timer data just to satisfy reflection from older tests.
+    static object ResolveTestMember(object value,ref string name)
+    {
+        var combat=value as CombatManager;
+        if (combat == null) return value;
+        switch (name)
+        {
+            case "heroController": name="Controller"; break;
+            case "runtimeHeroData": name="Data"; break;
+            case "currentHeroHP": name="CurrentHP"; break;
+            case "maxHeroHP": name="MaxHP"; break;
+            case "heroAttackTimer": name="AttackTimer"; break;
+            case "heroWindupMode": name="WindupMode"; break;
+            default: return value;
+        }
+        return combat.CurrentHeroCombatState;
+    }
+    static void Set(object value,string member,object data)
+    {
+        value=ResolveTestMember(value,ref member);
+        var flags=BindingFlags.NonPublic|BindingFlags.Public|BindingFlags.Instance;
+        var field=value.GetType().GetField(member,flags);
+        if (field != null) { field.SetValue(value,data); return; }
+        var property=value.GetType().GetProperty(member,flags);
+        if (property != null) { property.SetValue(value,data,null); return; }
+        throw new MissingMemberException(value.GetType().Name,member);
+    }
+    static T Get<T>(object value,string member)
+    {
+        value=ResolveTestMember(value,ref member);
+        var flags=BindingFlags.NonPublic|BindingFlags.Public|BindingFlags.Instance;
+        var field=value.GetType().GetField(member,flags);
+        if (field != null) return (T)field.GetValue(value);
+        var property=value.GetType().GetProperty(member,flags);
+        if (property != null) return (T)property.GetValue(value,null);
+        throw new MissingMemberException(value.GetType().Name,member);
+    }
 
     class Field
     {
@@ -263,6 +300,7 @@ partial class MotionRegression
         Patch54gTests();
         Patch54hTests();
         CameraFollowTests();
+        HeroCombatStateTests();
         TerrainTests();
         MenuDifficultyTests();
         BalanceTests();

@@ -31,12 +31,38 @@ public class CombatManager : MonoBehaviour
     private readonly List<Projectile> projectiles = new List<Projectile>();
     public int PendingProjectileCount => projectiles.Count;
     private GameManager gameManager;
-    private HeroController heroController;
-    private EntityDataSO runtimeHeroData;
-    private int currentHeroHP, maxHeroHP;
+    // B1: ONE authoritative object owns this Hero's transient HP/data/timer.
+    // These forwarding properties preserve the .54g combat call sites while
+    // the next phase (B2) prepares target/damage routing for several Heroes.
+    private readonly HeroCombatState primaryHeroState = new HeroCombatState();
+    public HeroCombatState CurrentHeroCombatState => primaryHeroState;
+    private HeroController heroController
+    {
+        get { return primaryHeroState.Controller; }
+        set { primaryHeroState.Controller = value; }
+    }
+    private EntityDataSO runtimeHeroData => primaryHeroState.Data;
+    private int currentHeroHP
+    {
+        get { return primaryHeroState.CurrentHP; }
+        set { primaryHeroState.CurrentHP = value; }
+    }
+    private int maxHeroHP
+    {
+        get { return primaryHeroState.MaxHP; }
+        set { primaryHeroState.MaxHP = value; }
+    }
+    private float heroAttackTimer
+    {
+        get { return primaryHeroState.AttackTimer; }
+        set { primaryHeroState.AttackTimer = value; }
+    }
+    private AttackMode heroWindupMode
+    {
+        get { return primaryHeroState.WindupMode; }
+        set { primaryHeroState.WindupMode = value; }
+    }
     private bool isBattling;
-    private float heroAttackTimer;
-    private AttackMode heroWindupMode;
 
     public class ActiveMonsterInfo
     {
@@ -62,10 +88,9 @@ public class CombatManager : MonoBehaviour
     public void SetupHeroInfo(EntityDataSO hData)
     {
         ClearProjectiles();
-        runtimeHeroData = hData;
         if (CombatBalance.HeroDev != null && heroController != null) heroController.moveSpeed = CombatBalance.HeroDev.movementSpeed;
-        maxHeroHP = runtimeHeroData.GetCalculatedHealth(heroController != null ? heroController.attackMode : AttackMode.Melee);
-        currentHeroHP = maxHeroHP;
+        int initialMaxHP = hData.GetCalculatedHealth(heroController != null ? heroController.attackMode : AttackMode.Melee);
+        primaryHeroState.BeginLife(hData, initialMaxHP);
         ResetHeroAttack();
         if (heroController != null)
         {
@@ -231,7 +256,7 @@ public class CombatManager : MonoBehaviour
             heroController.UpdateChargeBar(false,0f);
             return;
         }
-        bool ready = AdvanceCycle(ref heroAttackTimer,mode,duration,dt);
+        bool ready = AdvanceCycle(ref primaryHeroState.AttackTimer,mode,duration,dt);
         heroController.UpdateChargeBar(mode == AttackMode.RangedMagic,heroAttackTimer/duration);
         if (!ready || !isBattling || target == null) return;
         heroAttackTimer = mode == AttackMode.RangedMagic ? 0f : duration;
@@ -259,7 +284,7 @@ public class CombatManager : MonoBehaviour
 
     private void ResetHeroAttack()
     {
-        heroAttackTimer = 0f;
+        primaryHeroState.ResetAttack();
         if (heroController != null) heroController.UpdateChargeBar(false, 0f);
     }
 
