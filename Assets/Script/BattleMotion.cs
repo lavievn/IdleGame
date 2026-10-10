@@ -102,102 +102,82 @@ public static class DamagePopupMotion
 }
 
 
-// Camera velocity control in Ground-local units. The red zone is a soft trigger,
-// NEVER a hard clamp on hero position. The physical screen edges remain safety bounds.
-public enum SoftCameraPhase { Normal, Accelerating, Releasing }
-
-public sealed class SoftZoneCamera
+// A deadzone is a REGION, not a fixed point the Hero must occupy.
+// SmoothDamp uses the same 1D spring approximation as Unity Mathf.SmoothDamp;
+// we keep it in pure C# so the camera math is testable without Unity.
+public sealed class DeadzoneCamera
 {
-    public SoftCameraPhase Phase { get; private set; } = SoftCameraPhase.Normal;
-    public float AccelerationElapsed { get; private set; }
-    // Brief velocity blend after recovery. Unlike the old Following state,
-    // Releasing ALWAYS ends: it never locks the Hero to one screen position.
-    public const float ReleaseSeconds = .4f;
-    private float releaseElapsed;
-    private float releaseStartSpeed;
+    // Only retain velocity. An idle game may run for days: a cumulative
+    // camera world offset would eventually lose float precision.
+    private float velocity;
+    public float Velocity => velocity;
 
     public void Reset()
     {
-        Phase = SoftCameraPhase.Normal;
-        AccelerationElapsed = 0f;
-        releaseElapsed = 0f;
-        releaseStartSpeed = 0f;
+        velocity = 0f;
     }
 
     private static float Clamp(float x, float lo, float hi)
         => Math.Max(lo, Math.Min(hi, x));
 
-    public float Pan(float heroX, float heroWalkDistance,
-        float redLeft, float redRight, float viewLeft, float viewRight,
-        float baselineScrollSpeed, float dt, float accelerationSeconds,
-        float preferredRatio)
+    // All inputs use the stable Ground-local coordinate system. Hero movement
+    // is already applied before this call. Return ONE shared pan for actors,
+    // attacks and environment; zero when idle inside the deadzone.
+    public float Pan(float heroScreenX, float redLeft, float redRight,
+        float viewLeft, float viewRight, float dt, float smoothTime,
+        float deadzoneWidthRatio, float deadzoneCenterRatio)
     {
         if (dt <= 0f || viewRight <= viewLeft) return 0f;
+        float width = viewRight - viewLeft;
+        float center = viewLeft + width * Clamp(deadzoneCenterRatio, .4f, .6f);
+        float half = .5f * width * Clamp(deadzoneWidthRatio, .02f, .3f);
+        float left = center - half, right = center + half;
 
-        float normalSpeed = Math.Max(0f, baselineScrollSpeed);
-        float normalPan = normalSpeed * dt;
-        float goal = viewLeft + (viewRight - viewLeft) * Clamp(preferredRatio,.5f,.68f);
-        float left = Math.Min(redLeft, redRight);
-        float right = Math.Max(redLeft, redRight);
+        // Follow ONLY when the Hero leaves the deadzone. When they return,
+        // velocity decays toward zero rather than continuing to auto-scroll.
+        float correction = heroScreenX < left ? left - heroScreenX
+            : heroScreenX > right ? right - heroScreenX : 0f;
+        // Each frame is expressed relative to the current view, so no
+        // unbounded accumulated camera coordinate is needed.
+        // Red boundaries are secondary soft catch-up thresholds. Increase
+        // responsiveness outside them, WITHOUT clamping Hero to the red edge.
+        if (heroScreenX < Math.Min(redLeft, redRight)
+            || heroScreenX > Math.Max(redLeft, redRight))
+            smoothTime = Math.Max(.08f, smoothTime * .55f);
+        float pan = SmoothDamp(0f, correction, ref velocity, smoothTime, dt);
 
-        // The camera scrolls normally UNTIL the hero would leave the red zone.
-        // Do not constrain their position to the red edge.
-        if (Phase == SoftCameraPhase.Normal &&
-            (heroX + normalPan <= left || heroX + normalPan >= right))
+        // Red-zone boundaries are NOT a clamp. Protect only the actual
+        // screen edges when the Hero is too fast for a soft camera response.
+        float safety = Math.Min(30f, width * .03f);
+        float clampedPan = Clamp(pan,
+            viewLeft + safety - heroScreenX,
+            viewRight - safety - heroScreenX);
+        if (Math.Abs(clampedPan - pan) > .0001f)
+            velocity = 0f; // Don't retain momentum from a physically clipped step.
+        if (Math.Abs(velocity) < .01f && Math.Abs(clampedPan) < .001f)
+            velocity = 0f;
+        return clampedPan;
+    }
+
+    // Standard Unity SmoothDamp spring approximation, specialized to float.
+    private static float SmoothDamp(float current, float target,
+        ref float currentVelocity, float smoothTime, float deltaTime)
+    {
+        smoothTime = Math.Max(.0001f, smoothTime);
+        float omega = 2f / smoothTime;
+        float x = omega * deltaTime;
+        float exponent = 1f / (1f + x + .48f*x*x + .235f*x*x*x);
+        float change = current - target;
+        float originalTarget = target;
+        float temp = (currentVelocity + omega * change) * deltaTime;
+        currentVelocity = (currentVelocity - omega * temp) * exponent;
+        float output = target + (change + temp) * exponent;
+        // Match Unity's no-overshoot branch when passing a moving target.
+        if ((originalTarget - current > 0f) == (output > originalTarget))
         {
-            Phase = SoftCameraPhase.Accelerating;
-            AccelerationElapsed = 0f;
+            output = originalTarget;
+            currentVelocity = 0f;
         }
-
-        float pan = normalPan;
-        if (Phase == SoftCameraPhase.Accelerating)
-        {
-            AccelerationElapsed += dt;
-            float t = Clamp(AccelerationElapsed / Math.Max(.001f,accelerationSeconds),0f,1f);
-            float ramp = t*t*(3f - 2f*t);
-            // heroX is ALREADY sampled after the Hero's walking step.
-            // Using goal-heroX together with walking feed-forward double-counts
-            // that step and can make the recovery converge just past the goal,
-            // never exit Accelerating. Correct against the pre-walk position.
-            float walkSpeed = Math.Max(0f,heroWalkDistance) / dt;
-            float preWalkHeroX = heroX + Math.Max(0f,heroWalkDistance);
-            float desiredSpeed = walkSpeed + (goal - preWalkHeroX) * 2f;
-            float speed = normalSpeed + (desiredSpeed - normalSpeed) * ramp;
-            pan = speed * dt;
-
-            // No snapping to the RED boundary. Ease toward the preferred
-            // position, then RELEASE back to normal scroll instead of locking.
-            float error = goal - heroX;
-            if (error > 0f && pan > error) pan = error;
-            if (error < 0f && pan < error) pan = error;
-        }
-        else if (Phase == SoftCameraPhase.Releasing)
-        {
-            // End the catch-up smoothly over a short fixed interval and return
-            // to normal scrolling. The Hero is free to drift again in the red
-            // zone. A later edge crossing initiates a NEW catch-up cycle.
-            releaseElapsed += dt;
-            float t = Clamp(releaseElapsed / ReleaseSeconds,0f,1f);
-            float eased = t*t*(3f - 2f*t);
-            pan = (releaseStartSpeed + (normalSpeed - releaseStartSpeed) * eased) * dt;
-        }
-
-        // A hero may pass the red boundary; only the *physical* viewport is
-        // protected so acceleration cannot let them disappear off-screen.
-        float safety = Math.Min(32f,(viewRight-viewLeft)*.03f);
-        pan = Clamp(pan,viewLeft+safety-heroX,viewRight-safety-heroX);
-
-        if (Phase == SoftCameraPhase.Accelerating && Math.Abs(goal - (heroX+pan)) <= 1f)
-        {
-            Phase = SoftCameraPhase.Releasing;
-            releaseStartSpeed = pan / dt;
-            releaseElapsed = 0f;
-        }
-        else if (Phase == SoftCameraPhase.Releasing && releaseElapsed >= ReleaseSeconds)
-        {
-            Reset(); // Critical: no permanent Following state.
-        }
-
-        return pan;
+        return output;
     }
 }

@@ -1,155 +1,178 @@
 using System;
 using UnityEngine;
+using TuTienCore;
 
-// Soft-zone camera regression. Unity stubs test coordinate/time logic;
-// final visual feel still needs real Unity and Windows playback.
+// Camera tests run with Unity stubs, not actual Editor/Windows Play Mode.
 partial class MotionRegression
 {
+    // HeroController applies its walking step BEFORE the camera evaluates pan.
+    private static float StepDeadzone(DeadzoneCamera camera, ref float heroX,
+        float speed, float dt, float width=1000f)
+    {
+        heroX -= speed*dt;
+        float pan=camera.Pan(heroX,-227.5f,197.5f,-width*.5f,width*.5f,
+            dt,.2f,.1f,.5f);
+        heroX += pan;
+        return pan;
+    }
+
     static void CameraFollowTests()
     {
-        Run("54g soft camera accelerates on LEFT breach, then releases to normal scroll",()=>{
-            var camera = new SoftZoneCamera();
-            float x = -205f;
-            float initialSpeed=0f, speedAfterOneSecond=0f;
-            for(int i=0;i<10;i++)
+        Run("54g deadzone: stationary Hero cannot cause independent camera scrolling",()=>{
+            foreach(int fps in new[]{30,60,144})
             {
-                x -= 20f; // Hero faster than the default camera.
-                float pan=camera.Pan(x,20f,-200f,200f,-500f,500f,50f,
-                    .1f,1f,.62f);
-                x += pan;
-                if (i==0) initialSpeed=pan/.1f;
-                if (i==9) speedAfterOneSecond=pan/.1f;
-                if (i==0) Check(x < -200f,"red border is NOT a hard clamp");
+                var c=new DeadzoneCamera();float x=0f;
+                for(int i=0;i<fps*3;i++)
+                {
+                    Near(StepDeadzone(c,ref x,0f,1f/fps),0f,"idle pan",.0001f);
+                    Near(c.Velocity,0f,"no velocity from legacy scrollSpeed",.0001f);
+                }
+                Near(x,0f,"Hero stays where deployed",.0001f);
             }
-            Check(camera.Phase == SoftCameraPhase.Accelerating,"first chase active");
-            Near(camera.AccelerationElapsed,1f,"one-second acceleration window",.001f);
-            Check(speedAfterOneSecond > initialSpeed+100f,"speed ramps gradually");
-
-            bool sawRelease=false, sawNormal=false;
-            for(int i=0;i<80;i++)
-            {
-                x-=20f;
-                x+=camera.Pan(x,20f,-200f,200f,-500f,500f,50f,.1f,1f,.62f);
-                if (camera.Phase==SoftCameraPhase.Releasing) sawRelease=true;
-                if (sawRelease && camera.Phase==SoftCameraPhase.Normal) { sawNormal=true; break; }
-            }
-            Check(sawRelease&&sawNormal,"chase ends and restores baseline camera mode");
-            float previous=x;
-            x-=20f;
-            float restoredPan=camera.Pan(x,20f,-200f,200f,-500f,500f,50f,.1f,1f,.62f);
-            x+=restoredPan;
-            Near(restoredPan,5f,"back to ORIGINAL 50-units/s scroll");
-            Check(x<previous-10f,"Hero is free to drift after recovery");
-
-            bool secondChase=false;
-            for(int i=0;i<70;i++)
-            {
-                x-=20f;
-                x+=camera.Pan(x,20f,-200f,200f,-500f,500f,50f,.1f,1f,.62f);
-                if(camera.Phase==SoftCameraPhase.Accelerating){secondChase=true;break;}
-            }
-            Check(secondChase,"next red-border crossing triggers another catch-up");
         });
 
-        Run("54g RIGHT breach returns smoothly, then camera scrolls again",()=>{
-            var camera = new SoftZoneCamera();
-            float x=205f;
-            bool crossedFartherRight=false, sawRelease=false, sawNormal=false;
-            for(int i=0;i<100;i++)
+        Run("54g deadzone: Hero moves freely INSIDE the central 10 percent",()=>{
+            var c=new DeadzoneCamera();float x=0f;
+            Near(StepDeadzone(c,ref x,200f,.1f),0f,"first 20-unit step",.0001f);
+            Near(x,-20f,"Hero moves with camera stationary");
+            Near(StepDeadzone(c,ref x,200f,.1f),0f,"second 20-unit step",.0001f);
+            Near(x,-40f,"still in deadzone");
+            float third=StepDeadzone(c,ref x,200f,.1f);
+            Check(third>0f&&third<20f,"crossing left deadzone begins smooth following");
+            Check(x < -50f,"deadzone edge is not an instant hard clamp");
+        });
+
+        Run("54g deadzone: smooth catch-up then smooth deceleration on aim",()=>{
+            foreach(int fps in new[]{30,60,144})
             {
-                x+=camera.Pan(x,0f,-200f,200f,-500f,500f,150f,.1f,1f,.62f);
-                if(x>210f) crossedFartherRight=true;
-                if(camera.Phase==SoftCameraPhase.Releasing) sawRelease=true;
-                if(sawRelease&&camera.Phase==SoftCameraPhase.Normal){sawNormal=true;break;}
+                float dt=1f/fps,x=0f;var c=new DeadzoneCamera();
+                for(int i=0;i<fps*2;i++)
+                    StepDeadzone(c,ref x,320f,dt);
+                Check(x < -50f && x > -150f,"Hero can lead while moving");
+                Check(c.Velocity>200f,"camera gained following velocity");
+
+                float before=c.Velocity;
+                StepDeadzone(c,ref x,0f,dt);
+                Check(c.Velocity<before,"brakes immediately once Hero stops");
+                for(int i=0;i<fps;i++)
+                    StepDeadzone(c,ref x,0f,dt);
+                Near(c.Velocity,0f,"camera eventually comes to rest",.3f);
+                Check(x>=-55f&&x<=-49f,"stops at deadzone edge, not across red border");
+                Near(StepDeadzone(c,ref x,0f,dt),0f,
+                    "stationary aiming no autonomous background pan",.01f);
             }
-            Check(crossedFartherRight,"Hero can move beyond red right edge");
-            Check(sawRelease&&sawNormal,"right-side recovery has a finite end");
-            float position=x;
-            float normalPan=camera.Pan(x,0f,-200f,200f,-500f,500f,150f,.1f,1f,.62f);
-            Near(normalPan,15f,"idle Hero does not freeze camera forever");
-            Check(position+normalPan>position,"Hero drifts right as normal scrolling resumes");
         });
 
-        Run("54g slower Hero reaches return target without asymptotic Following lock",()=>{
-            var camera=new SoftZoneCamera();
-            float x=205f;
-            bool released=false, normalAgain=false;
-            for(int i=0;i<100;i++)
+        Run("54g deadzone: two move-stop cycles do not freeze or oscillate",()=>{
+            foreach(int fps in new[]{30,60,144})
             {
-                x-=4f; // 40 units/s movement against 150 units/s scrolling.
-                x+=camera.Pan(x,4f,-200,200,-500,500,150,.1f,1f,.62f);
-                if(camera.Phase==SoftCameraPhase.Releasing) released=true;
-                if(released&&camera.Phase==SoftCameraPhase.Normal){normalAgain=true;break;}
+                var c=new DeadzoneCamera();float x=0f,dt=1f/fps;
+                for(int cycle=0;cycle<2;cycle++)
+                {
+                    bool hadMovement=false;
+                    for(int i=0;i<fps*2;i++)
+                        if(StepDeadzone(c,ref x,350f,dt)>0f) hadMovement=true;
+                    Check(hadMovement,"camera follows again on cycle "+cycle);
+                    for(int i=0;i<fps*2;i++)
+                        StepDeadzone(c,ref x,0f,dt);
+                    Near(c.Velocity,0f,"stopped after cycle "+cycle,.02f);
+                    Check(x>=-55f&&x<=-49f,
+                        "no overshoot/right-side shaking on cycle "+cycle);
+                }
             }
-            Check(released&&normalAgain,"corrected pre-walk error eventually ends chase");
         });
 
-        Run("54g normal scroll stays unchanged while Hero remains inside red",()=>{
-            var camera=new SoftZoneCamera();
-            float x=0f;
-            for(int i=0;i<60;i++)
+        Run("54g red border: speed up follow without hard-clamping Hero",()=>{
+            foreach(int fps in new[]{30,60,144})
             {
-                x-=15f;
-                float pan=camera.Pan(x,15f,-200,200,-500,500,150,.1f,1f,.62f);
-                x+=pan;
-                Near(pan,15f,"normal camera unchanged",.0001f);
-                Check(camera.Phase==SoftCameraPhase.Normal,"no unnecessary recenter");
+                float dt=1f/fps,x=-235f;var c=new DeadzoneCamera();
+                StepDeadzone(c,ref x,1500f,dt);
+                Check(x< -227.5f,"Hero can go past RED edge");
+                Check(x > -470f,"but still visible in physical screen");
+                for(int i=0;i<fps*2;i++)
+                {
+                    StepDeadzone(c,ref x,1500f,dt);
+                    Check(x>=-470f&&x<=470f,"physical viewport protects only true edges");
+                }
+                Check(x>-270f,"red border boosts recovery to keep fast Hero in frame");
             }
-            Near(x,0,"Hero retains off-center within red area");
         });
 
-        Run("54g pause/reset does not keep stale camera acceleration",()=>{
-            var camera=new SoftZoneCamera();
-            camera.Pan(-220f,20f,-200,200,-500,500,50,.1f,1f,.62f);
-            float elapsed=camera.AccelerationElapsed;
-            Near(camera.Pan(-220f,20f,-200,200,-500,500,50,0f,1f,.62f),
-                0f,"pause produces no camera motion");
-            Near(camera.AccelerationElapsed,elapsed,"acceleration clock frozen during pause");
-            camera.Reset();
-            Check(camera.Phase==SoftCameraPhase.Normal && camera.AccelerationElapsed==0,
-                "retry/new Hero clears camera state");
+        Run("54g deadzone: right-side excursion recovers without camera oscillation",()=>{
+            foreach(int fps in new[]{30,60,144})
+            {
+                var c=new DeadzoneCamera();float x=220f,last=x,dt=1f/fps;
+                for(int i=0;i<fps*3;i++)
+                {
+                    StepDeadzone(c,ref x,0f,dt);
+                    Check(x<=last+.01f,"never snaps back right while recovering");
+                    last=x;
+                }
+                Check(x>=49f&&x<=51f,"right deadzone edge is resting location");
+                Near(c.Velocity,0f,"no residual shake",.1f);
+            }
         });
 
-        Run("54g Environment uses same camera pan for moving quái and Ground",()=>{
+        Run("54g deadzone: pause and respawn reset camera momentum",()=>{
+            var c=new DeadzoneCamera();float x=-100f;
+            c.Pan(x,-227.5f,197.5f,-500f,500f,.1f,.2f,.1f,.5f);
+            float velocity=c.Velocity;
+            Near(c.Pan(x,-227.5f,197.5f,-500f,500f,0f,.2f,.1f,.5f),
+                0f,"paused pan zero");
+            Near(c.Velocity,velocity,"paused velocity unchanged");
+            c.Reset();
+            Near(c.Velocity,0f,"respawn clears follow inertia");
+        });
+
+        Run("54g Environment: Hero idle and inside deadzone keeps entire Ground still",()=>{
+            var f=new Field();f.space.useSoftZoneCamera=true;
+            f.space.cameraSmoothTime=.2f;f.space.cameraDeadzoneRatio=.1f;
+            f.space.cameraPreferredX=.5f;
+            f.space.scrollSpeed=150f; // Must have no effect on living Hero.
+            f.hero.moveSpeed=0f;
+            float hero=f.space.Position(f.hero.heroRect).x;
+            float ground=f.space.Position(f.grass).x;
+            for(int i=0;i<90;i++)f.Step(1f/60f);
+            Near(f.space.Position(f.hero.heroRect).x,hero,"stationary Hero",.01f);
+            Near(f.space.Position(f.grass).x,ground,"Ground does not auto-scroll",.01f);
+            Near(f.space.CurrentCameraSpeed,0f,"no legacy camera base speed",.01f);
+
+            f.hero.moveSpeed=200f;
+            for(int i=0;i<3;i++)f.Step(.05f); // 30 Ground units, inside deadzone.
+            Near(f.space.Position(f.grass).x,ground,
+                "Ground remains still while Hero walks inside deadzone",.01f);
+            Near(f.space.CurrentBackgroundSpeed,0f,
+                "Ground does not scroll by heroWalkDistance",.01f);
+
+            for(int i=0;i<60;i++)f.Step(1f/60f);
+            Check(f.space.CurrentCameraSpeed>0f,"camera starts following after zone exit");
+            Near(f.space.CurrentBackgroundSpeed,f.space.CurrentCameraSpeed,
+                "Ground pan equals actor and projectile camera pan",.01f);
+
+            f.hero.moveSpeed=0f;
+            for(int i=0;i<90;i++)f.Step(1f/60f);
+            Near(f.space.CurrentCameraSpeed,0f,"camera stops after Hero stops",.1f);
+            Near(f.space.CurrentBackgroundSpeed,0f,"Ground also stops",.1f);
+            f.space.FollowHero(f.hero);
+            Near(f.space.CameraFollowVelocity,0f,"Retry resets inertia",.01f);
+        });
+
+        Run("54g melee Hero approaching ranged quái: both share the same Ground pan",()=>{
             var f=new Field();
             f.space.useSoftZoneCamera=true;
-            f.space.cameraAccelerationSeconds=1f;
-            f.space.cameraPreferredX=.62f;
-            f.space.scrollSpeed=50f;
-            f.hero.moveSpeed=200f;
-            f.space.SetPosition(f.hero.heroRect,new Vector2(f.space.ZoneLeftX-10f,0f));
-            var m=f.Monster(-900f);
-            float before=f.space.Position(m.Rect).x;
+            f.space.cameraSmoothTime=.2f;f.space.cameraDeadzoneRatio=.1f;
+            f.hero.ChangeAttackMode(0);f.hero.moveSpeed=600f;
+            var ranged=f.Monster(-110f,AttackMode.RangedPhysical);
+            float before=f.space.Position(ranged.Rect).x;
             f.Step(.1f);
-            Check(f.space.CameraPhase==SoftCameraPhase.Accelerating,
-                "real runtime enters soft catch-up once");
-            float actual=f.space.Position(m.Rect).x-before;
-            float expected=m.moveSpeed*.1f + f.space.CurrentBackgroundSpeed*.1f;
-            Near(actual,expected,"monster walk plus Ground pan, not duplicate camera",.05f);
-            Near(f.space.CurrentBackgroundSpeed,200f,"Ground follows actual hero motion",.05f);
-            float elapsed=f.space.CameraPhase==SoftCameraPhase.Accelerating ? .1f : 0f;
-            f.Step(.1f);
-            Check(f.space.CameraPhase==SoftCameraPhase.Accelerating,
-                "phase does not advance twice between Update/LateUpdate");
-            f.space.FollowHero(f.hero);
-            Check(f.space.CameraPhase==SoftCameraPhase.Normal,
-                "respawn or explicit FollowHero resets camera");
-
-            // Critical regression: a ranged monster can STOP to attack while
-            // the melee Hero keeps advancing and soft-camera acceleration runs.
-            var f2=new Field();
-            f2.space.useSoftZoneCamera=true;
-            f2.space.scrollSpeed=50f; f2.hero.moveSpeed=200f;
-            f2.hero.ChangeAttackMode(0);
-            f2.space.SetPosition(f2.hero.heroRect,new Vector2(f2.space.ZoneLeftX-10f,0f));
-            var ranged=f2.Monster(f2.space.ZoneLeftX-210f,AttackMode.RangedPhysical);
-            float rangedBefore=f2.space.Position(ranged.Rect).x;
-            f2.Step(.1f);
             Check(ranged.currentState==MonsterState.Attacking,
-                "ranged monster stops and fires before melee Hero arrives");
-            Near(f2.space.Position(ranged.Rect).x-rangedBefore,
-                f2.space.CurrentBackgroundSpeed*.1f,
-                "standing ranged monster stays coupled to Ground during camera chase",.05f);
+                "ranged defender stands and shoots");
+            Near(f.space.Position(ranged.Rect).x-before,
+                f.space.CurrentBackgroundSpeed*.1f,
+                "stationary ranged defender moves exactly with Ground",.05f);
+            for(int i=0;i<90;i++)f.Step(1f/60f);
+            Near(f.space.CurrentCameraSpeed,0f,
+                "camera eventually settles when melee Hero stops in range",.3f);
         });
     }
 }

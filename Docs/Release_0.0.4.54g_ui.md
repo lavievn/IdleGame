@@ -60,7 +60,7 @@
 Chưa triển khai các hệ này trong .54g; chưa chốt số ô item, bảng kỹ năng, công thức thưởng item hoặc định dạng nhập tool.
 
 
-## Tinh chỉnh camera mềm cuối .54g — không ghim Hero vào vùng đỏ
+## Lịch sử: camera mềm theo vùng đỏ (đã thay thế)
 
 **Yêu cầu đã làm rõ (10/10/2026):** Vùng đỏ chỉ là ngưỡng cảnh báo camera cần đuổi theo; Hero được phép đi vượt qua, không bị chặn/ghim ngay tại rìa. Camera bắt đầu điều chỉnh **ngay khi vượt biên** và tốc độ đuổi **tăng dần trong 1 giây**; không có khoảng chờ bất động 1 giây. Khi bắt kịp, đưa Hero về vị trí khoảng **62% chiều ngang Ground** rồi **thoát chế độ đuổi**, chuyển mượt về tốc độ cuộn nền bình thường để Hero lại tự do trôi trong vùng đỏ. Nếu vượt biên lần nữa thì kích hoạt lượt đuổi tiếp theo. Đây là sửa lỗi được người dùng báo sau khi bản trước khóa Hero lâu dài ở 62%.
 
@@ -78,3 +78,16 @@ Chưa triển khai các hệ này trong .54g; chưa chốt số ô item, bảng 
 Hero nhanh hơn/tương đương/chậm hơn `scrollSpeed`, Hero dừng khi đánh quái xa, resize/pause/chết/Retry giữa lúc camera đang tăng tốc; kiểm tra quái đứng đánh không trôi so với Ground. Hãy quan sát liệu 1 giây tăng tốc và cảm giác Hero trở về vùng khoảng 62% có mượt hay chưa; thông số này vẫn là giá trị thử nghiệm. Chưa có xác nhận biên dịch hoặc chạy build Unity/Windows ở môi trường thực tế.
 
 **Sửa lỗi hoàn thiện (11/10/2026):** Người phát triển xác nhận bản trước chỉ chạy đúng lượt camera đầu tiên, sau đó Hero bị giữ mãi ở điểm lệch phải. Nguyên nhân xác nhận trong mã: trạng thái `Following` không có điều kiện thoát, đặt `cameraPan = heroWalkDistance` cho mọi khung hình. Đã loại trạng thái bám vô hạn và sửa phép tính vị trí đích để lượt đuổi có thể hoàn tất. Chưa được kiểm tra lại bằng Unity thực tế.
+
+## Camera hiện hành .54g: Deadzone + SmoothDamp
+
+**Nguyên lý mới được người phát triển chốt:** Camera không có vận tốc cuộn nền độc lập khi Hero sống. Camera đứng yên nếu Hero nằm trong vùng chết giữa màn hình; chỉ bám theo với quán tính SmoothDamp khi Hero đi ra ngoài vùng chết. Khi Hero dừng bắn, camera giảm tốc về 0. Không ghim Hero vào một tọa độ cố định và không kéo trái–phải vô hạn.
+
+- DeadzoneCamera thay thế hoàn toàn trạng thái Normal/Accelerating/Releasing trong BattleMotion.cs. Dùng công thức 1D tương đương Unity Mathf.SmoothDamp để dễ kiểm thử headless.
+- Mặc định vùng chết rộng 10% chiều ngang Ground, tâm 50%, smoothTime=0.2 giây; có thể chỉnh cameraDeadzoneRatio, cameraPreferredX và cameraSmoothTime trong EnvironmentManager.
+- Vùng đỏ cũ được giữ làm ngưỡng mềm bên ngoài: khi Hero vượt ra, SmoothDamp phản ứng nhanh hơn (smoothTime x0.55, tối thiểu 0.08 giây). Không khóa Hero vào biên đỏ. Mép vật lý màn hình mới là ranh giới bảo vệ.
+- Quan trọng: trong chế độ mới backgroundPan=cameraPan; Ground, Hero, quái, đạn/hiệu ứng đều nhận cùng dịch camera, cộng thêm chuyển động riêng của đối tượng. Không giữ công thức nền trôi bằng heroWalkDistance khi camera đứng trong Deadzone.
+- Vẫn dùng một cặp pan tính trong Update và áp dụng ở LateUpdate. Camera khi Hero chết tiếp tục nhánh lịch sử. FollowHero/Retry reset vận tốc. Deadzone tính pan theo vị trí tương đối mỗi khung hình, không tích lũy camera offset vô hạn (tránh mất chính xác số thực khi game chạy nhiều giờ); useSoftZoneCamera=false vẫn cho phép đối chiếu camera cũ.
+- Tests~/CameraFollowRegression.cs được thay bằng 9 trường hợp kiểm tra deadzone tĩnh, bắt đầu SmoothDamp, dừng bắn, đi-dừng lặp, chạy nhanh vượt đỏ, điều chỉnh bên phải, pause/reset và quái đứng đánh bám Ground.
+
+**Chưa nghiệm thu:** cần chạy Unity Editor và Windows thực với kích thước 600/800/1150, nhiều tốc độ Hero, quái đánh xa, pause, resize và Hero chết/Retry. Mô phỏng 30/60/144 FPS không thay thế Play Mode.

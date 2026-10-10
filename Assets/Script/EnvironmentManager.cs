@@ -21,14 +21,16 @@ public class EnvironmentManager : MonoBehaviour
     [Range(0f, 0.49f)] public float speedZoneInset = 0.25f;
     public float CurrentBackgroundSpeed { get; private set; }
 
-    [Header("CAMERA - BẮT KỊP HERO KHI VƯỢT VÙNG ĐỎ")]
+    [Header("CAMERA THEO HERO - DEADZONE + SMOOTHDAMP")]
+    // Keep the old flag serialized name so existing .54g scenes keep this ON.
     public bool useSoftZoneCamera = true;
-    [Min(.01f)] public float cameraAccelerationSeconds = 1f;
-    [Range(.5f,.68f)] public float cameraPreferredX = .62f;
-    private readonly SoftZoneCamera softCamera = new SoftZoneCamera();
+    [Min(.01f)] public float cameraSmoothTime = .2f;
+    [Range(.02f,.3f)] public float cameraDeadzoneRatio = .10f;
+    [Range(.4f,.6f)] public float cameraPreferredX = .5f;
+    private readonly DeadzoneCamera deadzoneCamera = new DeadzoneCamera();
     private float plannedCameraPan, plannedBackgroundPan;
     private bool hasPlannedPan;
-    public SoftCameraPhase CameraPhase => softCamera.Phase;
+    public float CameraFollowVelocity => deadzoneCamera.Velocity;
 
     private GroundPresentation groundPresentation;
     private Canvas battleCanvas;
@@ -113,7 +115,7 @@ public class EnvironmentManager : MonoBehaviour
     public void FollowHero(HeroController hero)
     {
         cameraTarget = hero;
-        softCamera.Reset(); // Start or Retry must not inherit old camera velocity.
+        deadzoneCamera.Reset(); // Start or Retry must not inherit old momentum.
         hasPlannedPan = false;
     }
 
@@ -186,23 +188,30 @@ public class EnvironmentManager : MonoBehaviour
             foreach (var hero in HeroController.ActiveHeroes)
                 if (hero != null && hero.IsDeployed) { cameraTarget = hero; break; }
         }
-        if (cameraTarget == null) { softCamera.Reset(); return; }
+        if (cameraTarget == null) { deadzoneCamera.Reset(); return; }
         float heroX = Position(cameraTarget.heroRect).x;
         if (useSoftZoneCamera && cameraTarget.IsDeployed && !cameraTarget.IsDead)
         {
-            cameraPan = softCamera.Pan(heroX,cameraTarget.MovementDistanceThisFrame,
-                ZoneLeftX,ZoneRightX,battleArea.rect.xMin,battleArea.rect.xMax,
-                scrollSpeed,Time.deltaTime,cameraAccelerationSeconds,cameraPreferredX);
+            // Hero movement is applied first; camera does NOT auto-scroll.
+            // It only corrects excursions outside the central deadzone.
+            cameraPan = deadzoneCamera.Pan(heroX,ZoneLeftX,ZoneRightX,
+                battleArea.rect.xMin,battleArea.rect.xMax,Time.deltaTime,
+                cameraSmoothTime,cameraDeadzoneRatio,cameraPreferredX);
         }
         else
         {
             // Keep the established corpse/legacy camera behavior separate.
-            softCamera.Reset();
+            deadzoneCamera.Reset();
             cameraPan = BattleMotion.ZoneCameraStep(heroX, ZoneLeftX, ZoneRightX,
                 scrollSpeed, Time.deltaTime);
         }
-        backgroundPan = cameraTarget.IsDeployed && cameraTarget.MovementDistanceThisFrame > .001f
-            ? cameraTarget.MovementDistanceThisFrame : cameraPan;
+        // In deadzone mode Ground and ALL actors share the same view pan.
+        // The old formula (Ground = Hero movement) caused scenery to drift
+        // even while the camera was stationary inside the deadzone.
+        backgroundPan = useSoftZoneCamera && cameraTarget.IsDeployed
+            && !cameraTarget.IsDead ? cameraPan
+            : cameraTarget.IsDeployed && cameraTarget.MovementDistanceThisFrame > .001f
+                ? cameraTarget.MovementDistanceThisFrame : cameraPan;
     }
 
     public Vector2 Position(RectTransform rect)

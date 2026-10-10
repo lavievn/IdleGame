@@ -19,6 +19,25 @@ bị dính xuống đáy. Sau bản vá Windows 0.0.4.51f, ngày 09/10/2026 ngư
 xác nhận đã thử: System Menu hoạt động, scale cửa sổ đúng logic và cho phép
 merge PR #1 vào main. Chưa có xác nhận riêng về kéo cửa sổ, DPI/màn hình phụ.
 
+TRẠNG THÁI CAMERA MỚI NHẤT — DEADZONE + SMOOTHDAMP (thay phần camera tại .54g)
+[CÓ MÃ, CHƯA UNITY NGHIỆM THU] Yêu cầu: camera KHÔNG tự cuộn,
+Hero đứng bắn thì camera phải giảm tốc về 0 và dừng. Hero di chuyển
+trong Deadzone giữa Ground (mặc định 10% ngang/tâm 50%) không làm camera
+dịch; ra ngoài Deadzone mới bám bằng SmoothDamp 1D, smoothTime=0.2s.
+Vùng đỏ rộng bên ngoài chỉ tăng phản ứng, không kẹp Hero. Không có chu
+trình Normal/Accelerating/Releasing, không có scrollSpeed khi Hero sống.
+Trong EnvironmentManager, backgroundPan = cameraPan ở chế độ Deadzone,
+để quái/đạn/địa hình không trôi khác Hero; chỉ mỗi đối tượng có bước tự
+di chuyển riêng. Vẫn dùng pan của cùng frame tại Update/LateUpdate.
+BattleMotion.cs định nghĩa DeadzoneCamera thay SoftZoneCamera; pan mỗi frame tính tương đối, chỉ giữ vận tốc để tránh mất chính xác số thực khi game chạy nhiều giờ;
+EnvironmentManager giữ cờ useSoftZoneCamera=true để tương thích scene,
+thông số mới cameraSmoothTime=.2, cameraDeadzoneRatio=.1,
+cameraPreferredX=.5. Tests~/CameraFollowRegression.cs có 9 bài thử
+thay thế cơ chế camera cũ. Các đoạn ghi về camera 1s đuổi, tốc cuộn
+mặc định, Following hoặc 62% ở phần lịch sử BÊN DƯỚI ĐÃ LỖI THỜI;
+không dựa vào chúng khi sửa hay đánh giá phiên bản hiện hành.
+KHÔNG ĐƯỢC tuyên bố đã chạy Unity thật trước khi có kết quả máy người dùng.
+
 CẬP NHẬT ƯU TIÊN CAO NHẤT — 0.0.4.54g, trước khi người dùng gộp nhánh lên main
 Nhánh mã kiểm thử: feature/0.0.4.54g. README.MD là tài liệu trạng thái tổng quan
 mới nhất; xem Docs/Release_0.0.4.54g_ui.md cho thay đổi và checklist.
@@ -900,3 +919,24 @@ CameraFollowRegression.cs cập nhật 6 test, trong đó kiểm tra tốc cuộ
 trở lại và đuổi lần hai. Không thay mã Enemy/Melee/Projectile/World.
 Mọi nhận định về thực tế Unity/Windows vẫn chờ user test; đừng tuyên bố
 đã nghiệm thu chỉ từ test giả lập hoặc kiểm tra cấu trúc mã.
+
+
+18. CAMERA DEADZONE HIỆN HÀNH — THAY THẾ TOÀN BỘ NHỮNG THỬ NGHIỆM CAMERA TRƯỚC
+Nguyên nhân xác nhận từ phản hồi người dùng: mọi giải pháp lấy tốc độ cuộn nền
+làm chuyển động camera mặc định đều sai vì Hero dừng bắn vẫn khiến camera trôi
+rồi đảo hướng. Các thử nghiệm khóa vị trí 62% và cơ chế ba trạng thái đuổi
+tăng tốc theo mép đỏ cũng bị loại bỏ, không tiếp tục sửa nối trên chúng.
+Triển khai DeadzoneCamera thuần trong BattleMotion: SmoothDamp 1 trục X,
+vùng chết 10% chiều rộng quanh trung tâm (0.5), smoothTime 0.2s. Camera không
+dịch nếu Hero di chuyển trong deadzone khi vận tốc camera đã về 0. Hero đi qua
+rìa deadzone thì camera bám mượt tới rìa; Hero dừng lại thì quán tính tiêu tán.
+Ngoài vùng đỏ lớn, thời gian làm mượt giảm còn 55% (tối thiểu .08s) giúp đuổi
+kịp Hero nhanh hơn, nhưng KHÔNG kẹp tại biên đỏ. Mép hiển thị vật lý vẫn bảo vệ.
+Chỉnh EnvironmentManager: khi useSoftZoneCamera (tên cờ cũ để giữ scene),
+cameraPan chỉ theo camera Deadzone, không lấy scrollSpeed; backgroundPan
+chính xác bằng cameraPan, đảm bảo quái đứng bắn và Ground trôi cùng nhau.
+Đổi lại camera lúc Hero chết không nằm trong phạm vi sửa, vẫn giữ logic cũ.
+Thay test camera mới bằng 9 trường hợp; giữ test camera cổ thông qua chế độ
+useSoftZoneCamera=false. README.MD và Docs/Release_0.0.4.54g_ui.md cập nhật.
+Phải kiểm tra thật 600/800/1150, Hero chạy–dừng–chạy, quái cung đứng bắn,
+đạn khi resize, Pause/Retry và camera không trôi khi Hero đứng yên.
