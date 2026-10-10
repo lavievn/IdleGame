@@ -19,10 +19,26 @@ bị dính xuống đáy. Sau bản vá Windows 0.0.4.51f, ngày 09/10/2026 ngư
 xác nhận đã thử: System Menu hoạt động, scale cửa sổ đúng logic và cho phép
 merge PR #1 vào main. Chưa có xác nhận riêng về kéo cửa sổ, DPI/màn hình phụ.
 
+ĐIỀU CHỈNH THÔNG SỐ CAMERA SAU PHẢN HỒI (11/10/2026):
+User đã thử nguyên lý Deadzone và xác nhận chuyển động khá ổn, nhưng
+với speed Hero 700 camera vẫn bám quá sớm khi Hero chỉ vừa vượt tâm.
+Không đổi thuật toán SmoothDamp hay smoothTime 0.2s. Mở rộng bề ngang
+Deadzone từ 10% lên 38% Ground; trong scene MainGame ưu tiên giá trị
+explicit cameraDeadzoneRatio: 0.38. Với Ground 1000 và tâm 0, rìa
+Deadzone tại +/-190, biên đỏ do inset tại khoảng -227.5/+197.5.
+Chỉ điều chỉnh camera khi Hero vượt rìa rộng này, cho phép Hero đi
+gần biên đỏ rồi mới camera đuổi. Giới hạn vùng chết không vượt biên
+đỏ ngoài (trừ khoảng an toàn 0.5% width). Đã bổ sung test Hero 700,
+3 tốc độ khung hình, chạy/dừng; chờ người dùng thử thật.
+ĐỀ XUẤT KIẾN TRÚC NHIỀU HERO: tâm trung điểm(minX,maxX) hợp lý khi
+nhóm cận/xa giữ khoảng cách nhỏ hơn viewport; chưa được mã chiến đấu
+hỗ trợ đầy đủ do GameManager/CombatManager chỉ dùng 1 hero chính.
+Đọc Docs/Development_Roadmap.md để xem ưu tiên và tiêu chí chuyển giai đoạn.
+
 TRẠNG THÁI CAMERA MỚI NHẤT — DEADZONE + SMOOTHDAMP (thay phần camera tại .54g)
 [CÓ MÃ, CHƯA UNITY NGHIỆM THU] Yêu cầu: camera KHÔNG tự cuộn,
 Hero đứng bắn thì camera phải giảm tốc về 0 và dừng. Hero di chuyển
-trong Deadzone giữa Ground (mặc định 10% ngang/tâm 50%) không làm camera
+trong Deadzone giữa Ground (hiện mặc định 38% ngang/tâm 50%) không làm camera
 dịch; ra ngoài Deadzone mới bám bằng SmoothDamp 1D, smoothTime=0.2s.
 Vùng đỏ rộng bên ngoài chỉ tăng phản ứng, không kẹp Hero. Không có chu
 trình Normal/Accelerating/Releasing, không có scrollSpeed khi Hero sống.
@@ -940,3 +956,16 @@ Thay test camera mới bằng 9 trường hợp; giữ test camera cổ thông q
 useSoftZoneCamera=false. README.MD và Docs/Release_0.0.4.54g_ui.md cập nhật.
 Phải kiểm tra thật 600/800/1150, Hero chạy–dừng–chạy, quái cung đứng bắn,
 đạn khi resize, Pause/Retry và camera không trôi khi Hero đứng yên.
+
+
+19. KẾ HOẠCH GIAI ĐOẠN — THAM CHIẾU BẢN RÀ SOÁT MỚI
+Xem Docs/Development_Roadmap.md; đây là đề xuất ưu tiên cần user xác nhận,
+không phải tính năng đã triển khai. Chốt vòng core camera/wave/save/Windows;
+sau đó dựng lớp Combatant/Attack/Damage có thể hỗ trợ nhiều hero; tạo đồ và
+kho/slot tối thiểu; kỹ năng tự động dùng ưu tiên; sau đó mới tổ đội nhiều Hero
+và camera trung điểm đội. Phần asset/SFX/tool chỉ nên triển khai sau khi
+schema runtime đủ rõ. Boss/elite, roguelite, luân hồi, offline là giai đoạn sau.
+Không coi logic monster nearest nghĩa khoảng cách cận/xa không thể >400;
+MonsterController chỉ xét Hero hợp lệ trước mặt/đang trong tầm và CombatManager
+hiện bắn vào một heroController. Các quy tắc giữ đội hình phải được thiết kế
+riêng khi cho nhiều Hero độc lập.

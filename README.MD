@@ -57,6 +57,8 @@ Không lấy việc mã chạy trong test doubles làm bằng chứng đã hết
 
 **Tinh chỉnh sau phản hồi Hero tốc độ 700:** giữ `cameraSmoothTime=0.2`, tăng `cameraDeadzoneRatio=0.38` để Hero đến khoảng x=-190 trước khi camera bám (với Ground 1.000, tâm x=0, biên đỏ trái x≈-227,5); giá trị hiệu lực được giới hạn không vượt vùng đỏ. `Assets/Scenes/MainGame.unity` có giá trị tường minh để Unity không giữ thiết lập cũ. Đây là mốc thử nghiệm, không phải camera nhiều Hero. 
 
+**Kế hoạch phát triển sau bản camera:** xem [Docs/Development_Roadmap.md](Docs/Development_Roadmap.md) để phân biệt tình trạng mã thực, rủi ro kiến trúc và các mốc nghiệm thu trước khi chuyển từ lõi chiến đấu → trang bị → kỹ năng tự động → đội hình nhiều Hero → công cụ nội dung. Đây là đề xuất cần thống nhất, không phải cam kết phát hành.
+
 ## Hướng tiếp theo — CHƯA triển khai
 
 **Trước tiên:** nghiệm thu UI/damage/di chuyển; sau đó **đo lại cân bằng chiến đấu** bằng thực chiến, đặc biệt 5 wave đầu và cụm 25 wave, thay vì điều chỉnh chỉ dựa vào cảm nhận.
