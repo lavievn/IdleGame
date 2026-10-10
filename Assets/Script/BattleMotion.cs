@@ -100,3 +100,83 @@ public static class DamagePopupMotion
     }
     public static float Alpha(float elapsed) { return 1f-T(elapsed); }
 }
+
+
+// Camera velocity control in Ground-local units. The red zone is a soft trigger,
+// NEVER a hard clamp on hero position. The physical screen edges remain safety bounds.
+public enum SoftCameraPhase { Normal, Accelerating, Following }
+
+public sealed class SoftZoneCamera
+{
+    public SoftCameraPhase Phase { get; private set; } = SoftCameraPhase.Normal;
+    public float AccelerationElapsed { get; private set; }
+
+    public void Reset()
+    {
+        Phase = SoftCameraPhase.Normal;
+        AccelerationElapsed = 0f;
+    }
+
+    private static float Clamp(float x, float lo, float hi)
+        => Math.Max(lo, Math.Min(hi, x));
+
+    public float Pan(float heroX, float heroWalkDistance,
+        float redLeft, float redRight, float viewLeft, float viewRight,
+        float baselineScrollSpeed, float dt, float accelerationSeconds,
+        float preferredRatio)
+    {
+        if (dt <= 0f || viewRight <= viewLeft) return 0f;
+
+        float normalSpeed = Math.Max(0f, baselineScrollSpeed);
+        float normalPan = normalSpeed * dt;
+        float goal = viewLeft + (viewRight - viewLeft) * Clamp(preferredRatio,.5f,.68f);
+        float left = Math.Min(redLeft, redRight);
+        float right = Math.Max(redLeft, redRight);
+
+        // The camera scrolls normally UNTIL the hero would leave the red zone.
+        // Do not constrain their position to the red edge.
+        if (Phase == SoftCameraPhase.Normal &&
+            (heroX + normalPan <= left || heroX + normalPan >= right))
+        {
+            Phase = SoftCameraPhase.Accelerating;
+            AccelerationElapsed = 0f;
+        }
+
+        float pan = normalPan;
+        if (Phase == SoftCameraPhase.Accelerating)
+        {
+            AccelerationElapsed += dt;
+            float t = Clamp(AccelerationElapsed / Math.Max(.001f,accelerationSeconds),0f,1f);
+            float ramp = t*t*(3f - 2f*t);
+            // Feed-forward matches the hero's actual walking distance; proportional
+            // error then brings them back toward ~62% of the stable Ground viewport.
+            float walkSpeed = Math.Max(0f,heroWalkDistance) / dt;
+            float desiredSpeed = walkSpeed + (goal - heroX) * 2f;
+            float speed = normalSpeed + (desiredSpeed - normalSpeed) * ramp;
+            pan = speed * dt;
+
+            // No snapping to the RED boundary. Stop only at the desired resting
+            // position and then track the hero at their actual pace.
+            float error = goal - heroX;
+            if (error > 0f && pan > error) pan = error;
+            if (error < 0f && pan < error) pan = error;
+        }
+        else if (Phase == SoftCameraPhase.Following)
+        {
+            // Prevent an endless "drift → red edge → chase → drift" loop.
+            // Once caught, matching walk keeps the hero near the resting point;
+            // if they stand to attack the camera also rests.
+            pan = Math.Max(0f,heroWalkDistance);
+        }
+
+        // A hero may pass the red boundary; only the *physical* viewport is
+        // protected so acceleration cannot let them disappear off-screen.
+        float safety = Math.Min(32f,(viewRight-viewLeft)*.03f);
+        pan = Clamp(pan,viewLeft+safety-heroX,viewRight-safety-heroX);
+
+        if (Phase == SoftCameraPhase.Accelerating && Math.Abs(goal - (heroX+pan)) <= .3f)
+            Phase = SoftCameraPhase.Following;
+
+        return pan;
+    }
+}

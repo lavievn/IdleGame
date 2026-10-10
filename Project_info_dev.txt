@@ -44,6 +44,17 @@ Hero_DMG_Text trước đây ở Ground độc lập, Monster_DMG_Text nằm tro
 đã chỉnh neo trực tiếp vào rect đối tượng nhận sát thương. Quái gần/đứng
 đánh/không có target nay đều được bù khác biệt GroundPan-CameraPan thay vì
 bị trôi chậm theo camera khi Hero cận di chuyển tới. Không đổi balance .54f.
+[CÓ MÃ — TINH CHỈNH CAMERA MỀM CUỐI .54g, 10/10/2026] Vùng đỏ không
+còn là ranh giới khóa tọa độ Hero: khi vượt biên, camera ngay lập tức bắt
+đầu đuổi và tăng/điều chỉnh tốc độ trong 1 giây (smoothstep), đưa Hero về
+khoảng 62% chiều ngang Ground. Sau khi đuổi kịp camera theo nhịp chuyển
+động Hero (dừng Hero thì camera dừng) để không gây vòng lặp đuổi. Không
+có bước chờ bất động 1 giây: cách thử cũ đã bị người dùng yêu cầu revert.
+Camera giới hạn mềm chỉ với mép đỏ, giới hạn cứng an toàn chỉ là mép cửa
+sổ thực. EnvironmentManager dùng một cặp pan tính ở Update cho cả
+monster compensation và LateUpdate, không nhân đôi tăng tốc; phần camera
+khi Hero đã chết giữ xử lý cũ. Inspector: useSoftZoneCamera=true,
+cameraAccelerationSeconds=1, cameraPreferredX=.62. Chưa nghiệm thu Unity.
 [CHƯA NGHIỆM THU] Các thay đổi cuối .54g đã được chuẩn bị kiểm tra tĩnh và
 bổ sung bài kiểm tra hồi quy, chưa có kết quả chạy Unity Editor/Windows native.
 Phản hồi người dùng từ .54g trước sửa: wave/terrain thiếu trong tên map; chữ
@@ -807,3 +818,47 @@ quy tắc version, định dạng Unity chuẩn. CHƯA có đặc tả/tool th�
 Nguyên tắc làm việc: một cụm lỗi/nhánh, ưu tiên sửa nguyên nhân, có bài hồi quy
 cho bug cụ thể và yêu cầu Play Mode/Windows test; cập nhật README và tài liệu
 phiên bản trước merge. Chờ kết quả user thử .54g mới làm item/skill/balance.
+
+
+16. CAMERA MỀM .54g — CHỈNH LẠI THEO YÊU CẦU 10/10/2026
+
+Yêu cầu xác nhận:
+- Theo .54f trở về trước, "vùng đỏ" bị hiểu là vùng Hero không được vượt
+qua. Người dùng muốn **vượt qua vùng đỏ được**: ranh giới đỏ chỉ kích hoạt
+camera tăng tốc đuổi Hero khi Hero vượt ngưỡng.
+- Camera **tăng tốc dần TRONG 1 GIÂY**, bắt đầu ngay khi vượt ranh giới;
+KHÔNG chờ 1 giây rồi mới dịch chuyển camera.
+- Khi bắt kịp thì hướng đến khoảng 62% chiều ngang Ground (hơi lệch phải
+tâm); ngừng điều chỉnh bổ sung, duy trì theo nhịp Hero. Trường hợp Hero
+đứng yên, camera dừng thay vì lặp đuổi/camera trôi vào biên lại.
+- Trong vùng đỏ trước khi có truy đuổi, giữ cuộn nền như logic hiện hành;
+ngoài vùng đỏ không ghim ngay ở biên đỏ. Chỉ mép thực của cửa sổ giữ an toàn.
+
+Thiết kế kỹ thuật triển khai:
+- BattleMotion.cs: SoftZoneCamera (Normal/Accelerating/Following). Khi Hero
+vượt ranh giới, nội suy smoothstep 1 giây từ scrollSpeed về tốc độ đuổi,
+xác định theo quãng di chuyển thật Hero + sai số với x mong muốn. Camera
+không viết lại tọa độ logic Hero; chỉ tính pan toàn cảnh.
+- EnvironmentManager.cs: option useSoftZoneCamera mặc định true, mốc 1 giây
+và x=.62 có thể chỉnh trong Inspector; dùng cùng plannedCameraPan và
+plannedBackgroundPan cho AI trong Update và PanWorld/PanEnvironment của
+LateUpdate, để quái đang đứng đánh vẫn bám Ground trong lúc tăng tốc.
+- FollowHero/Retry reset trạng thái camera, không tích lũy đồng hồ gia tốc
+khi pause. Hero chết tiếp tục dùng nhánh camera trước đó.
+- Tests~/MotionRegression.cs bảo tồn kiểm thử camera cũ bằng cách chọn
+useSoftZoneCamera=false trong fixture; CameraFollowRegression.cs gồm 5
+trường hợp mới (trái/phải, tốc tăng trong 1s, trạng thái bám khi Hero dừng,
+pause/respawn, đồng bộ quái và Ground).
+- Đã thử mô phỏng các tình huống toán học để xem chuyển động không bị nhảy
+ngay ở biên đỏ, nhưng KHÔNG có Unity Editor, Windows build hay Play Mode
+thực nghiệm trong môi trường sửa; chưa tuyên bố đã hoàn thành nghiệm thu.
+
+Lịch sử và giới hạn:
+- Commit 2f271a9 đưa cách chờ 1 giây trước khi thu camera, đã được hoàn
+tác bởi 719345f. Không khôi phục cách đó khi tiếp tục.
+- Chưa thay hệ thống các thông số chiến đấu .54f, tăng trưởng, save,
+quái, wave, UI. Main không tự động cập nhật khi sửa nhánh .54g.
+- Nếu về sau quan sát rung/dao động ở x=.62, không sửa bằng clamping
+vào mép vùng đỏ; cần đo theo từng frame các giá trị heroWorldX,
+scrollSpeed, heroWalkDistance, plannedCameraPan, plannedBackgroundPan,
+trạng thái SoftZoneCamera và deltaTime rồi mới điều chỉnh hệ số bám.

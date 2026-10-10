@@ -21,6 +21,15 @@ public class EnvironmentManager : MonoBehaviour
     [Range(0f, 0.49f)] public float speedZoneInset = 0.25f;
     public float CurrentBackgroundSpeed { get; private set; }
 
+    [Header("CAMERA - BẮT KỊP HERO KHI VƯỢT VÙNG ĐỎ")]
+    public bool useSoftZoneCamera = true;
+    [Min(.01f)] public float cameraAccelerationSeconds = 1f;
+    [Range(.5f,.68f)] public float cameraPreferredX = .62f;
+    private readonly SoftZoneCamera softCamera = new SoftZoneCamera();
+    private float plannedCameraPan, plannedBackgroundPan;
+    private bool hasPlannedPan;
+    public SoftCameraPhase CameraPhase => softCamera.Phase;
+
     private GroundPresentation groundPresentation;
     private Canvas battleCanvas;
     private float logicalWidth;
@@ -101,7 +110,12 @@ public class EnvironmentManager : MonoBehaviour
     // Ground units/second actually applied this frame, including zone correction.
     public float CurrentCameraSpeed { get; private set; }
 
-    public void FollowHero(HeroController hero) { cameraTarget = hero; }
+    public void FollowHero(HeroController hero)
+    {
+        cameraTarget = hero;
+        softCamera.Reset(); // Start or Retry must not inherit old camera velocity.
+        hasPlannedPan = false;
+    }
 
     void Awake()
     {
@@ -120,6 +134,7 @@ public class EnvironmentManager : MonoBehaviour
     // All AI moves before CombatManager.Update. Camera presentation runs after both.
     void Update()
     {
+        hasPlannedPan = false;
         SyncBattleProjection(); // Also runs when paused or before deployment.
         if (Time.timeScale == 0f || battleArea == null || Width <= 0f) return;
         float dt = Time.deltaTime;
@@ -127,6 +142,9 @@ public class EnvironmentManager : MonoBehaviour
             if (hero != null && hero.IsDeployed) hero.TickMovement(this, dt);
         float cameraPan, backgroundPan;
         PresentationPan(out cameraPan, out backgroundPan);
+        plannedCameraPan = cameraPan;
+        plannedBackgroundPan = backgroundPan;
+        hasPlannedPan = true;
         float groundMinusCamera = backgroundPan - cameraPan;
         foreach (var monster in MonsterController.ActiveMonsters)
             if (monster != null && monster.IsAlive) monster.TickMovement(this, dt, groundMinusCamera);
@@ -142,7 +160,15 @@ public class EnvironmentManager : MonoBehaviour
         CurrentBackgroundSpeed = 0f;
         if (Time.timeScale == 0f || battleArea == null || Width <= 0f) return;
         float pan, backgroundPan;
-        PresentationPan(out pan, out backgroundPan);
+        // Update used this same pan to compute the monsters' Ground-camera
+        // compensation. Advancing the soft camera again here would desync them.
+        if (hasPlannedPan)
+        {
+            pan = plannedCameraPan;
+            backgroundPan = plannedBackgroundPan;
+        }
+        else PresentationPan(out pan, out backgroundPan);
+        hasPlannedPan = false;
         PanWorld(pan);
         PanEnvironment(backgroundPan);
         CurrentBackgroundSpeed = Time.deltaTime > 0f ? backgroundPan / Time.deltaTime : 0f;
@@ -160,9 +186,21 @@ public class EnvironmentManager : MonoBehaviour
             foreach (var hero in HeroController.ActiveHeroes)
                 if (hero != null && hero.IsDeployed) { cameraTarget = hero; break; }
         }
-        if (cameraTarget == null) return;
-        cameraPan = BattleMotion.ZoneCameraStep(Position(cameraTarget.heroRect).x,
-            ZoneLeftX, ZoneRightX, scrollSpeed, Time.deltaTime);
+        if (cameraTarget == null) { softCamera.Reset(); return; }
+        float heroX = Position(cameraTarget.heroRect).x;
+        if (useSoftZoneCamera && cameraTarget.IsDeployed && !cameraTarget.IsDead)
+        {
+            cameraPan = softCamera.Pan(heroX,cameraTarget.MovementDistanceThisFrame,
+                ZoneLeftX,ZoneRightX,battleArea.rect.xMin,battleArea.rect.xMax,
+                scrollSpeed,Time.deltaTime,cameraAccelerationSeconds,cameraPreferredX);
+        }
+        else
+        {
+            // Keep the established corpse/legacy camera behavior separate.
+            softCamera.Reset();
+            cameraPan = BattleMotion.ZoneCameraStep(heroX, ZoneLeftX, ZoneRightX,
+                scrollSpeed, Time.deltaTime);
+        }
         backgroundPan = cameraTarget.IsDeployed && cameraTarget.MovementDistanceThisFrame > .001f
             ? cameraTarget.MovementDistanceThisFrame : cameraPan;
     }

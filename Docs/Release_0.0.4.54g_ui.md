@@ -58,3 +58,21 @@
 5. **Tool biên tập asset giao diện**: import/gắn animation/effect/sprite/âm thanh cho nhân vật, skill, vũ khí, với schema và kiểm tra reference trước khi xây.
 
 Chưa triển khai các hệ này trong .54g; chưa chốt số ô item, bảng kỹ năng, công thức thưởng item hoặc định dạng nhập tool.
+
+
+## Tinh chỉnh camera mềm cuối .54g — không ghim Hero vào vùng đỏ
+
+**Yêu cầu đã làm rõ (10/10/2026):** Vùng đỏ chỉ là ngưỡng cảnh báo camera cần đuổi theo; Hero được phép đi vượt qua, không bị chặn/ghim ngay tại rìa. Camera bắt đầu điều chỉnh **ngay khi vượt biên** và tốc độ đuổi **tăng dần trong 1 giây**; không có khoảng chờ bất động 1 giây. Khi bắt kịp, đưa Hero về vị trí khoảng **62% chiều ngang Ground**, rồi giữ nhịp theo chuyển động Hero. Nếu Hero dừng đánh thì camera dừng, tránh lặp drift → kích hoạt → đuổi vô hạn.
+
+- `BattleMotion.cs`: thêm `SoftZoneCamera`, ba trạng thái `Normal`, `Accelerating`, `Following`. Trong vùng đỏ tiếp tục cuộn theo `scrollSpeed` như mốc cũ. Ngoài vùng đỏ dùng ramp smoothstep 1 giây để chuyển từ tốc độ cuộn thường sang tốc độ bám Hero kết hợp sai số vị trí đích.
+- Không chặn theo mép đỏ; chỉ **giới hạn ở mép cửa sổ thực** với khoảng an toàn nhỏ, ngăn Hero biến mất khi chạy quá nhanh. Biên trái camera cần tăng tốc cuộn sang phải; ở biên phải có thể cần giảm tốc và dịch ngược nhẹ để đưa Hero trở lại vùng đích.
+- Khi gần đích, `Following` bù đúng quãng Hero tự đi mỗi khung; không cần lặp lại việc tăng tốc. Hero vẫn có thể đứng ngoài vùng đỏ trong giai đoạn tăng tốc trước khi trở lại trung tâm.
+- `EnvironmentManager.cs`: mặc định `useSoftZoneCamera=true`, `cameraAccelerationSeconds=1f`, `cameraPreferredX=.62f`. Để kiểm chứng lại hành vi cũ có thể tắt cờ `useSoftZoneCamera`.
+- `EnvironmentManager.Update` tính một lần cặp `cameraPan/backgroundPan` và lưu cho `LateUpdate`. Điều này bắt buộc vì thuật toán tính chuyển động quái dựa trên **backgroundPan-cameraPan cùng một khung**, không được gọi cập nhật trạng thái camera lần thứ hai trong `LateUpdate`.
+- Camera xác chết vẫn dùng cơ chế cũ; `FollowHero` khi spawn/retry xóa trạng thái gia tốc; pause không tăng đồng hồ. Không thay các hệ số sát thương/HP, skill, wave, map, save, tọa độ logic hay cấu trúc Ground.
+- `Tests~/MotionRegression.cs`: bộ test camera cũ có chủ đích đặt `useSoftZoneCamera=false` để giữ kết quả lịch sử. `Tests~/CameraFollowRegression.cs`: 5 bài kiểm tra mới cho gia tốc, hai biên, trạng thái bám ổn định, pause/reset và quái/Ground cùng bước dịch.
+- **Không khôi phục commit lỗi đã revert**: bản thử trước dùng 1 giây *chờ* rồi nội suy vị trí hồi, không đúng ý định và từng gây lỗi. Thuật toán mới đuổi *ngay lập tức với tốc độ tăng từ từ*.
+
+### Bắt buộc kiểm tra bằng Unity thực
+
+Hero nhanh hơn/tương đương/chậm hơn `scrollSpeed`, Hero dừng khi đánh quái xa, resize/pause/chết/Retry giữa lúc camera đang tăng tốc; kiểm tra quái đứng đánh không trôi so với Ground. Hãy quan sát liệu 1 giây tăng tốc và cảm giác Hero trở về vùng khoảng 62% có mượt hay chưa; thông số này vẫn là giá trị thử nghiệm. Chưa có xác nhận biên dịch hoặc chạy build Unity/Windows ở môi trường thực tế.
