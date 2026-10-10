@@ -130,7 +130,13 @@ public sealed class DeadzoneCamera
         if (dt <= 0f || viewRight <= viewLeft) return 0f;
         float width = viewRight - viewLeft;
         float center = viewLeft + width * Clamp(deadzoneCenterRatio, .4f, .6f);
-        float half = .5f * width * Clamp(deadzoneWidthRatio, .02f, .3f);
+        // Keep deadzone narrower than the outer red limits. The default
+        // 38% Ground width starts following close to the red border rather
+        // than as soon as Hero moves a little from the center.
+        float half = .5f * width * Clamp(deadzoneWidthRatio, .02f, .45f);
+        float redHalf = Math.Min(center - Math.Min(redLeft, redRight),
+            Math.Max(redLeft, redRight) - center);
+        if (redHalf > 0f) half = Math.Min(half, Math.Max(0f, redHalf - width * .005f));
         float left = center - half, right = center + half;
 
         // Follow ONLY when the Hero leaves the deadzone. When they return,

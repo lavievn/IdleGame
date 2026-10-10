@@ -954,6 +954,10 @@ MonoBehaviour:
   speedZoneLeft: 0.06
   speedZoneRight: 0.91
   speedZoneInset: 0.25
+  useSoftZoneCamera: 1
+  cameraSmoothTime: 0.2
+  cameraDeadzoneRatio: 0.38
+  cameraPreferredX: 0.5
   meleeRangeRatio: 0.035
   heroPhysicalRangeRatio: 0.36
   heroMagicRangeRatio: 0.42

@@ -11,7 +11,7 @@ partial class MotionRegression
     {
         heroX -= speed*dt;
         float pan=camera.Pan(heroX,-227.5f,197.5f,-width*.5f,width*.5f,
-            dt,.2f,.1f,.5f);
+            dt,.2f,.38f,.5f);
         heroX += pan;
         return pan;
     }
@@ -31,15 +31,16 @@ partial class MotionRegression
             }
         });
 
-        Run("54g deadzone: Hero moves freely INSIDE the central 10 percent",()=>{
+        Run("54g deadzone: Hero approaches RED zone before camera follows",()=>{
             var c=new DeadzoneCamera();float x=0f;
-            Near(StepDeadzone(c,ref x,200f,.1f),0f,"first 20-unit step",.0001f);
-            Near(x,-20f,"Hero moves with camera stationary");
-            Near(StepDeadzone(c,ref x,200f,.1f),0f,"second 20-unit step",.0001f);
-            Near(x,-40f,"still in deadzone");
-            float third=StepDeadzone(c,ref x,200f,.1f);
-            Check(third>0f&&third<20f,"crossing left deadzone begins smooth following");
-            Check(x < -50f,"deadzone edge is not an instant hard clamp");
+            // Default 38% Ground width: first 180 units are freely walkable.
+            for(int i=0;i<9;i++)
+                Near(StepDeadzone(c,ref x,200f,.1f),0f,
+                    "inside broad deadzone frame "+i,.0001f);
+            Near(x,-180f,"Hero almost reaches left red region unaided");
+            float tenth=StepDeadzone(c,ref x,200f,.1f);
+            Check(tenth>0f&&tenth<20f,"camera starts gently once Hero passes -190");
+            Check(x < -190f,"camera does not snap Hero to deadzone border");
         });
 
         Run("54g deadzone: smooth catch-up then smooth deceleration on aim",()=>{
@@ -48,7 +49,7 @@ partial class MotionRegression
                 float dt=1f/fps,x=0f;var c=new DeadzoneCamera();
                 for(int i=0;i<fps*2;i++)
                     StepDeadzone(c,ref x,320f,dt);
-                Check(x < -50f && x > -150f,"Hero can lead while moving");
+                Check(x < -190f && x > -330f,"Hero can lead near the red border while moving");
                 Check(c.Velocity>200f,"camera gained following velocity");
 
                 float before=c.Velocity;
@@ -57,7 +58,7 @@ partial class MotionRegression
                 for(int i=0;i<fps;i++)
                     StepDeadzone(c,ref x,0f,dt);
                 Near(c.Velocity,0f,"camera eventually comes to rest",.3f);
-                Check(x>=-55f&&x<=-49f,"stops at deadzone edge, not across red border");
+                Check(x>=-195f&&x<=-189f,"stops near the expanded deadzone edge");
                 Near(StepDeadzone(c,ref x,0f,dt),0f,
                     "stationary aiming no autonomous background pan",.01f);
             }
@@ -76,7 +77,7 @@ partial class MotionRegression
                     for(int i=0;i<fps*2;i++)
                         StepDeadzone(c,ref x,0f,dt);
                     Near(c.Velocity,0f,"stopped after cycle "+cycle,.02f);
-                    Check(x>=-55f&&x<=-49f,
+                    Check(x>=-195f&&x<=-189f,
                         "no overshoot/right-side shaking on cycle "+cycle);
                 }
             }
@@ -94,7 +95,7 @@ partial class MotionRegression
                     StepDeadzone(c,ref x,1500f,dt);
                     Check(x>=-470f&&x<=470f,"physical viewport protects only true edges");
                 }
-                Check(x>-270f,"red border boosts recovery to keep fast Hero in frame");
+                Check(x>-460f,"red border boosts recovery without touching real viewport edge");
             }
         });
 
@@ -108,16 +109,16 @@ partial class MotionRegression
                     Check(x<=last+.01f,"never snaps back right while recovering");
                     last=x;
                 }
-                Check(x>=49f&&x<=51f,"right deadzone edge is resting location");
+                Check(x>=189f&&x<=191f,"right deadzone edge is resting location");
                 Near(c.Velocity,0f,"no residual shake",.1f);
             }
         });
 
         Run("54g deadzone: pause and respawn reset camera momentum",()=>{
             var c=new DeadzoneCamera();float x=-100f;
-            c.Pan(x,-227.5f,197.5f,-500f,500f,.1f,.2f,.1f,.5f);
+            c.Pan(x,-227.5f,197.5f,-500f,500f,.1f,.2f,.38f,.5f);
             float velocity=c.Velocity;
-            Near(c.Pan(x,-227.5f,197.5f,-500f,500f,0f,.2f,.1f,.5f),
+            Near(c.Pan(x,-227.5f,197.5f,-500f,500f,0f,.2f,.38f,.5f),
                 0f,"paused pan zero");
             Near(c.Velocity,velocity,"paused velocity unchanged");
             c.Reset();
@@ -126,7 +127,7 @@ partial class MotionRegression
 
         Run("54g Environment: Hero idle and inside deadzone keeps entire Ground still",()=>{
             var f=new Field();f.space.useSoftZoneCamera=true;
-            f.space.cameraSmoothTime=.2f;f.space.cameraDeadzoneRatio=.1f;
+            f.space.cameraSmoothTime=.2f;f.space.cameraDeadzoneRatio=.38f;
             f.space.cameraPreferredX=.5f;
             f.space.scrollSpeed=150f; // Must have no effect on living Hero.
             f.hero.moveSpeed=0f;
@@ -157,10 +158,40 @@ partial class MotionRegression
             Near(f.space.CameraFollowVelocity,0f,"Retry resets inertia",.01f);
         });
 
+        Run("54g speed 700 camera engages near RED and stops smoothly",()=>{
+            foreach(int fps in new[]{30,60,144})
+            {
+                var c=new DeadzoneCamera();
+                float dt=1f/fps,x=0f;
+                bool everFollowed=false, movedBeforeThreshold=false;
+                float firstFollowHeroX=0f, peak=0f;
+                for(int i=0;i<fps*2;i++)
+                {
+                    float pre=x-700f*dt;
+                    float pan=StepDeadzone(c,ref x,700f,dt);
+                    if(pre > -190f && pan > .001f) movedBeforeThreshold=true;
+                    if(!everFollowed && pan > .001f)
+                    {
+                        everFollowed=true;
+                        firstFollowHeroX=x;
+                    }
+                    peak=Math.Min(peak,x);
+                }
+                Check(!movedBeforeThreshold,"camera is still until Hero reaches left -190");
+                Check(everFollowed,"camera eventually follows fast Hero");
+                Check(firstFollowHeroX < -189f && firstFollowHeroX > -260f,
+                    "initial follow is close to red rather than center");
+                Check(peak < -227.5f,"red border remains SOFT at speed 700");
+                for(int i=0;i<fps;i++)StepDeadzone(c,ref x,0f,dt);
+                Near(c.Velocity,0f,"standing Hero has no camera drift",.1f);
+                Check(x>-195f && x< -189f,"Hero ends near expanded deadzone left edge");
+            }
+        });
+
         Run("54g melee Hero approaching ranged quái: both share the same Ground pan",()=>{
             var f=new Field();
             f.space.useSoftZoneCamera=true;
-            f.space.cameraSmoothTime=.2f;f.space.cameraDeadzoneRatio=.1f;
+            f.space.cameraSmoothTime=.2f;f.space.cameraDeadzoneRatio=.38f;
             f.hero.ChangeAttackMode(0);f.hero.moveSpeed=600f;
             var ranged=f.Monster(-110f,AttackMode.RangedPhysical);
             float before=f.space.Position(ranged.Rect).x;

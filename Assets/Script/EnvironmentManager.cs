@@ -25,7 +25,9 @@ public class EnvironmentManager : MonoBehaviour
     // Keep the old flag serialized name so existing .54g scenes keep this ON.
     public bool useSoftZoneCamera = true;
     [Min(.01f)] public float cameraSmoothTime = .2f;
-    [Range(.02f,.3f)] public float cameraDeadzoneRatio = .10f;
+    // Wider central deadzone: Hero may lead toward the red border before
+    // SmoothDamp begins. The 0.2s damping response remains unchanged.
+    [Range(.02f,.45f)] public float cameraDeadzoneRatio = .38f;
     [Range(.4f,.6f)] public float cameraPreferredX = .5f;
     private readonly DeadzoneCamera deadzoneCamera = new DeadzoneCamera();
     private float plannedCameraPan, plannedBackgroundPan;
