@@ -5,9 +5,9 @@
 
 Game idle RPG tu tiên 2D/2.5D dạng **desktop overlay trong suốt**, chơi tự động trong một cửa sổ nhỏ. Hero đi tìm quái, chiến đấu theo các dạng cận chiến/cung/phép, tăng cấp, lưu tiến độ và chuyển bản đồ. Game hiện ở giai đoạn **xây dựng khung gameplay, độ ổn định, UI và thông số thử nghiệm**; chưa phải sản phẩm hoàn thiện.
 
-## Nhánh tính năng đang phát triển: B1 — trạng thái chiến đấu Hero
+## Checkpoint B1 đã chốt — trạng thái chiến đấu Hero
 
-**Nguồn:** checkpoint `feature/0.0.4.54g` đã được chấp nhận sử dụng; gameplay .54g không đổi. **Nhánh làm B1:** `feature/b1-hero-combat-state` (chưa merge main hoặc .54g). B1 **chưa được nghiệm thu** bằng Unity/Windows.
+**Nguồn:** checkpoint `feature/0.0.4.54g` đã được chấp nhận sử dụng; gameplay .54g không đổi. **Nhánh làm B1:** `feature/b1-hero-combat-state` (chưa merge main hoặc .54g). **B1 đã được người phát triển xác nhận hoàn tất**; không có log độc lập chứng minh đủ tất cả bài thử Unity/Windows.
 
 - Thêm `HeroCombatState` làm nơi lưu duy nhất cho Controller, dữ liệu runtime, HP hiện tại/tối đa, nhịp đánh và thế vận sức của mỗi Hero. `CombatManager` vẫn điều phối một Hero qua các thuộc tính chuyển tiếp, chưa có đội hình thật.
 - Test `HeroCombatState` độc lập cho 2 actor và cập nhật helper reflection của các test cũ, không làm bản sao HP/timer. `Tests~/run.sh` bổ sung script nguồn mới.
@@ -70,7 +70,7 @@ Không lấy việc mã chạy trong test doubles làm bằng chứng đã hết
 
 **Camera tâm chung (.54g, đã chốt mức dùng được, còn dư địa cải thiện):** bật `cameraUseCombatCenter=true` trong `EnvironmentManager` để dùng **trung bình X của các Hero đang hoạt động + quái còn sống nằm trong viewport** làm mục tiêu bám. Không tính Ground/cỏ, vật trang trí, đạn, VFX, quái chết/ngoài cửa sổ. Cùng thuật toán **Deadzone 38%, SmoothDamp 0,2s và hồi mốc 40%/0,6s khi Hero dừng**; Hero thật vẫn được bảo vệ tại mép màn hình. **Tắt `cameraUseCombatCenter`** để so sánh lại bản camera theo Hero trước đó, không cần revert. Có nhiều quái ở một phía thì phép trung bình sẽ bị nghiêng về phía đông quái — mục đích hiện tại là thử cảm giác, chưa phải quy tắc camera đội hình đã chốt.
 
-**Ưu tiên sau khi chốt `.54g` (B1 ĐANG TRIỂN KHAI Ở NHÁNH RIÊNG):** xem [Docs/Development_Roadmap.md](Docs/Development_Roadmap.md). **P0 trước tiên: tách trạng thái chiến đấu theo từng Hero (mốc B1) nhưng chưa thay gameplay một Hero**, rồi P1: save/schema → trang bị tối thiểu → kỹ năng tự động; P2: hai Hero + đội hình → asset/VFX/SFX; P3: boss/luân hồi/ngoại tuyến/polish camera. **B1 đã được người phát triển yêu cầu bắt đầu**, nhưng chưa có nghiệm thu Unity; các mục B2/P1–P3 vẫn là kế hoạch cần duyệt.
+**Ưu tiên sau khi chốt `.54g` (B1 ĐÃ HOÀN TẤT THEO XÁC NHẬN NGƯỜI PHÁT TRIỂN):** xem [Docs/Development_Roadmap.md](Docs/Development_Roadmap.md). **P0 trước tiên: tách trạng thái chiến đấu theo từng Hero (mốc B1) nhưng chưa thay gameplay một Hero**, rồi P1: save/schema → trang bị tối thiểu → kỹ năng tự động; P2: hai Hero + đội hình → asset/VFX/SFX; P3: boss/luân hồi/ngoại tuyến/polish camera. **B1 đã được xác nhận xong**; bước kế tiếp được đề xuất là **B2 — định tuyến mục tiêu, đòn đánh và sát thương theo từng Hero**. Các mục B2/P1–P3 chưa được yêu cầu triển khai.
 
 ## Hướng tiếp theo — CHƯA triển khai
 

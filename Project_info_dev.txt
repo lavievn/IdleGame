@@ -3,7 +3,18 @@ Tài liệu thiết kế, hiện trạng và bàn giao phát triển của lavie
 Ngày đối chiếu: 09/10/2026, múi giờ Việt Nam (UTC+7).
 Đổi tên và thay thế AI_Prompt_Master.txt; lịch sử tài liệu cũ vẫn ở Git.
 
-B1 — NHÁNH MỚI feature/b1-hero-combat-state (ĐANG TRIỂN KHAI, CHƯA UNITY NGHIỆM THU)
+B1 — CHỐT CHECKPOINT, NGƯỜI PHÁT TRIỂN XÁC NHẬN XONG (11/10/2026)
+User trực tiếp phản hồi "ok, đã xong b1" sau khi Pull/thử. Đánh dấu
+B1 hoàn tất theo xác nhận này, nhưng KHÔNG tự nhận rằng mọi ca Mono,
+Unity hoặc Windows dài giờ đã chạy nếu chưa thấy log chi tiết.
+Nhánh checkpoint: feature/b1-hero-combat-state, mã B1 commit 2308f25,
+tài liệu trước chốt ca80c38. B1 tách HeroCombatState, CombatManager
+vẫn điều phối một Hero, không đổi save/UI/camera/damage chủ ý.
+Mốc tiếp theo được ĐỀ XUẤT là B2: routing nguồn/đích/HP/timer theo
+Hero, giữ tương thích gameplay 1 Hero; CHƯA có lệnh bắt đầu B2.
+Không tự merge main hoặc sửa lại checkpoint .54g.
+
+B1 — GHI CHÉP TRIỂN KHAI (ĐÃ HOÀN THÀNH THEO NGƯỜI PHÁT TRIỂN)
 User đã đồng ý "bắt đầu B1" sau khi chốt gameplay .54g. Tạo nhánh
 feature/b1-hero-combat-state từ 02801dd2b1fe4ca46ce2402ffdbe93de590a2b58
 (chỉ là commit chốt tài liệu, gameplay từ c86201b). KHÔNG sửa .54g/main.
