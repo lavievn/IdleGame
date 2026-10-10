@@ -29,6 +29,9 @@ public class EnvironmentManager : MonoBehaviour
     // SmoothDamp begins. The 0.2s damping response remains unchanged.
     [Range(.02f,.45f)] public float cameraDeadzoneRatio = .38f;
     [Range(.4f,.6f)] public float cameraPreferredX = .5f;
+    [Header("CAMERA KHI HERO DỪNG ĐÁNH")]
+    [Range(.3f,.5f)] public float cameraIdleRestX = .4f;
+    [Min(.05f)] public float cameraIdleSmoothTime = .6f;
     private readonly DeadzoneCamera deadzoneCamera = new DeadzoneCamera();
     private float plannedCameraPan, plannedBackgroundPan;
     private bool hasPlannedPan;
@@ -194,11 +197,15 @@ public class EnvironmentManager : MonoBehaviour
         float heroX = Position(cameraTarget.heroRect).x;
         if (useSoftZoneCamera && cameraTarget.IsDeployed && !cameraTarget.IsDead)
         {
-            // Hero movement is applied first; camera does NOT auto-scroll.
-            // It only corrects excursions outside the central deadzone.
+            // Running: broad 38% deadzone with 0.2s SmoothDamp.
+            // Stopped after walking: ease to 40% if Hero is farther LEFT,
+            // never recenter a newly spawned idle Hero or force slow Heroes
+            // to slide backwards when they stop near the camera center.
             cameraPan = deadzoneCamera.Pan(heroX,ZoneLeftX,ZoneRightX,
                 battleArea.rect.xMin,battleArea.rect.xMax,Time.deltaTime,
-                cameraSmoothTime,cameraDeadzoneRatio,cameraPreferredX);
+                cameraSmoothTime,cameraDeadzoneRatio,cameraPreferredX,
+                cameraTarget.MovementDistanceThisFrame > .001f,
+                cameraIdleRestX,cameraIdleSmoothTime);
         }
         else
         {

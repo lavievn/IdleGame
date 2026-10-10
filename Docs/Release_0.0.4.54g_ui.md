@@ -93,3 +93,19 @@ Hero nhanh hơn/tương đương/chậm hơn `scrollSpeed`, Hero dừng khi đá
 **Chưa nghiệm thu:** cần chạy Unity Editor và Windows thực với kích thước 600/800/1150, nhiều tốc độ Hero, quái đánh xa, pause, resize và Hero chết/Retry. Mô phỏng 30/60/144 FPS không thay thế Play Mode.
 
 **Điều chỉnh Deadzone theo phản hồi mới (11/10/2026):** Người dùng xác nhận nguyên lý theo Hero/giảm tốc khi đứng bắn đang khá ổn, nhưng với Hero tốc độ 700, vùng chết cũ 10% khiến camera bám ngay khi Hero vừa qua tâm trái. Giữ thời gian SmoothDamp **0,2 giây**, tăng `cameraDeadzoneRatio` lên **0,38** và cho phạm vi cấu hình đến 0,45; `DeadzoneCamera` còn giới hạn nửa bề rộng vùng chết để không vượt ngưỡng đỏ ngoài. Với Ground 1.000, tâm 0, biên đỏ trái -227,5, biên đỏ phải +197,5 (scene MainGame), camera bắt đầu bám gần x=-190 thay vì -50. Giá trị camera được khai báo tường minh trong `Assets/Scenes/MainGame.unity`; xác minh ở Inspector sau khi Pull. Thêm hồi quy cho tốc độ 700, Hero đi được 180 đơn vị mà camera chưa cuộn, đi–dừng và các khung hình 30/60/144 FPS. Chưa thay thuật toán SmoothDamp hoặc hành vi khi Hero dừng. Chưa thử Unity Play Mode.
+
+
+## Camera .54g — Hồi về mốc 40% khi Hero dừng sau khi chạy (11/10/2026)
+
+**Động lực:** quan sát video gameplay tham khảo, Hero chạy nhanh có thể tiến gần rìa trái, khi dừng bắn thì nhân vật cùng Ground từ từ dịch phải và cuối cùng ổn định gần vùng giữa. Bản .54g trước chỉ đưa về mép Deadzone -190 (trên Ground giả định rộng 1000) nên hiệu ứng hồi hơi ít.
+
+**Đã thêm, không thay chuyển động lúc chạy:**
+- `DeadzoneCamera.Pan` nhận `heroMovedThisFrame`, `idleRestRatio`, `idleSmoothTime`; lưu tối thiểu hai trạng thái `wasWalking` và `idleRecovering`, không có máy trạng thái cuộn nền tự động.
+- **Đang chạy:** giữ `cameraDeadzoneRatio=.38` và `cameraSmoothTime=.2`. Chỉ khi ra Deadzone mới bám, biên đỏ vẫn là vùng tăng độ nhạy.
+- **Đang chạy → dừng:** nếu Hero đứng **bên trái** mốc 40% chiều ngang Ground, kích hoạt một lần đưa Hero về gần 40% bằng SmoothDamp với `cameraIdleSmoothTime=.6`. Vận tốc camera được giữ liên tục từ trạng thái chạy sang lúc dừng, và cuối cùng về 0; Ground, quái và đạn dùng chung pan như trước.
+- **Hero chậm dừng trước mốc 40% hoặc đứng yên từ lúc spawn:** không cưỡng bức lùi/trượt nhân vật về đúng 40% (tránh cảm giác camera dịch vô lý, đặc biệt ở tốc độ thấp).
+- **Hero đi lại giữa lúc camera đang hồi:** hủy hồi ngay để chuyển lại bám Deadzone. Pause không cập nhật vận tốc/trạng thái, Retry/Spawn xóa trạng thái cũ; không đảo chiều vì cố đạt một tọa độ tuyệt đối.
+- `EnvironmentManager` cho chỉnh `cameraIdleRestX=.4`, `cameraIdleSmoothTime=.6`; hai trường có giá trị được ghi rõ vào `Assets/Scenes/MainGame.unity`.
+- Bổ sung 3 regression trong `Tests~/CameraFollowRegression.cs` (tổng 13): Hero chậm đứng yên không bị kéo; đang hồi mà chạy tiếp; kiểm tra Hero và Ground cùng lùi trong runtime stub. Các test đã có thay kỳ vọng dừng về mốc 40%. Thử mô phỏng số học 30/60/144 FPS, nhưng **chưa có kết quả Unity Editor/Windows build thực**.
+
+**Nghiệm thu:** kiểm tra Hero tốc độ 700 đi tới gần biên trái rồi dừng đánh: Hero và Ground trượt về bên phải rồi dừng, không trượt đến mép đỏ phải; Hero tốc độ thấp dừng gần tâm không bị camera ép sang trái; Hero đang hồi mà đi tiếp không gây giật hoặc đảo chiều; quái tầm xa và đạn vẫn cùng Ground khi camera hồi. Nếu thời gian 0.6s chưa giống video, chỉ tinh chỉnh `cameraIdleSmoothTime` trước khi đổi các quy tắc khác.

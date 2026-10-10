@@ -19,6 +19,22 @@ bị dính xuống đáy. Sau bản vá Windows 0.0.4.51f, ngày 09/10/2026 ngư
 xác nhận đã thử: System Menu hoạt động, scale cửa sổ đúng logic và cho phép
 merge PR #1 vào main. Chưa có xác nhận riêng về kéo cửa sổ, DPI/màn hình phụ.
 
+TINH CHỈNH CAMERA TỪ VIDEO MẪU — HỒI VỊ TRÍ 40% (11/10/2026)
+User đồng ý thử mốc nghỉ 40% màn hình. Đã thêm vào DeadzoneCamera
+một lượt hồi sau khi Hero chạy -> dừng, CHỈ KHI Hero đứng bên trái
+vị trí 40%; SmoothDamp hồi về mốc này với idleSmoothTime=0.6s
+(Inspector cameraIdleRestX=.4, cameraIdleSmoothTime=.6).
+Lúc Hero ĐANG CHẠY, hoàn toàn giữ deadzone=.38, smoothTime=.2,
+biên đỏ là ngưỡng bám nhanh; không làm speed-adaptive deadzone ở bản này.
+Hero đứng từ lúc spawn hoặc Hero chậm dừng gần tâm KHÔNG tự kéo về 40%.
+Khi Hero lại chạy trong lúc hồi, hủy hồi. Dịch camera dùng cùng pan
+cho Ground/Hero/quái/đạn như trước; Retry reset toàn bộ trạng thái.
+Tests~/CameraFollowRegression.cs có tổng 13 test sau bổ sung 3 case
+(hồi 40%, Hero chậm, ngắt hồi khi đi tiếp và Ground cùng chuyển động).
+Thử số học 30/60/144 FPS, CHƯA ĐƯỢC nghiệm thu trong Unity/Windows.
+Hướng camera nhóm nhiều Hero vẫn để roadmap tương lai, không trộn vào
+tinh chỉnh này.
+
 ĐIỀU CHỈNH THÔNG SỐ CAMERA SAU PHẢN HỒI (11/10/2026):
 User đã thử nguyên lý Deadzone và xác nhận chuyển động khá ổn, nhưng
 với speed Hero 700 camera vẫn bám quá sớm khi Hero chỉ vừa vượt tâm.
@@ -47,8 +63,9 @@ Trong EnvironmentManager, backgroundPan = cameraPan ở chế độ Deadzone,
 di chuyển riêng. Vẫn dùng pan của cùng frame tại Update/LateUpdate.
 BattleMotion.cs định nghĩa DeadzoneCamera thay SoftZoneCamera; pan mỗi frame tính tương đối, chỉ giữ vận tốc để tránh mất chính xác số thực khi game chạy nhiều giờ;
 EnvironmentManager giữ cờ useSoftZoneCamera=true để tương thích scene,
-thông số mới cameraSmoothTime=.2, cameraDeadzoneRatio=.1,
-cameraPreferredX=.5. Tests~/CameraFollowRegression.cs có 9 bài thử
+thông số mới cameraSmoothTime=.2, cameraDeadzoneRatio=.38,
+cameraPreferredX=.5, cameraIdleRestX=.4, cameraIdleSmoothTime=.6.
+Tests~/CameraFollowRegression.cs có 13 bài thử
 thay thế cơ chế camera cũ. Các đoạn ghi về camera 1s đuổi, tốc cuộn
 mặc định, Following hoặc 62% ở phần lịch sử BÊN DƯỚI ĐÃ LỖI THỜI;
 không dựa vào chúng khi sửa hay đánh giá phiên bản hiện hành.
@@ -969,3 +986,18 @@ Không coi logic monster nearest nghĩa khoảng cách cận/xa không thể >40
 MonsterController chỉ xét Hero hợp lệ trước mặt/đang trong tầm và CombatManager
 hiện bắn vào một heroController. Các quy tắc giữ đội hình phải được thiết kế
 riêng khi cho nhiều Hero độc lập.
+
+
+20. CAMERA THỬ MỐC 40% KHI DỪNG — GIỮ ĐỘ ỔN ĐỊNH DEADZONE
+
+Theo video tham khảo 3 mức vận tốc: cho phép Hero chạy nhanh gần biên
+trái, khi dừng tấn công thì Hero và Ground trôi dần về bên phải, sau
+đó dừng ở vị trí nghỉ thử nghiệm 40% chiều ngang. Đã thay DeadzoneCamera
+bằng cách bổ sung một hành vi hồi khi chuyển trạng thái heroMoved true
+sang false; KHÔNG dùng camera tự cuộn, KHÔNG kéo Hero về 40% ngay khi
+đang chạy và không ép Hero chậm gần tâm phải dịch ngược.
+Mặc định cameraIdleRestX=0.4, cameraIdleSmoothTime=0.6; hai giá trị đã
+khai báo tường minh trong MainGame.unity. Mọi việc chọn khoảng nghỉ
+và khoảng thời gian này vẫn là GIẢ ĐỊNH CẦN USER PLAY MODE NGHIỆM THU.
+Không triển khai camera multi-Hero hoặc điều chỉnh Deadzone tùy vận tốc
+cho đến khi người dùng kiểm tra bản này.

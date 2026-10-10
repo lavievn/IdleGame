@@ -30,9 +30,9 @@
 
 ### Mốc A — Chốt nền 0.0.4.54g, nghiệm thu thay vì thêm cơ chế mới
 
-**Phạm vi:** Camera Deadzone mặc định 38%, SmoothDamp giữ 0.2s; kiểm tra scene Inspector tương ứng. Chạy Hero đi/dừng/bắn rồi lại đi, riêng tốc độ 700 và cận→quái xa; quái sát Ground và không có đạn mất đích khi resize. Chạy đủ 25 wave (một cụm 5 map), chết/retry và load/save, thử UI/overlay Windows 600/800/1150, DPI và kéo/thu phóng. Sao lưu save trước thử migration.
+**Phạm vi:** Camera Deadzone mặc định 38%, SmoothDamp lúc chạy giữ 0.2s; thử hồi mềm khi Hero dừng (mốc 40% từ trái, SmoothDamp 0.6s, chỉ sau khi đã chạy tới bên trái mốc); kiểm tra scene Inspector tương ứng. Chạy Hero đi/dừng/bắn rồi lại đi, riêng tốc độ 700 và cận→quái xa; quái sát Ground và không có đạn mất đích khi resize. Chạy đủ 25 wave (một cụm 5 map), chết/retry và load/save, thử UI/overlay Windows 600/800/1150, DPI và kéo/thu phóng. Sao lưu save trước thử migration.
 
-**Đủ chuyển bước khi:** không còn lỗi Console nghiêm trọng, không có camera tự trôi khi Hero dừng, wave không kẹt, quái/đạn đúng Ground sau resize, save/load an toàn, người dùng chấp nhận cảm giác camera trong Unity và xác nhận có thể merge `.54g` vào `main`. Chưa cần polish ảnh, SFX, balance ba thế hoặc FPS tối ưu cuối cùng.
+**Đủ chuyển bước khi:** không còn lỗi Console nghiêm trọng, không có camera tự trôi vô hạn sau khi Hero dừng, hồi đúng mốc 40% và ngừng hẳn, wave không kẹt, quái/đạn đúng Ground sau resize, save/load an toàn, người dùng chấp nhận cảm giác camera trong Unity và xác nhận có thể merge `.54g` vào `main`. Chưa cần polish ảnh, SFX, balance ba thế hoặc FPS tối ưu cuối cùng.
 
 ### Mốc B — Lõi combat có thể mở rộng, giữ nguyên gameplay 1 Hero
 

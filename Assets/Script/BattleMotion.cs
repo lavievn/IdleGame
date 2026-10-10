@@ -110,11 +110,16 @@ public sealed class DeadzoneCamera
     // Only retain velocity. An idle game may run for days: a cumulative
     // camera world offset would eventually lose float precision.
     private float velocity;
+    private bool wasWalking;
+    private bool idleRecovering;
     public float Velocity => velocity;
+    public bool IsIdleRecovering => idleRecovering;
 
     public void Reset()
     {
         velocity = 0f;
+        wasWalking = false;
+        idleRecovering = false;
     }
 
     private static float Clamp(float x, float lo, float hi)
@@ -125,7 +130,8 @@ public sealed class DeadzoneCamera
     // attacks and environment; zero when idle inside the deadzone.
     public float Pan(float heroScreenX, float redLeft, float redRight,
         float viewLeft, float viewRight, float dt, float smoothTime,
-        float deadzoneWidthRatio, float deadzoneCenterRatio)
+        float deadzoneWidthRatio, float deadzoneCenterRatio,
+        bool heroMovedThisFrame, float idleRestRatio, float idleSmoothTime)
     {
         if (dt <= 0f || viewRight <= viewLeft) return 0f;
         float width = viewRight - viewLeft;
@@ -139,18 +145,46 @@ public sealed class DeadzoneCamera
         if (redHalf > 0f) half = Math.Min(half, Math.Max(0f, redHalf - width * .005f));
         float left = center - half, right = center + half;
 
-        // Follow ONLY when the Hero leaves the deadzone. When they return,
-        // velocity decays toward zero rather than continuing to auto-scroll.
+        // While running, retain the tested broad deadzone unchanged.
+        // On RUN -> STOP, recover toward 40% only if Hero had actually
+        // moved ahead of that position. A Hero idle since spawn, or a slow
+        // Hero stopped near the center, must NOT make the camera auto-pan.
+        float idleRestX = viewLeft + width * Clamp(idleRestRatio, .3f, .5f);
+        if (heroMovedThisFrame)
+        {
+            wasWalking = true;
+            idleRecovering = false;
+        }
+        else if (wasWalking)
+        {
+            wasWalking = false;
+            idleRecovering = heroScreenX < idleRestX - 1f;
+        }
+
         float correction = heroScreenX < left ? left - heroScreenX
             : heroScreenX > right ? right - heroScreenX : 0f;
-        // Each frame is expressed relative to the current view, so no
-        // unbounded accumulated camera coordinate is needed.
-        // Red boundaries are secondary soft catch-up thresholds. Increase
-        // responsiveness outside them, WITHOUT clamping Hero to the red edge.
-        if (heroScreenX < Math.Min(redLeft, redRight)
+        if (idleRecovering)
+        {
+            // Ground and Hero drift RIGHT together after the Hero stops
+            // attacking. SmoothDamp retains existing velocity and eases
+            // the recovery to a finite rest position; no autonomous scroll.
+            correction = Math.Max(0f, idleRestX - heroScreenX);
+            smoothTime = Math.Max(.05f, idleSmoothTime);
+        }
+        else if (heroScreenX < Math.Min(redLeft, redRight)
             || heroScreenX > Math.Max(redLeft, redRight))
+        {
+            // The red boundary only increases follow responsiveness.
             smoothTime = Math.Max(.08f, smoothTime * .55f);
+        }
         float pan = SmoothDamp(0f, correction, ref velocity, smoothTime, dt);
+        if (idleRecovering && pan < 0f)
+        {
+            // Never shake left and right while recovering from a stop.
+            pan = 0f;
+            velocity = 0f;
+            idleRecovering = false;
+        }
 
         // Red-zone boundaries are NOT a clamp. Protect only the actual
         // screen edges when the Hero is too fast for a soft camera response.
@@ -160,6 +194,13 @@ public sealed class DeadzoneCamera
             viewRight - safety - heroScreenX);
         if (Math.Abs(clampedPan - pan) > .0001f)
             velocity = 0f; // Don't retain momentum from a physically clipped step.
+        if (idleRecovering && idleRestX - (heroScreenX + clampedPan) <= .5f
+            && Math.Abs(velocity) < 2f)
+        {
+            // Stop once, without repeated re-centering every idle frame.
+            idleRecovering = false;
+            velocity = 0f;
+        }
         if (Math.Abs(velocity) < .01f && Math.Abs(clampedPan) < .001f)
             velocity = 0f;
         return clampedPan;
