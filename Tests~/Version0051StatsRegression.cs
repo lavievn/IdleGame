@@ -135,5 +135,31 @@ partial class MotionRegression
                 .totalDamage==100,"same bow mode magic portion bypasses armor");
         });
 
+        Run("0.0.51 negative resistance increases incoming damage within cap",()=>{
+            var d=new EntityDataSO();
+            d.AddCombatModifier(S(CombatStatId.MagicResistance,-100f));
+            var p=new [] {new CombatDamagePart {fixedDamage=100,
+                school=DamageSchool.Magical}};
+            Check(CombatDamage.Resolve(null,d,AttackMode.Melee,p).totalDamage==150,
+                "negative magic resistance creates bounded vulnerability");
+        });
+
+        Run("0.0.51 actual melee damage routed through monster defense",()=>{
+            var f=new Field();var m=f.Monster(-20f);f.Battle(m);
+            var target=f.Enemies[0];
+            target.data.AddCombatModifier(S(CombatStatId.Armor,100f));
+            var hero=f.combat.CurrentHeroCombatState;
+            var trace=SynergyMath.EvaluateDamage(hero.Data,target.data,
+                AttackMode.Melee,1f);
+            int expected=CombatDamage.ResolveLegacy(trace.elementDamage,hero.Data,
+                target.data,AttackMode.Melee,f.combat.resistanceSettings);
+            int before=target.currentHP;
+            var method=typeof(CombatManager).GetMethod("DealDamageToMonsterWithTrace",
+                System.Reflection.BindingFlags.NonPublic|System.Reflection.BindingFlags.Instance);
+            method.Invoke(f.combat,new object[]{target,trace,null});
+            Check(target.currentHP==Math.Max(0,before-expected),
+                "real Monster HP uses shared resistance calculation");
+        });
+
     }
 }
