@@ -24,10 +24,13 @@ public class GroundPresentation : MonoBehaviour
 
     [Header("NỀN XA - THỊ SAI (CHỈ HIỂN THỊ)")]
     [Range(0f, 1f)] public float farParallaxSpeed = .3f;
-    [Min(1f)] public float farLayerScale = 1.6f;
+    [Min(1f)] public float farLayerScale = 1.3f; // trees: 130% of Ground
     [Range(0f, 1f)] public float distantParallaxSpeed = .1f;
-    [Min(1f)] public float distantLayerScale = 2.08f; // 160% x 130%
+    [Min(1f)] public float distantLayerScale = 1.69f; // mountains: 130% x 130%
 
+    [Header("VỊ TRÍ CHÂN CỦA HAI LỚP XA")]
+    [Range(-.5f, 1f)] public float parallaxBaseHeightRatio = .25f;
+    // Preview texture includes large transparent margins. Crop pixels, not Ground units.
     private struct DepthVisual
     {
         public RectTransform Rect;
@@ -136,8 +139,12 @@ public class GroundPresentation : MonoBehaviour
             candidate.wrapMode = TextureWrapMode.Clamp;
             candidate.filterMode = FilterMode.Bilinear;
             texture = candidate;
-            return Sprite.Create(candidate, new Rect(0f, 0f, candidate.width, candidate.height),
-                new Vector2(.5f, .5f), 100f);
+            // Only the visible silhouette should fill the target RectTransform.
+            // Otherwise 50-70% of the scaled height is invisible padding and
+            // both mountains and trees disappear behind the near Ground strip.
+            Rect bounds = VisibleSpriteBounds(candidate);
+            return Sprite.Create(candidate, bounds,
+                new Vector2(.5f, 0f), 100f);
         }
         catch (System.Exception error)
         {
@@ -148,6 +155,36 @@ public class GroundPresentation : MonoBehaviour
         return null;
 #endif
     }
+
+#if UNITY_5_3_OR_NEWER
+    private static Rect VisibleSpriteBounds(Texture2D texture)
+    {
+        Color32[] pixels = texture.GetPixels32();
+        int w = texture.width, h = texture.height;
+        int left = w, bottom = h, right = -1, top = -1;
+        const byte alphaThreshold = 32;
+        for (int y = 0; y < h; y++)
+        {
+            int offset = y * w;
+            for (int x = 0; x < w; x++)
+            {
+                if (pixels[offset + x].a <= alphaThreshold) continue;
+                if (x < left) left = x;
+                if (x > right) right = x;
+                if (y < bottom) bottom = y;
+                if (y > top) top = y;
+            }
+        }
+        if (right < left || top < bottom)
+            return new Rect(0f, 0f, w, h);
+        // A one-pixel guard preserves antialiased tree / ridge edges.
+        left = Mathf.Max(0, left - 1);
+        right = Mathf.Min(w - 1, right + 1);
+        bottom = Mathf.Max(0, bottom - 1);
+        top = Mathf.Min(h - 1, top + 1);
+        return new Rect(left, bottom, right - left + 1, top - bottom + 1);
+    }
+#endif
 
     private RectTransform CreateImage(string name, Sprite sprite, Color tint)
     {
@@ -259,7 +296,11 @@ public class GroundPresentation : MonoBehaviour
             RectTransform tile = layer[i];
             if (tile == null) continue;
             tile.sizeDelta = new Vector2(width + 1f, height);
-            tile.anchoredPosition = new Vector2(left + layerPhase + (i - 1) * width, 0f);
+            // Place the *visible* bottom of each silhouette near the back edge
+            // of the main Grass strip. This stays independent of logic/world Y.
+            float baselineY = grassY + grassHeight * parallaxBaseHeightRatio;
+            tile.anchoredPosition = new Vector2(
+                left + layerPhase + (i - 1) * width, baselineY);
         }
     }
     private void LayoutTiles()
