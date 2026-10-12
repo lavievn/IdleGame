@@ -134,7 +134,7 @@ namespace TuTienCore
         public static DamageTrace EvaluateDamage(EntityDataSO attacker, EntityDataSO defender, AttackMode mode, float roll, float physicalFactor = .8f)
         {
             attacker.NormalizeRoots();
-            int attack = Mathf.Max(1, attacker.GetCalculatedDamage());
+            int attack = Mathf.Max(1, attacker.GetCalculatedDamage(mode));
             roll = Mathf.Clamp(roll, .85f, 1f);
             var snapshot = new DamageTrace { attacker = IdentityDisplay.Describe(attacker),
                 attackRaw = attacker.baseDamage, attackAdded = attacker.addedDamage, attackBase = attack,
