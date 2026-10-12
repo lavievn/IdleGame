@@ -314,7 +314,11 @@ public class CombatManager : MonoBehaviour
         TickProjectiles(space,dt);
         if (!AnyFightingHero()) return;
         foreach (var state in heroStates.Values)
-            if (state.CanFight) TickRegisteredHeroAttack(state,space,dt);
+            if (state.CanFight)
+            {
+                TickPassiveRegeneration(state,dt);
+                TickRegisteredHeroAttack(state,space,dt);
+            }
         if (!isBattling) return;
         for (int i=activeMonsters.Count-1;i>=0;i--)
         {
@@ -371,6 +375,25 @@ public class CombatManager : MonoBehaviour
             if (d<min) { min=d; nearest=state; }
         }
         return nearest;
+    }
+
+    private void TickPassiveRegeneration(HeroCombatState state,float dt)
+    {
+        if (state.CurrentHP >= state.MaxHP || dt <= 0f)
+        {
+            state.HealthRegenRemainder = 0f;
+            return;
+        }
+        float rate = CombatStats.Get(state.Data,CombatStatId.HealthRegeneration,0f,
+            ElementType.Vo,new [] { CombatStats.StanceTag(state.SelectedMode) });
+        if (rate <= 0f) { state.HealthRegenRemainder = 0f; return; }
+        state.HealthRegenRemainder += Mathf.Min(100000f,rate) * dt;
+        int heal = (int)System.Math.Min(state.MaxHP-state.CurrentHP,
+            System.Math.Max(0f,state.HealthRegenRemainder));
+        if (heal <= 0) return;
+        state.HealthRegenRemainder -= heal;
+        state.CurrentHP = Mathf.Min(state.MaxHP,state.CurrentHP+heal);
+        state.Controller.UpdateHealthBar(state.CurrentHP,state.MaxHP);
     }
 
     // Magic counts up before every cast; other attacks count down after a strike.
