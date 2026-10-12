@@ -309,9 +309,9 @@ public class EnvironmentManager : MonoBehaviour
                 // The rightmost Hero is the LAST actor behind the team on a
                 // left-to-right view where Heroes travel toward screen left.
                 float distance = Mathf.Max(0f, ZoneRightX - rightmostHeroX);
-                float step = Mathf.SmoothDamp(0f, distance, ref stationaryCombatVelocity,
-                    Mathf.Max(.05f, stationaryCombatSmoothTime), Time.deltaTime);
-                cameraPan = Mathf.Clamp(step, 0f, distance);
+                cameraPan = BattleMotion.StationaryCombatPan(
+                    distance, ref stationaryCombatVelocity,
+                    stationaryCombatSmoothTime, Time.deltaTime);
                 deadzoneCamera.Reset(); // Idle advance owns camera smoothing.
             }
             else
