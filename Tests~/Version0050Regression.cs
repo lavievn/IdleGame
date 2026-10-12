@@ -56,6 +56,18 @@ partial class MotionRegression
                 "camera drops to zero subjects and stops");
         });
 
+        Run("0.0.50 death after camera planning suppresses stale LateUpdate pan",()=>{
+            var f=new Field();
+            f.hero.moveSpeed=800f;
+            Time.deltaTime=.1f;
+            Call(f.space,"Update"); // Positive camera pan was computed before combat.
+            f.hero.Die();           // CombatManager can kill Hero later this frame.
+            Call(f.space,"LateUpdate");
+            Near(f.space.CurrentCameraSpeed,0f,"last death cancels cached camera pan",.01f);
+            Check(!f.space.IsScrolling &&
+                !f.hero.heroRect.gameObject.activeSelf,"hidden body and stationary camera");
+        });
+
         Run("0.0.50 when primary dies companion stays visible and gets camera",()=>{
             var f=new Field(); f.space.useSoftZoneCamera=true;
             var second=B2Hero(f,-100f,AttackMode.RangedPhysical);
