@@ -277,7 +277,7 @@ public class HeroController : MonoBehaviour
             "HP: " + currentHP + "/" + maxHP,
             "EXP: " + data.currentExp + "/" + data.expToNextLevel,
             "ATK: " + data.baseDamage + " + " + data.addedDamage +
-            " (+/- dac tinh) = " + data.GetCalculatedDamage(attackMode) };
+            " (đặc tính ±) = " + data.GetCalculatedDamage(attackMode) };
         for (int i = 0; i < data.spiritRoots.Count; i++)
             lines.Add("ATK " + IdentityDisplay.Element(data.spiritRoots[i]) + ": " +
                 (data.GetCalculatedDamage(attackMode) * data.rootWeights[i]).ToString("0.##") + " (" +
