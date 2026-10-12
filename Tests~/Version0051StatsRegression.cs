@@ -105,5 +105,35 @@ partial class MotionRegression
             data.characterTags.Add("terrain:forest");
             Near(f.hero.EffectiveMoveSpeed(),f.hero.moveSpeed+40f,"forest bonus");
         });
+        Run("0.0.51 runtime max HP refresh preserves fraction",()=>{
+            var f=new Field();var state=f.combat.CurrentHeroCombatState;
+            state.CurrentHP=state.MaxHP/2;
+            int originalMax=state.MaxHP;
+            state.Data.AddCombatModifier(S(CombatStatId.MaxHealth,100f,"gear"));
+            f.combat.RefreshRegisteredHeroStats(f.hero);
+            Check(state.MaxHP==originalMax+100,"HP reflects new modifier");
+            Near((float)state.CurrentHP/state.MaxHP,.5f,"ratio preserved",.001f);
+            state.Data.RemoveModifiersBySource("gear");
+            f.combat.RefreshRegisteredHeroStats(f.hero);
+            Check(state.MaxHP==originalMax,"unequip returns previous maximum");
+            Near((float)state.CurrentHP/state.MaxHP,.5f,"unequip cannot heal for free",.001f);
+        });
+
+        Run("0.0.51 incoming resistance checks incoming type not attacker stance",()=>{
+            var defender=new EntityDataSO();
+            var armored=S(CombatStatId.Armor,100f);
+            armored.requiredTags.Add("incoming:physical");
+            defender.AddCombatModifier(armored);
+            var enemy=new EntityDataSO {baseDamage=100};
+            var physical=new [] {new CombatDamagePart {fixedDamage=100,
+                school=DamageSchool.Physical}};
+            var magical=new [] {new CombatDamagePart {fixedDamage=100,
+                school=DamageSchool.Magical}};
+            Check(CombatDamage.Resolve(enemy,defender,AttackMode.RangedPhysical,physical)
+                .totalDamage==50,"physical armor blocks half");
+            Check(CombatDamage.Resolve(enemy,defender,AttackMode.RangedPhysical,magical)
+                .totalDamage==100,"same bow mode magic portion bypasses armor");
+        });
+
     }
 }
