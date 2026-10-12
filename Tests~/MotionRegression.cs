@@ -308,6 +308,7 @@ partial class MotionRegression
         B2CombatRoutingTests();
         B2TestPartyTests();
         Version0050RegressionTests();
+        Version0051StatsTests();
         TerrainTests();
         MenuDifficultyTests();
         BalanceTests();
