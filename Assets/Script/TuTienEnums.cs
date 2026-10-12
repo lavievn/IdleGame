@@ -144,6 +144,28 @@ namespace TuTienCore
                 sourceWeights = new List<float>(attacker.rootWeights) };
             return EvaluateSnapshot(snapshot, defender);
         }
+        // Skill power is NOT an AttackMode. It scales the actor's effective
+        // base attack before elemental matchup against the impact victim.
+        // Weapon/equipment modifiers will feed GetCalculatedDamage later.
+        public static DamageTrace EvaluateSkillDamage(EntityDataSO attacker,
+            EntityDataSO defender,float skillPowerPercent,float roll)
+        {
+            if (skillPowerPercent<=0f) throw new System.ArgumentOutOfRangeException("skillPowerPercent");
+            attacker.NormalizeRoots();
+            int attack=Mathf.Max(1,attacker.GetCalculatedDamage());
+            roll=Mathf.Clamp(roll,.85f,1f);
+            float multiplier=skillPowerPercent/100f;
+            var snapshot=new DamageTrace {
+                attacker=IdentityDisplay.Describe(attacker),
+                attackRaw=attacker.baseDamage,attackAdded=attacker.addedDamage,
+                attackBase=attack,modeMultiplier=multiplier,roll=roll,
+                rolledDamage=Mathf.Max(1,Mathf.RoundToInt(attack*multiplier*roll)),
+                sourceRoots=new List<ElementType>(attacker.spiritRoots),
+                sourceTiers=new List<int>(attacker.rootTiers),
+                sourceWeights=new List<float>(attacker.rootWeights)
+            };
+            return EvaluateSnapshot(snapshot,defender);
+        }
         public static DamageTrace EvaluateSnapshot(DamageTrace snapshot, EntityDataSO defender)
         {
             defender.NormalizeRoots();

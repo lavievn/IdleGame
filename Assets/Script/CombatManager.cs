@@ -29,6 +29,7 @@ public class CombatManager : MonoBehaviour
         public float elapsed, duration, arc;
         public string source;
         public DamageTrace trace;
+        public SkillCastContext skillCast; // Null means legacy .54g basic attack.
         public BattleEffects.Bolt visual;
     }
     private readonly List<Projectile> projectiles = new List<Projectile>();
@@ -86,6 +87,7 @@ public class CombatManager : MonoBehaviour
         if (!heroStates.TryGetValue(controller, out state)) return false;
         heroStates.Remove(controller);
         state.ResetAttack();
+        state.Skills.Cancel(); // Never leave a detached Hero invulnerable.
         // An unregistered but deployed Hero would still be targeted by
         // MonsterController and counted by the camera. Hide it as well.
         controller.HideHero();
@@ -104,7 +106,11 @@ public class CombatManager : MonoBehaviour
     }
     private void ResetAllHeroAttacks()
     {
-        foreach (var state in heroStates.Values) ResetRegisteredAttack(state);
+        foreach (var state in heroStates.Values)
+        {
+            ResetRegisteredAttack(state);
+            state.Skills.Cancel();
+        }
     }
     private HeroController heroController
     {
@@ -144,6 +150,8 @@ public class CombatManager : MonoBehaviour
         public float attackTimer;
         public AttackMode cycleMode;
         public int lifeId;
+        // Optional monster innate attack stun; zero chance by default.
+        public HitControlEffect BasicAttackControl;
     }
     private int monsterLifeSequence;
 
@@ -299,18 +307,40 @@ public class CombatManager : MonoBehaviour
             if (projectiles.Count > 0) ClearProjectiles();
             return;
         }
+        // Advance control lifetimes once per combat frame. World-space
+        // movement checks the stun state on the following Environment.Update.
+        foreach (var state in heroStates.Values)
+            if (state.CanFight) state.HitControl.Advance(dt);
+        foreach (var info in activeMonsters)
+            if (info.controller!=null && info.controller.IsAlive)
+                info.controller.HitControl.Advance(dt);
         if (effects == null && space.BattleArea != null) effects = BattleEffects.Create(space.BattleArea);
-        // Older projectiles always advance before a new strike.
+        // Mana and skill cast/release are independent from the .54g basic
+        // AttackTimer. No default skill is equipped, preserving old gameplay.
+        foreach (var state in heroStates.Values)
+            if (state.CanFight)
+            {
+                var step=state.Skills.Advance(dt);
+                for(int i=0;i<step.Emissions;i++)
+                    LaunchSkillProjectile(state,step.Cast,space);
+            }
+        // Older projectiles always advance before a new basic strike.
         TickProjectiles(space,dt);
         if (!AnyFightingHero()) return;
         foreach (var state in heroStates.Values)
-            if (state.CanFight) TickRegisteredHeroAttack(state,space,dt);
+            if (state.CanFight)
+            {
+                if (state.Skills.AutoCast && !state.Skills.IsExecuting)
+                    TryCastEquippedSkill(state.Controller);
+                TickRegisteredHeroAttack(state,space,dt);
+            }
         if (!isBattling) return;
         for (int i=activeMonsters.Count-1;i>=0;i--)
         {
             if (i>=activeMonsters.Count) continue;
             var info=activeMonsters[i];
-            if (info.controller==null || !info.controller.IsAlive) continue;
+            if (info.controller==null || !info.controller.IsAlive ||
+                info.controller.HitControl.IsStaggered) continue;
             AttackMode mode=info.controller.attackMode;
             if (info.cycleMode!=mode) { info.cycleMode=mode; info.attackTimer=0f; }
             float duration=AttackDuration(mode,info.data.baseAttackSpeed,true);
@@ -332,12 +362,91 @@ public class CombatManager : MonoBehaviour
             if (mode==AttackMode.Melee)
             {
                 Impact(BodyPosition(victim.Controller.heroRect,space),false);
-                ApplyDamageToHeroState(victim,trace.elementDamage,
-                    IdentityDisplay.Describe(info.data),trace,
+                ApplyMonsterHitToHero(victim,info,trace,space,
                     BodyPosition(info.controller.Rect,space).x);
             }
             else Launch(info,false,mode,trace,duration,space,victim);
             if (!isBattling) return;
+        }
+    }
+
+    // Runtime entry point for a developer-equipped skill. The player's
+    // chosen tier is fixed; missing mana NEVER falls back to another tier.
+    public bool TryCastEquippedSkill(HeroController controller)
+    {
+        var actor=StateFor(controller);
+        var space=EnvironmentManager.Instance;
+        if (actor==null || !actor.CanFight || actor.HitControl.IsStaggered ||
+            !isBattling || space==null || actor.Skills.Equipped==null || !actor.Skills.CanBegin ||
+            FindSkillTarget(actor,actor.Skills.Equipped,space)==null) return false;
+        if (!actor.Skills.TryBegin(actor.LifeVersion,controller.SpawnVersion)) return false;
+        ResetRegisteredAttack(actor);
+        return true;
+    }
+
+    // Selection uses the SKILL'S range, never the Hero's basic AttackMode.
+    private ActiveMonsterInfo FindSkillTarget(HeroCombatState actor,
+        SkillTierDefinition tier,EnvironmentManager space)
+    {
+        if (actor==null || !actor.CanFight || tier==null || space==null) return null;
+        var p=space.Position(actor.Controller.heroRect);
+        ActiveMonsterInfo selected=null;
+        float best=float.MaxValue,bestDistance=float.MaxValue;
+        foreach (var candidate in activeMonsters)
+        {
+            if (candidate.controller==null || !candidate.controller.IsAlive) continue;
+            float distance=Mathf.Abs(space.Position(candidate.controller.Rect).x-p.x);
+            if (distance>tier.Range) continue;
+            float score=tier.TargetRule==SkillTargetRule.LowestHealth?
+                candidate.currentHP:distance;
+            if (score<best || (score==best && distance<bestDistance))
+            { best=score;bestDistance=distance;selected=candidate; }
+        }
+        return selected;
+    }
+
+    private void LaunchSkillProjectile(HeroCombatState actor,SkillCastContext cast,
+        EnvironmentManager space)
+    {
+        if (cast==null || !IsRegistered(actor) || !actor.CanFight ||
+            actor.LifeVersion!=cast.LifeVersion ||
+            actor.Controller.SpawnVersion!=cast.SpawnVersion) return;
+        var target=FindSkillTarget(actor,cast.Tier,space);
+        if (target==null) return; // Release animation still completes.
+        var start=BodyPosition(actor.Controller.heroRect,space);
+        var end=BodyPosition(target.controller.Rect,space);
+        var shot=new Projectile {
+            monster=target,monsterLife=target.lifeId,
+            monsterSpawn=target.controller.SpawnVersion,
+            hero=actor,heroLife=cast.LifeVersion,heroSpawn=cast.SpawnVersion,
+            fromHero=true,magic=false,start=start,end=end,skillCast=cast,
+            trace=SynergyMath.EvaluateSkillDamage(actor.Data,target.data,
+                cast.PowerPercent,Random.Range(.85f,1f)),
+            source=IdentityDisplay.Describe(actor.Data),
+            duration=cast.Tier.FlightSeconds,arc=0f
+        };
+        if (effects!=null)
+        {
+            // Placeholder bolt. Actual summoned-sword art/animation is NOT
+            // present yet; its hooks use cast.Phase/EmittedCount.
+            shot.visual=effects.AddBolt(start,false,2f*Mathf.Max(.1f,effectsScale));
+            shot.visual.direction=end-start;
+        }
+        projectiles.Add(shot);
+    }
+
+    private void ApplyMonsterHitToHero(HeroCombatState victim,ActiveMonsterInfo attacker,
+        DamageTrace trace,EnvironmentManager space,float sourceX)
+    {
+        if (victim==null || !victim.CanFight || victim.IsDamageImmune) return;
+        ApplyDamageToHeroState(victim,trace.elementDamage,
+            IdentityDisplay.Describe(attacker.data),trace,sourceX);
+        if (victim.CanFight && !victim.IsControlImmune &&
+            attacker.BasicAttackControl.CanStagger &&
+            victim.HitControl.TryApply(attacker.BasicAttackControl,Random.Range(0f,1f)))
+        {
+            victim.Skills.Cancel();
+            ResetRegisteredAttack(victim);
         }
     }
 
@@ -394,6 +503,8 @@ public class CombatManager : MonoBehaviour
     private void TickRegisteredHeroAttack(HeroCombatState actor,EnvironmentManager space,float dt)
     {
         var hero=actor.Controller;
+        if (actor.Skills.IsExecuting || actor.HitControl.IsStaggered) return;
+        // No basic strike during cast, barrage or an actual stagger.
         AttackMode mode=hero.attackMode;
         if (actor.WindupMode!=mode) { ResetRegisteredAttack(actor); actor.WindupMode=mode; }
         float duration=AttackDuration(mode,actor.Data.baseAttackSpeed);
@@ -458,8 +569,21 @@ public class CombatManager : MonoBehaviour
     {
         DealDamageFromHero(target,finalDmg,primaryHeroState,impactSourceX);
     }
+    // Keep historic private signature for B1/.54g reflection regressions.
     private void DealDamageFromHero(ActiveMonsterInfo target,int damage,
         HeroCombatState attacker,float? impactSourceX=null)
+    {
+        DealDamageFromHeroInternal(target,damage,attacker,impactSourceX,
+            attacker!=null?attacker.BasicAttackControl:default(HitControlEffect));
+    }
+    private void DealSkillDamageToMonster(ActiveMonsterInfo target,DamageTrace trace,
+        HeroCombatState attacker,float impactSourceX,HitControlEffect onHit)
+    {
+        if (gameManager!=null) gameManager.RecordDamage(trace.Describe(1f,1,trace.elementDamage));
+        DealDamageFromHeroInternal(target,trace.elementDamage,attacker,impactSourceX,onHit);
+    }
+    private void DealDamageFromHeroInternal(ActiveMonsterInfo target,int damage,
+        HeroCombatState attacker,float? impactSourceX,HitControlEffect onHit)
     {
         if (target==null || !activeMonsters.Contains(target) || target.controller==null ||
             !target.controller.IsAlive || !IsRegistered(attacker)) return;
@@ -480,6 +604,15 @@ public class CombatManager : MonoBehaviour
             away=DamagePopupMotion.AwaySign(space.Position(target.controller.Rect).x,fromX,-1f);
         }
         target.controller.ShowDamage(damage,away);
+        target.controller.RequestHitReaction();
+        // Default normal attacks supply an empty profile: visual damage
+        // reaction without stopping the victim's actions.
+        if (target.currentHP>0 && onHit.CanStagger &&
+            target.controller.HitControl.TryApply(onHit,Random.Range(0f,1f)))
+        {
+            target.attackTimer=0f;
+            target.controller.UpdateChargeBar(false,0f);
+        }
         if (target.currentHP==0) HandleMonsterDeathBy(target,attacker);
     }
 
@@ -523,14 +656,15 @@ public class CombatManager : MonoBehaviour
     public bool ApplyDamageToRegisteredHero(HeroController target,int damage,string source)
     {
         var state=StateFor(target);
-        if (state==null || !state.CanFight) return false;
+        if (state==null || !state.CanFight || state.IsDamageImmune) return false;
         ApplyDamageToHeroState(state,damage,source);
         return true;
     }
     private void ApplyDamageToHeroState(HeroCombatState victim,int damage,string source,
         DamageTrace trace=null,float? impactSourceX=null)
     {
-        if (!IsRegistered(victim) || !victim.CanFight) return;
+        if (!IsRegistered(victim) || !victim.CanFight ||
+            victim.IsDamageImmune) return;
         float mapScale=WorldNames.MonsterDamageScale(victim.Data.MapVisits);
         int hardScale=gameManager!=null && gameManager.IsHardMode?2:1;
         damage=Mathf.Max(1,Mathf.RoundToInt(damage*mapScale*hardScale));
@@ -550,8 +684,10 @@ public class CombatManager : MonoBehaviour
         if (space!=null && hero.heroRect!=null && impactSourceX.HasValue)
             away=DamagePopupMotion.AwaySign(space.Position(hero.heroRect).x,impactSourceX.Value,1f);
         hero.ShowDamage(damage,away);
+        hero.RequestHitReaction();
         if (victim.CurrentHP>0) return;
         victim.ResetAttack();
+        victim.Skills.Cancel(); // Death cannot leave protection or a cast running.
         hero.Die();
         // Do not GameOver or clear projectiles when teammates remain alive.
         if (AnyFightingHero()) return;
@@ -613,10 +749,29 @@ public class CombatManager : MonoBehaviour
                               shot.monster.controller!=null &&
                               shot.monster.controller.SpawnVersion==shot.monsterSpawn &&
                               shot.monster.controller.IsAlive;
-            // A resurrected Hero and a pooled monster are NEW lifetimes. Physical
-            // shots require the original target; Hero magic still explodes at
-            // its stored endpoint even if the original monster has died.
-            if (!validHero || ((!shot.fromHero || !shot.magic) && !validMonster))
+            // A resurrected Hero and a pooled monster are NEW lifetimes.
+            // Only skill projectiles explicitly configured for reassignment
+            // may pick another target when the original monster dies.
+            if (!validHero) { RemoveProjectile(i); continue; }
+            if (shot.skillCast!=null && !validMonster &&
+                shot.skillCast.Tier.HitRule==SkillHitRule.RetargetOnDeath)
+            {
+                var alternative=FindSkillTarget(shot.hero,shot.skillCast.Tier,space);
+                if (alternative!=null)
+                {
+                    shot.monster=alternative;shot.monsterLife=alternative.lifeId;
+                    shot.monsterSpawn=alternative.controller.SpawnVersion;
+                    validMonster=true;
+                }
+            }
+            if (shot.skillCast!=null)
+            {
+                if (!validMonster) { RemoveProjectile(i); continue; }
+                // Guided sword visuals continuously follow the living target;
+                // other .54g projectiles keep their original world endpoint.
+                shot.end=BodyPosition(shot.monster.controller.Rect,space);
+            }
+            else if ((!shot.fromHero || !shot.magic) && !validMonster)
             { RemoveProjectile(i); continue; }
             shot.elapsed+=dt;
             float t=shot.duration>0f?Mathf.Clamp01(shot.elapsed/shot.duration):1f;
@@ -634,7 +789,25 @@ public class CombatManager : MonoBehaviour
             RemoveProjectile(i); // Death callbacks may clear the remaining volley.
             Impact(end,shot.magic);
             bool hit=false;
-            if (shot.fromHero && shot.magic)
+            if (shot.skillCast!=null)
+            {
+                // LockedTarget and RetargetOnDeath both use confirmed living
+                // entity hits; only the latter may replace a dead target.
+                var target=shot.monster;
+                if (target!=null && activeMonsters.Contains(target) &&
+                    target.controller!=null && target.controller.IsAlive &&
+                    target.lifeId==shot.monsterLife &&
+                    target.controller.SpawnVersion==shot.monsterSpawn)
+                {
+                    hit=true;
+                    var trace=SynergyMath.EvaluateSnapshot(shot.trace,target.data);
+                    // Skill damage shares the normal damage pipeline. Its
+                    // optional crowd control is independent of AttackMode.
+                    DealSkillDamageToMonster(target,trace,shot.hero,shot.start.x,
+                        shot.skillCast.Tier.ControlOnHit);
+                }
+            }
+            else if (shot.fromHero && shot.magic)
             {
                 var victims=new List<ActiveMonsterInfo>(activeMonsters);
                 foreach (var victim in victims)
@@ -664,7 +837,7 @@ public class CombatManager : MonoBehaviour
                 if (hit)
                 {
                     var trace=SynergyMath.EvaluateSnapshot(shot.trace,victim.Data);
-                    ApplyDamageToHeroState(victim,trace.elementDamage,shot.source,trace,
+                    ApplyMonsterHitToHero(victim,shot.monster,trace,space,
                         shot.magic?shot.end.x:shot.start.x);
                 }
             }

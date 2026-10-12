@@ -5,6 +5,12 @@
 
 Game idle RPG tu tiên 2D/2.5D dạng **desktop overlay trong suốt**, chơi tự động trong một cửa sổ nhỏ. Hero đi tìm quái, chiến đấu theo các dạng cận chiến/cung/phép, tăng cấp, lưu tiến độ và chuyển bản đồ. Game hiện ở giai đoạn **xây dựng khung gameplay, độ ổn định, UI và thông số thử nghiệm**; chưa phải sản phẩm hoàn thiện.
 
+## Nền tảng kỹ năng mở rộng — nhánh thử nghiệm sau B2
+
+Nhánh `feature/b2-skill-foundation` bổ sung **nền tảng** võ học nhiều tầng, mỗi tầng có 9 cấp thành thạo riêng; chọn tầng cố định, linh lực/hồi chiêu/vận chiêu độc lập; mô phỏng chuỗi xuất chiêu và bảo hộ tuyệt kỹ chỉ cho tầng cao nhất. **Đòn thường mặc định không gây khựng**; kỹ năng hoặc vũ khí/nội tại (khi được tích hợp) có thể bổ sung hiệu ứng này theo xác suất, với khoảng kháng khựng để tránh khóa hành động liên tục.
+
+**Chưa có kỹ năng hoặc giao diện sách võ học thật, nội dung save mới hay hoạt ảnh Thiên Kiếm.** Chưa chạy test/Unity trên nhánh này; xem [Docs/B2_SkillCombatFoundation.md](Docs/B2_SkillCombatFoundation.md). Đây là nhánh thử nghiệm tách riêng, **B2 gốc và các checkpoint cũ không đổi**.
+
 ## Nhánh B2 đang thử nghiệm — định tuyến chiến đấu nhiều Hero
 
 **Đang triển khai:** `feature/b2-combat-target-routing`, từ checkpoint B1 đã được người phát triển nghiệm thu. **Đã đồng bộ hotfix camera và giữ Y mà người phát triển vừa thử ổn**, nhưng toàn bộ B2 **chưa được xác nhận Unity/Windows**. `main`, `.54g` và nhánh B1 không đổi.

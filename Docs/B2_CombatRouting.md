@@ -2,6 +2,8 @@
 
 **Nhánh:** `feature/b2-combat-target-routing`, tách từ **B1 đã được chấp nhận** tại `7487646d355bad1f79e810eb76968a02555acb47`. **Trạng thái:** đã có mã và bộ kiểm thử mới; chờ Unity kiểm thử trước khi chốt. `main`, B1 và `.54g` không sửa.
 
+**Nhánh nghiên cứu tiếp theo (tách riêng, chưa nghiệm thu):** `feature/b2-skill-foundation` bổ sung hợp đồng nền tảng kỹ năng, linh lực, bảo hộ tuyệt kỹ và điều kiện khựng thật từ kỹ năng/vũ khí/nội tại. Xem [B2_SkillCombatFoundation.md](B2_SkillCombatFoundation.md). **B2 gốc không bị thay đổi**.
+
 ## Mục tiêu và phạm vi
 
 B1 đã tách trạng thái một Hero ra thành `HeroCombatState` nhưng vẫn sử dụng một Hero trong toàn bộ `CombatManager`. B2 nối ba khâu **tác nhân gây sát thương → mục tiêu chọn → HP/nhịp đánh của đối tượng nhận** theo từng Hero. Cho phép **hai Hero được đăng ký bằng API runtime** cùng đánh, nhận sát thương và chết riêng; chưa thiết kế hệ đội hình, UI tuyển đồng đội, tự spawn hay lưu nhiều nhân vật.

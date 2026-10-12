@@ -30,6 +30,12 @@ public class HeroController : MonoBehaviour
     public bool IsCameraSubject => (deployed || IsDead) && isActiveAndEnabled &&
         heroRect != null && heroRect.gameObject.activeInHierarchy;
     public MonsterController CurrentTarget { get; private set; }
+    // Animation/VFX hook only. Receiving a hit never implies actual stun.
+    public event System.Action HitReactionRequested;
+    public void RequestHitReaction()
+    {
+        if (HitReactionRequested!=null) HitReactionRequested();
+    }
 
     public float MovementDistanceThisFrame { get; private set; }
     // Identity of the CURRENT deployed life, not the reusable GameObject.
@@ -93,6 +99,16 @@ public class HeroController : MonoBehaviour
     {
         MovementDistanceThisFrame = 0f;
         if (!IsDeployed) return;
+        // Preserve the whole skill animation window. Movement and normal
+        // attacks stop while casting/releasing, but the camera can still pan.
+        var combat=CombatManager.Instance;
+        var actor=combat!=null?combat.StateFor(this):null;
+        if (actor!=null &&
+            (actor.Skills.IsExecuting || actor.HitControl.IsStaggered))
+        {
+            HandleAnimation(false,false);
+            return;
+        }
         attackRange = space.AttackRange(attackMode, true);
         // Keep an in-range target during a strike; otherwise rescan the closest eligible opponent.
         if (CurrentTarget == null || !CanAttack(CurrentTarget, space)) CurrentTarget = FindClosestMonster(space);

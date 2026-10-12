@@ -9,6 +9,15 @@ public sealed class HeroCombatState
     public EntityDataSO Data { get; private set; }
     public int CurrentHP { get; set; }
     public int MaxHP { get; set; }
+    // Skills and mana are independent of the basic AttackMode and AttackTimer.
+    // Unconfigured by default, so B2's current single-Hero gameplay is untouched.
+    public HeroSkillRuntime Skills { get; } = new HeroSkillRuntime();
+    public HitControlState HitControl { get; } = new HitControlState();
+    // Zero by default. Later an equipped weapon/passive may supply this
+    // independently of the Hero's normal AttackMode.
+    public HitControlEffect BasicAttackControl { get; set; }
+    public bool IsDamageImmune => Skills.IsDamageImmune;
+    public bool IsControlImmune => Skills.IsControlImmune;
     // Mutable field is intentional: legacy AdvanceCycle(ref timer) stays exact.
     public float AttackTimer;
     public AttackMode WindupMode { get; set; }
@@ -25,6 +34,11 @@ public sealed class HeroCombatState
     public void BeginLife(EntityDataSO data, int maxHP)
     {
         LifeVersion++;
+        Skills.ResetTransientForNewLife(); // Cancel protection and cooldowns from the old life.
+        HitControl.Reset();
+        // Runtime weapon/passive effects are never copied into a new
+        // character life implicitly; future equipment restore must reapply them.
+        BasicAttackControl=default(HitControlEffect);
         Data = data;
         MaxHP = maxHP;
         CurrentHP = maxHP;

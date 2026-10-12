@@ -17,10 +17,17 @@ public class MonsterController : MonoBehaviour
     public MonsterState currentState = MonsterState.PassiveScroll;
     public static List<MonsterController> ActiveMonsters = new List<MonsterController>();
     public HeroController CurrentTarget { get; private set; }
+    // Animation/VFX hook only. Receiving a hit never implies actual stun.
+    public event System.Action HitReactionRequested;
+    public void RequestHitReaction()
+    {
+        if (HitReactionRequested!=null) HitReactionRequested();
+    }
     public RectTransform Rect => rect;
     public bool IsAlive => isActiveAndEnabled && currentState != MonsterState.Dead;
     // The same pooled GameObject can represent multiple monster lives.
     public int SpawnVersion { get; private set; }
+    public HitControlState HitControl { get; } = new HitControlState();
 
     private RectTransform rect;
     private Coroutine attackFeedbackCoroutine;
@@ -53,6 +60,7 @@ public class MonsterController : MonoBehaviour
     void OnEnable()
     {
         SpawnVersion++;
+        HitControl.Reset(); // Pool reuse begins a new control lifetime.
         if (rect == null) rect = GetComponent<RectTransform>();
         ResetFeedback();
         // Exactly one random roll per activation (including pooled respawns).
@@ -73,6 +81,14 @@ public class MonsterController : MonoBehaviour
     public void TickMovement(EnvironmentManager space, float dt, float groundMinusCamera)
     {
         if (!IsAlive) return;
+        if (HitControl.IsStaggered)
+        {
+            // Stun stops autonomous motion, not the scene's background pan.
+            Vector2 p = space.Position(rect);
+            p.x += groundMinusCamera;
+            space.SetPosition(rect,p);
+            return;
+        }
         attackRange = space.AttackRange(attackMode, false);
         if (CurrentTarget == null || !CanAttack(CurrentTarget, space)) {
             CurrentTarget = null;
@@ -127,6 +143,7 @@ public class MonsterController : MonoBehaviour
 
     public void MarkDead()
     {
+        HitControl.Reset();
         currentState = MonsterState.Dead;
         UpdateChargeBar(false, 0f);
         CurrentTarget = null;
