@@ -35,9 +35,16 @@ public class EnvironmentManager : MonoBehaviour
     [Header("CAMERA — THEO TÂM NHÓM NHÂN VẬT")]
     // OFF compares against the previous single-Hero camera without a revert.
     public bool cameraUseCombatCenter = true;
+    [Header("LÀM MƯỢT KHI TÂM NHÓM THAY ĐỔI")]
+    [Min(.05f)] public float cameraCombatFocusSmoothTime = .7f;
+    [Min(1f)] public float cameraCombatFocusMaxSpeed = 240f;
+    // RAW mean from all eligible combatants, retained for diagnostics/tests.
     public float CurrentCameraFocusX { get; private set; }
+    // Filtered target actually passed to the unchanged .54g Deadzone camera.
+    public float CurrentCameraSmoothedFocusX { get; private set; }
     public int CurrentCameraFocusCount { get; private set; }
     private bool previousCombatCenterMode = true;
+    private readonly CombatFocusSmoother combatFocusSmoother = new CombatFocusSmoother();
     private readonly DeadzoneCamera deadzoneCamera = new DeadzoneCamera();
     private float plannedCameraPan, plannedBackgroundPan;
     private bool hasPlannedPan;
@@ -127,6 +134,7 @@ public class EnvironmentManager : MonoBehaviour
     {
         cameraTarget = hero;
         deadzoneCamera.Reset(); // Start or Retry must not inherit old momentum.
+        combatFocusSmoother.Reset(); // Old group offset belongs to the previous camera subject.
         hasPlannedPan = false;
     }
 
@@ -227,12 +235,15 @@ public class EnvironmentManager : MonoBehaviour
         if (cameraTarget == null)
         {
             CurrentCameraFocusX = 0f;
+            CurrentCameraSmoothedFocusX = 0f;
             CurrentCameraFocusCount = 0;
             deadzoneCamera.Reset();
+            combatFocusSmoother.Reset();
             return;
         }
         float heroX = Position(cameraTarget.heroRect).x;
         CurrentCameraFocusX = heroX;
+        CurrentCameraSmoothedFocusX = heroX;
         CurrentCameraFocusCount = 1;
         if (useSoftZoneCamera && cameraTarget.IsDeployed && !cameraTarget.IsDead)
         {
@@ -243,11 +254,27 @@ public class EnvironmentManager : MonoBehaviour
             CurrentCameraFocusCount = actorCount;
             if (previousCombatCenterMode != cameraUseCombatCenter)
             {
-                // Inspector A/B comparison must not inherit velocity or an idle
-                // return from a completely different camera subject.
+                // Inspector A/B comparison must not inherit old camera velocity
+                // or smoothing offset from a completely different camera subject.
                 deadzoneCamera.Reset();
+                combatFocusSmoother.Reset();
                 previousCombatCenterMode = cameraUseCombatCenter;
             }
+            if (cameraUseCombatCenter)
+            {
+                // The current averaged center is still the target. Filter its
+                // OFFSET RELATIVE TO THE HERO, so fast Hero locomotion retains
+                // .54g responsiveness while entering/dying monsters cannot
+                // jerk the camera by changing the participant count abruptly.
+                float filteredOffset = combatFocusSmoother.Step(focusX - heroX,
+                    Time.deltaTime,cameraCombatFocusSmoothTime,cameraCombatFocusMaxSpeed);
+                focusX = heroX + filteredOffset;
+            }
+            else
+            {
+                combatFocusSmoother.Reset();
+            }
+            CurrentCameraSmoothedFocusX = focusX;
             bool anyHeroMoved = cameraTarget.MovementDistanceThisFrame > .001f;
             if (cameraUseCombatCenter && !anyHeroMoved)
                 foreach (var hero in HeroController.ActiveHeroes)
@@ -267,6 +294,7 @@ public class EnvironmentManager : MonoBehaviour
         {
             // Keep the established corpse/legacy camera behavior separate.
             deadzoneCamera.Reset();
+            combatFocusSmoother.Reset();
             cameraPan = BattleMotion.ZoneCameraStep(heroX, ZoneLeftX, ZoneRightX,
                 scrollSpeed, Time.deltaTime);
         }

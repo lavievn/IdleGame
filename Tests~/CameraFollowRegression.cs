@@ -296,9 +296,15 @@ partial class MotionRegression
             group.space.SetPosition(group.hero.heroRect,new Vector2(-170f,0f));
             group.Monster(-330f,AttackMode.RangedMagic);
             group.Step(.1f);
-            Near(group.space.CurrentCameraFocusX,-250f,"Hero + monster mean");
+            Near(group.space.CurrentCameraFocusX,-250f,"Hero + monster raw mean");
+            Check(group.space.CurrentCameraSmoothedFocusX > -190f,
+                "new monster does not instantly move the filtered focus outside deadzone");
+            Near(group.space.CurrentCameraSpeed,0f,
+                "no camera impulse on the first frame of a changing group",.01f);
+            for(int i=0;i<25 && group.space.CurrentCameraSpeed<=0f;i++)
+                group.Step(.1f);
             Check(group.space.CurrentCameraSpeed>0f,
-                "group outside deadzone triggers camera correction");
+                "filtered group eventually moves camera outside deadzone");
             Near(group.space.CurrentBackgroundSpeed,group.space.CurrentCameraSpeed,
                 "group camera keeps Ground and world in sync");
             group.space.cameraUseCombatCenter=false;
@@ -330,7 +336,9 @@ partial class MotionRegression
             stationary.SpawnHero(); // Becomes cameraTarget, but does not walk.
             stationary.moveSpeed=0f;
             f.hero.moveSpeed=700f;
-            for(int i=0;i<6;i++)f.Step(.1f);
+            // Allow the 0.7s group offset filter to catch up with the fast
+            // moving teammate; a new centroid should never jump instantly.
+            for(int i=0;i<12;i++)f.Step(.1f);
             Check(f.space.CurrentCameraFocusCount==2,
                 "group camera includes both active Heroes");
             f.hero.moveSpeed=0f;
@@ -365,17 +373,87 @@ partial class MotionRegression
             float startM=f.space.Position(m.Rect).x;
             float startG=f.space.Position(f.grass).x;
             f.Step(.1f);
+            Near(f.space.CurrentCameraSpeed,0f,
+                "group offset is smoothed before entering deadzone",.01f);
+            for(int i=0;i<25 && f.space.CurrentCameraSpeed<=0f;i++)
+                f.Step(.1f);
             float heroDelta=f.space.Position(f.hero.heroRect).x-startH;
             Near(f.space.Position(m.Rect).x-startM,heroDelta,
                 "stationary ranged monster follows the shared view pan",.05f);
             Near(f.space.Position(f.grass).x-startG,heroDelta,
                 "decorative Ground follows the same view pan",.05f);
-            Check(heroDelta>0f,"combat center -250 triggers rightward follow");
+            Check(heroDelta>0f,"combat center -250 eventually triggers smooth follow");
             f.space.SetPosition(f.hero.heroRect,new Vector2(466f,0f));
             f.space.SetPosition(m.Rect,new Vector2(-450f,0f));
             f.Step(.1f);
             Check(f.space.Position(f.hero.heroRect).x <= 470.01f,
                 "centroid cannot push real Hero beyond right screen safety edge");
+        });
+
+        Run("54g group focus smoother caps velocity when monster enters viewport",()=>{
+            foreach(int fps in new[]{30,60,144})
+            {
+                var c=new CombatFocusSmoother();
+                float dt=1f/fps;
+                Near(c.Step(0f,dt,.7f,240f),0f,"no enemies no offset");
+                float previous=0f;
+                float first=c.Step(-350f,dt,.7f,240f);
+                Check(first<0f && first> -15f,
+                    "first frame of new monster group changes center gradually");
+                previous=first;
+                for(int i=0;i<fps*3;i++)
+                {
+                    float next=c.Step(-350f,dt,.7f,240f);
+                    Check(next<=previous+.001f && next>=previous-241f*dt,
+                        "group target approaches without a sudden >240 units/sec step");
+                    previous=next;
+                }
+                Check(previous < -345f && previous> -351f,
+                    "smoothed center still converges to the SAME raw mean");
+                for(int i=0;i<fps*4;i++)c.Step(0f,dt,.7f,240f);
+                Near(c.Offset,0f,"monster death also fades centroid shift",.25f);
+                c.Reset();
+                Near(c.Offset,0f,"retry clears old group focus offset");
+                Near(c.Velocity,0f,"retry clears focus momentum");
+            }
+        });
+
+        Run("54g group entrance maintains the raw mean but delays camera motion",()=>{
+            var f=new Field();f.space.useSoftZoneCamera=true;
+            f.space.cameraUseCombatCenter=true;f.hero.moveSpeed=0f;
+            f.space.SetPosition(f.hero.heroRect,new Vector2(-170f,0f));
+            var monster=f.Monster(-550f,AttackMode.RangedMagic);
+            f.Step(.1f);
+            Check(f.space.CurrentCameraFocusCount==1,
+                "offscreen monster does not influence center");
+            Near(f.space.CurrentCameraSmoothedFocusX,
+                f.space.CurrentCameraFocusX,"solo camera unchanged",.01f);
+            f.space.SetPosition(monster.Rect,new Vector2(-490f,0f));
+            f.Step(.1f);
+            Check(f.space.CurrentCameraFocusCount==2,
+                "monster enters viewport and joins raw centroid");
+            Near(f.space.CurrentCameraFocusX,-330f,
+                "centroid uses unchanged arithmetic average",.1f);
+            Check(f.space.CurrentCameraSmoothedFocusX>-190f,
+                "filtered target still close to Hero on entrance");
+            Near(f.space.CurrentCameraSpeed,0f,
+                "no instant camera jerk on entrance",.01f);
+            bool followed=false;
+            for(int i=0;i<180;i++)
+            {
+                f.Step(1f/60f);
+                if(f.space.CurrentCameraSpeed>.01f) followed=true;
+            }
+            Check(followed,"after settling the camera DOES follow the same mean");
+            Check(f.space.CurrentCameraFocusCount==2,
+                "focus filter does not exclude the already visible monster");
+            monster.MarkDead();
+            f.Step(1f/60f);
+            Check(f.space.CurrentCameraFocusCount==1,
+                "death removes monster from raw centroid immediately");
+            Check(Math.Abs(f.space.CurrentCameraSmoothedFocusX-
+                           f.space.CurrentCameraFocusX)>1f,
+                "smoothed focus transitions rather than teleporting to Hero");
         });
 
         Run("54g melee Hero approaching ranged quái: both share the same Ground pan",()=>{

@@ -243,3 +243,58 @@ public sealed class DeadzoneCamera
         return output;
     }
 }
+
+// Smooth only the relative offset between the existing combat centroid and
+// the tracked Hero. Following Hero's own movement keeps its .54g response;
+// sudden spawn/death/viewport changes move the centroid offset gradually.
+// The offset is invariant under the ONE pan shared by Hero and monsters.
+public sealed class CombatFocusSmoother
+{
+    private float offset;
+    private float velocity;
+
+    public float Offset => offset;
+    public float Velocity => velocity;
+
+    public void Reset()
+    {
+        offset = 0f;
+        velocity = 0f;
+    }
+
+    public float Step(float rawOffset, float dt, float smoothTime, float maxSpeed)
+    {
+        if (dt <= 0f) return offset;
+        smoothTime = Math.Max(.05f, smoothTime);
+        maxSpeed = Math.Max(1f, maxSpeed);
+
+        float omega = 2f / smoothTime;
+        float x = omega * dt;
+        float exponent = 1f / (1f + x + .48f*x*x + .235f*x*x*x);
+
+        // Unity SmoothDamp's max-speed-limited critically damped update.
+        // Cap the relative offset change before filtering so new monsters
+        // cannot pull the focus across the screen in one or two frames.
+        float change = offset - rawOffset;
+        float maxChange = maxSpeed * smoothTime;
+        change = Math.Max(-maxChange, Math.Min(maxChange, change));
+        float adjustedTarget = offset - change;
+        float temp = (velocity + omega * change) * dt;
+        velocity = (velocity - omega * temp) * exponent;
+        float next = adjustedTarget + (change + temp) * exponent;
+
+        // Keep the offset inside the target, never spring past it.
+        if ((rawOffset - offset > 0f) == (next > rawOffset))
+        {
+            next = rawOffset;
+            velocity = 0f;
+        }
+        offset = next;
+        if (Math.Abs(rawOffset - offset) < .001f && Math.Abs(velocity) < .01f)
+        {
+            offset = rawOffset;
+            velocity = 0f;
+        }
+        return offset;
+    }
+}

@@ -99,9 +99,10 @@ public class HeroController : MonoBehaviour
         if (CurrentTarget == null)
         {
             CurrentState = HeroState.Returning;
-            // Hero speed is independent from the camera's base scroll speed.
+            // With no target, walk straight left and keep the current lane.
+            // Only the melee approach BELOW may adjust Y toward a chosen foe;
+            // moving down to Y=0 here made the Hero hug the screen bottom.
             p.x -= Mathf.Max(0f, moveSpeed) * dt;
-            p.y = Mathf.MoveTowards(p.y, 0f, laneSpeed * dt);
             MovementDistanceThisFrame = Mathf.Abs(p.x - startX);
             space.SetPosition(heroRect, p);
             HandleAnimation(true, false);
