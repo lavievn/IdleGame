@@ -23,6 +23,8 @@ public class HeroController : MonoBehaviour
     public TextMeshProUGUI atkStatusText;
 
     public static List<HeroController> ActiveHeroes = new List<HeroController>();
+    // Includes fallen but still visible actors for Y-depth sorting; separate from combat participation.
+    public static List<HeroController> VisibleHeroes = new List<HeroController>();
     public HeroState CurrentState = HeroState.Idle;
     public bool IsDead => CurrentState == HeroState.Dead;
     public bool IsDeployed => deployed && !IsDead && isActiveAndEnabled &&
@@ -77,6 +79,7 @@ public class HeroController : MonoBehaviour
         MovementDistanceThisFrame = 0f;
         deployed = false;
         ActiveHeroes.Remove(this);
+        VisibleHeroes.Remove(this);
         CurrentTarget = null;
         ResetFeedback();
     }
@@ -162,6 +165,7 @@ public class HeroController : MonoBehaviour
         deployed = true;
         heroRect.gameObject.SetActive(true);
         if (!ActiveHeroes.Contains(this)) ActiveHeroes.Add(this);
+        if (!VisibleHeroes.Contains(this)) VisibleHeroes.Add(this);
         Canvas.ForceUpdateCanvases();
         var space = EnvironmentManager.Instance;
         if (space != null && space.BattleArea != null)
@@ -178,6 +182,7 @@ public class HeroController : MonoBehaviour
         CurrentTarget = null;
         CurrentState = HeroState.Idle;
         ActiveHeroes.Remove(this);
+        VisibleHeroes.Remove(this);
         ResetFeedback();
         if (heroRect != null) heroRect.gameObject.SetActive(false);
     }
