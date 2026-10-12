@@ -30,6 +30,168 @@ public class GameManager : MonoBehaviour
     [SerializeField] private SaveManager saveManager;
 
     public List<GameObject> activeMonsters = new List<GameObject>();
+
+    // B2-only test harness; NOT the future permanent companion/encounter system.
+    // These objects and their copied progression never enter SaveManager.
+    private sealed class TestCompanion
+    {
+        public GameObject ControllerRoot, VisualRoot;
+        public HeroController Controller;
+        public EntityDataSO Data;
+    }
+    private readonly List<TestCompanion> testCompanions = new List<TestCompanion>();
+    public int TestCompanionCount => testCompanions.Count;
+    public const int TestCompanionLimit = 2;
+
+    private static T CorrespondingVisual<T>(
+        RectTransform original, RectTransform clone, T originalComponent) where T : Component
+    {
+        if (original == null || clone == null || originalComponent == null) return null;
+        var indexes = new List<int>();
+        Transform cursor = originalComponent.transform;
+        while (cursor != original)
+        {
+            if (cursor.parent == null) return null; // UI components outside the actor.
+            indexes.Add(cursor.GetSiblingIndex());
+            cursor = cursor.parent;
+        }
+        Transform mapped = clone;
+        for (int i = indexes.Count - 1; i >= 0; i--)
+        {
+            if (indexes[i] >= mapped.childCount) return null;
+            mapped = mapped.GetChild(indexes[i]);
+        }
+        return mapped.GetComponent<T>();
+    }
+
+    private AttackMode RandomUnusedTestMode()
+    {
+        var available = new List<AttackMode>();
+        for (int i = 0; i < 3; i++)
+        {
+            var mode = (AttackMode)i;
+            if (heroController != null && mode == heroController.attackMode) continue;
+            bool alreadyUsed = false;
+            foreach (var member in testCompanions)
+                if (member.Controller != null && member.Controller.attackMode == mode)
+                { alreadyUsed = true; break; }
+            if (!alreadyUsed) available.Add(mode);
+        }
+        // A primary mode change during the test may consume all modes.
+        if (available.Count == 0)
+            for (int i = 0; i < 3; i++)
+                if (heroController == null || (AttackMode)i != heroController.attackMode)
+                    available.Add((AttackMode)i);
+        return available[Random.Range(0, available.Count)];
+    }
+
+    // Button sequence: 1 Hero -> 2 Heroes -> 3 Heroes -> 1 Hero.
+    public void CycleTestCompanions()
+    {
+        if (!IsGameplayHUDVisible || HasPendingConfirmation ||
+            Time.timeScale == 0f || combatManager == null ||
+            !combatManager.HasLivingHero || environmentManager == null ||
+            environmentManager.BattleArea == null || heroController == null ||
+            heroController.heroRect == null || runtimeHeroData == null) return;
+
+        if (testCompanions.Count >= TestCompanionLimit)
+        {
+            ClearTestCompanions();
+            UpdateEventLog("[B2 TEST] Đã thu hồi đồng đội thử nghiệm.");
+            return;
+        }
+
+        var extra = CreateTestCompanion();
+        if (extra == null)
+        {
+            UpdateEventLog("[B2 TEST] Không tạo được đồng đội; xem Unity Console.");
+            return;
+        }
+        testCompanions.Add(extra);
+        UpdateEventLog("[B2 TEST] Gọi đồng đội " + testCompanions.Count +
+            "/2, dạng " + extra.Controller.attackMode + ". Tổng: " +
+            (testCompanions.Count + 1) + " Hero.");
+    }
+
+    private TestCompanion CreateTestCompanion()
+    {
+        // Clone only the visible UI actor; cloning the scene's HeroController
+        // GameObject would keep external scene references pointed at Hero #1.
+        int number = testCompanions.Count + 1;
+        GameObject visual = null, rig = null;
+        EntityDataSO data = null;
+        try
+        {
+            var src = heroController.heroRect;
+            visual = Instantiate(src.gameObject, environmentManager.BattleArea);
+            visual.name = "B2 Test Hero Visual " + number;
+            visual.SetActive(false);
+            var rect = visual.GetComponent<RectTransform>();
+            if (rect == null) { Destroy(visual); return null; }
+
+            rig = new GameObject("B2 Test Hero Controller " + number);
+            rig.SetActive(false);
+            var actor = rig.AddComponent<HeroController>();
+            actor.heroRect = rect;
+            actor.hpFillImage = CorrespondingVisual(src, rect, heroController.hpFillImage);
+            actor.dmgTextPrototype = CorrespondingVisual(src, rect, heroController.dmgTextPrototype);
+            actor.atkStatusText = null; // Independent data, no duplicate HUD.
+            actor.moveSpeed = heroController.moveSpeed;
+            actor.laneSpeed = heroController.laneSpeed;
+            actor.attackMode = RandomUnusedTestMode();
+
+            data = Instantiate(runtimeHeroData);
+            data.entityName = "Đồng đội B2-" + number;
+            data.currentExp = 0;
+            data.isDirty = false;
+
+            rig.SetActive(true); // Deferred Awake binds damage popup to this actor.
+            actor.SpawnHero(false); // IMPORTANT: never steal the camera subject.
+
+            Vector2 origin = environmentManager.Position(heroController.heroRect);
+            environmentManager.SetPosition(rect, origin +
+                new Vector2(30f + number * 25f, number % 2 == 0 ? -25f : 25f));
+
+            actor.SetIdentityVisual(data);
+            var image = rect.GetComponent<Image>();
+            if (image != null)
+                image.color = Color.Lerp(image.color,
+                    number == 1 ? new Color(.22f,.72f,1f,1f) :
+                                  new Color(.9f,.46f,1f,1f), .45f);
+
+            if (combatManager.RegisterAdditionalHero(actor, data) == null)
+            {
+                actor.HideHero();
+                Destroy(rig); Destroy(visual); Destroy(data);
+                return null;
+            }
+            return new TestCompanion {
+                ControllerRoot = rig, VisualRoot = visual, Controller = actor, Data = data
+            };
+        }
+        catch (System.Exception ex)
+        {
+            Debug.LogError("[B2 TEST] Companion spawn failed: " + ex);
+            if (rig != null) Destroy(rig);
+            if (visual != null) Destroy(visual);
+            if (data != null) Destroy(data);
+            return null;
+        }
+    }
+
+    private void ClearTestCompanions()
+    {
+        foreach (var member in testCompanions)
+        {
+            if (member.Controller != null && combatManager != null)
+                combatManager.UnregisterAdditionalHero(member.Controller);
+            if (member.Controller != null) member.Controller.HideHero();
+            if (member.ControllerRoot != null) Destroy(member.ControllerRoot);
+            if (member.VisualRoot != null) Destroy(member.VisualRoot);
+            if (member.Data != null) Destroy(member.Data);
+        }
+        testCompanions.Clear();
+    }
     private Coroutine nextWaveCoroutine;
     private int waveSpawnCount, retryWaveSize;
     [Min(0f)] public float waveDelay = 1.5f;
@@ -194,6 +356,7 @@ public class GameManager : MonoBehaviour
         CancelNextWave();
         preGameUI.SetActive(false);
         hasDeployed = true;
+        ClearTestCompanions();
         if (combatManager != null) combatManager.SetupHeroInfo(runtimeHeroData);
         heroController.SpawnHero();
         RestoreProgress();
@@ -224,6 +387,7 @@ public class GameManager : MonoBehaviour
         // 1. Dọn dẹp sạch sẽ chiến trường tránh kẹt Coroutine
         hasDeployed = false;
         CancelNextWave();
+        ClearTestCompanions();
         if (combatManager != null) combatManager.ForceClearAllMonsters();
         activeMonsters.Clear();
         if (heroController != null) heroController.HideHero();
@@ -284,6 +448,7 @@ public class GameManager : MonoBehaviour
         CancelNextWave();
         if (gameOverPanel != null) gameOverPanel.SetActive(false);
         hasDeployed = true;
+        ClearTestCompanions();
         if (combatManager != null) combatManager.SetupHeroInfo(runtimeHeroData);
         heroController.SpawnHero();
         RestoreProgress();
@@ -342,6 +507,7 @@ public class GameManager : MonoBehaviour
             { UpdateEventLog("Không xóa được bản lưu. Chưa tạo trò chơi mới."); return; }
             hasDeployed = false;
             CancelNextWave();
+            ClearTestCompanions();
             if (combatManager != null) combatManager.ForceClearAllMonsters();
             activeMonsters.Clear();
             if (heroController != null) heroController.HideHero();
@@ -471,7 +637,11 @@ public class GameManager : MonoBehaviour
         retryWaveSize = 0;
     }
 
-    private void OnDisable() { CancelNextWave(); }
+    private void OnDisable()
+    {
+        CancelNextWave();
+        ClearTestCompanions();
+    }
 
     private void OnApplicationQuit() { if (saveManager != null && hasDeployed && runtimeHeroData != null) saveManager.SaveGame(runtimeHeroData, SaveSlot.AutoSave); }
 }
