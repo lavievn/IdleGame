@@ -22,6 +22,16 @@ partial class MotionRegression
                 new CombatResistanceSettings())==100,"old unarmored damage");
         });
 
+        Run("0.0.51 ratio stats accept percent-field modifiers",()=>{
+            var attacker=new EntityDataSO {baseDamage=100};
+            attacker.AddCombatModifier(new CombatStatModifier {
+                stat=CombatStatId.PhysicalDamagePercent,percent=.15f });
+            var parts=new [] {new CombatDamagePart {fixedDamage=100,
+                school=DamageSchool.Physical}};
+            Check(CombatDamage.Resolve(attacker,new EntityDataSO(),AttackMode.Melee,parts)
+                .totalDamage==115,"15 percent should not vanish when base ratio is zero");
+        });
+
         Run("0.0.51 tagged bonuses honor conditions and source removal",()=>{
             var hero=new EntityDataSO {baseDamage=100};
             var bow=S(CombatStatId.Attack,20,"hunter");
