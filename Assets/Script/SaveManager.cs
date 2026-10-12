@@ -75,6 +75,11 @@ public class SaveManager : MonoBehaviour
             try
             {
                 if (!jsonData.TrimStart().StartsWith("{") || !jsonData.Contains("\"currentLevel\"")) return false;
+                // JsonUtility.FromJsonOverwrite leaves template values intact for
+                // missing fields. Clear 0.0.51 lists before loading 0.0.50 saves.
+                entityData.combatStatsVersion = 0;
+                entityData.characterTags = new System.Collections.Generic.List<string>();
+                entityData.combatStatModifiers = new System.Collections.Generic.List<CombatStatModifier>();
                 entityData.balanceVersion = 0;
                 entityData.originHealth = 0;
                 entityData.meleeGrowthBonus = 0;
@@ -95,6 +100,7 @@ public class SaveManager : MonoBehaviour
                 JsonUtility.FromJsonOverwrite(jsonData, entityData);
                 entityData.NormalizeRoots();
                 entityData.NormalizeMapProgress();
+                entityData.NormalizeCombatStats();
                 return entityData.currentLevel >= 1;
             }
             catch (Exception e) { Debug.LogError("Không đọc được bản lưu: " + e.Message); return false; }
