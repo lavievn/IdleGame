@@ -47,6 +47,37 @@ public static class BattleMotion
         return Math.Max(minPan, Math.Min(maxPan, basePan));
     }
 
+    // 0.0.50: pure-C# critically damped pan for combatants standing still.
+    // Pan is shared across actors, projectiles and Ground; never changes AI coords.
+    public static float StationaryCombatPan(float remainingDistance, ref float velocity,
+        float smoothTime, float dt)
+    {
+        if (dt <= 0f || remainingDistance <= 0f)
+        {
+            velocity = 0f;
+            return 0f;
+        }
+        smoothTime = Math.Max(.05f, smoothTime);
+        float omega = 2f / smoothTime;
+        float x = omega * dt;
+        float exponent = 1f / (1f + x + .48f*x*x + .235f*x*x*x);
+        float change = -remainingDistance; // current pan is 0 each frame.
+        float temp = (velocity + omega * change) * dt;
+        velocity = (velocity - omega * temp) * exponent;
+        float pan = remainingDistance + (change + temp) * exponent;
+        if (pan < 0f)
+        {
+            velocity = 0f;
+            return 0f;
+        }
+        if (pan >= remainingDistance)
+        {
+            velocity = 0f;
+            return remainingDistance;
+        }
+        return pan;
+    }
+
     public static float WaveDelay(float baseDelay, float heroSpeed)
     {
         // Zero speed pauses progress in the caller; no division by zero.
