@@ -29,8 +29,8 @@ public class HeroController : MonoBehaviour
     public bool IsDead => CurrentState == HeroState.Dead;
     public bool IsDeployed => deployed && !IsDead && isActiveAndEnabled &&
         heroRect != null && heroRect.gameObject.activeInHierarchy;
-    public bool IsCameraSubject => (deployed || IsDead) && isActiveAndEnabled &&
-        heroRect != null && heroRect.gameObject.activeInHierarchy;
+    // Fallen Heroes never remain camera subjects. Corpses are hidden instantly.
+    public bool IsCameraSubject => IsDeployed;
     public MonsterController CurrentTarget { get; private set; }
 
     public float MovementDistanceThisFrame { get; private set; }
@@ -198,7 +198,10 @@ public class HeroController : MonoBehaviour
         CurrentTarget = null;
         CurrentState = HeroState.Dead;
         ActiveHeroes.Remove(this);
+        VisibleHeroes.Remove(this);
         ResetFeedback();
+        // Game rule since 0.0.50: death has no persistent body on the map.
+        if (heroRect != null) heroRect.gameObject.SetActive(false);
     }
 
     private void ResetFeedback()
