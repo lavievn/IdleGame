@@ -11,6 +11,8 @@ public sealed class HeroCombatState
     public int MaxHP { get; set; }
     // Mutable field is intentional: legacy AdvanceCycle(ref timer) stays exact.
     public float AttackTimer;
+    // Fractional health regeneration carries across frames, not respawns.
+    public float HealthRegenRemainder;
     public AttackMode WindupMode { get; set; }
     // Changes whenever this state starts a new life. Old projectiles cannot
     // hit a respawned actor just because the Controller object was reused.
@@ -29,6 +31,7 @@ public sealed class HeroCombatState
         MaxHP = maxHP;
         CurrentHP = maxHP;
         AttackTimer = 0f;
+        HealthRegenRemainder = 0f;
     }
 
     public void ResetAttack() { AttackTimer = 0f; }
