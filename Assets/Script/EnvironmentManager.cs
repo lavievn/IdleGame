@@ -32,6 +32,10 @@ public class EnvironmentManager : MonoBehaviour
     [Header("CAMERA KHI HERO DỪNG ĐÁNH")]
     [Range(.3f,.5f)] public float cameraIdleRestX = .4f;
     [Min(.05f)] public float cameraIdleSmoothTime = .6f;
+    [Header("0.0.50 - TRÔI CAMERA KHI ĐỘI ĐỨNG ĐÁNH")]
+    public bool advanceStationaryCombatToRight = true;
+    [Min(.05f)] public float stationaryCombatSmoothTime = .6f;
+    private float stationaryCombatVelocity;
     [Header("CAMERA — THEO TÂM NHÓM NHÂN VẬT")]
     // OFF compares against the previous single-Hero camera without a revert.
     public bool cameraUseCombatCenter = true;
@@ -107,8 +111,8 @@ public class EnvironmentManager : MonoBehaviour
     }
     void Start() { EnsureGroundPresentation(); }
 
-    // A dead, still-visible hero remains the camera subject until hidden/replaced.
-    // It is intentionally NOT put back in the list of living combat actors.
+    // Only deployed living Heroes are eligible for camera follow.
+    // Dead actors disappear immediately and cannot drive presentation pan.
     private HeroController cameraTarget;
 
     [Header("TẦM ĐÁNH - tỷ lệ chiều rộng Ground")]
@@ -136,6 +140,7 @@ public class EnvironmentManager : MonoBehaviour
         deadzoneCamera.Reset(); // Start or Retry must not inherit old momentum.
         combatFocusSmoother.Reset(); // New spawn/actor starts with fresh group offset.
         hasPlannedPan = false;
+        stationaryCombatVelocity = 0f;
     }
 
     void Awake()
@@ -226,17 +231,15 @@ public class EnvironmentManager : MonoBehaviour
     {
         cameraPan = backgroundPan = 0f;
         if (Time.timeScale == 0f || battleArea == null || Time.deltaTime <= 0f) return;
-        // Preserve .54g's corpse camera when there are NO survivors. In
-        // a multi-Hero battle a fallen camera subject must yield to a
-        // deployed teammate, otherwise combat continues offscreen.
-        if (cameraTarget == null || !cameraTarget.IsCameraSubject ||
-            (cameraTarget.IsDead && HeroController.ActiveHeroes.Count > 0))
+        // All fallen Hero visuals are hidden in 0.0.50; no corpse camera.
+        if (cameraTarget == null || !cameraTarget.IsDeployed)
         {
             cameraTarget = null;
             foreach (var hero in HeroController.ActiveHeroes)
                 if (hero != null && hero.IsDeployed) { cameraTarget = hero; break; }
             deadzoneCamera.Reset(); // Do not carry velocity from a dead subject.
-            combatFocusSmoother.Reset(); // Old offset was relative to the dead Hero.
+            combatFocusSmoother.Reset();
+            stationaryCombatVelocity = 0f;
         }
         if (cameraTarget == null)
         {
@@ -245,6 +248,7 @@ public class EnvironmentManager : MonoBehaviour
             CurrentCameraFocusCount = 0;
             deadzoneCamera.Reset();
             combatFocusSmoother.Reset();
+            stationaryCombatVelocity = 0f;
             return;
         }
         float heroX = Position(cameraTarget.heroRect).x;
@@ -285,19 +289,47 @@ public class EnvironmentManager : MonoBehaviour
                         hero.MovementDistanceThisFrame > .001f)
                     { anyHeroMoved = true; break; }
 
-            // Only the camera SUBJECT changes. Keep the established 38%
-            // deadzone, 0.2s follow, and 40% / 0.6s stop-recovery behavior.
-            // The original Hero position still protects the real screen edge.
-            cameraPan = deadzoneCamera.Pan(focusX,ZoneLeftX,ZoneRightX,
-                battleArea.rect.xMin,battleArea.rect.xMax,Time.deltaTime,
-                cameraSmoothTime,cameraDeadzoneRatio,cameraPreferredX,
-                anyHeroMoved,cameraIdleRestX,cameraIdleSmoothTime,heroX);
+            // While EVERY Hero has stopped to fight, advance the whole world
+            // smoothly toward the RIGHT red zone (trailing/rightmost Hero).
+            // This avoids wasting the last third of the screen during combat.
+            // Exploration and moving combat still use the established
+            // group-focus deadzone and SmoothDamp, unchanged.
+            bool fighting = false;
+            float rightmostHeroX = float.NegativeInfinity;
+            foreach (var hero in HeroController.ActiveHeroes)
+            {
+                if (hero == null || !hero.IsDeployed) continue;
+                if (hero.CurrentState == HeroState.Combat) fighting = true;
+                rightmostHeroX = Mathf.Max(rightmostHeroX, Position(hero.heroRect).x);
+            }
+            bool advanceIdle = advanceStationaryCombatToRight && fighting &&
+                !anyHeroMoved && !float.IsNegativeInfinity(rightmostHeroX);
+            if (advanceIdle)
+            {
+                // The rightmost Hero is the LAST actor behind the team on a
+                // left-to-right view where Heroes travel toward screen left.
+                float distance = Mathf.Max(0f, ZoneRightX - rightmostHeroX);
+                float step = Mathf.SmoothDamp(0f, distance, ref stationaryCombatVelocity,
+                    Mathf.Max(.05f, stationaryCombatSmoothTime), Time.deltaTime);
+                cameraPan = Mathf.Clamp(step, 0f, distance);
+                deadzoneCamera.Reset(); // Idle advance owns camera smoothing.
+            }
+            else
+            {
+                stationaryCombatVelocity = 0f;
+                cameraPan = deadzoneCamera.Pan(focusX,ZoneLeftX,ZoneRightX,
+                    battleArea.rect.xMin,battleArea.rect.xMax,Time.deltaTime,
+                    cameraSmoothTime,cameraDeadzoneRatio,cameraPreferredX,
+                    anyHeroMoved,cameraIdleRestX,cameraIdleSmoothTime,heroX);
+            }
         }
         else
         {
-            // Keep the established corpse/legacy camera behavior separate.
+            // Legacy hard-zone camera can still be selected for debugging.
+            // Its old dead-body tracking branch has been removed.
             deadzoneCamera.Reset();
             combatFocusSmoother.Reset();
+            stationaryCombatVelocity = 0f;
             cameraPan = BattleMotion.ZoneCameraStep(heroX, ZoneLeftX, ZoneRightX,
                 scrollSpeed, Time.deltaTime);
         }
@@ -357,10 +389,7 @@ public class EnvironmentManager : MonoBehaviour
         Vector3 worldDelta = battleArea.TransformVector(new Vector3(amount, 0f, 0f));
         foreach (var hero in HeroController.ActiveHeroes)
             if (hero != null && hero.IsDeployed) hero.heroRect.position += worldDelta;
-        // Death removes the hero from ActiveHeroes, but the body still travels
-        // with the world until it reaches the right zone edge.
-        if (cameraTarget != null && cameraTarget.IsDead && cameraTarget.IsCameraSubject)
-            cameraTarget.heroRect.position += worldDelta;
+        // 0.0.50: fallen Hero visuals are hidden, and must not be panned.
         foreach (var monster in MonsterController.ActiveMonsters)
             if (monster != null && monster.IsAlive) monster.Rect.position += worldDelta;
         if (CombatManager.Instance != null) CombatManager.Instance.PanEffects(amount);
