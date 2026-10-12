@@ -91,6 +91,13 @@ public static class CombatDamage
     public static int ResolveLegacy(int alreadyRolled, EntityDataSO attacker,
         EntityDataSO defender, AttackMode mode, CombatResistanceSettings settings)
     {
+        // Most idle-game hits have no extra traits. Avoid allocating a part,
+        // tag lists and a result object for this hot path.
+        bool attackingModifiers = attacker != null && attacker.combatStatModifiers != null &&
+            attacker.combatStatModifiers.Count > 0;
+        bool defendingModifiers = defender != null && defender.combatStatModifiers != null &&
+            defender.combatStatModifiers.Count > 0;
+        if (!attackingModifiers && !defendingModifiers) return Math.Max(0,alreadyRolled);
         var part = new CombatDamagePart {
             school = mode == AttackMode.RangedMagic ? DamageSchool.Magical : DamageSchool.Physical,
             element = ElementType.Vo, fixedDamage = Math.Max(0,alreadyRolled)
