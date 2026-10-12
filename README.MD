@@ -1,3 +1,11 @@
+## Bản kiểm thử hiện tại: 0.0.50 (B2)
+
+- Phiên bản Unity: `0.0.50` trên nhánh `feature/b2-combat-target-routing`.
+- Đã sửa quái Cung/Phép không thể đứng ngoài màn hình bắn vào Hero, và cho quái đi vào màn hình trước khi đứng đánh.
+- Hero chết **biến mất ngay khỏi bản đồ**, không còn xác di chuyển theo camera. Camera chỉ bám Hero còn sống, dừng khi đội chết hết.
+- Khi đội đứng yên và đang đánh, camera trôi mượt để đưa Hero cuối đội (ngoài cùng bên phải) tới gần biên đỏ phải. Có thể so sánh bằng Inspector `advanceStationaryCombatToRight`.
+- Chi tiết và kiểm thử: [Docs/Release_0.0.50.md](Docs/Release_0.0.50.md). **Chưa có kiểm thử Play Mode Unity cho thay đổi mới**; các xác nhận trước là checkpoint B2 trước bản 0.0.50.
+
 # IdleGame — game tu tiên tự động trên desktop Windows
 
 **Trạng thái hiện tại: 0.0.4.54g — ĐÃ CHỐT VÒNG PHÁT TRIỂN (11/10/2026), theo nghiệm thu có giới hạn của người phát triển.** Nhánh `feature/0.0.4.54g` vẫn lưu mốc này; **chưa gộp `main`**.
