@@ -89,6 +89,19 @@ public class MonsterController : MonoBehaviour
         }
 
         Vector2 p = space.Position(rect);
+        // Ranged enemies spawned off the LEFT edge must enter the actual
+        // viewport before they can plant their feet and start an attack.
+        // The ordinary range test alone would stop them outside the screen.
+        if (attackMode != AttackMode.Melee && p.x < space.BattleArea.rect.xMin)
+        {
+            float entryX = space.BattleArea.rect.xMin + 2f;
+            float step = Mathf.Max(0f, moveSpeed) * Mathf.Max(0f, dt);
+            p.x = Mathf.Min(entryX, p.x + groundMinusCamera + step);
+            space.SetPosition(rect, p);
+            currentState = MonsterState.Approaching;
+            UpdateChargeBar(false, 0f);
+            return;
+        }
         float targetX = space.Position(CurrentTarget.heroRect).x;
         p.x = BattleMotion.MonsterApproach(p.x, targetX, attackRange, moveSpeed, dt, groundMinusCamera);
         space.SetPosition(rect, p);
@@ -98,6 +111,9 @@ public class MonsterController : MonoBehaviour
     public bool CanAttack(HeroController target, EnvironmentManager space)
     {
         if (!IsAlive || target == null || !target.IsDeployed || space == null || space.BattleArea == null) return false;
+        // Prevent ranged attacks from offscreen enemies, even when their
+        // long attack ranges already overlap the Hero.
+        if (attackMode != AttackMode.Melee && !space.IsVisible(rect)) return false;
         Vector2 delta = space.Position(target.heroRect) - space.Position(rect);
         // Monster lanes are visual depth, not obstacles. A melee monster can reach
         // a ranged hero without forcing that hero to walk down its lane.
