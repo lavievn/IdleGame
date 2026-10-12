@@ -540,6 +540,9 @@ public class CombatManager : MonoBehaviour
         attacker.MaxHP=attacker.Data.GetCalculatedHealth(attacker.SelectedMode);
         int heal=attacker.SelectedMode==AttackMode.Melee
             ? CombatBalance.MeleeKillHeal(attacker.Data.currentLevel,Random.Range(3,6)) : 0;
+        heal = Mathf.Max(0,heal + CombatStats.GetInt(attacker.Data,
+            CombatStatId.KillHealBonus,0,ElementType.Vo,
+            new [] { CombatStats.StanceTag(attacker.SelectedMode) }));
         attacker.CurrentHP=Mathf.Clamp(attacker.CurrentHP+heal,0,attacker.MaxHP);
         if (attacker.Controller!=null)
         {
