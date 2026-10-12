@@ -3869,6 +3869,7 @@ MonoBehaviour:
     armorHalfReduction: 100
     magicResistanceHalfReduction: 100
     maximumSchoolReduction: 0.85
+    maximumSchoolVulnerability: 0.5
     maximumElementReduction: 0.75
     minimumElementReduction: -0.5
   monsterSpawner: {fileID: 1711842760}
