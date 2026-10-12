@@ -153,7 +153,11 @@ public class HeroController : MonoBehaviour
         return closest;
     }
 
-    public void SpawnHero()
+    // Existing single-Hero callers still follow the main actor.
+    public void SpawnHero() { SpawnHero(true); }
+
+    // Test companions must not steal camera focus from the active subject.
+    public void SpawnHero(bool followCamera)
     {
         if (heroRect == null) return;
         SpawnVersion++;
@@ -171,7 +175,7 @@ public class HeroController : MonoBehaviour
         if (space != null && space.BattleArea != null)
         {
             space.SetPosition(heroRect, new Vector2(space.HomeX, 0f));
-            space.FollowHero(this);
+            if (followCamera) space.FollowHero(this);
         }
     }
 
