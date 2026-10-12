@@ -16,6 +16,8 @@ public class CombatManager : MonoBehaviour
     [Min(0f)] public float magicImpactRadius = 100f; // Enemy radius unchanged.
     [Min(0f)] public float heroMagicImpactRadius = 250f; // Ground-local hero explosion.
     [Min(0.1f)] public float magicProjectileScale = 4f;
+    [Header("0.0.51 - GIAP / KHANG PHEP / KHANG HE")]
+    public CombatResistanceSettings resistanceSettings = new CombatResistanceSettings();
     [SerializeField] private MonsterSpawner monsterSpawner;
     private BattleEffects effects;
     private class Projectile
@@ -29,6 +31,7 @@ public class CombatManager : MonoBehaviour
         public float elapsed, duration, arc;
         public string source;
         public DamageTrace trace;
+        public AttackMode attackMode;
         public BattleEffects.Bolt visual;
     }
     private readonly List<Projectile> projectiles = new List<Projectile>();
@@ -313,7 +316,9 @@ public class CombatManager : MonoBehaviour
             if (info.controller==null || !info.controller.IsAlive) continue;
             AttackMode mode=info.controller.attackMode;
             if (info.cycleMode!=mode) { info.cycleMode=mode; info.attackTimer=0f; }
-            float duration=AttackDuration(mode,info.data.baseAttackSpeed,true);
+            float speed=CombatStats.Get(info.data,CombatStatId.AttackSpeed,
+                info.data.baseAttackSpeed,ElementType.Vo,new [] { CombatStats.StanceTag(mode) });
+            float duration=AttackDuration(mode,speed,true);
             var victim=ResolveMonsterTarget(info,space);
             bool eligible=victim!=null;
             if (mode==AttackMode.RangedMagic && !eligible)
@@ -334,7 +339,7 @@ public class CombatManager : MonoBehaviour
                 Impact(BodyPosition(victim.Controller.heroRect,space),false);
                 ApplyDamageToHeroState(victim,trace.elementDamage,
                     IdentityDisplay.Describe(info.data),trace,
-                    BodyPosition(info.controller.Rect,space).x);
+                    BodyPosition(info.controller.Rect,space).x,info.data,mode);
             }
             else Launch(info,false,mode,trace,duration,space,victim);
             if (!isBattling) return;
@@ -396,7 +401,9 @@ public class CombatManager : MonoBehaviour
         var hero=actor.Controller;
         AttackMode mode=hero.attackMode;
         if (actor.WindupMode!=mode) { ResetRegisteredAttack(actor); actor.WindupMode=mode; }
-        float duration=AttackDuration(mode,actor.Data.baseAttackSpeed);
+        float speed=CombatStats.Get(actor.Data,CombatStatId.AttackSpeed,
+            actor.Data.baseAttackSpeed,ElementType.Vo,new [] { CombatStats.StanceTag(mode) });
+        float duration=AttackDuration(mode,speed);
         ActiveMonsterInfo target=NearestEligibleMonster(space,actor);
         if (mode==AttackMode.RangedMagic && (!isBattling || target==null))
         {
@@ -414,7 +421,7 @@ public class CombatManager : MonoBehaviour
         if (mode==AttackMode.Melee)
         {
             Impact(BodyPosition(target.controller.Rect,space),false);
-            DealDamageToMonsterFromHero(target,trace,actor);
+            DealDamageToMonsterFromHero(target,trace,actor,null,mode);
         }
         else Launch(target,true,mode,trace,duration,space,actor);
     }
@@ -449,10 +456,13 @@ public class CombatManager : MonoBehaviour
         DealDamageToMonsterFromHero(target,trace,primaryHeroState,impactSourceX);
     }
     private void DealDamageToMonsterFromHero(ActiveMonsterInfo target,DamageTrace trace,
-        HeroCombatState attacker,float? impactSourceX=null)
+        HeroCombatState attacker,float? impactSourceX=null,AttackMode? sourceMode=null)
     {
-        if (gameManager!=null) gameManager.RecordDamage(trace.Describe(1f,1,trace.elementDamage));
-        DealDamageFromHero(target,trace.elementDamage,attacker,impactSourceX);
+        if (target == null || attacker == null || attacker.Data == null) return;
+        int damage = CombatDamage.ResolveLegacy(trace.elementDamage,attacker.Data,target.data,
+            sourceMode ?? attacker.SelectedMode,resistanceSettings);
+        if (gameManager!=null) gameManager.RecordDamage(trace.Describe(1f,1,damage));
+        DealDamageFromHero(target,damage,attacker,impactSourceX);
     }
     private void DealDamageToMonster(ActiveMonsterInfo target,int finalDmg,float? impactSourceX=null)
     {
@@ -528,9 +538,14 @@ public class CombatManager : MonoBehaviour
         return true;
     }
     private void ApplyDamageToHeroState(HeroCombatState victim,int damage,string source,
-        DamageTrace trace=null,float? impactSourceX=null)
+        DamageTrace trace=null,float? impactSourceX=null,
+        EntityDataSO attackerData=null,AttackMode sourceMode=AttackMode.Melee)
     {
         if (!IsRegistered(victim) || !victim.CanFight) return;
+        // Direct test/console damage (trace null) remains unaffected.
+        if (trace != null && attackerData != null)
+            damage = CombatDamage.ResolveLegacy(damage,attackerData,victim.Data,
+                sourceMode,resistanceSettings);
         float mapScale=WorldNames.MonsterDamageScale(victim.Data.MapVisits);
         int hardScale=gameManager!=null && gameManager.IsHardMode?2:1;
         damage=Mathf.Max(1,Mathf.RoundToInt(damage*mapScale*hardScale));
@@ -578,6 +593,7 @@ public class CombatManager : MonoBehaviour
             hero=actor,heroLife=actor.LifeVersion,
             heroSpawn=actor.Controller.SpawnVersion,
             fromHero=fromHero,magic=magic,start=start,end=end,trace=trace,
+            attackMode=mode,
             source=IdentityDisplay.Describe(fromHero?actor.Data:monster.data),
             duration=BattleMotion.FlightDuration(magic?magicFlightTime:physicalFlightTime,interval),
             arc=magic?Mathf.Max(0f,magicArcHeight):0f
@@ -645,7 +661,8 @@ public class CombatManager : MonoBehaviour
                             end,heroMagicImpactRadius)) continue;
                     hit=true;
                     DealDamageToMonsterFromHero(victim,
-                        SynergyMath.EvaluateSnapshot(shot.trace,victim.data),shot.hero,end.x);
+                        SynergyMath.EvaluateSnapshot(shot.trace,victim.data),shot.hero,
+                        end.x,shot.attackMode);
                 }
             }
             else if (shot.fromHero)
@@ -654,7 +671,7 @@ public class CombatManager : MonoBehaviour
                                  end,physicalHitRadius);
                 if (hit) DealDamageToMonsterFromHero(shot.monster,
                     SynergyMath.EvaluateSnapshot(shot.trace,shot.monster.data),
-                    shot.hero,shot.start.x);
+                    shot.hero,shot.start.x,shot.attackMode);
             }
             else
             {
@@ -665,7 +682,7 @@ public class CombatManager : MonoBehaviour
                 {
                     var trace=SynergyMath.EvaluateSnapshot(shot.trace,victim.Data);
                     ApplyDamageToHeroState(victim,trace.elementDamage,shot.source,trace,
-                        shot.magic?shot.end.x:shot.start.x);
+                        shot.magic?shot.end.x:shot.start.x,shot.monster.data,shot.attackMode);
                 }
             }
             if (!hit && gameManager!=null)
