@@ -3,16 +3,45 @@ using UnityEngine;
 using UnityEngine.UI;
 
 // Presentation only: never scale/move the Ground coordinate system used by AI.
+[DefaultExecutionOrder(200)] // Sort after combat movement, Ground pan, and spawned visuals.
 public class GroundPresentation : MonoBehaviour
 {
     private EnvironmentManager space;
-    private RectTransform fixedRect, originalGrass;
+    private RectTransform originalGrass;
     private Image sourceImage;
+    private readonly List<RectTransform> distantTiles = new List<RectTransform>();
+    private readonly List<RectTransform> farTiles = new List<RectTransform>();
+    private Sprite generatedTreeSprite, generatedMountainSprite;
+    private Texture2D generatedTreeTexture, generatedMountainTexture;
+    private Color farTint, distantTint;
     private readonly List<RectTransform> tiles = new List<RectTransform>();
     private readonly List<RectTransform> decorations = new List<RectTransform>();
     private readonly List<Vector2> decorationBaseSizes = new List<Vector2>();
-    private float phase, previousWidth, grassHeight, grassY;
+    private readonly List<DepthVisual> depthVisuals = new List<DepthVisual>();
+    private readonly List<RectTransform> previousDepthOrder = new List<RectTransform>();
+    private float phase, farPhase, distantPhase, previousWidth, previousHeight, grassHeight, grassY;
     private Color terrainTint;
+
+    [Header("NỀN XA - THỊ SAI (CHỈ HIỂN THỊ)")]
+    [Range(0f, 1f)] public float farParallaxSpeed = .3f;
+    [Min(1f)] public float farLayerScale = 1.6f;
+    [Range(0f, 1f)] public float distantParallaxSpeed = .1f;
+    [Min(1f)] public float distantLayerScale = 2.08f; // 160% x 130%
+
+    private struct DepthVisual
+    {
+        public RectTransform Rect;
+        public float Y;
+        public int StableOrder;
+    }
+    private static int CompareDepth(DepthVisual a, DepthVisual b)
+    {
+        // Larger foot Y = farther away = painted first.
+        int byY = b.Y.CompareTo(a.Y);
+        return byY != 0 ? byY : a.StableOrder.CompareTo(b.StableOrder);
+    }
+    public float FarPhase => farPhase;
+    public float DistantPhase => distantPhase;
     public int DecorationCount => decorations.Count;
     public float TilePhase => phase;
     public float ScrollingHeight => grassHeight;
@@ -39,10 +68,35 @@ public class GroundPresentation : MonoBehaviour
         presentation.grassY = environment.Position(main).y;
         presentation.grassHeight = main.rect.height * Mathf.Abs(main.localScale.y);
         Sprite decorationSprite = primaryImage.sprite;
-        // A visual clone grows independently; the root stays the logical width.
-        presentation.fixedRect = presentation.CreateImage("Ground Fixed 1.2", source.sprite, FixedTint);
-        presentation.fixedRect.pivot = area.pivot;
-        presentation.fixedRect.SetAsFirstSibling();
+        // Two distance bands. Both are visual-only and never modify Ground coordinates.
+        presentation.generatedTreeSprite = LoadPreviewSprite("Parallax/ParallaxTreesTest",
+            out presentation.generatedTreeTexture);
+        presentation.generatedMountainSprite = LoadPreviewSprite("Parallax/ParallaxMountainsTest",
+            out presentation.generatedMountainTexture);
+        Sprite mountain = presentation.generatedMountainSprite != null
+            ? presentation.generatedMountainSprite : source.sprite;
+        Sprite trees = presentation.generatedTreeSprite != null
+            ? presentation.generatedTreeSprite : source.sprite;
+        presentation.distantTint = presentation.generatedMountainSprite != null
+            ? Color.white : new Color(.07f, .07f, .08f, 1f);
+        presentation.farTint = presentation.generatedTreeSprite != null
+            ? Color.white : FixedTint;
+        for (int i = 0; i < 3; i++)
+        {
+            var distant = presentation.CreateImage("Ground Mountain Parallax " + (i + 1),
+                mountain, presentation.distantTint);
+            distant.pivot = new Vector2(0f, area.pivot.y);
+            presentation.distantTiles.Add(distant);
+            distant.SetSiblingIndex(i);
+        }
+        for (int i = 0; i < 3; i++)
+        {
+            var far = presentation.CreateImage("Ground Tree Parallax " + (i + 1),
+                trees, presentation.farTint);
+            far.pivot = new Vector2(0f, area.pivot.y);
+            presentation.farTiles.Add(far);
+            far.SetSiblingIndex(presentation.distantTiles.Count + i);
+        }
         source.enabled = false;
         primaryImage.sprite = source.sprite;
         primaryImage.type = Image.Type.Simple;
@@ -54,8 +108,10 @@ public class GroundPresentation : MonoBehaviour
         main.pivot = new Vector2(0f, 0.5f);
         presentation.tiles.Add(main);
         for (int i = 1; i <= 2; i++) presentation.tiles.Add(presentation.CreateImage("Grass1 Loop " + i, source.sprite, source.color));
-        // Keep every terrain strip behind the decoration/actor objects.
-        for (int i = 0; i < presentation.tiles.Count; i++) presentation.tiles[i].SetSiblingIndex(i + 1);
+        // Furthest mountains -> gray tree band -> Ground -> Y-sorted actors.
+        for (int i = 0; i < presentation.tiles.Count; i++)
+            presentation.tiles[i].SetSiblingIndex(
+                presentation.distantTiles.Count + presentation.farTiles.Count + i);
         var seen = new HashSet<RectTransform>();
         foreach (var d in details) presentation.AddDecoration(d, main, decorationSprite, seen);
         foreach (var d in area.GetComponentsInChildren<RectTransform>(true))
@@ -64,6 +120,35 @@ public class GroundPresentation : MonoBehaviour
         presentation.Reflow(true);
         return presentation;
     }
+    // Source bitmaps are bundled as base64 TextAssets for this temporary preview.
+    // Avoids depending on custom TextureImporter settings or unstable sprite GUIDs.
+    private static Sprite LoadPreviewSprite(string resource, out Texture2D texture)
+    {
+        texture = null;
+#if UNITY_5_3_OR_NEWER
+        TextAsset asset = Resources.Load<TextAsset>(resource);
+        if (asset == null) { Debug.LogWarning("Parallax preview not found: " + resource); return null; }
+        try
+        {
+            byte[] bytes = System.Convert.FromBase64String(asset.text.Trim());
+            var candidate = new Texture2D(2, 2, TextureFormat.RGBA32, false);
+            if (!candidate.LoadImage(bytes)) { Destroy(candidate); return null; }
+            candidate.wrapMode = TextureWrapMode.Clamp;
+            candidate.filterMode = FilterMode.Bilinear;
+            texture = candidate;
+            return Sprite.Create(candidate, new Rect(0f, 0f, candidate.width, candidate.height),
+                new Vector2(.5f, .5f), 100f);
+        }
+        catch (System.Exception error)
+        {
+            Debug.LogWarning("Cannot decode parallax preview " + resource + ": " + error.Message);
+            return null;
+        }
+#else
+        return null;
+#endif
+    }
+
     private RectTransform CreateImage(string name, Sprite sprite, Color tint)
     {
         var go = new GameObject(name, typeof(RectTransform), typeof(CanvasRenderer), typeof(Image));
@@ -100,7 +185,10 @@ public class GroundPresentation : MonoBehaviour
     {
         terrainTint = color;
         foreach (var rect in tiles) rect.GetComponent<Image>().color = color;
-        if (fixedRect != null) fixedRect.GetComponent<Image>().color = FixedTint;
+        foreach (var far in farTiles)
+            if (far != null) far.GetComponent<Image>().color = farTint;
+        foreach (var distant in distantTiles)
+            if (distant != null) distant.GetComponent<Image>().color = distantTint;
     }
     public void Scroll(float amount)
     {
@@ -108,7 +196,14 @@ public class GroundPresentation : MonoBehaviour
         float width = space.Width;
         if (width <= 0f) return;
         phase = BattleMotion.Wrap(phase + amount, 0f, width);
+        float farWidth = width * Mathf.Max(1f, farLayerScale);
+        farPhase = BattleMotion.Wrap(farPhase + amount * Mathf.Clamp01(farParallaxSpeed), 0f, farWidth);
+        float distantWidth = width * Mathf.Max(1f, distantLayerScale);
+        distantPhase = BattleMotion.Wrap(
+            distantPhase + amount * Mathf.Clamp01(distantParallaxSpeed), 0f, distantWidth);
         LayoutTiles();
+        LayoutFarTiles();
+        LayoutDistantTiles();
         for (int i = 0; i < decorations.Count; i++)
         {
             var d = decorations[i]; if (d == null) continue;
@@ -127,11 +222,18 @@ public class GroundPresentation : MonoBehaviour
     private void Reflow(bool force)
     {
         float width = space.Width;
-        if (width <= 0f || (!force && Mathf.Abs(previousWidth - width) < 0.01f)) return;
-        if (previousWidth > 0f) phase = phase / previousWidth * width;
+        float height = space.BattleArea.rect.height;
+        if (width <= 0f || (!force &&
+            Mathf.Abs(previousWidth - width) < .01f &&
+            Mathf.Abs(previousHeight - height) < .01f)) return;
+        if (previousWidth > 0f)
+        {
+            phase = phase / previousWidth * width;
+            farPhase = farPhase / previousWidth * width;
+            distantPhase = distantPhase / previousWidth * width;
+        }
         previousWidth = width;
-        fixedRect.sizeDelta = new Vector2(width * 1.2f, space.BattleArea.rect.height * 1.2f);
-        fixedRect.anchoredPosition = Vector2.zero;
+        previousHeight = height;
         for (int i = 0; i < decorations.Count; i++)
         {
             float size = Random.Range(0.8f, 1.15f);
@@ -141,6 +243,24 @@ public class GroundPresentation : MonoBehaviour
             space.SetPosition(decorations[i], new Vector2(space.BattleArea.rect.xMin + width * fraction, RandomY()));
         }
         LayoutTiles();
+        LayoutFarTiles();
+        LayoutDistantTiles();
+    }
+    private void LayoutFarTiles() { LayoutParallaxTiles(farTiles, farPhase, farLayerScale); }
+    private void LayoutDistantTiles() { LayoutParallaxTiles(distantTiles, distantPhase, distantLayerScale); }
+
+    private void LayoutParallaxTiles(List<RectTransform> layer, float layerPhase, float scale)
+    {
+        float width = space.Width * Mathf.Max(1f, scale);
+        float height = space.BattleArea.rect.height * Mathf.Max(1f, scale);
+        float left = space.BattleArea.rect.xMin;
+        for (int i = 0; i < layer.Count; i++)
+        {
+            RectTransform tile = layer[i];
+            if (tile == null) continue;
+            tile.sizeDelta = new Vector2(width + 1f, height);
+            tile.anchoredPosition = new Vector2(left + layerPhase + (i - 1) * width, 0f);
+        }
     }
     private void LayoutTiles()
     {
@@ -153,11 +273,57 @@ public class GroundPresentation : MonoBehaviour
             tiles[i].GetComponent<Image>().color = terrainTint;
         }
     }
-    void LateUpdate() { Scroll(0f); }
+    private void AddDepth(RectTransform rect)
+    {
+        if (rect == null || rect.parent != transform || !rect.gameObject.activeInHierarchy) return;
+        depthVisuals.Add(new DepthVisual {
+            Rect = rect, Y = space.Position(rect).y, StableOrder = depthVisuals.Count
+        });
+    }
+
+    private void SortDepth()
+    {
+        depthVisuals.Clear();
+        foreach (var rect in decorations) AddDepth(rect);
+        // Include visible corpses, not only active fighters.
+        foreach (var hero in HeroController.VisibleHeroes)
+            if (hero != null) AddDepth(hero.heroRect);
+        foreach (var monster in MonsterController.ActiveMonsters)
+            if (monster != null && monster.IsAlive) AddDepth(monster.Rect);
+        depthVisuals.Sort(CompareDepth);
+
+        // Rebuild Canvas draw order only if depth relationships changed.
+        bool changed = previousDepthOrder.Count != depthVisuals.Count;
+        if (!changed)
+            for (int i = 0; i < depthVisuals.Count; i++)
+                if (previousDepthOrder[i] != depthVisuals[i].Rect) { changed = true; break; }
+        if (!changed) return;
+
+        int firstActorIndex = distantTiles.Count + farTiles.Count + tiles.Count;
+        for (int i = 0; i < depthVisuals.Count; i++)
+            depthVisuals[i].Rect.SetSiblingIndex(firstActorIndex + i);
+        previousDepthOrder.Clear();
+        for (int i = 0; i < depthVisuals.Count; i++)
+            previousDepthOrder.Add(depthVisuals[i].Rect);
+    }
+
+    void LateUpdate()
+    {
+        Scroll(0f);
+        SortDepth();
+    }
     void OnDestroy()
     {
         if (sourceImage != null) sourceImage.enabled = true;
-        if (fixedRect != null) Destroy(fixedRect.gameObject);
-        foreach (var t in tiles) if (t != null && t != originalGrass) Destroy(t.gameObject);
+        foreach (var far in farTiles)
+            if (far != null) Destroy(far.gameObject);
+        foreach (var distant in distantTiles)
+            if (distant != null) Destroy(distant.gameObject);
+        foreach (var t in tiles)
+            if (t != null && t != originalGrass) Destroy(t.gameObject);
+        if (generatedTreeSprite != null) Destroy(generatedTreeSprite);
+        if (generatedMountainSprite != null) Destroy(generatedMountainSprite);
+        if (generatedTreeTexture != null) Destroy(generatedTreeTexture);
+        if (generatedMountainTexture != null) Destroy(generatedMountainTexture);
     }
 }
