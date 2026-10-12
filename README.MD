@@ -5,6 +5,16 @@
 
 Game idle RPG tu tiên 2D/2.5D dạng **desktop overlay trong suốt**, chơi tự động trong một cửa sổ nhỏ. Hero đi tìm quái, chiến đấu theo các dạng cận chiến/cung/phép, tăng cấp, lưu tiến độ và chuyển bản đồ. Game hiện ở giai đoạn **xây dựng khung gameplay, độ ổn định, UI và thông số thử nghiệm**; chưa phải sản phẩm hoàn thiện.
 
+## Nhánh B2 đang thử nghiệm — định tuyến chiến đấu nhiều Hero
+
+**Đang triển khai:** `feature/b2-combat-target-routing`, từ checkpoint B1 đã được người phát triển nghiệm thu. **Chưa được xác nhận Unity/Windows**. `main`, `.54g` và nhánh B1 không đổi.
+
+- `CombatManager` có sổ đăng ký `HeroController → HeroCombatState`, gọi `RegisterAdditionalHero(hero,data)` để đưa một Hero **đã spawn** vào chiến đấu. Không tự thêm Hero thứ hai vào Scene, UI hoặc Save.
+- Hero có máu, vận sức, mục tiêu, sát thương và EXP giết quái riêng; quái tấn công Hero mà AI đã chọn, không mặc định gây sát thương cho Hero chính. Đạn khóa đời sinh của cả Hero và quái để tránh bắn nhầm bản thể dùng lại.
+- Hero chính chết mà còn đồng đội sống: trận/wave tiếp tục, camera chuyển sang người còn sống; chỉ khi cả đội bị hạ mới Game Over. **Luật EXP chung đội hình và save danh sách Hero chưa được quyết định.**
+- `Tests~/B2CombatRoutingRegression.cs` bổ sung **13 ca**, nhưng hiện mới kiểm tra cấu trúc mã; **chưa có kết quả biên dịch/chạy C# hoặc Unity thật**. Kiểm thử trước khi nghiệm thu.
+- Tài liệu [Docs/B2_CombatRouting.md](Docs/B2_CombatRouting.md) nêu API, giới hạn và danh sách nghiệm thu. Khi muốn đối chiếu gameplay một Hero, quay về `feature/b1-hero-combat-state`.
+
 ## Checkpoint B1 đã chốt — trạng thái chiến đấu Hero
 
 **Nguồn:** checkpoint `feature/0.0.4.54g` đã được chấp nhận sử dụng; gameplay .54g không đổi. **Nhánh làm B1:** `feature/b1-hero-combat-state` (chưa merge main hoặc .54g). **B1 đã được người phát triển xác nhận hoàn tất**; không có log độc lập chứng minh đủ tất cả bài thử Unity/Windows.

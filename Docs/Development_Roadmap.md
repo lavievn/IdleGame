@@ -26,6 +26,8 @@
 - Khi phát sinh lỗi P0 (mất tiến trình, sai target, wave kẹt, Crash, camera mất đối tượng), **tạm dừng tính năng mới để sửa nguyên nhân**. Lỗi VFX/UI nhỏ có thể ghi backlog và xử lý ở vòng polish.
 - Phân biệt: có mã, mô phỏng toán học, chạy Mono/stub, Unity Editor Play Mode và Windows build thật.
 
+**B2 bắt đầu (12/10/2026):** người phát triển đã cho phép triển khai B2 trên nhánh `feature/b2-combat-target-routing`. Phần định tuyến nhiều Hero, chọn mục tiêu và định danh đạn đã có mã + 13 test, **chưa nghiệm thu Unity**. Chưa thêm đồng đội vào Scene, UI hay save; xem `Docs/B2_CombatRouting.md`. `main`, B1, `.54g` vẫn giữ checkpoint.
+
 **Cập nhật sau nghiệm thu B1 (11/10/2026):** người phát triển đã xác nhận B1 hoàn tất. Đây là checkpoint được chấp nhận; chưa có log xác nhận chi tiết từng trường hợp tự động. Nhánh đang thực hiện: `feature/b1-hero-combat-state`, bắt đầu từ checkpoint `.54g`. Chỉ tách trạng thái HP/timer/data của Hero ra khỏi `CombatManager`, **chưa thay gameplay một Hero**, chưa thực hiện B2, trang bị, kỹ năng hay đội hình. Xem `Docs/B1_HeroCombatState.md` để biết cấu trúc mã, test và điều kiện nghiệm thu. Các bước P1/P2/P3 chưa được duyệt triển khai.
 
 ## 3. Bảng ưu tiên sau khi chốt .54g — ngày 11/10/2026
@@ -103,7 +105,7 @@ Boss/elite, luật khắc sâu, crit/phòng thủ/buff/debuff, hiệu ứng theo
 
 ## 6. Quyết định cần người dùng duyệt trước khi thực hiện mốc tiếp theo
 
-1. `.54g` đã chốt; **B1 đã được người phát triển xác nhận hoàn tất** trên nhánh riêng. Đề xuất bước tiếp là B2 — xử lý nguồn/đích và sát thương theo từng Hero, cần phê duyệt trước khi viết mã. Chưa merge `main`; mọi hạng mục QA chưa có log vẫn được giữ lại.
+1. `.54g` đã chốt, **B1 đã nghiệm thu** và **B2 đã được duyệt bắt đầu**. B2 hiện chờ chạy Mono/Unity và kiểm chứng chiến đấu nhiều Hero; chưa được phép merge `main` hay triển khai hệ tuyển đồng đội, item/skill/save đội.
 2. Với đội hình sau này, tạm chấp nhận camera lấy trung điểm `(minX+maxX)/2` khi toàn đội đủ nằm trong khung. Quy tắc đội hình tách quá rộng để chốt ngay trước Mốc E.
 3. Số slot, loại item, bảng hiệu ứng vật phẩm, kiểu kỹ năng và hình ảnh/sound chưa cần chốt ở Mốc A/B; chỉ chốt contract khi triển khai lát cắt tương ứng.
 

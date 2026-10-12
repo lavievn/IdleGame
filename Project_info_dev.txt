@@ -3,6 +3,32 @@ Tài liệu thiết kế, hiện trạng và bàn giao phát triển của lavie
 Ngày đối chiếu: 09/10/2026, múi giờ Việt Nam (UTC+7).
 Đổi tên và thay thế AI_Prompt_Master.txt; lịch sử tài liệu cũ vẫn ở Git.
 
+B2 — ĐÃ BẮT ĐẦU TRÊN NHÁNH RIÊNG, CHƯA NGHIỆM THU (12/10/2026)
+User đã duyệt "bắt đầu B2". Nhánh mới feature/b2-combat-target-routing
+được tách từ B1 đã chốt tại 7487646d355bad1f79e810eb76968a02555acb47.
+B2 bổ sung dictionary<HeroController,HeroCombatState> và API
+RegisterAdditionalHero/UnregisterAdditionalHero/StateFor/HasLivingHero.
+Hero có HP/timer/chế độ/tầm đánh/đích riêng, quái tấn công đúng Hero
+đã chọn trong MonsterController.CurrentTarget, fallback Hero đăng ký
+gần nhất đang trong tầm. Đòn đánh/đạn snapshot actor source/destination
+và LifeVersion của HeroCombatState, SpawnVersion của HeroController/
+MonsterController nhằm loại đạn cũ khi respawn hoặc monster pooling.
+EXP + heal khi kill thuộc Hero tung đòn kết liễu, KHÔNG tự chia cho đội.
+Một Hero chết không GameOver khi vẫn còn đồng đội, chỉ chết hết đội
+mới GameOver; GameManager.LateUpdate/RecoverEscapedWave được chỉnh để
+khi Hero chính chết còn người sống thì wave tiếp tục, không hồi sinh
+Hero chính ngoài ý muốn; EnvironmentManager chọn Hero sống khi
+cameraTarget cũ chết, vẫn giữ nguyên cách camera một Hero .54g.
+MainGame.unity, SaveManager, EntityDataSO chưa đổi; GameManager
+CHỈ lưu Hero chính. KHÔNG tạo UI hay Hero thứ 2 mặc định. Test sử dụng
+B2Hero helper tạo actor thứ 2 và đăng ký bằng API runtime.
+Thêm Tests~/B2CombatRoutingRegression.cs có 13 tình huống và gọi trong
+Tests~/MotionRegression.cs. Chưa có máy Unity/mcs/mono trong môi trường
+GitHub connector; chỉ kiểm tra tĩnh, CHƯA ĐƯỢC USER NGHIỆM THU.
+Cần đối chiếu Console, 1 Hero và 2 Hero, bullet target/life, party wipe,
+wave, save cũ, và test runner. Không merge main/B1/.54g.
+Chi tiết xem Docs/B2_CombatRouting.md.
+
 B1 — CHỐT CHECKPOINT, NGƯỜI PHÁT TRIỂN XÁC NHẬN XONG (11/10/2026)
 User trực tiếp phản hồi "ok, đã xong b1" sau khi Pull/thử. Đánh dấu
 B1 hoàn tất theo xác nhận này, nhưng KHÔNG tự nhận rằng mọi ca Mono,
