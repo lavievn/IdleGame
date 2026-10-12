@@ -188,7 +188,9 @@ public class EnvironmentManager : MonoBehaviour
         float pan, backgroundPan;
         // Update used this same pan to compute the monsters' Ground-camera
         // compensation. Advancing the soft camera again here would desync them.
-        if (hasPlannedPan)
+        // CombatManager can kill the camera subject AFTER EnvironmentManager.Update
+        // but BEFORE this LateUpdate. Never apply a stale, pre-death camera pan.
+        if (hasPlannedPan && cameraTarget != null && cameraTarget.IsDeployed)
         {
             pan = plannedCameraPan;
             backgroundPan = plannedBackgroundPan;
