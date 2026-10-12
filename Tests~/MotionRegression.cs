@@ -303,6 +303,7 @@ partial class MotionRegression
         CameraAndLaneHotfixTests();
         HeroCombatStateTests();
         B2CombatRoutingTests();
+        B2TestPartyTests();
         TerrainTests();
         MenuDifficultyTests();
         BalanceTests();
