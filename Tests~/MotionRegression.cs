@@ -63,7 +63,7 @@ partial class MotionRegression
         {
             if (EnvironmentManager.Instance != null) Call(EnvironmentManager.Instance,"OnDestroy");
             CombatBalance.ResetDevProfiles();
-            HeroController.ActiveHeroes.Clear();MonsterController.ActiveMonsters.Clear();UnityEngine.Object.objects.Clear();
+            HeroController.ActiveHeroes.Clear();HeroController.VisibleHeroes.Clear();MonsterController.ActiveMonsters.Clear();UnityEngine.Object.objects.Clear();
             ground=(RectTransform)new GameObject(true).transform;ground.sizeDelta=new Vector2(1000,100);ground.localScale=new Vector3(scale,scale,1);
             grass=(RectTransform)new GameObject(true).transform;grass.parent=ground;grass.anchoredPosition=new Vector2(600,0);grass.sizeDelta=new Vector2(200,100);
             space=new GameObject().AddComponent<EnvironmentManager>();
@@ -210,17 +210,20 @@ partial class MotionRegression
             Near(f.space.CurrentCameraSpeed,0,"camera stopped",0.02f);
             Check(f.hero.CurrentState==HeroState.Combat,"still fighting");
         });
-        Run("dead body stays camera subject until right edge then stops",()=>{
+        Run("0.0.50 last Hero vanishes on death and camera stops immediately",()=>{
             var f=new Field(); f.space.scrollSpeed=1000; f.hero.Die();
-            f.Step(0.1f); Near(f.space.Position(f.hero.heroRect).x,100,"corpse pans with world");
-            Check(HeroController.ActiveHeroes.Count==0,"corpse not a combat actor");
-            for(int i=0;i<120;i++) f.Step(1f/60f);
-            Near(f.space.Position(f.hero.heroRect).x,f.space.ZoneRightX,"corpse remains in view",0.02f);
-            Near(f.space.CurrentCameraSpeed,0,"stops at corpse",0.02f);
-            f.hero.HideHero(); f.Step(); Check(!f.space.IsScrolling,"hide removes camera subject");
+            float corpseX=f.space.Position(f.hero.heroRect).x;
+            Check(!f.hero.heroRect.gameObject.activeSelf,"no visible Hero body after death");
+            Check(!f.hero.IsCameraSubject&&HeroController.ActiveHeroes.Count==0,"no dead camera subject");
+            Check(!HeroController.VisibleHeroes.Contains(f.hero),"depth sorting excludes corpse");
+            f.Step(0.1f);
+            Near(f.space.Position(f.hero.heroRect).x,corpseX,"hidden corpse never follows Ground");
+            Near(f.space.CurrentCameraSpeed,0,"no camera movement after last death",.02f);
+            Check(!f.space.IsScrolling&&f.space.CurrentCameraFocusCount==0,"camera fully released");
             f.hero.SpawnHero(); f.hero.moveSpeed=1000; f.Step();
-            Near(f.space.Position(f.hero.heroRect).x,f.space.HomeX,"retry starts centred",0.02f);
-            Near(f.space.CurrentCameraSpeed,1000,"retry resumes camera",0.02f);
+            Check(f.hero.heroRect.gameObject.activeSelf&&f.hero.IsDeployed,"retry visible");
+            Near(f.space.Position(f.hero.heroRect).x,f.space.HomeX,"retry starts centred",.02f);
+            Near(f.space.CurrentCameraSpeed,1000,"retry resumes camera",.02f);
         });
         Run("speed changes while anchored do not leave zone",()=>{
             var f=new Field(); f.space.scrollSpeed=1000; f.hero.moveSpeed=1500;
@@ -304,6 +307,7 @@ partial class MotionRegression
         HeroCombatStateTests();
         B2CombatRoutingTests();
         B2TestPartyTests();
+        Version0050RegressionTests();
         TerrainTests();
         MenuDifficultyTests();
         BalanceTests();
