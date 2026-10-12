@@ -5,6 +5,15 @@
 
 Game idle RPG tu tiên 2D/2.5D dạng **desktop overlay trong suốt**, chơi tự động trong một cửa sổ nhỏ. Hero đi tìm quái, chiến đấu theo các dạng cận chiến/cung/phép, tăng cấp, lưu tiến độ và chuyển bản đồ. Game hiện ở giai đoạn **xây dựng khung gameplay, độ ổn định, UI và thông số thử nghiệm**; chưa phải sản phẩm hoàn thiện.
 
+## Bản sửa nóng .54g — đang chờ kiểm thử (12/10/2026)
+
+**Nhánh tách biệt:** `fix/0.0.4.54g-smooth-focus-free-y`, xuất phát từ checkpoint `.54g`. Không thay đổi nhánh `.54g` đã chốt, B1/B2 hay `main`. Người phát triển phát hiện camera chạy quá nhanh khi quái vừa vào màn hình và Hero không có mục tiêu lại tự đi xuống Y=0.
+
+- Vẫn chọn **trung bình X của Hero + quái sống nằm trong viewport** làm mục tiêu camera, nhưng lọc mềm **độ lệch tâm nhóm so với Hero**: thời gian `0.7s`, tốc độ tối đa của độ lệch `240 đơn vị/giây`. Phần Hero chạy nhanh vẫn dùng Deadzone 38%, theo `0.2s`, hồi về 40%/`0.6s` khi dừng. Chỉnh `cameraCombatFocusSmoothTime` và `cameraCombatFocusMaxSpeed` ngay Inspector; `CurrentCameraFocusX` là tâm thô, `CurrentCameraSmoothedFocusX` là tâm thực đưa vào Deadzone.
+- Nếu không có quái, Hero **chỉ đi sang trái, không tự đổi Y**. Cận chiến vẫn đổi Y khi áp sát mục tiêu ngoài tầm ngang; các nguyên tắc khác giữ nguyên.
+- Thêm kiểm thử tình huống camera thay đổi nhóm, tốc độ 30/60/144 FPS, Hero có/không mục tiêu và hai Hero giữ lane. Chưa có kết quả Unity Play Mode.
+- Xem [Docs/CameraAndLaneHotfix_54g.md](Docs/CameraAndLaneHotfix_54g.md) để thử và ghi nhận. Khi được xác nhận, **cần chuyển fix tương ứng vào các nhánh B1/B2** một cách có kiểm soát, không gộp tự động.
+
 ## Phiên bản hiện tại và đường dẫn
 
 - **Nhánh đã chốt mốc gameplay:** [feature/0.0.4.54g](https://github.com/lavievn/IdleGame/tree/feature/0.0.4.54g). Không tự merge vào `main` hoặc đặt tag/release; phiên bản tiếp theo sẽ được tách nhánh riêng khi thống nhất phạm vi.

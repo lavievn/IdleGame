@@ -26,6 +26,10 @@
 - Khi phát sinh lỗi P0 (mất tiến trình, sai target, wave kẹt, Crash, camera mất đối tượng), **tạm dừng tính năng mới để sửa nguyên nhân**. Lỗi VFX/UI nhỏ có thể ghi backlog và xử lý ở vòng polish.
 - Phân biệt: có mã, mô phỏng toán học, chạy Mono/stub, Unity Editor Play Mode và Windows build thật.
 
+### Hotfix phát sinh sau khi bắt đầu B2 (12/10/2026)
+
+Người phát triển thử lại `.54g` và phát hiện tâm nhóm thay đổi quá nhanh khi quái bước vào viewport, đồng thời Hero đi thẳng khi không có quái tự kéo Y về 0. **Đang xử lý trên `fix/0.0.4.54g-smooth-focus-free-y` tách từ `.54g`**: lọc offset của trung bình nhóm `0.7s`, tối đa `240 đơn vị/s`, chỉ điều chỉnh Y khi tiếp cận mục tiêu thực. Nhánh B2 khác có nguồn từ B1 và **chưa bao gồm fix này**. Sau khi người phát triển nghiệm thu hotfix, cần chuyển riêng hai thay đổi vào B1/B2 trước khi tiếp tục nghiệm thu tích hợp; không tự merge nhánh `main`. Xem `Docs/CameraAndLaneHotfix_54g.md`.
+
 ## 3. Bảng ưu tiên sau khi chốt .54g — ngày 11/10/2026
 
 | Thứ tự | Mức | Hạng mục | Chỉ làm đến mức nào trong lượt đầu | Phụ thuộc |

@@ -3,6 +3,30 @@ Tài liệu thiết kế, hiện trạng và bàn giao phát triển của lavie
 Ngày đối chiếu: 09/10/2026, múi giờ Việt Nam (UTC+7).
 Đổi tên và thay thế AI_Prompt_Master.txt; lịch sử tài liệu cũ vẫn ở Git.
 
+HOTFIX NGOÀI NHÁNH .54g: CAMERA MƯỢT + HERO GIỮ Y (12/10/2026)
+User quay lại .54g và báo hai lỗi cần sửa dứt điểm:
+(1) Camera bám ngay trung bình X của Hero và quái ở viewport; quái mới
+vào tạo cú nhảy tâm khiến camera tăng tốc quá nhanh.
+(2) Hero không có mục tiêu cứ tự MoveTowards(Y,0) -> xuống mép dưới.
+Đã tạo nhánh fix/0.0.4.54g-smooth-focus-free-y TỪ .54g ĐÃ CHỐT
+(02801dd2b1fe4ca46ce2402ffdbe93de590a2b58), không sửa nhánh
+.54g/B1/B2/main ở bước này.
+Giải pháp camera: giữ nguyên trung bình nhóm và Deadzone; lọc offset
+tương đối của nhóm so với Hero bằng CombatFocusSmoother trong BattleMotion,
+mặc định smooth=0.7 giây, giới hạn offset speed=240 units/s; khi Hero đi
+nhanh thì phản hồi cũ vẫn giữ. CurrentCameraFocusX vẫn RAW mean,
+CurrentCameraSmoothedFocusX = vị trí thực gửi cho DeadzoneCamera.
+MainGame.unity ghi 2 thông số mới. Reset lọc khi spawn/Retry,
+chuyển mode hoặc không có chủ thể. HeroController.TickMovement khi
+CurrentTarget==null không còn kéo Y về 0, chỉ đi X về bên trái.
+Khi có mục tiêu, melee approach theo Y nếu ngoài tầm X vẫn giữ.
+Đã bổ sung 2 test camera & 4 test lane, sửa 3 bài camera cũ để
+đợi tâm mượt có thời gian đuổi theo, chưa chạy Mono/Unity Editor.
+Xem Docs/CameraAndLaneHotfix_54g.md; chờ user Pull và thử nghiệm.
+Quan trọng: nhánh B2 được triển khai từ B1, KHÔNG CÓ hai fix này.
+Nếu hotfix được chấp nhận cần áp tương ứng vào B1/B2 trước khi tiếp.
+Chưa merge main, chưa nghiệm thu.
+
 CHỐT CHECKPOINT 0.0.4.54g — NGÀY 11/10/2026 (ƯU TIÊN ĐỌC TRƯỚC)
 User đã trực tiếp thử game và xác nhận camera/gameplay dùng được với
 Hero CẬN CHIẾN/ĐÁNH XA và tốc độ NHANH/CHẬM. Cảm giác camera vẫn chưa

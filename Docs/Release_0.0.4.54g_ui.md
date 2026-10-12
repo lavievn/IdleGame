@@ -139,3 +139,14 @@ Hero nhanh hơn/tương đương/chậm hơn `scrollSpeed`, Hero dừng khi đá
 **Không tự gộp vào main, gắn tag/release hoặc tạo nhánh sau** nếu chưa có yêu cầu rõ ràng.
 
 **Ưu tiên phiên bản tiếp theo:** P0 — tách trạng thái HP/nhịp đánh/dữ liệu của từng nhân vật ra khỏi CombatManager một-Hero; B1 chỉ thay kiến trúc và bảo đảm hành vi 1 Hero như .54g, hai state độc lập được kiểm thử. P1 — schema/save theo phiên bản, trang bị thật một slot, kỹ năng tự động mẫu; P2 — 2 Hero độc lập, asset/VFX/SFX theo dữ liệu; P3 — boss/luân hồi/offline/polish camera. Chi tiết ràng buộc và cổng chuyển bước xem `Docs/Development_Roadmap.md`. Đây là thứ tự đề xuất, **chưa phải lệnh bắt đầu code**.
+
+## Hotfix camera + lane sau khi .54g đã chốt (12/10/2026)
+
+**Đang chờ người phát triển kiểm thử:** nhánh riêng `fix/0.0.4.54g-smooth-focus-free-y`; `.54g` gốc vẫn là checkpoint không đổi.
+
+1. Tâm nhóm vẫn là trung bình các Hero và quái sống trong viewport. Đã thêm `CombatFocusSmoother` vào `BattleMotion.cs` để làm mượt **offset của tâm nhóm so với Hero**. Mặc định `cameraCombatFocusSmoothTime = 0.7f` và `cameraCombatFocusMaxSpeed = 240f`; giảm cú tăng tốc camera khi số lượng quái thay đổi nhưng không làm chậm riêng phần chuyển động Hero.
+2. `HeroController.TickMovement` không tự đưa Y xuống 0 khi không có mục tiêu; Hero vẫn đi trái và giữ lane hiện tại. Khi đang áp sát quái cận chiến ngoài tầm X, quy tắc kéo Y tới mục tiêu vẫn giữ.
+3. `MainGame.unity` ghi hai thông số camera mới. Giữ Deadzone 38%, SmoothDamp 0.2s, hồi 40%/0.6s và cờ cameraUseCombatCenter.
+4. Kiểm thử thêm 2 trường hợp camera và 4 trường hợp lane, các bài cũ liên quan tới bước nhảy trung tâm được sửa kỳ vọng để phù hợp mục tiêu lọc mềm. **Chưa có kết quả Unity/Windows chính thức**. Xem tài liệu `Docs/CameraAndLaneHotfix_54g.md`.
+
+Sau khi nghiệm thu cần áp lại fix tương ứng vào B1/B2, tránh mất hotfix khi tiếp tục nhánh B2.
