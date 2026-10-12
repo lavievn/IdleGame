@@ -70,6 +70,37 @@ public class EntityDataSO : ScriptableObject
     public int statPoints = 0;
     public int addedHealth = 0;
     public int addedDamage = 0;
+    [Header("0.0.51 - THUOC TINH / DAC TINH")]
+    public int combatStatsVersion = 1;
+    public List<string> characterTags = new List<string>();
+    public List<CombatStatModifier> combatStatModifiers = new List<CombatStatModifier>();
+
+    // Used by save migration and test-created/old characters. Does NOT reroll.
+    public void NormalizeCombatStats()
+    {
+        if (characterTags == null) { characterTags = new List<string>(); isDirty = true; }
+        if (combatStatModifiers == null) { combatStatModifiers = new List<CombatStatModifier>(); isDirty = true; }
+        if (combatStatsVersion < CombatStats.SchemaVersion)
+        { combatStatsVersion = CombatStats.SchemaVersion; isDirty = true; }
+    }
+
+    public void AddCombatModifier(CombatStatModifier modifier)
+    {
+        if (modifier == null) return;
+        NormalizeCombatStats();
+        combatStatModifiers.Add(modifier);
+        isDirty = true;
+    }
+
+    public int RemoveModifiersBySource(string sourceId)
+    {
+        if (string.IsNullOrEmpty(sourceId)) return 0;
+        NormalizeCombatStats();
+        int count = combatStatModifiers.RemoveAll(mod => mod != null &&
+            string.Equals(mod.sourceId,sourceId,System.StringComparison.Ordinal));
+        if (count > 0) isDirty = true;
+        return count;
+    }
     // Independent per-character base; default/legacy characters start with test HP 400.
     public int originHealth = 0;
     // Persist the growth pool separately from the active stance for save/load stability.
@@ -201,13 +232,20 @@ public class EntityDataSO : ScriptableObject
 
     public void AllocateHealth() { if (statPoints > 0) { statPoints--; addedHealth += 6; isDirty = true; } }
     public void AllocateDamage() { if (statPoints > 0) { statPoints--; addedDamage += 1; isDirty = true; } }
-    public int GetCalculatedHealth() => baseHealth + addedHealth;
+    public int GetCalculatedHealth() => System.Math.Max(1,CombatStats.GetInt(
+        this,CombatStatId.MaxHealth,System.Math.Max(1,baseHealth + addedHealth)));
     public int GetCalculatedHealth(AttackMode mode)
     {
-        // Points and future equipment are additive and must not be multiplied.
+        // Stance multiplier applies to original base HP, not bonus points/gear.
         long baseByMode = System.Math.Max(1,Mathf.RoundToInt(baseHealth * CombatBalance.HeroHealthMultiplier(mode)));
         long hp = baseByMode + addedHealth + (mode == AttackMode.Melee ? System.Math.Max(0,meleeGrowthBonus) : 0);
-        return (int)System.Math.Max(1,System.Math.Min(int.MaxValue,hp));
+        hp = System.Math.Max(1,System.Math.Min(int.MaxValue,hp));
+        return System.Math.Max(1,CombatStats.GetInt(this,CombatStatId.MaxHealth,(int)hp,
+            ElementType.Vo,new [] { CombatStats.StanceTag(mode) }));
     }
-    public int GetCalculatedDamage() => baseDamage + addedDamage;
+    public int GetCalculatedDamage() => System.Math.Max(1,
+        CombatStats.GetInt(this,CombatStatId.Attack,baseDamage + addedDamage));
+    public int GetCalculatedDamage(AttackMode mode) => System.Math.Max(1,
+        CombatStats.GetInt(this,CombatStatId.Attack,baseDamage + addedDamage,
+            ElementType.Vo,new [] { CombatStats.StanceTag(mode) }));
 }
