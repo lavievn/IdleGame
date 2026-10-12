@@ -1,3 +1,7 @@
+## Đang kiểm thử 0.0.51 — nền thuộc tính chiến đấu
+
+**Nhánh `feature/0.0.51-combat-stats`, chưa gộp `main`.** Từ bản `main` 0.0.50 đã thêm `CombatStats` và `CombatDamage`: điểm cộng/trừ có điều kiện, giáp, kháng phép/hệ, tổn thương theo nhiều phần, hồi HP, tốc chạy/tốc đánh và định dạng lưu thuộc tính. Chưa có hệ thi triển skill, kho đồ hoặc xuất thân ngẫu nhiên. Hướng dẫn Inspector, thử trên Unity và giới hạn: [Docs/Release_0.0.51.md](Docs/Release_0.0.51.md). **Chưa được người phát triển nghiệm thu**; không coi thử nghiệm mới là đã hoàn thành.
+
 ## Mốc nhánh chính: 0.0.50 (12/10/2026)
 
 Bản B2 đã tích hợp vào `main`, gồm hệ chiến đấu nhiều Hero (tối đa 3 Hero thử nghiệm), quái đánh xa chỉ tấn công khi đã vào màn hình, Hero chết biến mất tức thì và camera trôi mượt khi đội đứng đánh. Bộ tham số Inspector theo người phát triển kiểm thử nằm trong `Assets/Scenes/MainGame.unity`; xem [Docs/Release_0.0.50.md](Docs/Release_0.0.50.md). **Hero chạy tốc độ cao chưa được xác nhận.** Các ghi chú ở các mục cũ về việc `main` chưa cập nhật phản ánh trạng thái trước commit này.
