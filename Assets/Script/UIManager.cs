@@ -211,6 +211,8 @@ public class UIManager : MonoBehaviour
     private GameObject damagePanel;
     private HeroController heroForUI;
     private readonly RectTransform[] attackButtons = new RectTransform[3];
+    private RectTransform testSummonButton;
+    private TMPro.TextMeshProUGUI testSummonText;
     private string[] displayedDamage = new string[0];
     private int damagePage;
     public void SetPaused(bool paused)
@@ -265,6 +267,14 @@ public class UIManager : MonoBehaviour
         devUI = new DevBalanceUI(this, hudCanvas);
         heroForUI = hero;
         InstallAttackModeButtons();
+        // Only a B2 test control. Future permanent companions are a separate feature.
+        testSummonButton = SmallButton(canvas, "B2TestSummon", "[B2] Gọi +1 (0/2)",
+            new Vector2(0,1), new Vector2(0,1), new Vector2(6,-139),
+            new Vector2(146,26), () => {
+                var game = Object.FindFirstObjectByType<GameManager>();
+                if (game != null) game.CycleTestCompanions();
+            });
+        testSummonText = testSummonButton.GetComponentInChildren<TMPro.TextMeshProUGUI>(true);
         SetPaused(false);
         if (gm != null && gm.eventLog != null) {
             // Reserve space at the right of the log so Info cannot obscure a formula/name.
@@ -331,6 +341,7 @@ public class UIManager : MonoBehaviour
         if (statsPanel != null) statsPanel.gameObject.SetActive(shown && Screen.height >= 290);
         for (int i=0;i<attackButtons.Length;i++)
             if (attackButtons[i] != null) attackButtons[i].gameObject.SetActive(shown);
+        if (testSummonButton != null) testSummonButton.gameObject.SetActive(shown);
         if (gm != null && gm.eventLog != null) gm.eventLog.gameObject.SetActive(shown);
         if (mapTitleRect != null) mapTitleRect.gameObject.SetActive(shown && !string.IsNullOrEmpty(mapTitleName));
     }
@@ -604,6 +615,11 @@ public class UIManager : MonoBehaviour
             LayoutReadableUI();
         RefreshCombatHUDVisibility();
         RefreshAttackModeSelection();
+        var gm = Object.FindFirstObjectByType<GameManager>();
+        if (testSummonText != null && gm != null)
+            testSummonText.text = gm.TestCompanionCount >= GameManager.TestCompanionLimit
+                ? "[B2] Thu hồi (2/2)"
+                : "[B2] Gọi +1 (" + gm.TestCompanionCount + "/2)";
     }
     private static void PlaceUI(RectTransform rect,Vector2 anchor,Vector2 pivot,Vector2 position,Vector2 size)
     {
@@ -628,6 +644,9 @@ public class UIManager : MonoBehaviour
         float buttonWidth = Mathf.Min(116f,(leftWidth-8f)/3f-4f);
         for(int i=0;i<3;i++) PlaceUI(attackButtons[i],new Vector2(0,1),new Vector2(0,1),
             new Vector2(6+i*(buttonWidth+4f),-104f),new Vector2(buttonWidth,28f));
+        // Stay below attack modes, at the LEFT of the centered map label.
+        PlaceUI(testSummonButton,new Vector2(0,1),new Vector2(0,1),
+            new Vector2(6,-139),new Vector2(Mathf.Min(146,leftWidth-12f),26f));
         foreach(var rect in Object.FindObjectsByType<RectTransform>(FindObjectsInactive.Include,FindObjectsSortMode.None))
             if (rect.gameObject.name == "MenuArea") PlaceUI(rect,new Vector2(1,0),new Vector2(1,0),new Vector2(-4,4),new Vector2(64,24));
         if (systemMenu != null) {
