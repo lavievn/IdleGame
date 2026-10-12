@@ -30,19 +30,192 @@ public class GameManager : MonoBehaviour
     [SerializeField] private SaveManager saveManager;
 
     public List<GameObject> activeMonsters = new List<GameObject>();
+
+    // B2-only test harness; NOT the future permanent companion/encounter system.
+    // These objects and their copied progression never enter SaveManager.
+    private sealed class TestCompanion
+    {
+        public GameObject ControllerRoot, VisualRoot;
+        public HeroController Controller;
+        public EntityDataSO Data;
+    }
+    private readonly List<TestCompanion> testCompanions = new List<TestCompanion>();
+    public int TestCompanionCount => testCompanions.Count;
+    public const int TestCompanionLimit = 2;
+
+    private static T CorrespondingVisual<T>(
+        RectTransform original, RectTransform clone, T originalComponent) where T : Component
+    {
+        if (original == null || clone == null || originalComponent == null) return null;
+        // Same prefab hierarchy; use component ordinal rather than transform names
+        // (duplicate names are common in Unity UI prefab children).
+        T[] originals = original.GetComponentsInChildren<T>(true);
+        T[] copies = clone.GetComponentsInChildren<T>(true);
+        for (int i = 0; i < originals.Length && i < copies.Length; i++)
+            if (originals[i] == originalComponent) return copies[i];
+        return null; // External references such as main Hero's stats panel.
+    }
+
+    private AttackMode RandomUnusedTestMode()
+    {
+        var available = new List<AttackMode>();
+        for (int i = 0; i < 3; i++)
+        {
+            var mode = (AttackMode)i;
+            if (heroController != null && mode == heroController.attackMode) continue;
+            bool alreadyUsed = false;
+            foreach (var member in testCompanions)
+                if (member.Controller != null && member.Controller.attackMode == mode)
+                { alreadyUsed = true; break; }
+            if (!alreadyUsed) available.Add(mode);
+        }
+        // A primary mode change during the test may consume all modes.
+        if (available.Count == 0)
+            for (int i = 0; i < 3; i++)
+                if (heroController == null || (AttackMode)i != heroController.attackMode)
+                    available.Add((AttackMode)i);
+        return available[Random.Range(0, available.Count)];
+    }
+
+    // Button sequence: 1 Hero -> 2 Heroes -> 3 Heroes -> 1 Hero.
+    public void CycleTestCompanions()
+    {
+        if (!IsGameplayHUDVisible || HasPendingConfirmation ||
+            Time.timeScale == 0f || combatManager == null ||
+            !combatManager.HasLivingHero || environmentManager == null ||
+            environmentManager.BattleArea == null || heroController == null ||
+            heroController.heroRect == null || runtimeHeroData == null) return;
+
+        if (testCompanions.Count >= TestCompanionLimit)
+        {
+            ClearTestCompanions();
+            UpdateEventLog("[B2 TEST] Đã thu hồi đồng đội thử nghiệm.");
+            return;
+        }
+
+        var extra = CreateTestCompanion();
+        if (extra == null)
+        {
+            UpdateEventLog("[B2 TEST] Không tạo được đồng đội; xem Unity Console.");
+            return;
+        }
+        testCompanions.Add(extra);
+        UpdateEventLog("[B2 TEST] Gọi đồng đội " + testCompanions.Count +
+            "/2, dạng " + extra.Controller.attackMode + ". Tổng: " +
+            (testCompanions.Count + 1) + " Hero.");
+    }
+
+    private TestCompanion CreateTestCompanion()
+    {
+        // Clone only the visible UI actor; cloning the scene's HeroController
+        // GameObject would keep external scene references pointed at Hero #1.
+        int number = testCompanions.Count + 1;
+        GameObject visual = null, rig = null;
+        EntityDataSO data = null;
+        try
+        {
+            var src = heroController.heroRect;
+            visual = Instantiate(src.gameObject, environmentManager.BattleArea);
+            visual.name = "B2 Test Hero Visual " + number;
+            visual.SetActive(false);
+            var rect = visual.GetComponent<RectTransform>();
+            if (rect == null) { Destroy(visual); return null; }
+
+            rig = new GameObject("B2 Test Hero Controller " + number);
+            rig.SetActive(false);
+            var actor = rig.AddComponent<HeroController>();
+            actor.heroRect = rect;
+            actor.hpFillImage = CorrespondingVisual(src, rect, heroController.hpFillImage);
+            actor.dmgTextPrototype = CorrespondingVisual(src, rect, heroController.dmgTextPrototype);
+            actor.atkStatusText = null; // Independent data, no duplicate HUD.
+            actor.moveSpeed = heroController.moveSpeed;
+            actor.laneSpeed = heroController.laneSpeed;
+            actor.attackMode = RandomUnusedTestMode();
+
+            data = Instantiate(runtimeHeroData);
+            data.entityName = "Đồng đội B2-" + number;
+            data.currentExp = 0;
+            data.isDirty = false;
+
+            rig.SetActive(true); // Deferred Awake binds damage popup to this actor.
+            actor.SpawnHero(false); // IMPORTANT: never steal the camera subject.
+
+            Vector2 origin = environmentManager.Position(heroController.heroRect);
+            environmentManager.SetPosition(rect, origin +
+                new Vector2(30f + number * 25f, number % 2 == 0 ? -25f : 25f));
+
+            actor.SetIdentityVisual(data);
+            var image = rect.GetComponent<Image>();
+            if (image != null)
+                image.color = number == 1 ? new Color(.22f,.72f,1f,1f) :
+                                            new Color(.9f,.46f,1f,1f);
+
+            if (combatManager.RegisterAdditionalHero(actor, data) == null)
+            {
+                actor.HideHero();
+                Destroy(rig); Destroy(visual); Destroy(data);
+                return null;
+            }
+            return new TestCompanion {
+                ControllerRoot = rig, VisualRoot = visual, Controller = actor, Data = data
+            };
+        }
+        catch (System.Exception ex)
+        {
+            Debug.LogWarning("[B2 TEST] Companion spawn failed: " + ex);
+            if (rig != null) Destroy(rig);
+            if (visual != null) Destroy(visual);
+            if (data != null) Destroy(data);
+            return null;
+        }
+    }
+
+    private void ClearTestCompanions()
+    {
+        foreach (var member in testCompanions)
+        {
+            if (member.Controller != null && combatManager != null)
+                combatManager.UnregisterAdditionalHero(member.Controller);
+            if (member.Controller != null) member.Controller.HideHero();
+            if (member.ControllerRoot != null) Destroy(member.ControllerRoot);
+            if (member.VisualRoot != null) Destroy(member.VisualRoot);
+            if (member.Data != null) Destroy(member.Data);
+        }
+        testCompanions.Clear();
+    }
     private Coroutine nextWaveCoroutine;
     private int waveSpawnCount, retryWaveSize;
     [Min(0f)] public float waveDelay = 1.5f;
     public float CurrentWaveDelay => BattleMotion.WaveDelay(waveDelay,
-        heroController != null ? Mathf.Max(0f, heroController.moveSpeed) : 150f);
+        combatManager != null ? Mathf.Max(0f,combatManager.ActiveHeroMovementSpeed) :
+        heroController != null ? Mathf.Max(0f,heroController.moveSpeed) : 150f);
     private bool hasDeployed = false;
     private readonly Queue<string> recentEvents = new Queue<string>();
+    private readonly Queue<string> recentDamage = new Queue<string>();
+    private readonly List<string> fullEventHistory = new List<string>();
+    public string FullEventHistory => fullEventHistory.Count==0 ? "Chưa có sự kiện." : string.Join("\n",fullEventHistory.ToArray());
     private readonly List<string> damageHistory = new List<string>();
     public string[] DamageHistory => damageHistory.ToArray();
     public void RecordDamage(string detail)
     {
         damageHistory.Insert(0, detail);
         if (damageHistory.Count > 30) damageHistory.RemoveAt(damageHistory.Count - 1);
+    }
+    public void RecordDamageEvent(string source,string target,int damage)
+    {
+        recentDamage.Enqueue(ShortName(source)+" → "+ShortName(target)+" - "+damage);
+        while(recentDamage.Count>2) recentDamage.Dequeue();
+        RefreshCompactLog();
+    }
+    private static string ShortName(string s)
+    {
+        s=string.IsNullOrWhiteSpace(s)?"?":s.Trim();
+        return s.Length<=16?s:s.Substring(0,15)+"…";
+    }
+    private void RefreshCompactLog()
+    {
+        if (eventLogText!=null) eventLogText.text=recentDamage.Count==0
+            ?"Chưa có sát thương":string.Join("\n",recentDamage.ToArray());
     }
     public EntityDataSO HeroData => runtimeHeroData;
     private enum MenuChoice { None, Continue, NewGame }
@@ -52,6 +225,11 @@ public class GameManager : MonoBehaviour
     private StartMenuUI startMenu;
     public bool IsHardMode => runtimeHeroData != null && runtimeHeroData.difficulty == 1;
     public bool HasPendingConfirmation => pendingChoice != MenuChoice.None;
+    // Visible HUD only during active gameplay, never on start/confirmation/death screens.
+    public bool IsGameplayHUDVisible => hasDeployed &&
+        (preGameUI == null || !preGameUI.activeInHierarchy) &&
+        (gameOverPanel == null || !gameOverPanel.activeInHierarchy) &&
+        (confirmationPopup == null || !confirmationPopup.activeInHierarchy);
     public bool CanContinue => saveManager != null && (manualSelection ? saveManager.HasSave(continueSlot) : saveManager.TryGetLatestSlot(out continueSlot));
 
     void Start()
@@ -74,7 +252,7 @@ public class GameManager : MonoBehaviour
 
     private void InitHeroData()
     {
-        recentEvents.Clear();
+        recentEvents.Clear(); recentDamage.Clear(); fullEventHistory.Clear();
         damageHistory.Clear();
         if (runtimeHeroData != null) Destroy(runtimeHeroData);
         runtimeHeroData = Instantiate(heroDataSO);
@@ -82,6 +260,9 @@ public class GameManager : MonoBehaviour
         runtimeHeroData.currentExp = 0;
         runtimeHeroData.expToNextLevel = 100;
         runtimeHeroData.addedHealth = runtimeHeroData.addedDamage = runtimeHeroData.statPoints = 0;
+        runtimeHeroData.originHealth = Mathf.Max(1,heroDataSO != null ? heroDataSO.baseHealth : CombatBalance.HeroHealth(1));
+        runtimeHeroData.meleeGrowthBonus = 0;
+        runtimeHeroData.meleeGrowthThroughLevel = 1;
         runtimeHeroData.balanceVersion = 0;
         runtimeHeroData.difficulty = 0;
         runtimeHeroData.mapNumber = 1; runtimeHeroData.completedWavesInMap = 0; runtimeHeroData.mapProgressVersion = 1;
@@ -116,32 +297,41 @@ public class GameManager : MonoBehaviour
             rect.anchorMin = Vector2.zero; rect.anchorMax = Vector2.one;
             rect.pivot = new Vector2(.5f,.5f); rect.anchoredPosition = new Vector2(-52,0);
             rect.sizeDelta = new Vector2(-136,-16);
-            UIManager.ReadableText(eventLogText,14);
+            UIManager.ReadableText(eventLogText,16);
             eventLogText.alignment = TextAlignmentOptions.TopLeft; eventLogText.raycastTarget = false;
             eventLogText.color = new Color(1,1,1,1);
         }
     }
     public void UpdateEventLog(string message)
     {
-        if (!string.IsNullOrEmpty(message)) { recentEvents.Enqueue(message); while (recentEvents.Count > 2) recentEvents.Dequeue(); }
-        if (eventLogText == null) return;
-        string header = runtimeHeroData == null ? "" : IdentityDisplay.Describe(runtimeHeroData) +
-            " · Cấp " + runtimeHeroData.currentLevel + "\n" + WorldNames.Region(runtimeHeroData.regionTheme) + " [" + ((runtimeHeroData.mapNumber - 1) % 5 + 1) + "/5] · " + runtimeHeroData.mapName + " · " + WorldNames.Terrain(runtimeHeroData.mapTerrain) +
-            (IsHardMode ? " (Khó)" : " (Thường)") + " · Đợt " + (runtimeHeroData.completedWavesInMap + 1) + "/5\n";
-        eventLogText.text = header + string.Join("\n", recentEvents.ToArray());
+        if (!string.IsNullOrEmpty(message))
+        {
+            recentEvents.Enqueue(message);
+            while(recentEvents.Count>2)recentEvents.Dequeue();
+            fullEventHistory.Insert(0,message);
+            if(fullEventHistory.Count>80)fullEventHistory.RemoveAt(fullEventHistory.Count-1);
+        }
+        // Only compact damage lines are shown on the battlefield.
+        RefreshCompactLog();
     }
     private void RestoreProgress()
     {
         runtimeHeroData.NormalizeMapProgress();
         runtimeHeroData.NormalizeRoots();
-        if (UIManager.Instance != null) UIManager.Instance.ApplyDifficultyVisual(IsHardMode);
+        if (UIManager.Instance != null)
+        {
+            UIManager.Instance.ApplyDifficultyVisual(IsHardMode);
+            UIManager.Instance.UpdateMapDebug(runtimeHeroData);
+        }
         UpdateEventLog(null);
     }
 
 
     private void SetupPreGameUI()
     {
+        if (UIManager.Instance != null) UIManager.Instance.HideMapTitle();
         preGameUI.SetActive(true);
+        preGameUI.transform.SetAsLastSibling();
         if (startMenu != null) startMenu.Refresh();
         if (infoText != null) infoText.text = CanContinue
             ? "Tiếp tục hành trình đã lưu hoặc bắt đầu một hành trình mới."
@@ -157,9 +347,11 @@ public class GameManager : MonoBehaviour
         CancelNextWave();
         preGameUI.SetActive(false);
         hasDeployed = true;
+        ClearTestCompanions();
         if (combatManager != null) combatManager.SetupHeroInfo(runtimeHeroData);
         heroController.SpawnHero();
         RestoreProgress();
+        if (UIManager.Instance != null) UIManager.Instance.ShowMapTitle(runtimeHeroData.mapName);
         CallNextWave();
     }
 
@@ -186,6 +378,7 @@ public class GameManager : MonoBehaviour
         // 1. Dọn dẹp sạch sẽ chiến trường tránh kẹt Coroutine
         hasDeployed = false;
         CancelNextWave();
+        ClearTestCompanions();
         if (combatManager != null) combatManager.ForceClearAllMonsters();
         activeMonsters.Clear();
         if (heroController != null) heroController.HideHero();
@@ -194,7 +387,7 @@ public class GameManager : MonoBehaviour
         // 2. Nạp dữ liệu mới
         if (runtimeHeroData != null) Destroy(runtimeHeroData);
         runtimeHeroData = loaded;
-        recentEvents.Clear();
+        recentEvents.Clear(); recentDamage.Clear(); fullEventHistory.Clear();
         damageHistory.Clear();
         continueSlot = slot;
         manualSelection = true;
@@ -225,6 +418,7 @@ public class GameManager : MonoBehaviour
     public void OnHeroDied()
     {
         if (!hasDeployed) return;
+        if (UIManager.Instance != null) UIManager.Instance.HideMapTitle();
         hasDeployed = false;
         CancelNextWave();
         activeMonsters.Clear();
@@ -235,7 +429,7 @@ public class GameManager : MonoBehaviour
             UpdateEventLog("Thất bại: quay về map đầu của " + WorldNames.Region(runtimeHeroData.regionTheme) + ", đợt 1/5. Giữ cấp và chỉ số nhân vật.");
             if (saveManager != null) saveManager.SaveGame(runtimeHeroData, SaveSlot.AutoSave);
         }
-        if (gameOverPanel != null) gameOverPanel.SetActive(true);
+        if (gameOverPanel != null) { gameOverPanel.SetActive(true); gameOverPanel.transform.SetAsLastSibling(); }
     }
 
     public void OnRetryClicked()
@@ -245,9 +439,11 @@ public class GameManager : MonoBehaviour
         CancelNextWave();
         if (gameOverPanel != null) gameOverPanel.SetActive(false);
         hasDeployed = true;
+        ClearTestCompanions();
         if (combatManager != null) combatManager.SetupHeroInfo(runtimeHeroData);
         heroController.SpawnHero();
         RestoreProgress();
+        if (UIManager.Instance != null) UIManager.Instance.ShowMapTitle(runtimeHeroData.mapName);
         CallNextWave();
     }
 
@@ -293,7 +489,7 @@ public class GameManager : MonoBehaviour
             }
             if (runtimeHeroData != null) Destroy(runtimeHeroData);
             runtimeHeroData = loaded;
-            recentEvents.Clear();
+            recentEvents.Clear(); recentDamage.Clear(); fullEventHistory.Clear();
             runtimeHeroData.ApplyHeroBalance();
         }
         else
@@ -302,6 +498,7 @@ public class GameManager : MonoBehaviour
             { UpdateEventLog("Không xóa được bản lưu. Chưa tạo trò chơi mới."); return; }
             hasDeployed = false;
             CancelNextWave();
+            ClearTestCompanions();
             if (combatManager != null) combatManager.ForceClearAllMonsters();
             activeMonsters.Clear();
             if (heroController != null) heroController.HideHero();
@@ -330,6 +527,7 @@ public class GameManager : MonoBehaviour
         if (heroController != null)
         {
             heroController.ChangeAttackMode(modeIndex);
+            if (combatManager != null) combatManager.OnHeroAttackModeChanged();
             UpdateEventLog($"Đổi thế: {(AttackMode)modeIndex}");
         }
     }
@@ -359,7 +557,9 @@ public class GameManager : MonoBehaviour
 
     void LateUpdate()
     {
-        if (!hasDeployed || Time.timeScale == 0f || heroController == null || !heroController.IsDeployed ||
+        if (!hasDeployed || Time.timeScale == 0f ||
+            (combatManager != null ? !combatManager.HasLivingHero :
+             heroController == null || !heroController.IsDeployed) ||
             environmentManager == null || nextWaveCoroutine != null || activeMonsters.Count == 0) return;
         foreach (var monster in activeMonsters)
         {
@@ -375,7 +575,10 @@ public class GameManager : MonoBehaviour
         activeMonsters.Clear();
         // Keep HP/EXP/map progress. Cancel old life identities and aim points,
         // then replay the unfinished wave after the normal delay.
-        heroController.SpawnHero();
+        // Preserve .54g when primary lives. If only a companion survives,
+        // do not silently resurrect the primary while repeating a wave.
+        if (heroController != null && heroController.IsDeployed)
+            heroController.SpawnHero();
         retryWaveSize = Mathf.Clamp(waveSpawnCount, 1, 3);
         UpdateEventLog("Quái thoát mép phải: sinh lại đợt đang dở, không cộng tiến trình map.");
         nextWaveCoroutine = StartCoroutine(WaitAndCallNextWave());
@@ -390,7 +593,11 @@ public class GameManager : MonoBehaviour
             {
                 bool changed = runtimeHeroData.CompleteWave();
                 RestoreProgress();
-                if (changed) UpdateEventLog("Đã tới " + runtimeHeroData.mapName + (IsHardMode ? ": quái gây sát thương ×2, EXP ×3." : ": bình thường."));
+                if (changed)
+                {
+                    UpdateEventLog("Đã tới " + runtimeHeroData.mapName + (IsHardMode ? ": quái gây sát thương ×2, EXP ×3." : ": bình thường."));
+                    if (UIManager.Instance != null) UIManager.Instance.ShowMapTitle(runtimeHeroData.mapName);
+                }
             }
             nextWaveCoroutine = StartCoroutine(WaitAndCallNextWave());
         }
@@ -421,7 +628,11 @@ public class GameManager : MonoBehaviour
         retryWaveSize = 0;
     }
 
-    private void OnDisable() { CancelNextWave(); }
+    private void OnDisable()
+    {
+        CancelNextWave();
+        ClearTestCompanions();
+    }
 
     private void OnApplicationQuit() { if (saveManager != null && hasDeployed && runtimeHeroData != null) saveManager.SaveGame(runtimeHeroData, SaveSlot.AutoSave); }
 }

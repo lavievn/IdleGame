@@ -145,7 +145,7 @@ public sealed class DevBalanceUI
         Position(prev,4,bottom,24,24);Position((RectTransform)pageText.transform,30,bottom,34,24);Position(next,66,bottom,24,24);
         pageText.text=(page+1)+"/"+(7/rowsPerPage+1);
         Position(okay,width-140,bottom,64,24);Position(cancel,width-72,bottom,64,24);
-        foreach(var text in Root.GetComponentsInChildren<TextMeshProUGUI>(true))UIManager.ReadableText(text,14);
+        foreach(var text in Root.GetComponentsInChildren<TextMeshProUGUI>(true))UIManager.ReadableText(text,Screen.width>=1000?18f:Screen.width>=750?16f:14f);
         foreach(var rect in new[]{heroTab,monsterTab,resetButton,modeButton,prev,next,okay,cancel}) {
             var text=(RectTransform)rect.GetComponentInChildren<TextMeshProUGUI>(true).transform;text.anchorMin=Vector2.zero;text.anchorMax=Vector2.one;text.sizeDelta=new Vector2(-6,-2);text.anchoredPosition=Vector2.zero;text.pivot=new Vector2(.5f,.5f);
         }

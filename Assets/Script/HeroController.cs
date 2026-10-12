@@ -23,15 +23,19 @@ public class HeroController : MonoBehaviour
     public TextMeshProUGUI atkStatusText;
 
     public static List<HeroController> ActiveHeroes = new List<HeroController>();
+    // Includes fallen but still visible actors for Y-depth sorting; separate from combat participation.
+    public static List<HeroController> VisibleHeroes = new List<HeroController>();
     public HeroState CurrentState = HeroState.Idle;
     public bool IsDead => CurrentState == HeroState.Dead;
     public bool IsDeployed => deployed && !IsDead && isActiveAndEnabled &&
         heroRect != null && heroRect.gameObject.activeInHierarchy;
-    public bool IsCameraSubject => (deployed || IsDead) && isActiveAndEnabled &&
-        heroRect != null && heroRect.gameObject.activeInHierarchy;
+    // Fallen Heroes never remain camera subjects. Corpses are hidden instantly.
+    public bool IsCameraSubject => IsDeployed;
     public MonsterController CurrentTarget { get; private set; }
 
     public float MovementDistanceThisFrame { get; private set; }
+    // Identity of the CURRENT deployed life, not the reusable GameObject.
+    public int SpawnVersion { get; private set; }
 
     private bool deployed;
     private Coroutine fadeDmgCoroutine;
@@ -50,19 +54,32 @@ public class HeroController : MonoBehaviour
             heroRect.position = feet;
             heroRect.gameObject.SetActive(false);
         }
-        if (dmgTextPrototype != null)
-        {
-            damageTextHome = dmgTextPrototype.transform.localPosition;
-            dmgTextPrototype.alpha = 0f;
-        }
+        AlignDamageTextToBody();
+        if (dmgTextPrototype != null) dmgTextPrototype.alpha = 0f;
         if (atkStatusText != null) atkStatusText.text = "";
     }
 
+    private void AlignDamageTextToBody()
+    {
+        if (heroRect == null || dmgTextPrototype == null) return;
+        // Hero_DMG_Text used to be an independent Ground child with a fixed
+        // design-time position, so it was far away from the hurt Hero.
+        var rt = dmgTextPrototype.transform as RectTransform;
+        if (rt == null) return;
+        rt.SetParent(heroRect, false);
+        rt.anchorMin = rt.anchorMax = new Vector2(.5f,.5f);
+        rt.pivot = new Vector2(.5f,.5f);
+        rt.anchoredPosition = new Vector2(0f, heroRect.rect.height * .18f);
+        rt.sizeDelta = new Vector2(130f,40f);
+        dmgTextPrototype.raycastTarget = false;
+        damageTextHome = rt.localPosition;
+    }
     void OnDisable()
     {
         MovementDistanceThisFrame = 0f;
         deployed = false;
         ActiveHeroes.Remove(this);
+        VisibleHeroes.Remove(this);
         CurrentTarget = null;
         ResetFeedback();
     }
@@ -87,9 +104,9 @@ public class HeroController : MonoBehaviour
         if (CurrentTarget == null)
         {
             CurrentState = HeroState.Returning;
-            // Hero speed is independent from the camera's base scroll speed.
+            // No current enemy: explore straight left at the current Y.
+            // Y only changes while a melee Hero approaches a selected target.
             p.x -= Mathf.Max(0f, moveSpeed) * dt;
-            p.y = Mathf.MoveTowards(p.y, 0f, laneSpeed * dt);
             MovementDistanceThisFrame = Mathf.Abs(p.x - startX);
             space.SetPosition(heroRect, p);
             HandleAnimation(true, false);
@@ -136,9 +153,14 @@ public class HeroController : MonoBehaviour
         return closest;
     }
 
-    public void SpawnHero()
+    // Existing single-Hero callers still follow the main actor.
+    public void SpawnHero() { SpawnHero(true); }
+
+    // Test companions must not steal camera focus from the active subject.
+    public void SpawnHero(bool followCamera)
     {
         if (heroRect == null) return;
+        SpawnVersion++;
         gameObject.SetActive(true);
         ResetFeedback();
         CurrentTarget = null;
@@ -147,12 +169,13 @@ public class HeroController : MonoBehaviour
         deployed = true;
         heroRect.gameObject.SetActive(true);
         if (!ActiveHeroes.Contains(this)) ActiveHeroes.Add(this);
+        if (!VisibleHeroes.Contains(this)) VisibleHeroes.Add(this);
         Canvas.ForceUpdateCanvases();
         var space = EnvironmentManager.Instance;
         if (space != null && space.BattleArea != null)
         {
             space.SetPosition(heroRect, new Vector2(space.HomeX, 0f));
-            space.FollowHero(this);
+            if (followCamera) space.FollowHero(this);
         }
     }
 
@@ -163,6 +186,7 @@ public class HeroController : MonoBehaviour
         CurrentTarget = null;
         CurrentState = HeroState.Idle;
         ActiveHeroes.Remove(this);
+        VisibleHeroes.Remove(this);
         ResetFeedback();
         if (heroRect != null) heroRect.gameObject.SetActive(false);
     }
@@ -174,7 +198,10 @@ public class HeroController : MonoBehaviour
         CurrentTarget = null;
         CurrentState = HeroState.Dead;
         ActiveHeroes.Remove(this);
+        VisibleHeroes.Remove(this);
         ResetFeedback();
+        // Game rule since 0.0.50: death has no persistent body on the map.
+        if (heroRect != null) heroRect.gameObject.SetActive(false);
     }
 
     private void ResetFeedback()
@@ -232,11 +259,14 @@ public class HeroController : MonoBehaviour
     }
     public void UpdateHealthBar(int currentHP, int maxHP) { if (hpFillImage != null) hpFillImage.fillAmount = maxHP > 0 ? (float)currentHP / maxHP : 0f; }
     public void UpdateAtkUI(int currentAtk) { if (atkStatusText != null) atkStatusText.text = $"ATK: {currentAtk}"; }
+    public string FullStatDetails { get; private set; } = "Chưa có nhân vật.";
     public void UpdateStats(EntityDataSO data, int currentHP, int maxHP)
     {
         if (atkStatusText == null || data == null) return;
         data.NormalizeRoots();
-        var lines = new List<string> { "HP: " + currentHP + "/" + maxHP,
+        var lines = new List<string> { "Cấp: " + data.currentLevel + " · " + (attackMode == AttackMode.Melee ? "Cận chiến" : attackMode == AttackMode.RangedPhysical ? "Cung" : "Phép"),
+            "HP: " + currentHP + "/" + maxHP,
+            "EXP: " + data.currentExp + "/" + data.expToNextLevel,
             "ATK cơ bản: " + data.baseDamage + " + " + data.addedDamage + " = " + data.GetCalculatedDamage() };
         for (int i = 0; i < data.spiritRoots.Count; i++)
             lines.Add("ATK " + IdentityDisplay.Element(data.spiritRoots[i]) + ": " +
@@ -244,29 +274,38 @@ public class HeroController : MonoBehaviour
                 IdentityDisplay.Tier(data.rootTiers[i]) + ", " + data.rootWeights[i].ToString("P0") + ")");
         float interval = CombatBalance.AttackInterval(attackMode, data.baseAttackSpeed, CombatBalance.HeroDev != null);
         lines.Add("Di chuyển: " + moveSpeed.ToString("0.##") + " đơn vị/giây");
-        lines.Add("Tốc đánh: " + (1f / interval).ToString("0.##") + " đòn/giây · " + interval.ToString("0.##") + " giây/đòn");
-        atkStatusText.text = string.Join("\n", lines.ToArray());
+        lines.Add("Tốc đánh: " + (1f / interval).ToString("0.##") + " đòn/giây");
+        lines.Add("Nhịp đánh: " + interval.ToString("0.##") + " giây/đòn");
+        lines.Add("Tầm đánh: " + attackRange.ToString("0.##"));
+        FullStatDetails = string.Join("\n",lines.ToArray());
+        // Debug HUD intentionally keeps ALL calculated stats until a dedicated button exists.
+        atkStatusText.text = FullStatDetails;
     }
-    public void ShowDamage(int damageAmount)
+    public void ShowDamage(int damageAmount) { ShowDamage(damageAmount, 1f); }
+    public void ShowDamage(int damageAmount, float awaySign)
     {
         if (dmgTextPrototype == null) return;
         UIManager.ReadableWorldText(dmgTextPrototype);
-        dmgTextPrototype.text = $"-{damageAmount}";
+        dmgTextPrototype.text = "-" + damageAmount;
+        dmgTextPrototype.alpha = 1f;
+        dmgTextPrototype.transform.localPosition = damageTextHome;
         if (fadeDmgCoroutine != null) StopCoroutine(fadeDmgCoroutine);
-        fadeDmgCoroutine = StartCoroutine(FadeDamageTextRoutine());
+        fadeDmgCoroutine = StartCoroutine(FadeDamageTextRoutine(awaySign));
     }
-    private IEnumerator FadeDamageTextRoutine()
+    private IEnumerator FadeDamageTextRoutine(float awaySign)
     {
-        float duration = 0.8f; float elapsed = 0f;
-        Vector3 startPos = damageTextHome;
-        while (elapsed < duration)
+        float elapsed = 0f;
+        while (elapsed < DamagePopupMotion.Duration)
         {
-            elapsed += Time.deltaTime;
-            dmgTextPrototype.alpha = 1f - (elapsed / duration);
-            dmgTextPrototype.transform.localPosition = startPos + new Vector3(0, (elapsed / duration) * 30f, 0);
+            elapsed = Mathf.Min(DamagePopupMotion.Duration, elapsed + Time.deltaTime);
+            if (dmgTextPrototype == null) yield break;
+            dmgTextPrototype.transform.localPosition = damageTextHome + new Vector3(
+                DamagePopupMotion.X(elapsed, awaySign), DamagePopupMotion.Y(elapsed), 0f);
+            dmgTextPrototype.alpha = DamagePopupMotion.Alpha(elapsed);
             yield return null;
         }
-        dmgTextPrototype.transform.localPosition = startPos; fadeDmgCoroutine = null;
+        if (dmgTextPrototype != null) dmgTextPrototype.transform.localPosition = damageTextHome;
+        fadeDmgCoroutine = null;
     }
     public void HandleAnimation(bool isMoving, bool isFighting)
     {

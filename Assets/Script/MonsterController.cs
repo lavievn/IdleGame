@@ -19,16 +19,40 @@ public class MonsterController : MonoBehaviour
     public HeroController CurrentTarget { get; private set; }
     public RectTransform Rect => rect;
     public bool IsAlive => isActiveAndEnabled && currentState != MonsterState.Dead;
+    // The same pooled GameObject can represent multiple monster lives.
+    public int SpawnVersion { get; private set; }
 
     private RectTransform rect;
     private Coroutine attackFeedbackCoroutine;
     private MagicChargeBar chargeBar;
     private Coroutine fadeDmgCoroutine;
+    private Vector3 damageTextHome;
 
-    void Awake() { rect = GetComponent<RectTransform>(); }
+    void Awake()
+    {
+        rect = GetComponent<RectTransform>();
+        AlignDamageTextToBody();
+        if (dmgTextPrototype != null) dmgTextPrototype.alpha = 0f;
+    }
 
+    private void AlignDamageTextToBody()
+    {
+        if (dmgTextPrototype == null || rect == null) return;
+        // Prefab placed its label under Monster_Hp_Fill; that follows bar anchors,
+        // not the monster's body. Anchor it directly to the damage recipient.
+        var rt = dmgTextPrototype.transform as RectTransform;
+        if (rt == null) return;
+        rt.SetParent(rect, false);
+        rt.anchorMin = rt.anchorMax = new Vector2(.5f,.5f);
+        rt.pivot = new Vector2(.5f,.5f);
+        rt.anchoredPosition = new Vector2(0f, rect.rect.height * .18f);
+        rt.sizeDelta = new Vector2(130f,40f);
+        dmgTextPrototype.raycastTarget = false;
+        damageTextHome = rt.localPosition;
+    }
     void OnEnable()
     {
+        SpawnVersion++;
         if (rect == null) rect = GetComponent<RectTransform>();
         ResetFeedback();
         // Exactly one random roll per activation (including pooled respawns).
@@ -54,9 +78,30 @@ public class MonsterController : MonoBehaviour
             CurrentTarget = null;
             FindTarget(space);
         }
-        if (CurrentTarget == null) { currentState = MonsterState.PassiveScroll; return; }
+        if (CurrentTarget == null)
+        {
+            // Stay coupled to Ground even before acquiring a target.
+            Vector2 idle = space.Position(rect);
+            idle.x += groundMinusCamera;
+            space.SetPosition(rect, idle);
+            currentState = MonsterState.PassiveScroll;
+            return;
+        }
 
         Vector2 p = space.Position(rect);
+        // Ranged enemies spawned off the LEFT edge must enter the actual
+        // viewport before they can plant their feet and start an attack.
+        // The ordinary range test alone would stop them outside the screen.
+        if (attackMode != AttackMode.Melee && p.x < space.BattleArea.rect.xMin)
+        {
+            float entryX = space.BattleArea.rect.xMin + 2f;
+            float step = Mathf.Max(0f, moveSpeed) * Mathf.Max(0f, dt);
+            p.x = Mathf.Min(entryX, p.x + groundMinusCamera + step);
+            space.SetPosition(rect, p);
+            currentState = MonsterState.Approaching;
+            UpdateChargeBar(false, 0f);
+            return;
+        }
         float targetX = space.Position(CurrentTarget.heroRect).x;
         p.x = BattleMotion.MonsterApproach(p.x, targetX, attackRange, moveSpeed, dt, groundMinusCamera);
         space.SetPosition(rect, p);
@@ -66,6 +111,9 @@ public class MonsterController : MonoBehaviour
     public bool CanAttack(HeroController target, EnvironmentManager space)
     {
         if (!IsAlive || target == null || !target.IsDeployed || space == null || space.BattleArea == null) return false;
+        // Prevent ranged attacks from offscreen enemies, even when their
+        // long attack ranges already overlap the Hero.
+        if (attackMode != AttackMode.Melee && !space.IsVisible(rect)) return false;
         Vector2 delta = space.Position(target.heroRect) - space.Position(rect);
         // Monster lanes are visual depth, not obstacles. A melee monster can reach
         // a ranged hero without forcing that hero to walk down its lane.
@@ -109,7 +157,11 @@ public class MonsterController : MonoBehaviour
         attackFeedbackCoroutine = null;
         fadeDmgCoroutine = null;
         transform.localScale = Vector3.one;
-        if (dmgTextPrototype != null) dmgTextPrototype.alpha = 0f;
+        if (dmgTextPrototype != null)
+        {
+            dmgTextPrototype.alpha = 0f;
+            dmgTextPrototype.transform.localPosition = damageTextHome;
+        }
     }
 
     private bool hasBodyColor;
@@ -142,19 +194,30 @@ public class MonsterController : MonoBehaviour
         transform.localScale = originalScale; attackFeedbackCoroutine = null;
     }
     public void UpdateHealthBar(int currentHP, int maxHP) { if (hpFillImage != null) hpFillImage.fillAmount = maxHP > 0 ? (float)currentHP / maxHP : 0f; }
-    public void ShowDamage(int damageAmount)
+    public void ShowDamage(int damageAmount) { ShowDamage(damageAmount, -1f); }
+    public void ShowDamage(int damageAmount, float awaySign)
     {
         if (dmgTextPrototype == null) return;
         UIManager.ReadableWorldText(dmgTextPrototype);
-        dmgTextPrototype.text = $"-{damageAmount}";
-        if (fadeDmgCoroutine != null) StopCoroutine(fadeDmgCoroutine);
-        fadeDmgCoroutine = StartCoroutine(FadeDamageTextRoutine());
-    }
-    private IEnumerator FadeDamageTextRoutine()
-    {
+        dmgTextPrototype.text = "-" + damageAmount;
         dmgTextPrototype.alpha = 1f;
-        yield return new WaitForSeconds(0.4f);
-        if (dmgTextPrototype != null) dmgTextPrototype.alpha = 0f;
+        dmgTextPrototype.transform.localPosition = damageTextHome;
+        if (fadeDmgCoroutine != null) StopCoroutine(fadeDmgCoroutine);
+        fadeDmgCoroutine = StartCoroutine(FadeDamageTextRoutine(awaySign));
+    }
+    private IEnumerator FadeDamageTextRoutine(float awaySign)
+    {
+        float elapsed = 0f;
+        while (elapsed < DamagePopupMotion.Duration)
+        {
+            elapsed = Mathf.Min(DamagePopupMotion.Duration,elapsed+Time.deltaTime);
+            if (dmgTextPrototype == null) yield break;
+            dmgTextPrototype.transform.localPosition = damageTextHome + new Vector3(
+                DamagePopupMotion.X(elapsed,awaySign),DamagePopupMotion.Y(elapsed),0f);
+            dmgTextPrototype.alpha = DamagePopupMotion.Alpha(elapsed);
+            yield return null;
+        }
+        if (dmgTextPrototype != null) dmgTextPrototype.transform.localPosition = damageTextHome;
         fadeDmgCoroutine = null;
     }
 }

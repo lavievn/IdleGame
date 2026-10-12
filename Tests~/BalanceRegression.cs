@@ -43,19 +43,19 @@ partial class MotionRegression
             int hp=d.addedHealth,atk=d.addedDamage,exp=d.currentExp;d.ApplyHeroBalance();
             Check(d.addedHealth==hp&&d.addedDamage==atk&&d.currentExp==exp,"idempotent migration");
         });
-        Run("level-up kill heals only 5 to 10 HP and never fills new maximum",()=>{
+        Run("level-up melee kill heals scaled 3-5 but does not fill max HP",()=>{
             var f=new Field();var d=HeroAt(1);d.currentExp=99;f.combat.SetupHeroInfo(d);
             Set(f.combat,"currentHeroHP",30);var m=f.Monster(-20);f.Battle(m);
             var victim=f.Enemies[0];
             typeof(CombatManager).GetMethod("HandleMonsterDeath",BindingFlags.NonPublic|BindingFlags.Instance).Invoke(f.combat,new object[]{victim});
-            int hp=Get<int>(f.combat,"currentHeroHP");Check(d.currentLevel>=2,"leveled up");Check(hp>=35&&hp<=40,"small kill heal only");
+            int hp=Get<int>(f.combat,"currentHeroHP");Check(d.currentLevel>=2,"leveled up");Check(hp>=33&&hp<=36,"melee kill heal after new level");
             Check(hp<Get<int>(f.combat,"maxHeroHP"),"no full level heal");
         });
         Run("ordinary kill healing is capped and there is no idle regeneration",()=>{
             var f=new Field();var d=HeroAt(20);f.combat.SetupHeroInfo(d);var m=f.Monster(-20);f.Battle(m);
-            Set(f.combat,"currentHeroHP",d.GetCalculatedHealth()-1);
+            Set(f.combat,"currentHeroHP",f.combat.MaxHeroHP-1);
             typeof(CombatManager).GetMethod("HandleMonsterDeath",BindingFlags.NonPublic|BindingFlags.Instance).Invoke(f.combat,new object[]{f.Enemies[0]});
-            Check(Get<int>(f.combat,"currentHeroHP")==d.GetCalculatedHealth(),"heal capped");
+            Check(Get<int>(f.combat,"currentHeroHP")==f.combat.MaxHeroHP,"heal capped");
             Set(f.combat,"currentHeroHP",100);for(int i=0;i<100;i++)CombatStep(f,1);
             Check(Get<int>(f.combat,"currentHeroHP")==100,"no idle heal");
         });
@@ -65,7 +65,9 @@ partial class MotionRegression
             Check(data.baseDamage==CombatBalance.MonsterAttack(data.currentLevel)&&data.baseDamage>8,"monster attack scales");
             Check(f.Enemies[0].maxHP==CombatBalance.MonsterHealth(data.currentLevel),"monster health scales");
             Near(CombatBalance.AttackInterval(AttackMode.Melee,1),1.4f,"slower melee");
-            Near(CombatBalance.AttackInterval(AttackMode.RangedPhysical,1),.7f,"faster physical");
+            Near(CombatBalance.AttackInterval(AttackMode.RangedPhysical,1),1.4f/1.5f,"physical = 150% fire rate");
+            Near(CombatBalance.AttackInterval(AttackMode.RangedMagic,1),1.4f,"magic baseline");
+            Near(CombatBalance.ModeMultiplier(AttackMode.RangedPhysical),.7f,"physical = 70% damage");
             Check(CombatBalance.Damage(10,AttackMode.RangedMagic,1)==25,"magic 2.5x damage");
         });
     }

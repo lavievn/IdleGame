@@ -26,7 +26,7 @@ partial class MotionRegression
             f.Step(2);Check(f.space.Position(m.Rect).x<=f.space.Position(f.hero.heroRect).x,"no crossing after compensation");
             Check(m.CanAttack(f.hero,f.space),"stops in attack range");
             float old=f.space.Position(m.Rect).x;f.Step(.1f);
-            Near(f.space.Position(m.Rect).x-old,f.space.CurrentCameraSpeed*.1f,"attacking monster does not receive extra approach offset",.01f);
+            Near(f.space.Position(m.Rect).x-old,f.space.CurrentBackgroundSpeed*.1f,"attacking monster travels with Ground, not only camera",.01f);
         });
     }
 }

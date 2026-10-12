@@ -12,8 +12,45 @@ partial class MotionRegression
     static void Near(float a,float b,string message,float tolerance=0.002f) { Check(Math.Abs(a-b)<=tolerance,message+": "+a+" != "+b); }
     static void Run(string name,Action test) { test(); tests++; Console.WriteLine("PASS "+name); }
     static void Call(object value,string method) { value.GetType().GetMethod(method,BindingFlags.NonPublic|BindingFlags.Instance).Invoke(value,null); }
-    static void Set(object value,string field,object data) { value.GetType().GetField(field,BindingFlags.NonPublic|BindingFlags.Instance).SetValue(value,data); }
-    static T Get<T>(object value,string field) { return (T)value.GetType().GetField(field,BindingFlags.NonPublic|BindingFlags.Instance).GetValue(value); }
+    // Legacy regression cases refer to the old CombatManager scalar field
+    // names. Resolve them to HeroCombatState instead of keeping duplicate
+    // mutable HP/timer data just to satisfy reflection from older tests.
+    static object ResolveTestMember(object value,ref string name)
+    {
+        var combat=value as CombatManager;
+        if (combat == null) return value;
+        switch (name)
+        {
+            case "heroController": name="Controller"; break;
+            case "runtimeHeroData": name="Data"; break;
+            case "currentHeroHP": name="CurrentHP"; break;
+            case "maxHeroHP": name="MaxHP"; break;
+            case "heroAttackTimer": name="AttackTimer"; break;
+            case "heroWindupMode": name="WindupMode"; break;
+            default: return value;
+        }
+        return combat.CurrentHeroCombatState;
+    }
+    static void Set(object value,string member,object data)
+    {
+        value=ResolveTestMember(value,ref member);
+        var flags=BindingFlags.NonPublic|BindingFlags.Public|BindingFlags.Instance;
+        var field=value.GetType().GetField(member,flags);
+        if (field != null) { field.SetValue(value,data); return; }
+        var property=value.GetType().GetProperty(member,flags);
+        if (property != null) { property.SetValue(value,data,null); return; }
+        throw new MissingMemberException(value.GetType().Name,member);
+    }
+    static T Get<T>(object value,string member)
+    {
+        value=ResolveTestMember(value,ref member);
+        var flags=BindingFlags.NonPublic|BindingFlags.Public|BindingFlags.Instance;
+        var field=value.GetType().GetField(member,flags);
+        if (field != null) return (T)field.GetValue(value);
+        var property=value.GetType().GetProperty(member,flags);
+        if (property != null) return (T)property.GetValue(value,null);
+        throw new MissingMemberException(value.GetType().Name,member);
+    }
 
     class Field
     {
@@ -26,10 +63,14 @@ partial class MotionRegression
         {
             if (EnvironmentManager.Instance != null) Call(EnvironmentManager.Instance,"OnDestroy");
             CombatBalance.ResetDevProfiles();
-            HeroController.ActiveHeroes.Clear();MonsterController.ActiveMonsters.Clear();UnityEngine.Object.objects.Clear();
+            HeroController.ActiveHeroes.Clear();HeroController.VisibleHeroes.Clear();MonsterController.ActiveMonsters.Clear();UnityEngine.Object.objects.Clear();
             ground=(RectTransform)new GameObject(true).transform;ground.sizeDelta=new Vector2(1000,100);ground.localScale=new Vector3(scale,scale,1);
             grass=(RectTransform)new GameObject(true).transform;grass.parent=ground;grass.anchoredPosition=new Vector2(600,0);grass.sizeDelta=new Vector2(200,100);
-            space=new GameObject().AddComponent<EnvironmentManager>();space.speedZoneInset=0;Set(space,"battleArea",ground);Set(space,"groundDetails",new[]{grass});Call(space,"Awake");
+            space=new GameObject().AddComponent<EnvironmentManager>();
+            // Existing camera tests describe the original hard-zone behavior.
+            // Keep that reference available; new tests exercise soft chasing.
+            space.useSoftZoneCamera=false;
+            space.speedZoneInset=0;Set(space,"battleArea",ground);Set(space,"groundDetails",new[]{grass});Call(space,"Awake");
             hero=new GameObject().AddComponent<HeroController>();hero.heroRect=(RectTransform)new GameObject(true).transform;hero.heroRect.parent=ground;hero.heroRect.anchorMin=hero.heroRect.anchorMax=new Vector2(1,0);hero.heroRect.pivot=new Vector2(1,0);Call(hero,"Awake");hero.SpawnHero();
             spawner=new GameObject().AddComponent<MonsterSpawner>();Set(spawner,"monsterPool",new ObjectPool<GameObject>(()=>new GameObject(),m=>{},m=>m.SetActive(false),m=>{},5,20));
             combat=new GameObject().AddComponent<CombatManager>();Call(combat,"Start");combat.SetupHeroInfo(new EntityDataSO { baseHealth=10000,baseDamage=10,expToNextLevel=1000000 });
@@ -100,7 +141,7 @@ partial class MotionRegression
             var f=new Field();f.hero.ChangeAttackMode(2);var near=f.Monster(-200);var far=f.Monster(-480);f.Battle(near,far);f.hero.TickMovement(f.space,0);Time.deltaTime=2;Call(f.combat,"Update");Check(f.Enemies[0].currentHP==f.Enemies[0].maxHP,"no damage before arrival");Time.deltaTime=1.2f;Call(f.combat,"Update");Check(f.Enemies[0].currentHP<f.Enemies[0].maxHP,"near hit");Check(f.Enemies[1].currentHP==f.Enemies[1].maxHP,"far untouched");
         });
         Run("charged magic waits for an eligible target without firing",()=>{
-            var f=new Field();f.hero.ChangeAttackMode(2);var m=f.Monster(-200);f.Battle(m);f.hero.TickMovement(f.space,0);Time.deltaTime=1.9f;Call(f.combat,"Update");f.space.SetPosition(m.Rect,new Vector2(-480,0));Time.deltaTime=0.2f;Call(f.combat,"Update");Check(f.Enemies[0].currentHP==f.Enemies[0].maxHP,"no ghost hit");Near(Get<float>(f.combat,"heroAttackTimer"),2,"charge held");
+            var f=new Field();f.hero.ChangeAttackMode(2);var m=f.Monster(-200);f.Battle(m);f.hero.TickMovement(f.space,0);Time.deltaTime=1.9f;Call(f.combat,"Update");f.space.SetPosition(m.Rect,new Vector2(-480,0));Time.deltaTime=0.2f;Call(f.combat,"Update");Check(f.Enemies[0].currentHP==f.Enemies[0].maxHP,"no ghost hit");Near(Get<float>(f.combat,"heroAttackTimer"),0,"charge resets when target leaves range");
         });
         Run("switching from magic to melee allows an immediate strike",()=>{
             var f=new Field();f.hero.ChangeAttackMode(2);var m=f.Monster(-20);f.Battle(m);f.hero.TickMovement(f.space,0);Time.deltaTime=1.9f;Call(f.combat,"Update");f.hero.ChangeAttackMode(0);Time.deltaTime=0.2f;Call(f.combat,"Update");Check(f.Enemies[0].currentHP<f.Enemies[0].maxHP,"immediate melee strike");
@@ -169,17 +210,20 @@ partial class MotionRegression
             Near(f.space.CurrentCameraSpeed,0,"camera stopped",0.02f);
             Check(f.hero.CurrentState==HeroState.Combat,"still fighting");
         });
-        Run("dead body stays camera subject until right edge then stops",()=>{
+        Run("0.0.50 last Hero vanishes on death and camera stops immediately",()=>{
             var f=new Field(); f.space.scrollSpeed=1000; f.hero.Die();
-            f.Step(0.1f); Near(f.space.Position(f.hero.heroRect).x,100,"corpse pans with world");
-            Check(HeroController.ActiveHeroes.Count==0,"corpse not a combat actor");
-            for(int i=0;i<120;i++) f.Step(1f/60f);
-            Near(f.space.Position(f.hero.heroRect).x,f.space.ZoneRightX,"corpse remains in view",0.02f);
-            Near(f.space.CurrentCameraSpeed,0,"stops at corpse",0.02f);
-            f.hero.HideHero(); f.Step(); Check(!f.space.IsScrolling,"hide removes camera subject");
+            float corpseX=f.space.Position(f.hero.heroRect).x;
+            Check(!f.hero.heroRect.gameObject.activeSelf,"no visible Hero body after death");
+            Check(!f.hero.IsCameraSubject&&HeroController.ActiveHeroes.Count==0,"no dead camera subject");
+            Check(!HeroController.VisibleHeroes.Contains(f.hero),"depth sorting excludes corpse");
+            f.Step(0.1f);
+            Near(f.space.Position(f.hero.heroRect).x,corpseX,"hidden corpse never follows Ground");
+            Near(f.space.CurrentCameraSpeed,0,"no camera movement after last death",.02f);
+            Check(!f.space.IsScrolling&&f.space.CurrentCameraFocusCount==0,"camera fully released");
             f.hero.SpawnHero(); f.hero.moveSpeed=1000; f.Step();
-            Near(f.space.Position(f.hero.heroRect).x,f.space.HomeX,"retry starts centred",0.02f);
-            Near(f.space.CurrentCameraSpeed,1000,"retry resumes camera",0.02f);
+            Check(f.hero.heroRect.gameObject.activeSelf&&f.hero.IsDeployed,"retry visible");
+            Near(f.space.Position(f.hero.heroRect).x,f.space.HomeX,"retry starts centred",.02f);
+            Near(f.space.CurrentCameraSpeed,1000,"retry resumes camera",.02f);
         });
         Run("speed changes while anchored do not leave zone",()=>{
             var f=new Field(); f.space.scrollSpeed=1000; f.hero.moveSpeed=1500;
@@ -255,6 +299,15 @@ partial class MotionRegression
         Patch54bTests();
         Patch54cTests();
         Patch54dTests();
+        Patch54fTests();
+        Patch54gTests();
+        Patch54hTests();
+        CameraFollowTests();
+        CameraAndLaneHotfixTests();
+        HeroCombatStateTests();
+        B2CombatRoutingTests();
+        B2TestPartyTests();
+        Version0050RegressionTests();
         TerrainTests();
         MenuDifficultyTests();
         BalanceTests();

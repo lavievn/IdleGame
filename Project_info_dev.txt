@@ -3,6 +3,118 @@ Tài liệu thiết kế, hiện trạng và bàn giao phát triển của lavie
 Ngày đối chiếu: 09/10/2026, múi giờ Việt Nam (UTC+7).
 Đổi tên và thay thế AI_Prompt_Master.txt; lịch sử tài liệu cũ vẫn ở Git.
 
+ĐỒNG BỘ HOTFIX .54g → B2 SAU KHI USER XÁC NHẬN "ỔN RỒI" (12/10/2026)
+User đã nghiệm thu bản sửa camera giật khi quái vào viewport + giữ Y
+lúc Hero chưa có mục tiêu trên nhánh fix/0.0.4.54g-smooth-focus-free-y.
+Đã đồng bộ SELECTIVE vào feature/b2-combat-target-routing:
+(1) BattleMotion.cs thêm CombatFocusSmoother lọc OFFSET tâm nhóm so với
+Hero theo .7s/240 units/s, giữ mean thô Hero+quái trong viewport.
+(2) EnvironmentManager.cs thêm hai Inspector cameraCombatFocusSmoothTime
+và cameraCombatFocusMaxSpeed, CurrentCameraSmoothedFocusX. Giữ B2
+chuyển camera sang Hero sống khi chủ thể chết, đồng thời reset bộ lọc.
+(3) HeroController.cs bỏ MoveTowards(Y,0) khi không có quái, giữ
+SpawnVersion của B2 để tránh đạn cũ trúng Hero tái sinh.
+(4) MainGame.unity chỉ ghi 2 field camera; KHÔNG thêm Hero/UI/save.
+(5) Tests CameraFollowRegression tăng 19→21, bổ sung 4 test lane,
+B2CombatRoutingRegression tăng 13→14 kiểm tra reset camera khi primary
+die lúc filter đang có offset. MotionRegression gọi đầy đủ B1/B2/hotfix.
+B1, .54g gốc và main không bị chỉnh. Chưa chạy Unity/Mono bản B2 sau
+đồng bộ, cần user Pull + nghiệm thu. Không tự chốt B2 khi chưa test.
+
+B2 — ĐÃ BẮT ĐẦU TRÊN NHÁNH RIÊNG, CHƯA NGHIỆM THU (12/10/2026)
+User đã duyệt "bắt đầu B2". Nhánh mới feature/b2-combat-target-routing
+được tách từ B1 đã chốt tại 7487646d355bad1f79e810eb76968a02555acb47.
+B2 bổ sung dictionary<HeroController,HeroCombatState> và API
+RegisterAdditionalHero/UnregisterAdditionalHero/StateFor/HasLivingHero.
+Hero có HP/timer/chế độ/tầm đánh/đích riêng, quái tấn công đúng Hero
+đã chọn trong MonsterController.CurrentTarget, fallback Hero đăng ký
+gần nhất đang trong tầm. Đòn đánh/đạn snapshot actor source/destination
+và LifeVersion của HeroCombatState, SpawnVersion của HeroController/
+MonsterController nhằm loại đạn cũ khi respawn hoặc monster pooling.
+EXP + heal khi kill thuộc Hero tung đòn kết liễu, KHÔNG tự chia cho đội.
+Một Hero chết không GameOver khi vẫn còn đồng đội, chỉ chết hết đội
+mới GameOver; GameManager.LateUpdate/RecoverEscapedWave được chỉnh để
+khi Hero chính chết còn người sống thì wave tiếp tục, không hồi sinh
+Hero chính ngoài ý muốn; EnvironmentManager chọn Hero sống khi
+cameraTarget cũ chết, vẫn giữ nguyên cách camera một Hero .54g.
+MainGame.unity chỉ thêm 2 field camera theo hotfix; SaveManager và EntityDataSO chưa đổi; GameManager
+CHỈ lưu Hero chính. KHÔNG tạo UI hay Hero thứ 2 mặc định. Test sử dụng
+B2Hero helper tạo actor thứ 2 và đăng ký bằng API runtime.
+Thêm Tests~/B2CombatRoutingRegression.cs có 14 tình huống và gọi trong
+Tests~/MotionRegression.cs. Chưa có máy Unity/mcs/mono trong môi trường
+GitHub connector; chỉ kiểm tra tĩnh, CHƯA ĐƯỢC USER NGHIỆM THU.
+Cần đối chiếu Console, 1 Hero và 2 Hero, bullet target/life, party wipe,
+wave, save cũ, và test runner. Không merge main/B1/.54g.
+Chi tiết xem Docs/B2_CombatRouting.md.
+
+B1 — CHỐT CHECKPOINT, NGƯỜI PHÁT TRIỂN XÁC NHẬN XONG (11/10/2026)
+User trực tiếp phản hồi "ok, đã xong b1" sau khi Pull/thử. Đánh dấu
+B1 hoàn tất theo xác nhận này, nhưng KHÔNG tự nhận rằng mọi ca Mono,
+Unity hoặc Windows dài giờ đã chạy nếu chưa thấy log chi tiết.
+Nhánh checkpoint: feature/b1-hero-combat-state, mã B1 commit 2308f25,
+tài liệu trước chốt ca80c38. B1 tách HeroCombatState, CombatManager
+vẫn điều phối một Hero, không đổi save/UI/camera/damage chủ ý.
+Mốc tiếp theo được ĐỀ XUẤT là B2: routing nguồn/đích/HP/timer theo
+Hero, giữ tương thích gameplay 1 Hero; CHƯA có lệnh bắt đầu B2.
+Không tự merge main hoặc sửa lại checkpoint .54g.
+
+B1 — GHI CHÉP TRIỂN KHAI (ĐÃ HOÀN THÀNH THEO NGƯỜI PHÁT TRIỂN)
+User đã đồng ý "bắt đầu B1" sau khi chốt gameplay .54g. Tạo nhánh
+feature/b1-hero-combat-state từ 02801dd2b1fe4ca46ce2402ffdbe93de590a2b58
+(chỉ là commit chốt tài liệu, gameplay từ c86201b). KHÔNG sửa .54g/main.
+Scope B1: thêm Assets/Script/HeroCombatState.cs và .meta; mỗi instance
+có riêng Controller, Data, CurrentHP, MaxHP, AttackTimer, WindupMode,
+SelectedMode, BeginLife/ResetAttack. CombatManager bỏ các FIELD scalar
+chỉ một Hero; giữ THUỘC TÍNH chuyển tiếp tới primaryHeroState duy nhất
+(nguồn dữ liệu thật, không có bản sao HP/timer) để bảo toàn toàn bộ
+logic damage/wave/UI/camera/save hiện tại. AdvanceCycle(ref...) đổi dùng
+trực tiếp field AttackTimer trong primaryHeroState. B1 CHƯA điều phối
+nhiều Hero trong trận. Bộ helper reflection ở Tests~/MotionRegression
+được đổi để các test cũ đọc đúng HeroCombatState; thêm 6 test
+Tests~/HeroCombatStateRegression.cs và cập nhật Tests~/run.sh.
+Cần chạy bash Tests~/run.sh với mcs/mono, Unity Editor và Windows thật;
+tool GitHub hiện tại chưa thể chạy biên dịch/Play Mode trực tiếp.
+Xem Docs/B1_HeroCombatState.md để nghiệm thu. Không gộp bất kỳ nhánh
+nào nếu chưa có kết quả test và xác nhận của user.
+Lộ trình sau B1 là B2 routing source/target theo từng Hero; không
+vội triển khai item/skill/đội hình vào B1.
+
+CHỐT CHECKPOINT 0.0.4.54g — NGÀY 11/10/2026 (ƯU TIÊN ĐỌC TRƯỚC)
+User đã trực tiếp thử game và xác nhận camera/gameplay dùng được với
+Hero CẬN CHIẾN/ĐÁNH XA và tốc độ NHANH/CHẬM. Cảm giác camera vẫn chưa
+đạt toàn bộ kỳ vọng nhưng user chủ động tuyên bố KẾT THÚC .54g và
+CHUYỂN SANG TÍNH NĂNG MỚI. Đây là nghiệm thu GIỚI HẠN THEO PHẢN HỒI,
+không được suy diễn đã thử toàn bộ DPI, save/load cũ, build Windows,
+mọi wave, CI/Unity PlayMode. Khi chưa có lỗi nghiêm trọng, ĐÓNG BĂNG
+tối ưu camera của .54g và đưa polish vào backlog P3.
+
+MỐC SOURCE: feature/0.0.4.54g tại c86201b364b21d6a195e3ebd51668067427d04eb
+là gameplay đã được user chấp nhận trước commit tài liệu chốt mốc.
+Camera mặc định lấy trung bình X Hero đang hoạt động + quái sống đang
+trong viewport (cameraUseCombatCenter=true); tắt cờ để theo một Hero.
+Deadzone 38%, SmoothDamp chạy .2s, hồi nghỉ về 40%/.6s khi Hero đã
+tiến sâu sang trái rồi dừng; mã Ground/quái/đạn dùng cùng camera pan.
+Không tự merge main, gán tag, tạo release hoặc nhánh kế tiếp trước
+khi có yêu cầu rõ ràng. Giữ nhánh đã chốt làm điểm đối chiếu.
+
+ƯU TIÊN PHÁT TRIỂN SAU .54g (ĐỀ XUẤT, CHƯA ĐƯỢC USER CHỐT TRIỂN KHAI):
+P0: TÁCH LÕI CHIẾN ĐẤU THEO TỪNG THỰC THỂ (CombatManager hiện dùng
+heroController/currentHeroHP/maxHeroHP/heroAttackTimer chung 1 Hero).
+B1 đầu tiên chỉ tạo state HP/timer/stat theo Hero mà GIỮ gameplay một
+Hero hoạt động y như .54g; 2 state độc lập trong test, không đổi UI/save.
+B2 về sau đổi chọn mục tiêu và áp sát thương theo đúng thực thể.
+P1a: Schema/save có phiên bản và migration tối thiểu, thêm theo lát cắt.
+P1b: Trang bị tối thiểu 1 slot + 1-2 item HP/ATK có equip/unequip/save.
+P1c: Hai kỹ năng tự động theo ưu tiên, cooldown/tầm đánh khác nhau.
+P2a: 2 Hero chiến đấu độc lập + đội hình/camera nhóm sau khi combat đủ.
+P2b: Asset/SFX/VFX kết nối theo schema và tool nhập nội dung.
+P3: Boss/elite, buff/debuff, độ hiếm, luân hồi/offline, polish camera/UI.
+Không buộc làm đủ 100% item/skill/art trước khi tiếp tục; phải đạt
+tiêu chí giao tiếp và hồi quy ở Docs/Development_Roadmap.md.
+Chưa được user yêu cầu thực hiện mốc B1 ngay; hiện chỉ ghi chú/xếp ưu tiên.
+QA mở: 25 wave, save cũ, DPI, resize, Windows runtime dài giờ; nếu có lỗi
+P0 nghiêm trọng thì sửa trước khi thêm tính năng.
+
 0. ĐỌC TRƯỚC: PHẠM VI, NGUỒN VÀ ĐỘ TIN CẬY
 
 Tài liệu này là điểm nạp bối cảnh cho các phiên phát triển tiếp theo. Không dùng
@@ -19,29 +131,134 @@ bị dính xuống đáy. Sau bản vá Windows 0.0.4.51f, ngày 09/10/2026 ngư
 xác nhận đã thử: System Menu hoạt động, scale cửa sổ đúng logic và cho phép
 merge PR #1 vào main. Chưa có xác nhận riêng về kéo cửa sổ, DPI/màn hình phụ.
 
-CẬP NHẬT ĐANG PHÁT TRIỂN: 0.0.4.54.d_prefinal, nền toàn bộ .54c (GitHub a040937).
-Nhánh feature/0.0.4.54.d_prefinal; chưa merge main, chưa kết thúc tiến trình 0.0.4.
-Hiện trạng ưu tiên: README.MD và Docs/Release_0.0.4.54.d_prefinal.md.
-Người dùng báo resize dịch vị trí/tầm/điểm rơi, quái bị bỏ lại khiến wave kẹt.
-[CÓ MÃ] Ground cố định chiều rộng logic (MainGame 1920), Canvas chiến đấu riêng;
-resize chỉ đổi scaleFactor, giữ tọa độ hero/quái/đạn, tầm, mục tiêu và trang trí.
-[CÓ MÃ] Quái ra hẳn mép phải: hủy wave/đạn cũ, đưa hero về HomeX, chờ rồi replay
-wave cùng số quái, random lại quái; không cộng tiến trình/EXP hoặc hồi HP giả.
-Giữ EXP từ quái đã hạ, HP/cấp/điểm và map; hủy retry khi chết/load/reset.
-[CÓ MÃ] Chết quay về map đầu cụm 5 map, wave 1; giữ nhân vật/chủ đề, random lại
-map trong chủ đề đó. Autosave ghi checkpoint ngay khi chết, Retry đầy HP.
-[CÓ MÃ] mapVisits lưu riêng tổng lượt vào map, gồm quay về sau chết; damage quái
-không giảm do rewind mapNumber. Save cũ chuyển từ số map, cứu wave không cộng lượt.
-Giữ UI theo điểm ảnh/DEVB/pause, linh căn và ranged từ .54c. Xem ghi chú .54c
-trong lịch sử cuối file; không nhầm đó là phiên bản mới nhất.
-[ĐÃ THỬ]139 tình huống logic với API Unity mô phỏng; 720 mô phỏng mặc định giữ
-kết quả .54c, biên dịch nhánh Windows với API mô phỏng. Chưa chạy Unity/WinAPI.
-[CẦN KIỂM THỬ] Resize khi có đạn/vận công, wave replay, chết/checkpoint/save,
-render Ground/HUD, taskbar/DPI/input. Gói là source project, chưa có EXE mới.
-README.MD thay tài liệu overlay 0.0.4.51f. Theo yêu cầu mới, tổng tiến độ được
-ước lượng có trọng số: hình ảnh 60–70% khối lượng, hoàn thành 10–15% (user);
-phần còn lại hoàn thành 35–45% (ước lượng), tổng 17,5–27%, trung tâm khoảng 22%.
-Không coi phần trăm này là nghiệm thu hoặc lịch phát hành.
+CAMERA THỬ NGHIỆM TÂM TẤT CẢ NHÂN VẬT ĐANG GIAO TRANH (11/10/2026)
+Theo yêu cầu mới: GIỮ Deadzone 38%, theo 0.2s, hồi mốc 40%
+sau Hero chạy rồi dừng (0.6s); thay mục tiêu camera là trung bình
+tọa độ X các Hero sống/đang hoạt động + quái còn sống ĐANG TRONG
+viewport. Không tính Ground/texture/cây/cỏ, đạn/VFX, xác/quái pool,
+quái vừa spawn còn ngoài khung hình. Equal weights: nhiều quái có thể
+kéo camera về phía chúng; phải thử wave spawn/death và nhiều quái.
+EnvironmentManager có cờ cameraUseCombatCenter=true (MainGame.unity
+ghi rõ); tắt cờ là trở về camera Hero trước khi chỉnh này.
+CurrentCameraFocusX và CurrentCameraFocusCount là thuộc tính quan sát.
+DeadzoneCamera.Pan có overload bảo vệ rìa thật theo Hero thực tế,
+không phải tâm quái, tránh để nhiều quái kéo Hero ra khỏi màn hình.
+Tâm nhóm được tính sau Hero TickMovement trước Monster TickMovement;
+độ trễ quái tối đa 1 khung nhưng giữ Update/LateUpdate + Ground/đạn.
+Tests~/CameraFollowRegression.cs mở rộng lên 19 bài hồi quy (thêm 6
+case tâm nhóm, chuyển mode, quái chết/ngoài khung, nhiều Hero, Ground).
+CHƯA có nghiệm thu Unity/Windows, main KHÔNG được merge tự động.
+
+TINH CHỈNH CAMERA TỪ VIDEO MẪU — HỒI VỊ TRÍ 40% (11/10/2026)
+User đồng ý thử mốc nghỉ 40% màn hình. Đã thêm vào DeadzoneCamera
+một lượt hồi sau khi Hero chạy -> dừng, CHỈ KHI Hero đứng bên trái
+vị trí 40%; SmoothDamp hồi về mốc này với idleSmoothTime=0.6s
+(Inspector cameraIdleRestX=.4, cameraIdleSmoothTime=.6).
+Lúc Hero ĐANG CHẠY, hoàn toàn giữ deadzone=.38, smoothTime=.2,
+biên đỏ là ngưỡng bám nhanh; không làm speed-adaptive deadzone ở bản này.
+Hero đứng từ lúc spawn hoặc Hero chậm dừng gần tâm KHÔNG tự kéo về 40%.
+Khi Hero lại chạy trong lúc hồi, hủy hồi. Dịch camera dùng cùng pan
+cho Ground/Hero/quái/đạn như trước; Retry reset toàn bộ trạng thái.
+Tests~/CameraFollowRegression.cs có tổng 13 test sau bổ sung 3 case
+(hồi 40%, Hero chậm, ngắt hồi khi đi tiếp và Ground cùng chuyển động).
+Thử số học 30/60/144 FPS, CHƯA ĐƯỢC nghiệm thu trong Unity/Windows.
+Hướng camera nhóm nhiều Hero vẫn để roadmap tương lai, không trộn vào
+tinh chỉnh này.
+
+ĐIỀU CHỈNH THÔNG SỐ CAMERA SAU PHẢN HỒI (11/10/2026):
+User đã thử nguyên lý Deadzone và xác nhận chuyển động khá ổn, nhưng
+với speed Hero 700 camera vẫn bám quá sớm khi Hero chỉ vừa vượt tâm.
+Không đổi thuật toán SmoothDamp hay smoothTime 0.2s. Mở rộng bề ngang
+Deadzone từ 10% lên 38% Ground; trong scene MainGame ưu tiên giá trị
+explicit cameraDeadzoneRatio: 0.38. Với Ground 1000 và tâm 0, rìa
+Deadzone tại +/-190, biên đỏ do inset tại khoảng -227.5/+197.5.
+Chỉ điều chỉnh camera khi Hero vượt rìa rộng này, cho phép Hero đi
+gần biên đỏ rồi mới camera đuổi. Giới hạn vùng chết không vượt biên
+đỏ ngoài (trừ khoảng an toàn 0.5% width). Đã bổ sung test Hero 700,
+3 tốc độ khung hình, chạy/dừng; chờ người dùng thử thật.
+ĐỀ XUẤT KIẾN TRÚC NHIỀU HERO: tâm trung điểm(minX,maxX) hợp lý khi
+nhóm cận/xa giữ khoảng cách nhỏ hơn viewport; chưa được mã chiến đấu
+hỗ trợ đầy đủ do GameManager/CombatManager chỉ dùng 1 hero chính.
+Đọc Docs/Development_Roadmap.md để xem ưu tiên và tiêu chí chuyển giai đoạn.
+
+TRẠNG THÁI CAMERA MỚI NHẤT — DEADZONE + SMOOTHDAMP (thay phần camera tại .54g)
+[CÓ MÃ, CHƯA UNITY NGHIỆM THU] Yêu cầu: camera KHÔNG tự cuộn,
+Hero đứng bắn thì camera phải giảm tốc về 0 và dừng. Hero di chuyển
+trong Deadzone giữa Ground (hiện mặc định 38% ngang/tâm 50%) không làm camera
+dịch; ra ngoài Deadzone mới bám bằng SmoothDamp 1D, smoothTime=0.2s.
+Vùng đỏ rộng bên ngoài chỉ tăng phản ứng, không kẹp Hero. Không có chu
+trình Normal/Accelerating/Releasing, không có scrollSpeed khi Hero sống.
+Trong EnvironmentManager, backgroundPan = cameraPan ở chế độ Deadzone,
+để quái/đạn/địa hình không trôi khác Hero; chỉ mỗi đối tượng có bước tự
+di chuyển riêng. Vẫn dùng pan của cùng frame tại Update/LateUpdate.
+BattleMotion.cs định nghĩa DeadzoneCamera thay SoftZoneCamera; pan mỗi frame tính tương đối, chỉ giữ vận tốc để tránh mất chính xác số thực khi game chạy nhiều giờ;
+EnvironmentManager giữ cờ useSoftZoneCamera=true để tương thích scene,
+thông số mới cameraSmoothTime=.2, cameraDeadzoneRatio=.38,
+cameraPreferredX=.5, cameraIdleRestX=.4, cameraIdleSmoothTime=.6.
+Tests~/CameraFollowRegression.cs có 13 bài thử
+thay thế cơ chế camera cũ. Các đoạn ghi về camera 1s đuổi, tốc cuộn
+mặc định, Following hoặc 62% ở phần lịch sử BÊN DƯỚI ĐÃ LỖI THỜI;
+không dựa vào chúng khi sửa hay đánh giá phiên bản hiện hành.
+KHÔNG ĐƯỢC tuyên bố đã chạy Unity thật trước khi có kết quả máy người dùng.
+
+CẬP NHẬT ƯU TIÊN CAO NHẤT — 0.0.4.54g, trước khi người dùng gộp nhánh lên main
+Nhánh mã kiểm thử: feature/0.0.4.54g. README.MD là tài liệu trạng thái tổng quan
+mới nhất; xem Docs/Release_0.0.4.54g_ui.md cho thay đổi và checklist.
+Tất cả ghi chép .54d/.54e/.54f và .52 ở các mục lịch sử sau là mốc trước,
+KHÔNG ghi đè các thông số/chức năng hiện tại; luôn đọc lại commit tại thời điểm làm.
+
+[CÓ MÃ] 54d: Canvas/Ground logic ổn định khi resize; quái thoát biên phải replay
+wave dở, chết quay về map đầu cụm 5 map/5 wave, giữ cấp/EXP/checkpoint theo save.
+[CÓ MÃ] 54e: UI font theo preset, 3 kích thước ngang 600/800/1150, log sát thương
+rút gọn, 3 nút Kiếm/Cung/Phép, EXP trong chỉ số, lịch sử damage đầy đủ trong Info.
+[CÓ MÃ] 54f: ẩn HUD khi Start/Confirmation/Game Over, nhãn Menu đỏ; data originHealth
+là HP nền của từng nhân vật, KHÔNG mặc định cố định 400 trong thiết kế về sau.
+HP nền khi Cận×2, Cung×0.6, Phép×1. Cận +50..100 HP riêng/cấp, lưu vào save;
+Cận kill heal Random3..5*(1+0.05*(level-1)); Cung damage×0.7 và 150% tốc đánh
+Hero; Phép Hero chỉ vận sức khi có target, nổ AoE250 theo Ground. Đây là
+THÔNG SỐ KIỂM THỬ, không phải kết quả cân bằng tối ưu.
+[CÓ MÃ] 54g: bảng chỉ số debug đầy đủ ở bên phải dưới Chỉ số/DEVB/Tạm dừng,
+log damage và nút đổi thế ở cột trái; tên map lớn giữa cửa sổ 3s rồi thu nhỏ
+trong 0.85s. Chữ damage bật ra ngược nguồn gây sát thương và fade 1s.
+[CÓ MÃ — BỔ SUNG CUỐI 54g] Wave hiện tại/5, mapNumber và địa hình theo
+WorldNames.Terrain(mapTerrain) bên dưới nhãn map thu nhỏ, cập nhật mỗi wave.
+Hero_DMG_Text trước đây ở Ground độc lập, Monster_DMG_Text nằm trong HP fill;
+đã chỉnh neo trực tiếp vào rect đối tượng nhận sát thương. Quái gần/đứng
+đánh/không có target nay đều được bù khác biệt GroundPan-CameraPan thay vì
+bị trôi chậm theo camera khi Hero cận di chuyển tới. Không đổi balance .54f.
+[CÓ MÃ — TINH CHỈNH CAMERA MỀM CUỐI .54g, 10/10/2026] Vùng đỏ không
+còn là ranh giới khóa tọa độ Hero: khi vượt biên, camera ngay lập tức bắt
+đầu đuổi và tăng/điều chỉnh tốc độ trong 1 giây (smoothstep), đưa Hero về
+khoảng 62% chiều ngang Ground. Bản 9733a4d có LỖI GIỮ CỐ ĐỊNH HERO:
+Following đặt cameraPan=heroWalkDistance vô hạn, khiến Hero khóa ở 62%;
+đã được người dùng báo ngày 10/10/2026. BẢN SỬA HIỆN TẠI không có trạng
+thái Following vô hạn: sau khi về đích, hòa camera về scrollSpeed trong
+0.4 giây rồi trở lại Normal. Hero tiếp tục trôi tự nhiên, vượt biên lần
+nữa sẽ khởi tạo lượt đuổi mới. Công thức sai số mục tiêu cũng được sửa:
+tính từ vị trí Hero trước bước di chuyển, không cộng bước walk hai lần.
+Không có bước chờ 1 giây: cách thử cũ đã được revert.
+Camera giới hạn mềm chỉ với mép đỏ, giới hạn cứng an toàn chỉ là mép cửa
+sổ thực. EnvironmentManager dùng một cặp pan tính ở Update cho cả
+monster compensation và LateUpdate, không nhân đôi tăng tốc; phần camera
+khi Hero đã chết giữ xử lý cũ. Inspector: useSoftZoneCamera=true,
+cameraAccelerationSeconds=1, cameraPreferredX=.62. Chưa nghiệm thu Unity.
+[CHƯA NGHIỆM THU] Các thay đổi cuối .54g đã được chuẩn bị kiểm tra tĩnh và
+bổ sung bài kiểm tra hồi quy, chưa có kết quả chạy Unity Editor/Windows native.
+Phản hồi người dùng từ .54g trước sửa: wave/terrain thiếu trong tên map; chữ
+damage lệch thân Hero/quái; quái đánh xa dừng và trôi chậm so với Ground.
+Không tự xóa kết quả phản hồi này khỏi lịch sử trước khi user test bản sửa.
+[ĐIỂM GỘP] Tất cả chỉnh sửa, README.MD và Project_info_dev.txt triển khai trên
+feature/0.0.4.54g; CHƯA tự merge main. Sau khi user kiểm tra và merge,
+main trở thành mốc mới chỉ khi Git thực sự xác nhận. WINDOWS_OVERLAY_FIX_0.0.4.51f.txt
+được loại khỏi nhánh; phần hữu ích về nút MenuArea/uGUI Button, WinAPI input,
+kéo/thả, topmost/DPI đã được chuyển vào README.MD. Git history còn bản cũ.
+[ƯU TIÊN] Thử cụ thể Hero CẬN vs quái CUNG/PHÉP đứng bắn, tốc Ground khác camera;
+chữ damage ở thân, death/despawn, tên map wave/terrain, 600/800/1150;
+thử 5 wave và hết cụm 5 map, save/load/resize/pause, build Windows thật.
+
+Các ước lượng hoàn thành và kết quả mô phỏng của các bản cũ (139 regression,
+720 mô phỏng và tỉ trọng tổng khoảng 22%) chỉ là SỐ LIỆU MỐC CŨ; không khẳng
+định bộ test mới đã đạt, không cập nhật tiến độ bằng suy đoán.
 
 Nhãn trạng thái dùng xuyên suốt:
 [ĐỊNH HƯỚNG] ý định thiết kế, chưa phải chức năng chạy được.
@@ -569,7 +786,7 @@ P2. Chốt bảng linh căn và dữ liệu vũ khí/võ học tối thiểu, sa
 P3. Kho/rơi đồ/đội hình/boss, rồi đặc tả Luân Hồi/ngoại tuyến/Lò Bát Quái.
     Không tự triển khai cả danh sách nếu chưa có yêu cầu phạm vi cụ thể.
 
-11. KIỂM THỬ ĐÃ CÓ VÀ NHỮNG ĐIỀU KHÔNG ĐƯỢC SUY RA
+11. KIỂM THỬ LỊCH SỬ (TRƯỚC .54g) VÀ NHỮNG ĐIỀU KHÔNG ĐƯỢC SUY RA
 
 Tests~ dùng Unity test doubles, không phải Unity engine thực.
 Bộ gần nhất: 78 tình huống regression đạt, kết quả Tests~/test-results.txt.
@@ -664,7 +881,7 @@ Các mô tả đã bị thay thế:
 - Cập nhật tài liệu khi yêu cầu/hành vi/trạng thái đổi; ghi bằng chứng và
   giới hạn, không xóa ý tưởng chưa triển khai chỉ vì hiện tại chưa có code.
 
-14. ĐIỂM BÀN GIAO HIỆN TẠI
+14. ĐIỂM BÀN GIAO LỊCH SỬ (MỐC .52; ĐÃ BỊ MỤC ĐẦU VÀ MỤC 15 THAY THẾ)
 
 Phiên bản đang thử:0.0.4.52, nềnmainf6140282; feature/0.0.4.52.
 Tên ghép/tộc/linh căn/khắc hệ/log, menu phân trang và chu kỳ map đã có mã.
@@ -714,3 +931,215 @@ CẬP NHẬT CUỐI — 0.0.4.54.d_prefinal
 replay wave, không CompleteWave. Chết lưu checkpoint đầu cụm, wave 1; mapVisits
 đếm lượt riêng giữ tăng damage. Các mô tả retry ngay map hiện tại đã hết hiệu lực.
 139 kiểm tra logic đạt, cần Unity/Windows kiểm thử trước final và merge.
+
+
+=== NGUYÊN TẮC THIẾT KẾ NHÂN VẬT (09/10/2026) ===
+HP cơ bản 400 hiện tại chỉ là giá trị kiểm thử logic, KHÔNG phải giá trị cố định trong thiết kế cuối.
+Hướng phát triển: khởi tạo nhân vật ngẫu nhiên theo bối cảnh, cốt truyện, hoàn cảnh xuất hiện; linh căn, tâm pháp, võ học và trang bị đều có thể ảnh hưởng các chỉ số.
+Kiến trúc phải giữ nguyên dữ liệu nền của mỗi nhân vật, cho phép nhiều tầng chỉ số; không khóa hệ thống vào chỉ 3 kiểu tấn công hay gán cứng base HP 400.
+Các thay đổi sau này cần phân biệt base theo nhân vật, hệ số theo lối đánh, thưởng mỗi cấp, hiệu ứng và chỉ số trang bị. Khi thêm random vĩnh viễn nên lưu kết quả vào save, có kế hoạch tương thích save cũ.
+54e CHỈ sửa UI tại mốc đó. Các cơ chế 54f dự định nêu trước đây ĐÃ ĐƯỢC MÃ HÓA: Cận HP nền×2, hồi 3..5*(1+5%*(cấp-1)) khi hạ địch, thưởng 50..100 HP riêng/cấp và lưu; cung tốc đánh 150%, sát thương 70%, HP nền×0.6; phép bắt đầu vận sức khi có target, bán kính AoE Hero 250. Bán kính trong mã trước 54f là 100 (không phải 150 như phỏng đoán cũ). Chưa kết luận cân bằng thực chiến.
+
+
+=== THỬ NGHIỆM 0.0.4.54f / THIẾT KẾ MỞ RỘNG VỀ SAU ===
+Bản 54f khóa logic giao diện combat không được đè màn hình khởi đầu, xác nhận và Game Over; bố cục chữ không được tràn khung. Nút Menu đỏ ở dưới phải cần nhãn văn bản.
+Mọi nhân vật có originHealth riêng (HP ban đầu, hiện thường là 400 để thử); đường tăng HP theo cấp, điểm cộng và trang bị về sau là các lớp dữ liệu khác nhau. Không hardcode x2/x0.6 trực tiếp lên dữ liệu gốc hoặc reset originHealth khi đổi chế độ.
+Cận chiến: nhân phần HP nền x2, thêm HP riêng 50..100 mỗi lần nhân vật lên cấp (được lưu ở meleeGrowthBonus); giết quái hồi Random(3..5) * (1+5%*(level-1)), áp dụng lúc dùng cận chiến; chỉ số HP khác không hưởng phần thưởng cận chiến. Save cũ cấp cao được bù một lần 75 HP cho mỗi cấp đã qua để không reroll khi load.
+Cung: nhân HP nền x0.6; damage mode x0.7; đòn Hero 150% tốc độ so với các hệ khác ở tốc độ gốc (1.4/1.5s/đòn). Phép Hero cùng thời gian gốc 1.4s/đòn nhưng không vận sức trước khi có target sống trong tầm và hủy charge nếu mất target. AoE tính từ tâm nổ (Ground-local) bán kính250; monster vẫn radius100 và thời gian vận phép cũ.
+Chuyển chế độ đánh phải giữ %HP, không hồi máu do tăng maxHP. Cấp hiện tại và trang bị tương lai không được phụ thuộc vào chế độ đang đứng tại thời điểm save/load.
+Tất cả các giá trị này chỉ phục vụ thử nghiệm logic; tiếp theo cần chạy thực chiến 5 wave đầu, 25 wave/5 map và kiểm tra mất mục tiêu/resize mid-combat để đo độ khó thực tế.
+
+
+=== 0.0.4.54g_ui / GIAO DIỆN THEO DÕI CÂN BẰNG ===
+- GIỮ NGUYÊN toàn bộ công thức cân bằng/lưu nhân vật của .54f. .54g chỉ thay đổi hiển thị, các vị trí xuất phát và hướng bay popup sát thương; không thay HP/damage/EXP/AI/di chuyển/điều khiển cửa sổ.
+- Bảng chỉ số dùng HeroController.FullStatDetails đầy đủ (cấp/dạng đánh, HP, EXP, sát thương cơ bản và theo hệ, di chuyển, tốc đánh, nhịp đánh, tầm đánh). KHÔNG rút về 3 dòng. Đây là bảng theo dõi tạm thời; tương lai sẽ tách thành một nút riêng.
+- Bảng chỉ số neo phía trên bên phải ngay dưới bộ nút Chỉ số/DEVB/Tạm dừng, cùng hàng với log rút gọn phía trái. Ba nút Cận chiến/Cung/Phép nằm dưới log để không chồng lên bảng chỉ số.
+- Khi deploy hero hoặc đổi map sau wave 5, tên map xuất hiện lớn giữa cửa sổ, giữ vị trí đó đúng 3 giây rồi trong 0.85 giây vừa thu nhỏ vừa di chuyển đến nhãn ở dưới log và nút hệ đánh phía trái; giữ nhãn nhỏ đến khi đổi map. Khi chưa chơi, Game Over hoặc mở popup thì ẩn nhãn.
+- Popup sát thương Hero và quái bật ra về phía ngược nguồn gây sát thương (tọa độ Ground-local), đi theo một đường cong nhỏ rồi mờ dần tuyến tính trong 1 giây; không ảnh hưởng logic đạn/HP/hitbox, đặt lại vị trí cho quái được tái sử dụng từ pool.
+- Bất cứ thay đổi về gameplay/balance tiếp theo phải làm ở một phiên bản riêng sau khi UI .54g được kiểm tra.
+
+15. ĐIỂM BÀN GIAO MỚI NHẤT — .54g HOÀN THIỆN VÒNG UI/DI CHUYỂN
+
+Nguồn đúng khi bắt đầu phiên: GitHub feature/0.0.4.54g, README.MD,
+Docs/Release_0.0.4.54g_ui.md, Assets/Script trong cùng commit, không dựa mô tả
+.cũ hay file vá overlay 0.0.4.51f. Kiểm tra local/nhánh đang checkout và status
+Git trước khi sửa; KHÔNG coi main đã merge khi user chưa chủ động merge.
+
+ĐÃ SỬA TRONG MÃ (chưa có Unity/Windows nghiệm thu):
+1) Map-title: chữ to giữa màn hình 3s rồi thu nhỏ 0.85s; nhãn dưới tên map
+hiện Bản đồ N, Wave hiện tại/5, Địa hình; RestoreProgress() làm mới nhãn
+khi progress cập nhật, không restart hoạt ảnh lúc chỉ đổi wave.
+2) Hero/Monster damage text: transform label được gắn lại dưới RectTransform
+nhân vật/quái khi Awake, không còn dùng vị trí thiết kế Ground hay child HP.
+Vị trí khởi đầu căn thân; ngược hướng nguồn sát thương theo Ground-local,
+quỹ đạo nhô lên và alpha 0 sau 1s. Giữ chú ý trường hợp monster chết/despawn
+ngay sau hit có thể khiến label bị thu hồi sớm vì text còn nằm trong prefab:
+cần thử, và khi làm VFX manager tương lai ưu tiên popup tự quản lý ngoài pool.
+3) Monster motion: trong EnvironmentManager.Update, backgroundPan-cameraPan
+là phần bù carrier trước khi LateUpdate pan camera. MonsterApproach tách bước
+tự di chuyển khỏi phần bù; không bỏ carrier khi đã đúng tầm. MonsterController
+cũng bù carrier nếu chưa có target. Quái đang bắn xa không được trôi chậm hơn
+lớp Ground dù Hero cận vẫn tiếp cận. Không cộng camera thêm lần thứ hai.
+4) Test mới: GroundRelativeMotionRegression đã đổi kỳ vọng quái đứng đánh theo
+CurrentBackgroundSpeed; Patch54hRegression có các trường hợp hero melee tiến
+quái ranged khi speed Ground khác camera, popup anchored, map terrain/wave.
+Kết quả đã viết vào mã nhưng chưa chạy với Unity thật/EXE. Không công bố "PASS"
+nếu không có stdout kết quả thực.
+
+ĐỊNH HƯỚNG TRIỂN KHAI KẾ TIẾP (chưa làm, cần chốt đặc tả trước):
+- Hệ item/equipment thành lớp chỉ số độc lập: HP gốc, HP cộng, tăng/giảm damage,
+phòng thủ/giảm sát thương, bonus damage theo linh căn của item/vũ khí, giới hạn
+stack/cộng nhân/ràng buộc lưu bản. Có thể random theo xuất thân/trang bị và
+tác động mạnh hơn +HP/cấp ở giai đoạn sau. Chưa có schema/item inventory đầy đủ.
+- Placeholder slot item: ô trang bị/kho đồ để kiểm tra dữ liệu/khả năng tương tác.
+- Placeholder skill rồi hệ thống skill auto theo thứ tự ưu tiên, xét đủ điều kiện
+mục tiêu/tầm/chi phí/cooldown/hiệu ứng; một nhân vật phối hợp skill gần và xa,
+không khóa toàn nhân vật vào một class cố định. Cần tách quyết định hành động
+khỏi mode hiện tại và khả năng ghép kỹ năng với trang bị/tâm pháp/linh căn.
+- Placeholder âm thanh: sự kiện phát theo đòn, skill, hit, UI, môi trường; sau
+này trộn âm, âm lượng và nguồn asset tùy chọn, tránh hardcode.
+- Dự kiến tool có UI để import/gắn sprite/animation/effect/âm thanh cho Hero,
+quái, vũ khí, skill. Cần manifest/schema asset, preview, kiểm tra reference,
+quy tắc version, định dạng Unity chuẩn. CHƯA có đặc tả/tool thực hiện.
+
+Nguyên tắc làm việc: một cụm lỗi/nhánh, ưu tiên sửa nguyên nhân, có bài hồi quy
+cho bug cụ thể và yêu cầu Play Mode/Windows test; cập nhật README và tài liệu
+phiên bản trước merge. Chờ kết quả user thử .54g mới làm item/skill/balance.
+
+
+16. CAMERA MỀM .54g — CHỈNH LẠI THEO YÊU CẦU 10/10/2026
+
+Yêu cầu xác nhận:
+- Theo .54f trở về trước, "vùng đỏ" bị hiểu là vùng Hero không được vượt
+qua. Người dùng muốn **vượt qua vùng đỏ được**: ranh giới đỏ chỉ kích hoạt
+camera tăng tốc đuổi Hero khi Hero vượt ngưỡng.
+- Camera **tăng tốc dần TRONG 1 GIÂY**, bắt đầu ngay khi vượt ranh giới;
+KHÔNG chờ 1 giây rồi mới dịch chuyển camera.
+- Khi bắt kịp thì hướng đến khoảng 62% chiều ngang Ground (hơi lệch phải
+tâm); HOÀ TRỞ LẠI tốc độ cuộn mặc định trong 0,4 giây rồi NGỪNG ĐUỔI.
+Camera tiếp tục cuộn thông thường ngay cả khi Hero đứng đánh. Hero lại
+trôi trong vùng đỏ, sau đó có thể kích hoạt đuổi lần hai và lần tiếp.
+Không dùng cơ chế Following giữ Hero cố định nữa.
+- Trong vùng đỏ trước khi có truy đuổi, giữ cuộn nền như logic hiện hành;
+ngoài vùng đỏ không ghim ngay ở biên đỏ. Chỉ mép thực của cửa sổ giữ an toàn.
+
+Thiết kế kỹ thuật triển khai:
+- BattleMotion.cs: SoftZoneCamera (Normal/Accelerating/Releasing). Khi Hero
+vượt ranh giới, nội suy smoothstep 1 giây từ scrollSpeed về tốc độ đuổi;
+sai số mục tiêu tính theo vị trí trước bước Hero đi. Khi gần x=.62 thì
+Releasing=0,4 giây chuyển về scrollSpeed, trả trạng thái Normal. Không
+viết lại tọa độ Hero hay giới hạn tại biên đỏ, chỉ tính pan toàn cảnh.
+- EnvironmentManager.cs: option useSoftZoneCamera mặc định true, mốc 1 giây
+và x=.62 có thể chỉnh trong Inspector; dùng cùng plannedCameraPan và
+plannedBackgroundPan cho AI trong Update và PanWorld/PanEnvironment của
+LateUpdate, để quái đang đứng đánh vẫn bám Ground trong lúc tăng tốc.
+- FollowHero/Retry reset trạng thái camera, không tích lũy đồng hồ gia tốc
+khi pause. Hero chết tiếp tục dùng nhánh camera trước đó.
+- Tests~/MotionRegression.cs bảo tồn kiểm thử camera cũ bằng cách chọn
+useSoftZoneCamera=false trong fixture; CameraFollowRegression.cs gồm 6
+trường hợp (trái/phải, tốc tăng trong 1s, THOÁT TRẠNG THÁI ĐUỔI, TRÔI
+TRỞ LẠI VÀ ĐUỔI LẦN HAI, Hero chậm, pause/respawn, đồng bộ quái và Ground).
+- Đã thử mô phỏng các tình huống toán học để xem chuyển động không bị nhảy
+ngay ở biên đỏ, nhưng KHÔNG có Unity Editor, Windows build hay Play Mode
+thực nghiệm trong môi trường sửa; chưa tuyên bố đã hoàn thành nghiệm thu.
+
+Lịch sử và giới hạn:
+- Commit 2f271a9 đưa cách chờ 1 giây trước khi thu camera, đã được hoàn
+tác bởi 719345f. Không khôi phục cách đó khi tiếp tục.
+- Chưa thay hệ thống các thông số chiến đấu .54f, tăng trưởng, save,
+quái, wave, UI. Main không tự động cập nhật khi sửa nhánh .54g.
+- Nếu về sau quan sát rung/dao động ở x=.62, không sửa bằng clamping
+vào mép vùng đỏ; cần đo theo từng frame các giá trị heroWorldX,
+scrollSpeed, heroWalkDistance, plannedCameraPan, plannedBackgroundPan,
+trạng thái SoftZoneCamera và deltaTime rồi mới điều chỉnh hệ số bám.
+
+
+17. SỬA LỖI KHÓA CAMERA SAU LẦN ĐUỔI ĐẦU TIÊN — 11/10/2026
+
+Phản hồi thực tế từ user: lượt đầu Hero tới biên trái chạy tạm ổn, sau
+đó Hero bị cố định tại vị trí lệch phải gần 62%, camera không còn cuộn
+theo quy tắc tốc độ nền thông thường. Kiểm tra mã 9733a4d xác nhận
+SoftCameraPhase.Following không hề có lối thoát và tính pan mỗi khung bằng
+MovementDistanceThisFrame của Hero. Đây là bug implement của assistant,
+không phải thay đổi yêu cầu.
+
+Đã thay Following bằng Releasing 0.4 giây, rồi Reset() sang Normal.
+Camera trở về scrollSpeed mặc định, Hero không bị khóa vị trí. Khi Hero
+đi nhanh/chậm hơn scrollSpeed, vị trí tương đối phải tiếp tục đổi
+trong vùng đỏ và vùng đỏ sẽ kích hoạt thêm nhiều lượt đuổi khi vượt
+biên. Khi tốc hai bên bằng nhau thì nhân vật có thể đứng yên TƯƠNG ĐỐI
+do vận tốc triệt tiêu, không có trạng thái khóa trong mã.
+
+Sửa thêm công thức sai số camera: tọa độ heroX tại thời điểm Pan() đã
+bao gồm bước đi của Hero. Kết hợp với walk feed-forward phải sử dụng
+preWalkHeroX=heroX+heroWalkDistance khi kiểm tra sai số goal; nếu dùng
+goal-heroX sẽ đếm bước đi hai lần và có thể khiến camera nằm gần 62%
+vĩnh viễn mà không kết thúc đuổi, rõ nhất khi Hero chạy chậm.
+
+Các bài mô phỏng thử fps 30/60/144, Hero nhanh/chậm/đứng; các trường hợp
+có chênh tốc đều có thể tái kích hoạt camera sau khi một lượt kết thúc.
+CameraFollowRegression.cs cập nhật 6 test, trong đó kiểm tra tốc cuộn
+trở lại và đuổi lần hai. Không thay mã Enemy/Melee/Projectile/World.
+Mọi nhận định về thực tế Unity/Windows vẫn chờ user test; đừng tuyên bố
+đã nghiệm thu chỉ từ test giả lập hoặc kiểm tra cấu trúc mã.
+
+
+18. CAMERA DEADZONE HIỆN HÀNH — THAY THẾ TOÀN BỘ NHỮNG THỬ NGHIỆM CAMERA TRƯỚC
+Nguyên nhân xác nhận từ phản hồi người dùng: mọi giải pháp lấy tốc độ cuộn nền
+làm chuyển động camera mặc định đều sai vì Hero dừng bắn vẫn khiến camera trôi
+rồi đảo hướng. Các thử nghiệm khóa vị trí 62% và cơ chế ba trạng thái đuổi
+tăng tốc theo mép đỏ cũng bị loại bỏ, không tiếp tục sửa nối trên chúng.
+Triển khai DeadzoneCamera thuần trong BattleMotion: SmoothDamp 1 trục X,
+vùng chết 10% chiều rộng quanh trung tâm (0.5), smoothTime 0.2s. Camera không
+dịch nếu Hero di chuyển trong deadzone khi vận tốc camera đã về 0. Hero đi qua
+rìa deadzone thì camera bám mượt tới rìa; Hero dừng lại thì quán tính tiêu tán.
+Ngoài vùng đỏ lớn, thời gian làm mượt giảm còn 55% (tối thiểu .08s) giúp đuổi
+kịp Hero nhanh hơn, nhưng KHÔNG kẹp tại biên đỏ. Mép hiển thị vật lý vẫn bảo vệ.
+Chỉnh EnvironmentManager: khi useSoftZoneCamera (tên cờ cũ để giữ scene),
+cameraPan chỉ theo camera Deadzone, không lấy scrollSpeed; backgroundPan
+chính xác bằng cameraPan, đảm bảo quái đứng bắn và Ground trôi cùng nhau.
+Đổi lại camera lúc Hero chết không nằm trong phạm vi sửa, vẫn giữ logic cũ.
+Thay test camera mới bằng 9 trường hợp; giữ test camera cổ thông qua chế độ
+useSoftZoneCamera=false. README.MD và Docs/Release_0.0.4.54g_ui.md cập nhật.
+Phải kiểm tra thật 600/800/1150, Hero chạy–dừng–chạy, quái cung đứng bắn,
+đạn khi resize, Pause/Retry và camera không trôi khi Hero đứng yên.
+
+
+19. KẾ HOẠCH GIAI ĐOẠN — THAM CHIẾU BẢN RÀ SOÁT MỚI
+Xem Docs/Development_Roadmap.md; đây là đề xuất ưu tiên cần user xác nhận,
+không phải tính năng đã triển khai. Chốt vòng core camera/wave/save/Windows;
+sau đó dựng lớp Combatant/Attack/Damage có thể hỗ trợ nhiều hero; tạo đồ và
+kho/slot tối thiểu; kỹ năng tự động dùng ưu tiên; sau đó mới tổ đội nhiều Hero
+và camera trung điểm đội. Phần asset/SFX/tool chỉ nên triển khai sau khi
+schema runtime đủ rõ. Boss/elite, roguelite, luân hồi, offline là giai đoạn sau.
+Không coi logic monster nearest nghĩa khoảng cách cận/xa không thể >400;
+MonsterController chỉ xét Hero hợp lệ trước mặt/đang trong tầm và CombatManager
+hiện bắn vào một heroController. Các quy tắc giữ đội hình phải được thiết kế
+riêng khi cho nhiều Hero độc lập.
+
+
+20. CAMERA THỬ MỐC 40% KHI DỪNG — GIỮ ĐỘ ỔN ĐỊNH DEADZONE
+
+Theo video tham khảo 3 mức vận tốc: cho phép Hero chạy nhanh gần biên
+trái, khi dừng tấn công thì Hero và Ground trôi dần về bên phải, sau
+đó dừng ở vị trí nghỉ thử nghiệm 40% chiều ngang. Đã thay DeadzoneCamera
+bằng cách bổ sung một hành vi hồi khi chuyển trạng thái heroMoved true
+sang false; KHÔNG dùng camera tự cuộn, KHÔNG kéo Hero về 40% ngay khi
+đang chạy và không ép Hero chậm gần tâm phải dịch ngược.
+Mặc định cameraIdleRestX=0.4, cameraIdleSmoothTime=0.6; hai giá trị đã
+khai báo tường minh trong MainGame.unity. Mọi việc chọn khoảng nghỉ
+và khoảng thời gian này vẫn là GIẢ ĐỊNH CẦN USER PLAY MODE NGHIỆM THU.
+Không triển khai camera multi-Hero hoặc điều chỉnh Deadzone tùy vận tốc
+cho đến khi người dùng kiểm tra bản này.
+
+
+21. THỬ NGHIỆM COMBAT CENTROID — GIỮ CAMERA DEADZONE 40% CŨ
+Mục tiêu mới là trung bình các nhân vật đang chiến đấu, không phải
+trung điểm hai Hero và không phải trung tâm của terrain. Dùng danh
+sách ActiveHeroes/ActiveMonsters không cấp phát mỗi frame; bỏ quái chết
+hoặc ngoài viewport, bỏ all scenery/effects. Tuy nguồn camera đổi,
+các giới hạn đỏ, tốc 0.2s, idle 40%/0.6s và Ground cùng pan vẫn giữ.
+Bảo vệ Hero gốc theo mép thực, không dùng centroid làm viewport clamp.
+Khi chưa có quái và một Hero thì kết quả trùng camera Hero cũ.
+Thử ít quái/nhiều quái/đứng bắn/wave mới/quái chết; tắt cờ
+cameraUseCombatCenter trong Inspector để A/B ngay, không revert.

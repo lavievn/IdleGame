@@ -2,6 +2,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.Events;
 using System.Collections.Generic;
+using System.Collections;
 
 public class UIManager : MonoBehaviour
 {
@@ -30,6 +31,7 @@ public class UIManager : MonoBehaviour
         InstallReadableCanvas();
         ConfigureSystemMenu();
         ConfigureGameplayPanels();
+        ConfigureMapTitle();
         LayoutReadableUI();
         if (mapMenu != null) mapMenu.SetActive(false);
         foreach (var rect in Object.FindObjectsByType<RectTransform>(FindObjectsInactive.Include, FindObjectsSortMode.None))
@@ -134,9 +136,9 @@ public class UIManager : MonoBehaviour
         MakeMenuButton(loadPage, "LoadSave2", "Save 2", 1, () => LoadSlot(SaveSlot.ManualSave2));
         MakeMenuButton(loadPage, "LoadAuto", "Auto", 2, () => LoadSlot(SaveSlot.AutoSave));
         MakeMenuButton(loadPage, "LoadBack", "Quay lại", 3, () => ShowPage(mainPage));
-        MakeMenuButton(sizePage, "Size800", "800", 0, () => ExecuteScale(800));
-        MakeMenuButton(sizePage, "Size500", "500", 1, () => ExecuteScale(500));
-        MakeMenuButton(sizePage, "Size250", "250", 2, () => ExecuteScale(250));
+        MakeMenuButton(sizePage, "Size600", "Nhỏ · 600", 0, () => ExecuteScale(600));
+        MakeMenuButton(sizePage, "Size800", "Vừa · 800", 1, () => ExecuteScale(800));
+        MakeMenuButton(sizePage, "Size1150", "Lớn · 1150", 2, () => ExecuteScale(1150));
         MakeMenuButton(sizePage, "SizeBack", "Quay lại", 3, () => ShowPage(mainPage));
         ShowPage(mainPage);
         // Scene lists can omit this trigger. Discover and register it explicitly.
@@ -155,6 +157,10 @@ public class UIManager : MonoBehaviour
             rect.sizeDelta = new Vector2(180f,96f);
             item.onClickEvent = new UnityEvent(); item.onClickEvent.AddListener(ToggleSystemMenu);
             RegisterInteractable(item);
+            var caption = rect.GetComponentInChildren<TMPro.TextMeshProUGUI>(true);
+            if (caption == null) caption = MakeLabel(rect,"Menu",new Vector2(32,-12),new Vector2(60,22));
+            caption.text = "Menu"; caption.alignment = TMPro.TextAlignmentOptions.Center;
+            caption.gameObject.SetActive(true); caption.raycastTarget = false;
             if (transparentWindow != null) transparentWindow.RegisterClickable(rect);
         }
         if (transparentWindow != null)
@@ -203,6 +209,10 @@ public class UIManager : MonoBehaviour
     public bool IsPaused { get; private set; }
     private TMPro.TextMeshProUGUI pauseText, damageText;
     private GameObject damagePanel;
+    private HeroController heroForUI;
+    private readonly RectTransform[] attackButtons = new RectTransform[3];
+    private RectTransform testSummonButton;
+    private TMPro.TextMeshProUGUI testSummonText;
     private string[] displayedDamage = new string[0];
     private int damagePage;
     public void SetPaused(bool paused)
@@ -255,6 +265,16 @@ public class UIManager : MonoBehaviour
         devButton = SmallButton(canvas,"DEVBButton","DEVB",new Vector2(1,1),new Vector2(1,1),new Vector2(-120,-4),new Vector2(56,24),OpenDevBalance);
         statsButton = SmallButton(canvas,"StatsButton","Chỉ số",new Vector2(1,1),new Vector2(1,1),new Vector2(-180,-4),new Vector2(60,24),OpenHeroStats);
         devUI = new DevBalanceUI(this, hudCanvas);
+        heroForUI = hero;
+        InstallAttackModeButtons();
+        // Only a B2 test control. Future permanent companions are a separate feature.
+        testSummonButton = SmallButton(canvas, "B2TestSummon", "[B2] Gọi +1 (0/2)",
+            new Vector2(0,1), new Vector2(0,1), new Vector2(6,-139),
+            new Vector2(146,26), () => {
+                var game = Object.FindFirstObjectByType<GameManager>();
+                if (game != null) game.CycleTestCompanions();
+            });
+        testSummonText = testSummonButton.GetComponentInChildren<TMPro.TextMeshProUGUI>(true);
         SetPaused(false);
         if (gm != null && gm.eventLog != null) {
             // Reserve space at the right of the log so Info cannot obscure a formula/name.
@@ -273,10 +293,12 @@ public class UIManager : MonoBehaviour
             var rect = (RectTransform)panel.transform;rect.SetParent(canvas,false);
             rect.anchorMin = rect.anchorMax = Vector2.zero;rect.pivot = Vector2.zero;
             rect.anchoredPosition = new Vector2(16,166);rect.sizeDelta = new Vector2(440,256);
-            panel.GetComponent<Image>().color = new Color(.04f,.06f,.1f,.8f);panel.GetComponent<Image>().raycastTarget = false;
+            panel.GetComponent<Image>().color = new Color(.04f,.06f,.1f,.95f);panel.GetComponent<Image>().raycastTarget = false;
             var text = MakeLabel(rect,"",new Vector2(220,-128),new Vector2(416,236));
-            text.alignment = TMPro.TextAlignmentOptions.TopLeft;text.fontSizeMin = 16;text.fontSizeMax = 24;
+            text.alignment = TMPro.TextAlignmentOptions.TopLeft; ReadableText(text,16);
             hero.atkStatusText = text; statsPanel = rect;
+            ConfigureCompactStatsText(text);
+            rect.gameObject.SetActive(false);
             if (transparentWindow != null) transparentWindow.RegisterClickable(rect);
         }
         damagePanel = new GameObject("DamageInfoPanel",typeof(RectTransform),typeof(CanvasRenderer),typeof(Image));
@@ -295,6 +317,70 @@ public class UIManager : MonoBehaviour
         SmallButton(body,"DamageClose","Đóng",new Vector2(1,0),new Vector2(1,0),new Vector2(-18,12),new Vector2(160,54),CloseDamageInfo);
         if (transparentWindow != null) transparentWindow.RegisterClickable(body);
         damagePanel.SetActive(false);
+    }
+    private static void ConfigureCompactStatsText(TMPro.TextMeshProUGUI label)
+    {
+        // The full debug stat block wraps inside its own bounded panel.
+        label.enableWordWrapping = true;
+        label.overflowMode = TMPro.TextOverflowModes.Ellipsis;
+        label.alignment = TMPro.TextAlignmentOptions.TopLeft;
+    }
+    public static bool ShouldShowCombatHUD(bool deployed, bool starting, bool gameOver, bool confirmation, bool modal)
+    {
+        return deployed && !starting && !gameOver && !confirmation && !modal;
+    }
+    private void RefreshCombatHUDVisibility()
+    {
+        var gm = Object.FindFirstObjectByType<GameManager>();
+        bool shown = ShouldShowCombatHUD(gm != null && gm.IsGameplayHUDVisible,
+            gm != null && gm.preGameUI != null && gm.preGameUI.activeInHierarchy,
+            gm != null && gm.gameOverPanel != null && gm.gameOverPanel.activeInHierarchy,
+            gm != null && gm.confirmationPopup != null && gm.confirmationPopup.activeInHierarchy,
+            (damagePanel != null && damagePanel.activeSelf) || (devUI != null && devUI.IsOpen) ||
+            (systemMenu != null && systemMenu.activeInHierarchy));
+        if (statsPanel != null) statsPanel.gameObject.SetActive(shown && Screen.height >= 290);
+        for (int i=0;i<attackButtons.Length;i++)
+            if (attackButtons[i] != null) attackButtons[i].gameObject.SetActive(shown);
+        if (testSummonButton != null) testSummonButton.gameObject.SetActive(shown);
+        if (gm != null && gm.eventLog != null) gm.eventLog.gameObject.SetActive(shown);
+        if (mapTitleRect != null) mapTitleRect.gameObject.SetActive(shown && !string.IsNullOrEmpty(mapTitleName));
+    }
+    private void InstallAttackModeButtons()
+    {
+        string[] names = { "Kiếm", "Cung", "Phép" };
+        string[] captions = { "Cận chiến", "Cung", "Phép" };
+        foreach (var rect in Object.FindObjectsByType<RectTransform>(FindObjectsInactive.Include, FindObjectsSortMode.None))
+            for (int i=0;i<3;i++)
+                if (rect.gameObject.name == names[i] && attackButtons[i] == null)
+                {
+                    // Old scene controls have x~1760; preserve original UnityEvent callbacks.
+                    rect.SetParent(hudCanvas,false);
+                    rect.gameObject.SetActive(true);
+                    var click = rect.GetComponent<CustomInteractable>();
+                    if (click != null) RegisterInteractable(click);
+                    if (transparentWindow != null) transparentWindow.RegisterClickable(rect);
+                    var caption=rect.GetComponentInChildren<TMPro.TextMeshProUGUI>(true);
+                    if (caption != null)
+                    {
+                        caption.gameObject.SetActive(true); caption.text=captions[i];
+                        caption.alignment=TMPro.TextAlignmentOptions.Center;
+                        var rt=(RectTransform)caption.transform;
+                        rt.anchorMin=Vector2.zero;rt.anchorMax=Vector2.one;rt.pivot=new Vector2(.5f,.5f);
+                        rt.anchoredPosition=Vector2.zero;rt.sizeDelta=new Vector2(-4,-2);ReadableText(caption,14);
+                    }
+                    attackButtons[i]=rect;
+                }
+    }
+    private void RefreshAttackModeSelection()
+    {
+        if (heroForUI==null) return;
+        for(int i=0;i<attackButtons.Length;i++)
+        {
+            if (attackButtons[i]==null) continue;
+            var bg=attackButtons[i].GetComponent<Image>();
+            if (bg!=null) bg.color=(int)heroForUI.attackMode==i
+                ? new Color(.55f,.34f,.08f,.96f) : new Color(.14f,.24f,.34f,.95f);
+        }
     }
     public void OpenDamageInfo()
     {
@@ -315,14 +401,14 @@ public class UIManager : MonoBehaviour
         if (damageText == null) return;
         string title = detailKind == 1 ? "CHỈ SỐ HERO" : detailKind == 2 ? "NHẬT KÝ" : "SÁT THƯƠNG " + (damagePage+1) + "/" + System.Math.Max(1,displayedDamage.Length);
         string content = detailKind != 0 ? detailSnapshot : displayedDamage.Length == 0 ? "Chưa có đòn đánh hoàn tất." : displayedDamage[damagePage];
-        var pages = ReadablePages(content, Mathf.Max(12,Screen.width-32), Mathf.Max(20,Screen.height-68));
+        var pages = ReadablePages(content, Mathf.Max(12,Screen.width-40), Mathf.Max(20,Screen.height-92));
         detailSliceCount = pages.Count; detailSlice = Mathf.Clamp(detailSlice,0,pages.Count-1);
         damageText.text = title + " · " + (detailSlice+1) + "/" + pages.Count + "\n" + pages[detailSlice];
     }
     public static List<string> ReadablePages(string content, float width, float height)
     {
-        int columns = System.Math.Max(12,(int)(width/8f));
-        int rows = System.Math.Max(1,(int)(height/18f)-1);
+        int columns = System.Math.Max(12,(int)(width/11f));
+        int rows = System.Math.Max(1,(int)(height/25f)-1);
         var lines = new List<string>();
         foreach (string line in (content ?? "").Split('\n')) {
             string rest = line;
@@ -341,12 +427,21 @@ public class UIManager : MonoBehaviour
     public void OpenHeroStats()
     {
         var hero = Object.FindFirstObjectByType<HeroController>();
-        OpenTextDetail(1,hero != null && hero.atkStatusText != null ? hero.atkStatusText.text : "Chưa có nhân vật.");
+        var gm=Object.FindFirstObjectByType<GameManager>();
+        string stats=hero!=null ? hero.FullStatDetails : "Chưa có nhân vật.";
+        if (gm!=null)
+        {
+            if (gm.HeroData!=null) stats=TuTienCore.IdentityDisplay.Describe(gm.HeroData)+" · Cấp "+gm.HeroData.currentLevel+"\n"+stats;
+            stats+="\n\nSỰ KIỆN\n"+gm.FullEventHistory;
+            var details=gm.DamageHistory;
+            stats+="\n\nCHI TIẾT SÁT THƯƠNG\n"+(details.Length==0?"Chưa có đòn đánh.":string.Join("\n\n",details));
+        }
+        OpenTextDetail(1,stats);
     }
     public void OpenLogInfo()
     {
         var gm = Object.FindFirstObjectByType<GameManager>();
-        OpenTextDetail(2,gm != null && gm.eventLogText != null ? gm.eventLogText.text : "Chưa có nhật ký.");
+        OpenTextDetail(2,gm != null ? gm.FullEventHistory : "Chưa có nhật ký.");
     }
     private void OpenTextDetail(int kind,string text)
     {
@@ -360,8 +455,112 @@ public class UIManager : MonoBehaviour
     }
 
     private RectTransform hudCanvas, pauseRect, devButton, statsButton, statsPanel;
+    private RectTransform mapTitleRect;
+    private TMPro.TextMeshProUGUI mapTitleText, mapDebugText;
+    private Coroutine mapTitleRoutine;
+    private float mapTitleElapsed;
+    private string mapTitleName;
     private DevBalanceUI devUI;
-    private int layoutWidth, layoutHeight;
+    private int layoutWidth, layoutHeight, layoutStatLines = -1;
+
+    // A separate presentation label: does not change map progress or world coordinates.
+    private void ConfigureMapTitle()
+    {
+        if (hudCanvas == null || mapTitleRect != null) return;
+        mapTitleText = MakeLabel(hudCanvas,"",Vector2.zero,new Vector2(560,85));
+        mapTitleRect = (RectTransform)mapTitleText.transform;
+        mapTitleRect.gameObject.name = "AnimatedMapTitle";
+        mapTitleText.alignment = TMPro.TextAlignmentOptions.Center;
+        mapTitleText.color = new Color(1f,.89f,.57f,1f);
+        mapTitleText.raycastTarget = false;
+        mapTitleText.enableAutoSizing = false;
+        mapTitleText.enableWordWrapping = false;
+        mapTitleText.overflowMode = TMPro.TextOverflowModes.Ellipsis;
+        // Secondary debug line follows the small title, not the large 3s intro.
+        mapDebugText = MakeLabel(mapTitleRect,"",Vector2.zero,new Vector2(345,38));
+        mapDebugText.gameObject.name = "MapWaveAndTerrain";
+        var debugRect = (RectTransform)mapDebugText.transform;
+        debugRect.anchorMin = debugRect.anchorMax = new Vector2(.5f,0f);
+        debugRect.pivot = new Vector2(.5f,1f);
+        debugRect.anchoredPosition = new Vector2(0f,-2f);
+        debugRect.sizeDelta = new Vector2(345f,38f);
+        mapDebugText.alignment = TMPro.TextAlignmentOptions.Center;
+        mapDebugText.raycastTarget = false;
+        mapDebugText.enableWordWrapping = false;
+        mapDebugText.overflowMode = TMPro.TextOverflowModes.Ellipsis;
+        mapDebugText.gameObject.SetActive(false);
+        mapTitleRect.gameObject.SetActive(false);
+    }
+    // This is updated for every wave; ShowMapTitle only restarts when the map changes.
+    public void UpdateMapDebug(EntityDataSO data)
+    {
+        if (data == null) return;
+        if (mapTitleRect == null) ConfigureMapTitle();
+        if (mapDebugText == null) return;
+        int wave = Mathf.Clamp(data.completedWavesInMap + 1,1,5);
+        mapDebugText.text = "Bản đồ " + data.mapNumber + " · Wave " + wave + "/5" +
+            "\nĐịa hình: " + TuTienCore.WorldNames.Terrain(data.mapTerrain);
+    }
+    public void ShowMapTitle(string name)
+    {
+        if (string.IsNullOrEmpty(name)) return;
+        if (mapTitleRect == null) ConfigureMapTitle();
+        if (mapTitleRect == null) return;
+        if (mapTitleRoutine != null) StopCoroutine(mapTitleRoutine);
+        mapTitleName = name;
+        mapTitleElapsed = 0f;
+        mapTitleText.text = name;
+        mapTitleRect.gameObject.SetActive(true);
+        mapTitleRect.SetAsLastSibling();
+        UpdateMapTitleAppearance();
+        mapTitleRoutine = StartCoroutine(AnimateMapTitle());
+    }
+    public void HideMapTitle()
+    {
+        if (mapTitleRoutine != null) StopCoroutine(mapTitleRoutine);
+        mapTitleRoutine = null;
+        mapTitleName = null;
+        if (mapTitleRect != null) mapTitleRect.gameObject.SetActive(false);
+    }
+    private IEnumerator AnimateMapTitle()
+    {
+        while (mapTitleElapsed < MapTitleMotion.HoldSeconds + MapTitleMotion.TravelSeconds)
+        {
+            mapTitleElapsed = Mathf.Min(MapTitleMotion.HoldSeconds + MapTitleMotion.TravelSeconds,
+                mapTitleElapsed + Time.deltaTime);
+            UpdateMapTitleAppearance();
+            yield return null;
+        }
+        mapTitleRoutine = null;
+    }
+    private void UpdateMapTitleAppearance()
+    {
+        if (mapTitleRect == null || mapTitleText == null) return;
+        float t = MapTitleMotion.Progress(mapTitleElapsed);
+        float w = Mathf.Max(1f,Screen.width);
+        float rightWidth = StatsColumnWidth(w);
+        float leftWidth = Mathf.Max(150f,w-rightWidth-18f);
+        // Center of window -> small persistent title under left combat log.
+        Vector2 anchor = new Vector2(.5f * (1f-t),.5f + .5f*t);
+        mapTitleRect.anchorMin = mapTitleRect.anchorMax = anchor;
+        mapTitleRect.pivot = new Vector2(.5f,.5f);
+        mapTitleRect.anchoredPosition = new Vector2(leftWidth * .5f * t,-151f*t);
+        float big = Mathf.Clamp(w*.065f,32f,64f),small = w < 750f ? 16f : 18f;
+        mapTitleText.fontSize = big+(small-big)*t;
+        if (mapDebugText != null)
+        {
+            mapDebugText.fontSize = w < 750f ? 12f : 14f;
+            mapDebugText.gameObject.SetActive(t >= .999f);
+            var debugRect = (RectTransform)mapDebugText.transform;
+            debugRect.sizeDelta = new Vector2(Mathf.Min(leftWidth-10f,335f),42f);
+        }
+        float wide = Mathf.Min(w-20f,660f),narrow = Mathf.Min(leftWidth-12f,320f);
+        mapTitleRect.sizeDelta = new Vector2(wide+(narrow-wide)*t,90f-60f*t);
+    }
+    public static float StatsColumnWidth(float width)
+    {
+        return Mathf.Min(340f,Mathf.Max(220f,width*.40f));
+    }
     public static void ReadableText(TMPro.TextMeshProUGUI text,float size = 14)
     {
         text.fontStyle = TMPro.FontStyles.Normal; text.fontWeight = TMPro.FontWeight.Regular;
@@ -410,7 +609,17 @@ public class UIManager : MonoBehaviour
             if (item == null) { item = b.gameObject.AddComponent<CustomInteractable>(); item.onClickEvent = new UnityEvent(); item.onClickEvent.AddListener(()=>{if(b.interactable)b.onClick.Invoke();}); }
             RegisterInteractable(item); if (transparentWindow != null) transparentWindow.RegisterClickable(item.GetRect()); button.enabled = false;
         }
-        if (controlsChanged || Screen.width != layoutWidth || Screen.height != layoutHeight) LayoutReadableUI();
+        int lines = heroForUI == null || string.IsNullOrEmpty(heroForUI.FullStatDetails) ? 9 :
+            heroForUI.FullStatDetails.Split('\n').Length;
+        if (controlsChanged || Screen.width != layoutWidth || Screen.height != layoutHeight || lines != layoutStatLines)
+            LayoutReadableUI();
+        RefreshCombatHUDVisibility();
+        RefreshAttackModeSelection();
+        var gm = Object.FindFirstObjectByType<GameManager>();
+        if (testSummonText != null && gm != null)
+            testSummonText.text = gm.TestCompanionCount >= GameManager.TestCompanionLimit
+                ? "[B2] Thu hồi (2/2)"
+                : "[B2] Gọi +1 (" + gm.TestCompanionCount + "/2)";
     }
     private static void PlaceUI(RectTransform rect,Vector2 anchor,Vector2 pivot,Vector2 position,Vector2 size)
     {
@@ -429,6 +638,15 @@ public class UIManager : MonoBehaviour
         PlaceUI(pauseRect,new Vector2(1,1),new Vector2(1,1),new Vector2(-4,-4),new Vector2(76,24));
         PlaceUI(devButton,new Vector2(1,1),new Vector2(1,1),new Vector2(-84,-4),new Vector2(52,24));
         PlaceUI(statsButton,new Vector2(1,1),new Vector2(1,1),new Vector2(-140,-4),new Vector2(60,24));
+        // Full stats sit below the 3 top-right tools. Combat log takes the left column.
+        float rightWidth = StatsColumnWidth(w);
+        float leftWidth = Mathf.Max(150f,w-rightWidth-18f);
+        float buttonWidth = Mathf.Min(116f,(leftWidth-8f)/3f-4f);
+        for(int i=0;i<3;i++) PlaceUI(attackButtons[i],new Vector2(0,1),new Vector2(0,1),
+            new Vector2(6+i*(buttonWidth+4f),-104f),new Vector2(buttonWidth,28f));
+        // Stay below attack modes, at the LEFT of the centered map label.
+        PlaceUI(testSummonButton,new Vector2(0,1),new Vector2(0,1),
+            new Vector2(6,-139),new Vector2(Mathf.Min(146,leftWidth-12f),26f));
         foreach(var rect in Object.FindObjectsByType<RectTransform>(FindObjectsInactive.Include,FindObjectsSortMode.None))
             if (rect.gameObject.name == "MenuArea") PlaceUI(rect,new Vector2(1,0),new Vector2(1,0),new Vector2(-4,4),new Vector2(64,24));
         if (systemMenu != null) {
@@ -445,13 +663,19 @@ public class UIManager : MonoBehaviour
         }
         if (gm != null && gm.eventLog != null) {
             var log = (RectTransform)gm.eventLog.transform;
-            PlaceUI(log,new Vector2(.5f,1),new Vector2(.5f,1),new Vector2(0,-32),new Vector2(w-12,h<200?54:84));
+            PlaceUI(log,new Vector2(0,1),new Vector2(0,1),new Vector2(6,-32),new Vector2(leftWidth,Mathf.Min(66,h*.19f)));
             if (transparentWindow != null) transparentWindow.RegisterClickable(log);
             if (gm.eventLogText != null) { var rt = (RectTransform)gm.eventLogText.transform; rt.anchorMin = Vector2.zero; rt.anchorMax = Vector2.one; rt.pivot = new Vector2(.5f,.5f); rt.sizeDelta = new Vector2(-58,-8); rt.anchoredPosition = new Vector2(-22,0); gm.eventLogText.overflowMode = TMPro.TextOverflowModes.Ellipsis; }
             var info = FindNamedRect("DamageInfoButton"); PlaceUI(info,new Vector2(1,1),new Vector2(1,1),new Vector2(-3,-3),new Vector2(42,22));
         }
-        if (statsPanel != null) { PlaceUI(statsPanel,Vector2.zero,Vector2.zero,new Vector2(6,34),new Vector2(Mathf.Min(400,w-12),142)); statsPanel.gameObject.SetActive(h>=360);
-            var stat = statsPanel.GetComponentInChildren<TMPro.TextMeshProUGUI>(true); if (stat != null) {var rt=(RectTransform)stat.transform;rt.anchorMin=Vector2.zero;rt.anchorMax=Vector2.one;rt.sizeDelta=new Vector2(-12,-12);rt.anchoredPosition=Vector2.zero;rt.pivot=new Vector2(.5f,.5f);}
+        if (statsPanel != null) {
+            int lineCount = heroForUI == null || string.IsNullOrEmpty(heroForUI.FullStatDetails) ? 9 :
+                heroForUI.FullStatDetails.Split('\n').Length;
+            layoutStatLines = lineCount;
+            float height = Mathf.Min(h-116f,Mathf.Max(158f,lineCount*(w<750?18f:19f)+16f));
+            PlaceUI(statsPanel,new Vector2(1,1),new Vector2(1,1),new Vector2(-6,-32),
+                new Vector2(rightWidth,Mathf.Max(100f,height)));
+            var stat = statsPanel.GetComponentInChildren<TMPro.TextMeshProUGUI>(true); if (stat != null) {var rt=(RectTransform)stat.transform;rt.anchorMin=Vector2.zero;rt.anchorMax=Vector2.one;rt.sizeDelta=new Vector2(-16,-14);rt.anchoredPosition=Vector2.zero;rt.pivot=new Vector2(.5f,.5f);ConfigureCompactStatsText(stat);}
         }
         if (damagePanel != null) {
             var rt = (RectTransform)damagePanel.transform; rt.anchorMin = Vector2.zero; rt.anchorMax = Vector2.one; rt.pivot = new Vector2(.5f,.5f); rt.sizeDelta = new Vector2(-12,-12); rt.anchoredPosition = Vector2.zero;
@@ -471,12 +695,20 @@ public class UIManager : MonoBehaviour
         // readable pixel font, rather than shrinking a 1920px canvas to 250px.
         foreach(var text in Object.FindObjectsByType<TMPro.TextMeshProUGUI>(FindObjectsInactive.Include,FindObjectsSortMode.None)) {
             if (!text.transform.IsChildOf(hudCanvas)) continue;
-            ReadableText(text,14);
+            bool compact = text.transform.parent != null && text.transform.parent.GetComponent<CustomInteractable>() != null;
+            if (text == mapTitleText || text == mapDebugText) continue; // Map labels own their fonts.
+            float fontSize = text == (gm != null ? gm.eventLogText : null) ? 16f :
+                text == (heroForUI != null ? heroForUI.atkStatusText : null) ? (w>=1000?15f:14f) :
+                compact ? (w>=1000?16f:14f) : (w>=1000?17f:w>=750?16f:14f);
+            ReadableText(text,fontSize);
             if (text.transform.parent != null && text.transform.parent.GetComponent<CustomInteractable>() != null && text != (gm != null ? gm.eventLogText : null)) {
                 var rt = (RectTransform)text.transform; rt.anchorMin=Vector2.zero;rt.anchorMax=Vector2.one;rt.sizeDelta=new Vector2(-8,-4);rt.anchoredPosition=Vector2.zero;rt.pivot=new Vector2(.5f,.5f);
             }
         }
+        if (heroForUI != null && heroForUI.atkStatusText != null) ConfigureCompactStatsText(heroForUI.atkStatusText);
         if (devUI != null) devUI.Layout();
+        UpdateMapTitleAppearance();
+        RefreshCombatHUDVisibility();
     }
     private RectTransform FindNamedRect(string name)
     {
@@ -559,9 +791,9 @@ public class UIManager : MonoBehaviour
         CloseSystemMenu();
     }
 
-    public void Scale250() { ExecuteScale(250); }
+    public void Scale250() { ExecuteScale(600); }
     public void Scale800() { ExecuteScale(800); }
-    public void Scale200() { ExecuteScale(250); }
-    public void Scale500() { ExecuteScale(500); }
-    public void Scale1000() { ExecuteScale(800); }
+    public void Scale200() { ExecuteScale(600); }
+    public void Scale500() { ExecuteScale(600); }
+    public void Scale1000() { ExecuteScale(1150); }
 }

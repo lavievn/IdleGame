@@ -70,6 +70,11 @@ public class EntityDataSO : ScriptableObject
     public int statPoints = 0;
     public int addedHealth = 0;
     public int addedDamage = 0;
+    // Independent per-character base; default/legacy characters start with test HP 400.
+    public int originHealth = 0;
+    // Persist the growth pool separately from the active stance for save/load stability.
+    public int meleeGrowthThroughLevel = 0;
+    public int meleeGrowthBonus = 0;
     public bool isDirty = false;
 
     // Old saves have no version field. Normalize once after every load.
@@ -138,12 +143,35 @@ public class EntityDataSO : ScriptableObject
             balanceVersion = CombatBalance.Version;
             isDirty = true;
         }
+        if (originHealth <= 0)
+        {
+            // Old levelled saves stored a derived baseHealth, not their creation HP.
+            originHealth = currentLevel == 1 && baseHealth > 0
+                ? baseHealth : CombatBalance.HeroHealth(1);
+            isDirty = true;
+        }
+        if (meleeGrowthThroughLevel <= 0)
+        {
+            // Previous versions never rolled class growth. Migrate existing levels once
+            // with 75 HP per level (no random reroll every load).
+            meleeGrowthBonus = System.Math.Max(0,currentLevel-1) * 75;
+            meleeGrowthThroughLevel = currentLevel;
+            isDirty = true;
+        }
+        if (meleeGrowthThroughLevel < currentLevel)
+        {
+            meleeGrowthBonus += (currentLevel-meleeGrowthThroughLevel)*75;
+            meleeGrowthThroughLevel = currentLevel;
+            isDirty = true;
+        }
+        if (meleeGrowthThroughLevel > currentLevel) meleeGrowthThroughLevel = currentLevel;
         RebuildHeroStats();
     }
 
     private void RebuildHeroStats()
     {
-        baseHealth = CombatBalance.HeroHealth(currentLevel);
+        baseHealth = CombatBalance.HeroDev != null ? CombatBalance.HeroHealth(currentLevel)
+            : System.Math.Max(1,originHealth + CombatBalance.HeroHealth(currentLevel) - CombatBalance.HeroHealth(1));
         baseDamage = CombatBalance.HeroAttack(currentLevel);
         baseAttackSpeed = CombatBalance.HeroSpeed(currentLevel);
         AddAttackSpeed = baseAttackSpeed - (CombatBalance.HeroDev != null ? CombatBalance.HeroDev.attackSpeed : 1f);
@@ -160,6 +188,9 @@ public class EntityDataSO : ScriptableObject
             total -= expToNextLevel;
             currentLevel++;
             statPoints++;
+            // Exactly one permanent roll per level, independent of selected stance.
+            meleeGrowthBonus += Random.Range(50,101);
+            meleeGrowthThroughLevel = currentLevel;
             RebuildHeroStats();
             leveledUp = true;
         }
@@ -171,5 +202,12 @@ public class EntityDataSO : ScriptableObject
     public void AllocateHealth() { if (statPoints > 0) { statPoints--; addedHealth += 6; isDirty = true; } }
     public void AllocateDamage() { if (statPoints > 0) { statPoints--; addedDamage += 1; isDirty = true; } }
     public int GetCalculatedHealth() => baseHealth + addedHealth;
+    public int GetCalculatedHealth(AttackMode mode)
+    {
+        // Points and future equipment are additive and must not be multiplied.
+        long baseByMode = System.Math.Max(1,Mathf.RoundToInt(baseHealth * CombatBalance.HeroHealthMultiplier(mode)));
+        long hp = baseByMode + addedHealth + (mode == AttackMode.Melee ? System.Math.Max(0,meleeGrowthBonus) : 0);
+        return (int)System.Math.Max(1,System.Math.Min(int.MaxValue,hp));
+    }
     public int GetCalculatedDamage() => baseDamage + addedDamage;
 }

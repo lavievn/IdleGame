@@ -76,6 +76,9 @@ public class SaveManager : MonoBehaviour
             {
                 if (!jsonData.TrimStart().StartsWith("{") || !jsonData.Contains("\"currentLevel\"")) return false;
                 entityData.balanceVersion = 0;
+                entityData.originHealth = 0;
+                entityData.meleeGrowthBonus = 0;
+                entityData.meleeGrowthThroughLevel = 0;
                 entityData.difficulty = 0;
                 entityData.mapNumber = 1;
                 entityData.mapVisits = 0;

@@ -1,0 +1,478 @@
+using System;
+using UnityEngine;
+using TuTienCore;
+
+// Camera tests run with Unity stubs, not actual Editor/Windows Play Mode.
+partial class MotionRegression
+{
+    // HeroController applies its walking step BEFORE the camera evaluates pan.
+    private static float StepDeadzone(DeadzoneCamera camera, ref float heroX,
+        float speed, float dt, float width=1000f)
+    {
+        heroX -= speed*dt;
+        float pan=camera.Pan(heroX,-227.5f,197.5f,-width*.5f,width*.5f,
+            dt,.2f,.38f,.5f,speed*dt>.001f,.4f,.6f);
+        heroX += pan;
+        return pan;
+    }
+
+    static void CameraFollowTests()
+    {
+        Run("54g deadzone: stationary Hero cannot cause independent camera scrolling",()=>{
+            foreach(int fps in new[]{30,60,144})
+            {
+                var c=new DeadzoneCamera();float x=0f;
+                for(int i=0;i<fps*3;i++)
+                {
+                    Near(StepDeadzone(c,ref x,0f,1f/fps),0f,"idle pan",.0001f);
+                    Near(c.Velocity,0f,"no velocity from legacy scrollSpeed",.0001f);
+                }
+                Near(x,0f,"Hero stays where deployed",.0001f);
+            }
+        });
+
+        Run("54g deadzone: Hero approaches RED zone before camera follows",()=>{
+            var c=new DeadzoneCamera();float x=0f;
+            // Default 38% Ground width: first 180 units are freely walkable.
+            for(int i=0;i<9;i++)
+                Near(StepDeadzone(c,ref x,200f,.1f),0f,
+                    "inside broad deadzone frame "+i,.0001f);
+            Near(x,-180f,"Hero almost reaches left red region unaided");
+            float tenth=StepDeadzone(c,ref x,200f,.1f);
+            Check(tenth>0f&&tenth<20f,"camera starts gently once Hero passes -190");
+            Check(x < -190f,"camera does not snap Hero to deadzone border");
+        });
+
+        Run("54g deadzone: smooth catch-up then smooth deceleration on aim",()=>{
+            foreach(int fps in new[]{30,60,144})
+            {
+                float dt=1f/fps,x=0f;var c=new DeadzoneCamera();
+                for(int i=0;i<fps*2;i++)
+                    StepDeadzone(c,ref x,320f,dt);
+                Check(x < -190f && x > -330f,"Hero can lead near the red border while moving");
+                Check(c.Velocity>200f,"camera gained following velocity");
+
+                float before=c.Velocity;
+                StepDeadzone(c,ref x,0f,dt);
+                Check(c.Velocity<before,"brakes immediately once Hero stops");
+                Check(c.IsIdleRecovering,"running Hero stopping left of 40% starts idle recovery");
+                float previous=x;
+                for(int i=0;i<fps*2;i++)
+                {
+                    StepDeadzone(c,ref x,0f,dt);
+                    Check(x>=previous-.01f,"idle recovery does not shake camera backwards");
+                    previous=x;
+                }
+                Near(c.Velocity,0f,"camera eventually comes to rest",.3f);
+                Check(x>=-101f&&x<=-99f,"settles gently at 40% of Ground width");
+                Check(!c.IsIdleRecovering,"return to rest is a finite, not perpetual, action");
+                Near(StepDeadzone(c,ref x,0f,dt),0f,
+                    "stationary aiming no autonomous background pan",.01f);
+            }
+        });
+
+        Run("54g deadzone: two move-stop cycles do not freeze or oscillate",()=>{
+            foreach(int fps in new[]{30,60,144})
+            {
+                var c=new DeadzoneCamera();float x=0f,dt=1f/fps;
+                for(int cycle=0;cycle<2;cycle++)
+                {
+                    bool hadMovement=false;
+                    for(int i=0;i<fps*2;i++)
+                        if(StepDeadzone(c,ref x,350f,dt)>0f) hadMovement=true;
+                    Check(hadMovement,"camera follows again on cycle "+cycle);
+                    for(int i=0;i<fps*2;i++)
+                        StepDeadzone(c,ref x,0f,dt);
+                    Near(c.Velocity,0f,"stopped after cycle "+cycle,.02f);
+                    Check(x>=-101f&&x<=-99f,
+                        "settles at 40% without shaking on cycle "+cycle);
+                }
+            }
+        });
+
+        Run("54g red border: speed up follow without hard-clamping Hero",()=>{
+            foreach(int fps in new[]{30,60,144})
+            {
+                float dt=1f/fps,x=-235f;var c=new DeadzoneCamera();
+                StepDeadzone(c,ref x,1500f,dt);
+                Check(x< -227.5f,"Hero can go past RED edge");
+                Check(x > -470f,"but still visible in physical screen");
+                for(int i=0;i<fps*2;i++)
+                {
+                    StepDeadzone(c,ref x,1500f,dt);
+                    Check(x>=-470f&&x<=470f,"physical viewport protects only true edges");
+                }
+                Check(x>-460f,"red border boosts recovery without touching real viewport edge");
+            }
+        });
+
+        Run("54g deadzone: right-side excursion recovers without camera oscillation",()=>{
+            foreach(int fps in new[]{30,60,144})
+            {
+                var c=new DeadzoneCamera();float x=220f,last=x,dt=1f/fps;
+                for(int i=0;i<fps*3;i++)
+                {
+                    StepDeadzone(c,ref x,0f,dt);
+                    Check(x<=last+.01f,"never snaps back right while recovering");
+                    last=x;
+                }
+                Check(x>=189f&&x<=191f,"right deadzone edge is resting location");
+                Near(c.Velocity,0f,"no residual shake",.1f);
+            }
+        });
+
+        Run("54g deadzone: pause and respawn reset camera momentum",()=>{
+            var c=new DeadzoneCamera();float x=-100f;
+            c.Pan(x,-227.5f,197.5f,-500f,500f,.1f,.2f,.38f,.5f,
+                true,.4f,.6f);
+            float velocity=c.Velocity;
+            Near(c.Pan(x,-227.5f,197.5f,-500f,500f,0f,.2f,.38f,.5f,
+                false,.4f,.6f),
+                0f,"paused pan zero");
+            Near(c.Velocity,velocity,"paused velocity unchanged");
+            c.Reset();
+            Near(c.Velocity,0f,"respawn clears follow inertia");
+        });
+
+        Run("54g Environment: Hero idle and inside deadzone keeps entire Ground still",()=>{
+            var f=new Field();f.space.useSoftZoneCamera=true;
+            f.space.cameraUseCombatCenter=false; // Preserve previous single-Hero behavior.
+            f.space.cameraSmoothTime=.2f;f.space.cameraDeadzoneRatio=.38f;
+            f.space.cameraPreferredX=.5f;
+            f.space.cameraIdleRestX=.4f;
+            f.space.cameraIdleSmoothTime=.6f;
+            f.space.scrollSpeed=150f; // Must have no effect on living Hero.
+            f.hero.moveSpeed=0f;
+            float hero=f.space.Position(f.hero.heroRect).x;
+            float ground=f.space.Position(f.grass).x;
+            for(int i=0;i<90;i++)f.Step(1f/60f);
+            Near(f.space.Position(f.hero.heroRect).x,hero,"stationary Hero",.01f);
+            Near(f.space.Position(f.grass).x,ground,"Ground does not auto-scroll",.01f);
+            Near(f.space.CurrentCameraSpeed,0f,"no legacy camera base speed",.01f);
+
+            f.hero.moveSpeed=200f;
+            for(int i=0;i<3;i++)f.Step(.05f); // 30 Ground units, inside deadzone.
+            Near(f.space.Position(f.grass).x,ground,
+                "Ground remains still while Hero walks inside deadzone",.01f);
+            Near(f.space.CurrentBackgroundSpeed,0f,
+                "Ground does not scroll by heroWalkDistance",.01f);
+
+            for(int i=0;i<60;i++)f.Step(1f/60f);
+            Check(f.space.CurrentCameraSpeed>0f,"camera starts following after zone exit");
+            Near(f.space.CurrentBackgroundSpeed,f.space.CurrentCameraSpeed,
+                "Ground pan equals actor and projectile camera pan",.01f);
+
+            f.hero.moveSpeed=0f;
+            for(int i=0;i<90;i++)f.Step(1f/60f);
+            Near(f.space.CurrentCameraSpeed,0f,"camera stops after Hero stops",.1f);
+            Near(f.space.CurrentBackgroundSpeed,0f,"Ground also stops",.1f);
+            f.space.FollowHero(f.hero);
+            Near(f.space.CameraFollowVelocity,0f,"Retry resets inertia",.01f);
+        });
+
+        Run("54g speed 700 camera engages near RED and stops smoothly",()=>{
+            foreach(int fps in new[]{30,60,144})
+            {
+                var c=new DeadzoneCamera();
+                float dt=1f/fps,x=0f;
+                bool everFollowed=false, movedBeforeThreshold=false;
+                float firstFollowHeroX=0f, peak=0f;
+                for(int i=0;i<fps*2;i++)
+                {
+                    float pre=x-700f*dt;
+                    float pan=StepDeadzone(c,ref x,700f,dt);
+                    if(pre > -190f && pan > .001f) movedBeforeThreshold=true;
+                    if(!everFollowed && pan > .001f)
+                    {
+                        everFollowed=true;
+                        firstFollowHeroX=x;
+                    }
+                    peak=Math.Min(peak,x);
+                }
+                Check(!movedBeforeThreshold,"camera is still until Hero reaches left -190");
+                Check(everFollowed,"camera eventually follows fast Hero");
+                Check(firstFollowHeroX < -189f && firstFollowHeroX > -260f,
+                    "initial follow is close to red rather than center");
+                Check(peak < -227.5f,"red border remains SOFT at speed 700");
+                for(int i=0;i<2*fps;i++)StepDeadzone(c,ref x,0f,dt);
+                Near(c.Velocity,0f,"standing Hero has no camera drift",.1f);
+                Check(x>-101f && x< -99f,"fast Hero returns softly to 40% when stopped");
+            }
+        });
+
+        Run("54g slow Hero stopping before 40% causes no autonomous repositioning",()=>{
+            foreach(int fps in new[]{30,60,144})
+            {
+                var c=new DeadzoneCamera();float x=0f,dt=1f/fps;
+                for(int i=0;i<fps/2;i++)StepDeadzone(c,ref x,100f,dt);
+                Check(x>-100f && x<0f,"slow Hero did not reach idle rest point");
+                float original=x;
+                for(int i=0;i<fps*2;i++)
+                    Near(StepDeadzone(c,ref x,0f,dt),0f,
+                        "slow Hero stopping does not activate camera",.0001f);
+                Near(x,original,"slow Hero remains near central area",.001f);
+                Check(!c.IsIdleRecovering,"no unnecessary idle recenter");
+            }
+        });
+
+        Run("54g idle return is interrupted by resumed Hero walking without a shake",()=>{
+            foreach(int fps in new[]{30,60,144})
+            {
+                var c=new DeadzoneCamera();float x=0f,dt=1f/fps;
+                for(int i=0;i<2*fps;i++) StepDeadzone(c,ref x,700f,dt);
+                for(int i=0;i<fps/4;i++) StepDeadzone(c,ref x,0f,dt);
+                Check(c.IsIdleRecovering,"idle return active before resuming movement");
+                StepDeadzone(c,ref x,700f,dt);
+                Check(!c.IsIdleRecovering,"moving immediately cancels idle recenter");
+                for(int i=0;i<2*fps;i++)StepDeadzone(c,ref x,700f,dt);
+                for(int i=0;i<2*fps;i++)StepDeadzone(c,ref x,0f,dt);
+                Near(x,-100f,"second stop also converges to 40%",1f);
+                Near(c.Velocity,0f,"no lingering camera motion",.1f);
+            }
+        });
+
+        Run("54g scene camera recovery: stationary Hero and Ground move together",()=>{
+            var f=new Field();
+            f.space.useSoftZoneCamera=true;
+            f.space.cameraUseCombatCenter=false;
+            f.space.cameraDeadzoneRatio=.38f;
+            f.space.cameraIdleRestX=.4f;
+            f.space.cameraIdleSmoothTime=.6f;
+            f.hero.moveSpeed=700f;
+            for(int i=0;i<120;i++)f.Step(1f/60f);
+            float before=f.space.Position(f.hero.heroRect).x;
+            Check(before < -190f,"fast Hero leads camera before stopping");
+            f.hero.moveSpeed=0f;
+            float heroBefore=f.space.Position(f.hero.heroRect).x;
+            float groundBefore=f.space.Position(f.grass).x;
+            f.Step(1f/60f);
+            float heroPan=f.space.Position(f.hero.heroRect).x-heroBefore;
+            float groundPan=f.space.Position(f.grass).x-groundBefore;
+            Check(heroPan>0f,"after stopping, Hero drifts right with camera");
+            Near(groundPan,heroPan,"Ground drifts by same camera pan",.05f);
+            for(int i=0;i<120;i++)f.Step(1f/60f);
+            Near(f.space.Position(f.hero.heroRect).x,-100f,
+                "physical Hero recovers to 40% while stopped",1f);
+            Near(f.space.CurrentCameraSpeed,0f,"camera stops after return",.2f);
+        });
+
+        Run("54g combat center averages visible heroes and alive monsters ONLY",()=>{
+            var f=new Field();f.space.useSoftZoneCamera=true;
+            f.space.cameraUseCombatCenter=true;f.hero.moveSpeed=0f;
+            f.Monster(-100f,AttackMode.RangedMagic);
+            f.Monster(-350f,AttackMode.RangedMagic);
+            f.Monster(-600f,AttackMode.RangedMagic); // Outside viewport, excluded.
+            f.Step(1f/60f);
+            Check(f.space.CurrentCameraFocusCount==3,"Hero + two visible monsters");
+            Near(f.space.CurrentCameraFocusX,-150f,
+                "arithmetic mean (0 -100 -350) / 3; no terrain/projectile",.05f);
+        });
+
+        Run("54g combat center includes multiple deployed Heroes with equal weight",()=>{
+            var f=new Field();f.space.useSoftZoneCamera=true;
+            f.space.cameraUseCombatCenter=true;
+            f.hero.moveSpeed=0f;
+            var hero2=new GameObject().AddComponent<HeroController>();
+            hero2.heroRect=(RectTransform)new GameObject(true).transform;
+            hero2.heroRect.parent=f.ground;
+            Call(hero2,"Awake");
+            hero2.SpawnHero();
+            hero2.moveSpeed=0f;
+            f.space.SetPosition(hero2.heroRect,new Vector2(-100f,0f));
+            f.Monster(-300f,AttackMode.RangedMagic);
+            f.Step(1f/60f);
+            Check(f.space.CurrentCameraFocusCount==3,
+                "two Heroes + one visible monster");
+            Near(f.space.CurrentCameraFocusX,-400f/3f,
+                "all living combatants are equal contributors",.05f);
+            hero2.HideHero();
+            f.Step(1f/60f);
+            Check(f.space.CurrentCameraFocusCount==2,"hidden Hero excluded");
+        });
+
+        Run("54g camera focus toggle restores single-Hero camera exactly",()=>{
+            var group=new Field();group.space.useSoftZoneCamera=true;
+            group.space.cameraUseCombatCenter=true;group.hero.moveSpeed=0f;
+            group.space.SetPosition(group.hero.heroRect,new Vector2(-170f,0f));
+            group.Monster(-330f,AttackMode.RangedMagic);
+            group.Step(.1f);
+            Near(group.space.CurrentCameraFocusX,-250f,"Hero + monster raw mean");
+            Check(group.space.CurrentCameraSmoothedFocusX > -190f,
+                "new monster does not instantly move the filtered focus outside deadzone");
+            Near(group.space.CurrentCameraSpeed,0f,
+                "no camera impulse on the first frame of a changing group",.01f);
+            for(int i=0;i<25 && group.space.CurrentCameraSpeed<=0f;i++)
+                group.Step(.1f);
+            Check(group.space.CurrentCameraSpeed>0f,
+                "filtered group eventually moves camera outside deadzone");
+            Near(group.space.CurrentBackgroundSpeed,group.space.CurrentCameraSpeed,
+                "group camera keeps Ground and world in sync");
+            group.space.cameraUseCombatCenter=false;
+            group.Step(.1f);
+            Check(group.space.CurrentCameraFocusCount==1,
+                "switching modes immediately selects only Hero");
+            Near(group.space.CurrentCameraSpeed,0f,
+                "changing camera mode clears old velocity and idle recovery",.01f);
+
+            var single=new Field();single.space.useSoftZoneCamera=true;
+            single.space.cameraUseCombatCenter=false;single.hero.moveSpeed=0f;
+            single.space.SetPosition(single.hero.heroRect,new Vector2(-170f,0f));
+            single.Monster(-330f,AttackMode.RangedMagic);
+            single.Step(.1f);
+            Near(single.space.CurrentCameraFocusX,-170f,"single-Hero focus");
+            Check(single.space.CurrentCameraFocusCount==1,"toggle disables group sampling");
+            Near(single.space.CurrentCameraSpeed,0f,
+                "Hero still inside old deadzone: camera must stand still",.01f);
+        });
+
+        Run("54g secondary Hero movement participates in group camera stop transition",()=>{
+            var f=new Field();
+            f.space.useSoftZoneCamera=true;
+            f.space.cameraUseCombatCenter=true;
+            var stationary=new GameObject().AddComponent<HeroController>();
+            stationary.heroRect=(RectTransform)new GameObject(true).transform;
+            stationary.heroRect.parent=f.ground;
+            Call(stationary,"Awake");
+            stationary.SpawnHero(); // Becomes cameraTarget, but does not walk.
+            stationary.moveSpeed=0f;
+            f.hero.moveSpeed=700f;
+            // Allow the 0.7s group offset filter to catch up with the fast
+            // moving teammate; a new centroid should never jump instantly.
+            for(int i=0;i<12;i++)f.Step(.1f);
+            Check(f.space.CurrentCameraFocusCount==2,
+                "group camera includes both active Heroes");
+            f.hero.moveSpeed=0f;
+            f.Step(.1f);
+            var camera=Get<DeadzoneCamera>(f.space,"deadzoneCamera");
+            Check(camera.IsIdleRecovering,
+                "stopping the OTHER moving Hero triggers 40% group recovery");
+        });
+
+        Run("54g dead or offscreen monsters stop influencing camera center",()=>{
+            var f=new Field();f.space.useSoftZoneCamera=true;
+            f.space.cameraUseCombatCenter=true;f.hero.moveSpeed=0f;
+            var m=f.Monster(-450f,AttackMode.RangedMagic);
+            f.Step(1f/60f);
+            Check(f.space.CurrentCameraFocusCount==2,"visible monster counted");
+            Near(f.space.CurrentCameraFocusX,-225f,"live center before defeat",.05f);
+            float before=f.space.Position(f.hero.heroRect).x;
+            m.MarkDead();
+            f.Step(1f/60f);
+            Check(f.space.CurrentCameraFocusCount==1,"defeated monster excluded");
+            Near(f.space.CurrentCameraFocusX,before,"center returns to Hero before pan",.1f);
+            Check(Math.Abs(f.space.CurrentCameraSpeed)<100f,
+                "removing an actor does not teleport/instantly pan the scene");
+        });
+
+        Run("54g combat center protects Hero and synchronizes Ground during centering",()=>{
+            var f=new Field();f.space.useSoftZoneCamera=true;
+            f.space.cameraUseCombatCenter=true;f.hero.moveSpeed=0f;
+            f.space.SetPosition(f.hero.heroRect,new Vector2(-180f,0f));
+            var m=f.Monster(-320f,AttackMode.RangedMagic);
+            float startH=f.space.Position(f.hero.heroRect).x;
+            float startM=f.space.Position(m.Rect).x;
+            float startG=f.space.Position(f.grass).x;
+            f.Step(.1f);
+            Near(f.space.CurrentCameraSpeed,0f,
+                "group offset is smoothed before entering deadzone",.01f);
+            for(int i=0;i<25 && f.space.CurrentCameraSpeed<=0f;i++)
+                f.Step(.1f);
+            float heroDelta=f.space.Position(f.hero.heroRect).x-startH;
+            Near(f.space.Position(m.Rect).x-startM,heroDelta,
+                "stationary ranged monster follows the shared view pan",.05f);
+            Near(f.space.Position(f.grass).x-startG,heroDelta,
+                "decorative Ground follows the same view pan",.05f);
+            Check(heroDelta>0f,"combat center -250 eventually triggers smooth follow");
+            f.space.SetPosition(f.hero.heroRect,new Vector2(466f,0f));
+            f.space.SetPosition(m.Rect,new Vector2(-450f,0f));
+            f.Step(.1f);
+            Check(f.space.Position(f.hero.heroRect).x <= 470.01f,
+                "centroid cannot push real Hero beyond right screen safety edge");
+        });
+
+        Run("54g group focus smoother caps velocity when monster enters viewport",()=>{
+            foreach(int fps in new[]{30,60,144})
+            {
+                var c=new CombatFocusSmoother();
+                float dt=1f/fps;
+                Near(c.Step(0f,dt,.7f,240f),0f,"no enemies no offset");
+                float previous=0f;
+                float first=c.Step(-350f,dt,.7f,240f);
+                Check(first<0f && first> -15f,
+                    "first frame of new monster group changes center gradually");
+                previous=first;
+                for(int i=0;i<fps*3;i++)
+                {
+                    float next=c.Step(-350f,dt,.7f,240f);
+                    Check(next<=previous+.001f && next>=previous-241f*dt,
+                        "group target approaches without a sudden >240 units/sec step");
+                    previous=next;
+                }
+                Check(previous < -345f && previous> -351f,
+                    "smoothed center still converges to the SAME raw mean");
+                for(int i=0;i<fps*4;i++)c.Step(0f,dt,.7f,240f);
+                Near(c.Offset,0f,"monster death also fades centroid shift",.25f);
+                c.Reset();
+                Near(c.Offset,0f,"retry clears old group focus offset");
+                Near(c.Velocity,0f,"retry clears focus momentum");
+            }
+        });
+
+        Run("54g group entrance maintains the raw mean but delays camera motion",()=>{
+            var f=new Field();f.space.useSoftZoneCamera=true;
+            f.space.cameraUseCombatCenter=true;f.hero.moveSpeed=0f;
+            f.space.SetPosition(f.hero.heroRect,new Vector2(-170f,0f));
+            var monster=f.Monster(-550f,AttackMode.RangedMagic);
+            f.Step(.1f);
+            Check(f.space.CurrentCameraFocusCount==1,
+                "offscreen monster does not influence center");
+            Near(f.space.CurrentCameraSmoothedFocusX,
+                f.space.CurrentCameraFocusX,"solo camera unchanged",.01f);
+            f.space.SetPosition(monster.Rect,new Vector2(-490f,0f));
+            f.Step(.1f);
+            Check(f.space.CurrentCameraFocusCount==2,
+                "monster enters viewport and joins raw centroid");
+            Near(f.space.CurrentCameraFocusX,-330f,
+                "centroid uses unchanged arithmetic average",.1f);
+            Check(f.space.CurrentCameraSmoothedFocusX>-190f,
+                "filtered target still close to Hero on entrance");
+            Near(f.space.CurrentCameraSpeed,0f,
+                "no instant camera jerk on entrance",.01f);
+            bool followed=false;
+            for(int i=0;i<180;i++)
+            {
+                f.Step(1f/60f);
+                if(f.space.CurrentCameraSpeed>.01f) followed=true;
+            }
+            Check(followed,"after settling the camera DOES follow the same mean");
+            Check(f.space.CurrentCameraFocusCount==2,
+                "focus filter does not exclude the already visible monster");
+            monster.MarkDead();
+            f.Step(1f/60f);
+            Check(f.space.CurrentCameraFocusCount==1,
+                "death removes monster from raw centroid immediately");
+            Check(Math.Abs(f.space.CurrentCameraSmoothedFocusX-
+                           f.space.CurrentCameraFocusX)>1f,
+                "smoothed focus transitions rather than teleporting to Hero");
+        });
+
+        Run("54g melee Hero approaching ranged quái: both share the same Ground pan",()=>{
+            var f=new Field();
+            f.space.useSoftZoneCamera=true;
+            f.space.cameraUseCombatCenter=false;
+            f.space.cameraSmoothTime=.2f;f.space.cameraDeadzoneRatio=.38f;
+            f.hero.ChangeAttackMode(0);f.hero.moveSpeed=600f;
+            var ranged=f.Monster(-110f,AttackMode.RangedPhysical);
+            float before=f.space.Position(ranged.Rect).x;
+            f.Step(.1f);
+            Check(ranged.currentState==MonsterState.Attacking,
+                "ranged defender stands and shoots");
+            Near(f.space.Position(ranged.Rect).x-before,
+                f.space.CurrentBackgroundSpeed*.1f,
+                "stationary ranged defender moves exactly with Ground",.05f);
+            for(int i=0;i<90;i++)f.Step(1f/60f);
+            Near(f.space.CurrentCameraSpeed,0f,
+                "camera eventually settles when melee Hero stops in range",.3f);
+        });
+    }
+}

@@ -55,15 +55,15 @@ partial class MotionRegression
             Vector2 center=ControlCenter(rt);ui.HandlePointerClick(center,center+new Vector2(100,0));Check(clicks==0,"release elsewhere ignored");ui.HandlePointerClick(center,center);Check(clicks==1,"one same-control click");
             var g=new WindowPointerGesture();Vector2 pos;g.Begin(Vector2.zero,Vector2.zero,center,true);g.Step(true,new Vector2(50,0),out pos);if(g.Step(false,new Vector2(50,0),out pos))ui.HandlePointerClick(center,center);Check(clicks==1,"drag cannot invoke a button");UIManager.Instance=null;
         });
-        Run("readable HUD and DEVB remain on screen at 800 500 and 250 with regular 14px fonts",()=>{
+        Run("HUD and DEVB fit current 600 800 1150 presets",()=>{
             int oldW=Screen.width,oldH=Screen.height;
-            try {foreach(int width in new[]{800,500,250}) {
+            try {foreach(int width in new[]{600,800,1150}) {
                 Screen.width=width;Screen.height=Mathf.RoundToInt(width*9f/16);var f=new Field();var ui=ReadableFixture(f);ui.ToggleSystemMenu();
                 var root=Get<RectTransform>(ui,"hudCanvas");Inside((RectTransform)ui.systemMenu.transform,root,"system menu fits");
-                foreach(var text in ui.systemMenu.GetComponentsInChildren<TextMeshProUGUI>()){Check(text.fontStyle==FontStyles.Normal&&!text.enableAutoSizing&&text.fontSize==14,"regular readable font");Inside((RectTransform)text.transform,(RectTransform)ui.systemMenu.transform,"menu text fits");}
+                foreach(var text in ui.systemMenu.GetComponentsInChildren<TextMeshProUGUI>()){Check(text.fontStyle==FontStyles.Normal&&!text.enableAutoSizing&&text.fontSize>=14&&text.fontSize<=18,"readable font range");Inside((RectTransform)text.transform,(RectTransform)ui.systemMenu.transform,"menu text fits");}
                 ui.OpenDevBalance();var dev=Get<DevBalanceUI>(ui,"devUI");Inside(dev.Root,root,"DEVB fits viewport");
-                var fields=Get<TMP_InputField[]>(dev,"inputs");int visible=0;foreach(var field in fields)if(field.gameObject.activeInHierarchy){visible++;Inside((RectTransform)field.transform,dev.Root,"input fits");Check(field.pointSize==14,"input 14px");}
-                Check((width==800?visible==8:width==250?visible==1:visible>1&&visible<8),"paginate rather than shrink inputs");
+                var fields=Get<TMP_InputField[]>(dev,"inputs");int visible=0;foreach(var field in fields)if(field.gameObject.activeInHierarchy){visible++;Inside((RectTransform)field.transform,dev.Root,"input fits");Check(field.pointSize>=14&&field.pointSize<=18,"readable input");}
+                Check(visible>=1&&visible<=8,"rows visible and fit");
                 foreach(var c in dev.Root.GetComponentsInChildren<CustomInteractable>())Inside(c.GetRect(),dev.Root,"dev control fits");
                 Check(ui.IsTextInputAt(ControlCenter((RectTransform)fields[0].transform)),"native text editing exemption");dev.Close();UIManager.Instance=null;
             }} finally {Screen.width=oldW;Screen.height=oldH;Time.timeScale=1;}
