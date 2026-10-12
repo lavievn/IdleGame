@@ -47,21 +47,13 @@ public class GameManager : MonoBehaviour
         RectTransform original, RectTransform clone, T originalComponent) where T : Component
     {
         if (original == null || clone == null || originalComponent == null) return null;
-        var indexes = new List<int>();
-        Transform cursor = originalComponent.transform;
-        while (cursor != original)
-        {
-            if (cursor.parent == null) return null; // UI components outside the actor.
-            indexes.Add(cursor.GetSiblingIndex());
-            cursor = cursor.parent;
-        }
-        Transform mapped = clone;
-        for (int i = indexes.Count - 1; i >= 0; i--)
-        {
-            if (indexes[i] >= mapped.childCount) return null;
-            mapped = mapped.GetChild(indexes[i]);
-        }
-        return mapped.GetComponent<T>();
+        // Same prefab hierarchy; use component ordinal rather than transform names
+        // (duplicate names are common in Unity UI prefab children).
+        T[] originals = original.GetComponentsInChildren<T>(true);
+        T[] copies = clone.GetComponentsInChildren<T>(true);
+        for (int i = 0; i < originals.Length && i < copies.Length; i++)
+            if (originals[i] == originalComponent) return copies[i];
+        return null; // External references such as main Hero's stats panel.
     }
 
     private AttackMode RandomUnusedTestMode()
@@ -155,9 +147,8 @@ public class GameManager : MonoBehaviour
             actor.SetIdentityVisual(data);
             var image = rect.GetComponent<Image>();
             if (image != null)
-                image.color = Color.Lerp(image.color,
-                    number == 1 ? new Color(.22f,.72f,1f,1f) :
-                                  new Color(.9f,.46f,1f,1f), .45f);
+                image.color = number == 1 ? new Color(.22f,.72f,1f,1f) :
+                                            new Color(.9f,.46f,1f,1f);
 
             if (combatManager.RegisterAdditionalHero(actor, data) == null)
             {
@@ -171,7 +162,7 @@ public class GameManager : MonoBehaviour
         }
         catch (System.Exception ex)
         {
-            Debug.LogError("[B2 TEST] Companion spawn failed: " + ex);
+            Debug.LogWarning("[B2 TEST] Companion spawn failed: " + ex);
             if (rig != null) Destroy(rig);
             if (visual != null) Destroy(visual);
             if (data != null) Destroy(data);
