@@ -51,9 +51,9 @@ public class CombatManager : MonoBehaviour
     {
         get
         {
-            if (primaryHeroState.CanFight) return primaryHeroState.Controller.moveSpeed;
+            if (primaryHeroState.CanFight) return primaryHeroState.Controller.EffectiveMoveSpeed();
             foreach (var state in heroStates.Values)
-                if (state.CanFight) return state.Controller.moveSpeed;
+                if (state.CanFight) return state.Controller.EffectiveMoveSpeed();
             return 150f;
         }
     }
@@ -163,6 +163,8 @@ public class CombatManager : MonoBehaviour
 
     public void SetupHeroInfo(EntityDataSO hData)
     {
+        if (hData == null) return;
+        hData.NormalizeCombatStats();
         ClearProjectiles();
         if (CombatBalance.HeroDev != null && heroController != null) heroController.moveSpeed = CombatBalance.HeroDev.movementSpeed;
         int initialMaxHP = hData.GetCalculatedHealth(heroController != null ? heroController.attackMode : AttackMode.Melee);
@@ -274,13 +276,18 @@ public class CombatManager : MonoBehaviour
     }
     public void OnRegisteredHeroModeChanged(HeroController controller)
     {
+        RefreshRegisteredHeroStats(controller,true);
+    }
+
+    public void RefreshRegisteredHeroStats(HeroController controller,bool resetAttack=false)
+    {
         var state = StateFor(controller);
         if (state == null || state.Data == null || state.Controller == null) return;
         float ratio = state.MaxHP > 0 ? (float)state.CurrentHP/state.MaxHP : 1f;
         state.MaxHP = state.Data.GetCalculatedHealth(controller.attackMode);
         state.CurrentHP = state.CurrentHP <= 0 ? 0 :
             Mathf.Clamp(Mathf.RoundToInt(ratio*state.MaxHP),1,state.MaxHP);
-        ResetRegisteredAttack(state);
+        if (resetAttack) ResetRegisteredAttack(state);
         controller.UpdateHealthBar(state.CurrentHP,state.MaxHP);
         controller.UpdateStats(state.Data,state.CurrentHP,state.MaxHP);
     }
