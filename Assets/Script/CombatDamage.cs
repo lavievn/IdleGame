@@ -57,16 +57,22 @@ public static class CombatDamage
                 CombatStats.Get(attacker,CombatStatId.ElementDamagePercent,0f,part.element,tags);
             double enhanced = raw * Math.Max(0d,1d + boost);
             result.afterModifiers += (float)enhanced;
+            // Defender conditions concern incoming damage, never the
+            // ATTACKER's combat stance.
+            var incomingTags = new [] {
+                part.school == DamageSchool.Physical ? "incoming:physical" : "incoming:magical",
+                CombatStats.ElementTag(part.element)
+            };
             float resistance = CombatStats.Get(defender,
                 part.school == DamageSchool.Physical ? CombatStatId.Armor :
-                CombatStatId.MagicResistance,0f,ElementType.Vo,tags);
+                CombatStatId.MagicResistance,0f,ElementType.Vo,incomingTags);
             float half = part.school == DamageSchool.Physical ?
                 settings.armorHalfReduction : settings.magicResistanceHalfReduction;
             double reduction = Math.Max(0d,resistance) /
                 (Math.Max(.001d,half) + Math.Max(0d,resistance));
             reduction = Math.Min(Math.Max(0d,settings.maximumSchoolReduction),reduction);
             float elemental = CombatStats.Get(defender,
-                CombatStatId.ElementResistance,0f,part.element,tags);
+                CombatStatId.ElementResistance,0f,part.element,incomingTags);
             double elementalReduction = Math.Max(settings.minimumElementReduction,
                 Math.Min(settings.maximumElementReduction,elemental));
             double after = enhanced * (1d-reduction) * (1d-elementalReduction);
