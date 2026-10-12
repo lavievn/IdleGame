@@ -26,7 +26,9 @@
 - Khi phát sinh lỗi P0 (mất tiến trình, sai target, wave kẹt, Crash, camera mất đối tượng), **tạm dừng tính năng mới để sửa nguyên nhân**. Lỗi VFX/UI nhỏ có thể ghi backlog và xử lý ở vòng polish.
 - Phân biệt: có mã, mô phỏng toán học, chạy Mono/stub, Unity Editor Play Mode và Windows build thật.
 
-**B2 bắt đầu (12/10/2026):** người phát triển đã cho phép triển khai B2 trên nhánh `feature/b2-combat-target-routing`. Phần định tuyến nhiều Hero, chọn mục tiêu và định danh đạn đã có mã + 13 test, **chưa nghiệm thu Unity**. Chưa thêm đồng đội vào Scene, UI hay save; xem `Docs/B2_CombatRouting.md`. `main`, B1, `.54g` vẫn giữ checkpoint.
+**B2 bắt đầu (12/10/2026):** người phát triển đã cho phép triển khai B2 trên nhánh `feature/b2-combat-target-routing`. Phần định tuyến nhiều Hero, chọn mục tiêu và định danh đạn đã có mã + 14 test, **chưa nghiệm thu Unity**. Chưa thêm đồng đội vào Scene, UI hay save; xem `Docs/B2_CombatRouting.md`. `main`, B1, `.54g` vẫn giữ checkpoint.
+
+**Quay lại B2 sau hotfix được chấp nhận (12/10/2026):** người phát triển đã thử ổn bản sửa camera và Y trên nhánh hotfix `.54g`. Đã đồng bộ có chọn lọc mã vào B2, **không ghi đè logic chuyển camera sang đồng đội sống**; giữ bộ lọc 0.7s/240 đơn vị/s, Hero không có mục tiêu giữ Y. Có 21 bài camera, 4 bài lane, 14 bài định tuyến B2. **Chờ chạy Unity/Mono với mã B2 tích hợp**, chưa gộp `main`. Xem `Docs/B2_CombatRouting.md`.
 
 **Cập nhật sau nghiệm thu B1 (11/10/2026):** người phát triển đã xác nhận B1 hoàn tất. Đây là checkpoint được chấp nhận; chưa có log xác nhận chi tiết từng trường hợp tự động. Nhánh đang thực hiện: `feature/b1-hero-combat-state`, bắt đầu từ checkpoint `.54g`. Chỉ tách trạng thái HP/timer/data của Hero ra khỏi `CombatManager`, **chưa thay gameplay một Hero**, chưa thực hiện B2, trang bị, kỹ năng hay đội hình. Xem `Docs/B1_HeroCombatState.md` để biết cấu trúc mã, test và điều kiện nghiệm thu. Các bước P1/P2/P3 chưa được duyệt triển khai.
 

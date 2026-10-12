@@ -24,15 +24,25 @@ B1 đã tách trạng thái một Hero ra thành `HeroCombatState` nhưng vẫn 
 
 ### Giữ tương thích gameplay một Hero
 
-`SetupHeroInfo` vẫn ràng buộc `primaryHeroState`; trường/properties B1 đã được bộ test cũ đọc qua `Tests~/MotionRegression.cs`, không tạo HP/timer dự phòng. `GameManager` chưa thay schema SaveManager/EntityDataSO, chưa có UI quản lý Hero thứ hai. B2 chỉ thay mã khi có actor đăng ký ngoài Hero chính và những kiểm tra an toàn khi tái sinh. `Assets/Scenes/MainGame.unity` **không đổi**.
+`SetupHeroInfo` vẫn ràng buộc `primaryHeroState`; trường/properties B1 đã được bộ test cũ đọc qua `Tests~/MotionRegression.cs`, không tạo HP/timer dự phòng. `GameManager` chưa thay schema SaveManager/EntityDataSO, chưa có UI quản lý Hero thứ hai. B2 chỉ thay mã khi có actor đăng ký ngoài Hero chính và những kiểm tra an toàn khi tái sinh. `Assets/Scenes/MainGame.unity` **chỉ bổ sung hai thông số camera từ hotfix đã được người phát triển chấp nhận**, không thêm Hero vào Scene hay thay cấu trúc SaveManager.
 
 ## Kiểm thử đã bổ sung
 
-`Tests~/B2CombatRoutingRegression.cs` có **13 ca** gồm: hai trạng thái HP/timer riêng; hai Hero đánh quái khác nhau; quái cận đánh Hero gần nhất; đạn quái cố định mục tiêu; Hero đổi life qua đăng ký lại hoặc SpawnHero; quái pool tái kích hoạt; hủy đạn khi caster chết; Hero chính chết vẫn giữ trận cho đồng đội; đổi thế của đồng đội không ảnh hưởng chính; EXP dành cho người kết liễu; wave thoát vẫn hồi khi chỉ còn đồng đội; unregister hủy đường sát thương cũ.
+`Tests~/B2CombatRoutingRegression.cs` có **14 ca** gồm: hai trạng thái HP/timer riêng; hai Hero đánh quái khác nhau; quái cận đánh Hero gần nhất; đạn quái cố định mục tiêu; Hero đổi life qua đăng ký lại hoặc SpawnHero; quái pool tái kích hoạt; hủy đạn khi caster chết; Hero chính chết vẫn giữ trận cho đồng đội; đổi thế của đồng đội không ảnh hưởng chính; EXP dành cho người kết liễu; wave thoát vẫn hồi khi chỉ còn đồng đội; unregister hủy đường sát thương cũ.
 
-Mã kiểm thử tự động được gọi từ `Tests~/MotionRegression.cs`; `Tests~/run.sh` đã bao gồm tệp runtime `HeroCombatState.cs` ở B1 và dùng `Tests~/*.cs`, nên không cần cập nhật danh sách riêng B2.
+Mã kiểm thử tự động được gọi từ `Tests~/MotionRegression.cs`; `Tests~/run.sh` đã bao gồm tệp runtime `HeroCombatState.cs` ở B1 và dùng `Tests~/*.cs`, nên tự nhận cả bộ test B2 và bộ hotfix, không cần sửa danh sách riêng.
 
-**Giới hạn xác minh:** đã kiểm tra tĩnh cấu trúc, vị trí callsite và các hợp đồng API; chưa chạy `mcs/mono`, Unity Play Mode hoặc Windows EXE trên môi trường kết nối GitHub này. Không tuyên bố 13 test đã PASS trên C#. Người phát triển cần **Pull nhánh B2 → Unity Console → thử gameplay một Hero và kiểm thử thêm 2 Hero bằng API, hoặc chạy `bash Tests~/run.sh` ở máy có Mono**.
+**Giới hạn xác minh:** đã kiểm tra tĩnh cấu trúc, vị trí callsite và các hợp đồng API; chưa chạy `mcs/mono`, Unity Play Mode hoặc Windows EXE trên môi trường kết nối GitHub này. Không tuyên bố các test mới đã PASS trên C#. Người phát triển cần **Pull nhánh B2 → Unity Console → thử gameplay một Hero và kiểm thử thêm 2 Hero bằng API, hoặc chạy `bash Tests~/run.sh` ở máy có Mono**.
+
+## Đồng bộ hotfix .54g đã được kiểm thử (12/10/2026)
+
+Người phát triển đã xác nhận **hotfix camera và hướng đi Y hoạt động ổn** trên `fix/0.0.4.54g-smooth-focus-free-y` tại commit tài liệu `26ffb4f1cc8f9f0c284fe5b8ddc2c63152b14642` (mã hotfix `88098e0bfc47771f12dd32524c5e37cfbf24dcf6`). Hai thay đổi này đã được **đồng bộ chọn lọc vào B2**; việc người phát triển chấp nhận hotfix **không có nghĩa toàn bộ B2 đã nghiệm thu**.
+
+- **Camera:** giữ trung bình cộng tọa độ X các Hero sống + quái sống trong viewport; lọc tốc độ thay đổi độ lệch tâm nhóm so với Hero qua `CombatFocusSmoother`. Thông số mặc định `cameraCombatFocusSmoothTime=0.7s`, `cameraCombatFocusMaxSpeed=240` đơn vị/giây. `CurrentCameraFocusX` tiếp tục là tâm thô, `CurrentCameraSmoothedFocusX` là đích sau lọc. Deadzone 38%, follow 0.2s, nghỉ 40%/0.6s giữ nguyên. Có thể bật/tắt `cameraUseCombatCenter`.
+- **Giữ Y:** Hero không có quái chỉ chạy về trái; bỏ lệnh kéo `Y` về 0. Cận chiến chỉ tiến về Y của quái khi đang ngoài tầm X; cung/phép vẫn tuân thủ khoảng đánh cũ.
+- **Giữ riêng B2:** `EnvironmentManager` còn logic camera chuyển sang Hero sống khi chủ thể đang theo bị hạ; khi thay Hero theo dõi thì **reset cả DeadzoneCamera và CombatFocusSmoother**. `HeroController.SpawnVersion` của B2 vẫn giữ để hủy đạn thuộc kiếp sống cũ. Không dùng nguyên `EnvironmentManager` của hotfix đè lên B2.
+- **Hồi quy:** thừa hưởng 21 tình huống camera (tăng 2 so với 19 của .54g), thêm 4 tình huống Y từ `Tests~/CameraAndLaneHotfixRegression.cs`, giữ 6 bài B1, và 14 bài B2 (**thêm 1 bài** kiểm tra đổi chủ thể camera sau khi Hero chính chết lúc bộ lọc tâm đang có vận tốc). Bộ runner `Tests~/MotionRegression.cs` gọi đủ các suite.
+- **Trạng thái:** đã ghép và kiểm tra mã nguồn tĩnh; **chưa chạy Unity/Mono hoặc bản Windows của nhánh B2 đã đồng bộ**. Không tự merge vào B1, `.54g` hoặc `main`.
 
 ## Tiêu chí nghiệm thu B2
 

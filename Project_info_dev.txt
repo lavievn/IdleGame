@@ -3,6 +3,24 @@ Tài liệu thiết kế, hiện trạng và bàn giao phát triển của lavie
 Ngày đối chiếu: 09/10/2026, múi giờ Việt Nam (UTC+7).
 Đổi tên và thay thế AI_Prompt_Master.txt; lịch sử tài liệu cũ vẫn ở Git.
 
+ĐỒNG BỘ HOTFIX .54g → B2 SAU KHI USER XÁC NHẬN "ỔN RỒI" (12/10/2026)
+User đã nghiệm thu bản sửa camera giật khi quái vào viewport + giữ Y
+lúc Hero chưa có mục tiêu trên nhánh fix/0.0.4.54g-smooth-focus-free-y.
+Đã đồng bộ SELECTIVE vào feature/b2-combat-target-routing:
+(1) BattleMotion.cs thêm CombatFocusSmoother lọc OFFSET tâm nhóm so với
+Hero theo .7s/240 units/s, giữ mean thô Hero+quái trong viewport.
+(2) EnvironmentManager.cs thêm hai Inspector cameraCombatFocusSmoothTime
+và cameraCombatFocusMaxSpeed, CurrentCameraSmoothedFocusX. Giữ B2
+chuyển camera sang Hero sống khi chủ thể chết, đồng thời reset bộ lọc.
+(3) HeroController.cs bỏ MoveTowards(Y,0) khi không có quái, giữ
+SpawnVersion của B2 để tránh đạn cũ trúng Hero tái sinh.
+(4) MainGame.unity chỉ ghi 2 field camera; KHÔNG thêm Hero/UI/save.
+(5) Tests CameraFollowRegression tăng 19→21, bổ sung 4 test lane,
+B2CombatRoutingRegression tăng 13→14 kiểm tra reset camera khi primary
+die lúc filter đang có offset. MotionRegression gọi đầy đủ B1/B2/hotfix.
+B1, .54g gốc và main không bị chỉnh. Chưa chạy Unity/Mono bản B2 sau
+đồng bộ, cần user Pull + nghiệm thu. Không tự chốt B2 khi chưa test.
+
 B2 — ĐÃ BẮT ĐẦU TRÊN NHÁNH RIÊNG, CHƯA NGHIỆM THU (12/10/2026)
 User đã duyệt "bắt đầu B2". Nhánh mới feature/b2-combat-target-routing
 được tách từ B1 đã chốt tại 7487646d355bad1f79e810eb76968a02555acb47.
@@ -19,10 +37,10 @@ mới GameOver; GameManager.LateUpdate/RecoverEscapedWave được chỉnh để
 khi Hero chính chết còn người sống thì wave tiếp tục, không hồi sinh
 Hero chính ngoài ý muốn; EnvironmentManager chọn Hero sống khi
 cameraTarget cũ chết, vẫn giữ nguyên cách camera một Hero .54g.
-MainGame.unity, SaveManager, EntityDataSO chưa đổi; GameManager
+MainGame.unity chỉ thêm 2 field camera theo hotfix; SaveManager và EntityDataSO chưa đổi; GameManager
 CHỈ lưu Hero chính. KHÔNG tạo UI hay Hero thứ 2 mặc định. Test sử dụng
 B2Hero helper tạo actor thứ 2 và đăng ký bằng API runtime.
-Thêm Tests~/B2CombatRoutingRegression.cs có 13 tình huống và gọi trong
+Thêm Tests~/B2CombatRoutingRegression.cs có 14 tình huống và gọi trong
 Tests~/MotionRegression.cs. Chưa có máy Unity/mcs/mono trong môi trường
 GitHub connector; chỉ kiểm tra tĩnh, CHƯA ĐƯỢC USER NGHIỆM THU.
 Cần đối chiếu Console, 1 Hero và 2 Hero, bullet target/life, party wipe,

@@ -7,12 +7,13 @@ Game idle RPG tu tiên 2D/2.5D dạng **desktop overlay trong suốt**, chơi t�
 
 ## Nhánh B2 đang thử nghiệm — định tuyến chiến đấu nhiều Hero
 
-**Đang triển khai:** `feature/b2-combat-target-routing`, từ checkpoint B1 đã được người phát triển nghiệm thu. **Chưa được xác nhận Unity/Windows**. `main`, `.54g` và nhánh B1 không đổi.
+**Đang triển khai:** `feature/b2-combat-target-routing`, từ checkpoint B1 đã được người phát triển nghiệm thu. **Đã đồng bộ hotfix camera và giữ Y mà người phát triển vừa thử ổn**, nhưng toàn bộ B2 **chưa được xác nhận Unity/Windows**. `main`, `.54g` và nhánh B1 không đổi.
 
 - `CombatManager` có sổ đăng ký `HeroController → HeroCombatState`, gọi `RegisterAdditionalHero(hero,data)` để đưa một Hero **đã spawn** vào chiến đấu. Không tự thêm Hero thứ hai vào Scene, UI hoặc Save.
 - Hero có máu, vận sức, mục tiêu, sát thương và EXP giết quái riêng; quái tấn công Hero mà AI đã chọn, không mặc định gây sát thương cho Hero chính. Đạn khóa đời sinh của cả Hero và quái để tránh bắn nhầm bản thể dùng lại.
 - Hero chính chết mà còn đồng đội sống: trận/wave tiếp tục, camera chuyển sang người còn sống; chỉ khi cả đội bị hạ mới Game Over. **Luật EXP chung đội hình và save danh sách Hero chưa được quyết định.**
-- `Tests~/B2CombatRoutingRegression.cs` bổ sung **13 ca**, nhưng hiện mới kiểm tra cấu trúc mã; **chưa có kết quả biên dịch/chạy C# hoặc Unity thật**. Kiểm thử trước khi nghiệm thu.
+- `Tests~/B2CombatRoutingRegression.cs` bổ sung **14 ca**, nhưng hiện mới kiểm tra cấu trúc mã; **chưa có kết quả biên dịch/chạy C# hoặc Unity thật**. Kiểm thử trước khi nghiệm thu.
+- Đã thừa hưởng lớp lọc tâm camera **0,7 giây / 240 đơn vị/giây** và logic Hero không có mục tiêu **giữ nguyên Y**; bộ kiểm thử camera + 4 bài lane của hotfix cũng được ghép vào B2. Tính năng B2 vẫn yêu cầu thử nhiều Hero thật.
 - Tài liệu [Docs/B2_CombatRouting.md](Docs/B2_CombatRouting.md) nêu API, giới hạn và danh sách nghiệm thu. Khi muốn đối chiếu gameplay một Hero, quay về `feature/b1-hero-combat-state`.
 
 ## Checkpoint B1 đã chốt — trạng thái chiến đấu Hero
