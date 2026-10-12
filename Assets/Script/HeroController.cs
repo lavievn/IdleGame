@@ -101,9 +101,9 @@ public class HeroController : MonoBehaviour
         if (CurrentTarget == null)
         {
             CurrentState = HeroState.Returning;
-            // Hero speed is independent from the camera's base scroll speed.
+            // No current enemy: explore straight left at the current Y.
+            // Y only changes while a melee Hero approaches a selected target.
             p.x -= Mathf.Max(0f, moveSpeed) * dt;
-            p.y = Mathf.MoveTowards(p.y, 0f, laneSpeed * dt);
             MovementDistanceThisFrame = Mathf.Abs(p.x - startX);
             space.SetPosition(heroRect, p);
             HandleAnimation(true, false);

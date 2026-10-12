@@ -35,9 +35,16 @@ public class EnvironmentManager : MonoBehaviour
     [Header("CAMERA — THEO TÂM NHÓM NHÂN VẬT")]
     // OFF compares against the previous single-Hero camera without a revert.
     public bool cameraUseCombatCenter = true;
+    [Header("LÀM MƯỢT KHI TÂM NHÓM THAY ĐỔI")]
+    [Min(.05f)] public float cameraCombatFocusSmoothTime = .7f;
+    [Min(1f)] public float cameraCombatFocusMaxSpeed = 240f;
+    // Keep RAW combat mean available for debugging while the filtered
+    // focus is the subject sent into DeadzoneCamera.
     public float CurrentCameraFocusX { get; private set; }
+    public float CurrentCameraSmoothedFocusX { get; private set; }
     public int CurrentCameraFocusCount { get; private set; }
     private bool previousCombatCenterMode = true;
+    private readonly CombatFocusSmoother combatFocusSmoother = new CombatFocusSmoother();
     private readonly DeadzoneCamera deadzoneCamera = new DeadzoneCamera();
     private float plannedCameraPan, plannedBackgroundPan;
     private bool hasPlannedPan;
@@ -127,6 +134,7 @@ public class EnvironmentManager : MonoBehaviour
     {
         cameraTarget = hero;
         deadzoneCamera.Reset(); // Start or Retry must not inherit old momentum.
+        combatFocusSmoother.Reset(); // New spawn/actor starts with fresh group offset.
         hasPlannedPan = false;
     }
 
@@ -228,16 +236,20 @@ public class EnvironmentManager : MonoBehaviour
             foreach (var hero in HeroController.ActiveHeroes)
                 if (hero != null && hero.IsDeployed) { cameraTarget = hero; break; }
             deadzoneCamera.Reset(); // Do not carry velocity from a dead subject.
+            combatFocusSmoother.Reset(); // Old offset was relative to the dead Hero.
         }
         if (cameraTarget == null)
         {
             CurrentCameraFocusX = 0f;
+            CurrentCameraSmoothedFocusX = 0f;
             CurrentCameraFocusCount = 0;
             deadzoneCamera.Reset();
+            combatFocusSmoother.Reset();
             return;
         }
         float heroX = Position(cameraTarget.heroRect).x;
         CurrentCameraFocusX = heroX;
+        CurrentCameraSmoothedFocusX = heroX;
         CurrentCameraFocusCount = 1;
         if (useSoftZoneCamera && cameraTarget.IsDeployed && !cameraTarget.IsDead)
         {
@@ -248,11 +260,24 @@ public class EnvironmentManager : MonoBehaviour
             CurrentCameraFocusCount = actorCount;
             if (previousCombatCenterMode != cameraUseCombatCenter)
             {
-                // Inspector A/B comparison must not inherit velocity or an idle
-                // return from a completely different camera subject.
+                // Do not carry camera velocity or relative group offset across
+                // toggles between Hero-only and all living combatants.
                 deadzoneCamera.Reset();
+                combatFocusSmoother.Reset();
                 previousCombatCenterMode = cameraUseCombatCenter;
             }
+            if (cameraUseCombatCenter)
+            {
+                // Same raw group mean as .54g. Smooth only its offset from
+                // the current camera Hero, retaining quick Hero follow while
+                // preventing a sudden centroid jump from entering monsters.
+                float filteredOffset = combatFocusSmoother.Step(focusX - heroX,
+                    Time.deltaTime,cameraCombatFocusSmoothTime,cameraCombatFocusMaxSpeed);
+                focusX = heroX + filteredOffset;
+            }
+            else
+                combatFocusSmoother.Reset();
+            CurrentCameraSmoothedFocusX = focusX;
             bool anyHeroMoved = cameraTarget.MovementDistanceThisFrame > .001f;
             if (cameraUseCombatCenter && !anyHeroMoved)
                 foreach (var hero in HeroController.ActiveHeroes)
@@ -272,6 +297,7 @@ public class EnvironmentManager : MonoBehaviour
         {
             // Keep the established corpse/legacy camera behavior separate.
             deadzoneCamera.Reset();
+            combatFocusSmoother.Reset();
             cameraPan = BattleMotion.ZoneCameraStep(heroX, ZoneLeftX, ZoneRightX,
                 scrollSpeed, Time.deltaTime);
         }

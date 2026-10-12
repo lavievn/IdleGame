@@ -190,6 +190,36 @@ partial class MotionRegression
                 "only FINAL Hero death clears the battle");
         });
 
+        Run("B2 group focus smoothing resets on primary death and camera switches Hero",()=>{
+            var f=new Field();f.space.useSoftZoneCamera=true;
+            f.space.cameraUseCombatCenter=true;f.hero.moveSpeed=0f;
+            var second=B2Hero(f,-190f,AttackMode.RangedPhysical);
+            second.moveSpeed=0f;
+            f.combat.RegisterAdditionalHero(second,B2Data("Camera survivor"));
+            f.space.SetPosition(second.heroRect,new Vector2(-190f,65f));
+            // B2Hero.SpawnHero follows the newly spawned companion. Track
+            // primary again, as happens in a normal primary-led party.
+            f.space.FollowHero(f.hero);
+            f.Monster(-410f,AttackMode.RangedMagic);
+            for(int i=0;i<12;i++)f.Step(.1f);
+            var smoother=Get<CombatFocusSmoother>(f.space,"combatFocusSmoother");
+            Check(Math.Abs(smoother.Offset)>20f,
+                "group focus had nonzero offset before changing camera subject");
+            Check(f.combat.ApplyDamageToRegisteredHero(f.hero,1000000,"test"),
+                "the currently followed primary Hero can die");
+            float survivorXBeforeCameraPan = f.space.Position(second.heroRect).x;
+            f.Step(.1f);
+            Check(f.hero.IsDead && second.IsDeployed,
+                "companion remains alive and deployed");
+            Check(f.space.CurrentCameraFocusCount==2,
+                "new center includes survivor and monster, not dead Hero");
+            Check(Math.Abs(smoother.Offset)<15f,
+                "new camera subject resets the old focus offset before filtering");
+            Near(f.space.CurrentCameraSmoothedFocusX,
+                survivorXBeforeCameraPan+smoother.Offset,
+                "new focus is computed relative to the new living Hero",.1f);
+        });
+
         Run("B2 companion attack-mode change preserves HP ratio independently",()=>{
             var f=new Field();
             var second=B2Hero(f,-100f,AttackMode.Melee);
