@@ -20,7 +20,7 @@ public sealed class CombatStatModifier
     public CombatStatId stat;
     // Raw points. For *Percent stats* this is a ratio: .15 = +15%.
     public float flat;
-    // Proportional adjustment of the stat's BASE value: .15 = +15% of base.
+    // .15 = +15% of base on ordinary stats; +15 percentage points on ratio stats.
     public float percent;
     public ElementType element = ElementType.Vo;
     public bool anyElement;
@@ -62,7 +62,15 @@ public static class CombatStats
             if (Finite(mod.flat)) flat += mod.flat;
             if (Finite(mod.percent)) percentage += mod.percent;
         }
-        double result = ((double)baseValue + flat) + baseValue * (double)percentage;
+        // Percent-type stats store a ratio as the actual stat value.
+        // For example +20% Fire damage is .20, not 20 or 20% of zero.
+        bool ratioStat = stat == CombatStatId.PhysicalDamagePercent ||
+            stat == CombatStatId.MagicalDamagePercent ||
+            stat == CombatStatId.ElementDamagePercent ||
+            stat == CombatStatId.ElementResistance ||
+            stat == CombatStatId.CooldownReductionPercent;
+        double result = ratioStat ? (double)baseValue + flat + percentage :
+            ((double)baseValue + flat) + baseValue * (double)percentage;
         if (double.IsNaN(result)) return baseValue;
         return (float)Math.Max(-1000000000d, Math.Min(1000000000d, result));
     }
