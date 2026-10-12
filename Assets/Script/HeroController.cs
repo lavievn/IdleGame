@@ -32,6 +32,8 @@ public class HeroController : MonoBehaviour
     public MonsterController CurrentTarget { get; private set; }
 
     public float MovementDistanceThisFrame { get; private set; }
+    // Identity of the CURRENT deployed life, not the reusable GameObject.
+    public int SpawnVersion { get; private set; }
 
     private bool deployed;
     private Coroutine fadeDmgCoroutine;
@@ -151,6 +153,7 @@ public class HeroController : MonoBehaviour
     public void SpawnHero()
     {
         if (heroRect == null) return;
+        SpawnVersion++;
         gameObject.SetActive(true);
         ResetFeedback();
         CurrentTarget = null;

@@ -301,6 +301,7 @@ partial class MotionRegression
         Patch54hTests();
         CameraFollowTests();
         HeroCombatStateTests();
+        B2CombatRoutingTests();
         TerrainTests();
         MenuDifficultyTests();
         BalanceTests();

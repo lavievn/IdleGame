@@ -19,6 +19,8 @@ public class MonsterController : MonoBehaviour
     public HeroController CurrentTarget { get; private set; }
     public RectTransform Rect => rect;
     public bool IsAlive => isActiveAndEnabled && currentState != MonsterState.Dead;
+    // The same pooled GameObject can represent multiple monster lives.
+    public int SpawnVersion { get; private set; }
 
     private RectTransform rect;
     private Coroutine attackFeedbackCoroutine;
@@ -50,6 +52,7 @@ public class MonsterController : MonoBehaviour
     }
     void OnEnable()
     {
+        SpawnVersion++;
         if (rect == null) rect = GetComponent<RectTransform>();
         ResetFeedback();
         // Exactly one random roll per activation (including pooled respawns).

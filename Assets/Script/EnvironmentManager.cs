@@ -218,11 +218,16 @@ public class EnvironmentManager : MonoBehaviour
     {
         cameraPan = backgroundPan = 0f;
         if (Time.timeScale == 0f || battleArea == null || Time.deltaTime <= 0f) return;
-        if (cameraTarget == null || !cameraTarget.IsCameraSubject)
+        // Preserve .54g's corpse camera when there are NO survivors. In
+        // a multi-Hero battle a fallen camera subject must yield to a
+        // deployed teammate, otherwise combat continues offscreen.
+        if (cameraTarget == null || !cameraTarget.IsCameraSubject ||
+            (cameraTarget.IsDead && HeroController.ActiveHeroes.Count > 0))
         {
             cameraTarget = null;
             foreach (var hero in HeroController.ActiveHeroes)
                 if (hero != null && hero.IsDeployed) { cameraTarget = hero; break; }
+            deadzoneCamera.Reset(); // Do not carry velocity from a dead subject.
         }
         if (cameraTarget == null)
         {

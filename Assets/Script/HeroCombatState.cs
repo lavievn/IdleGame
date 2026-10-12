@@ -1,8 +1,8 @@
 using TuTienCore;
 
-// B1: transient combat state owned by ONE Hero. This is not save data.
-// Do not use static HP/timers or put shared mutable defaults here.
-// GameManager still deploys one Hero; B2 will route per-actor target/damage.
+// B2: transient state for ONE combatant, independent from other Heroes.
+// No shared static HP/timers. GameManager still saves only the primary
+// Hero; B2's additional actors are registered at runtime, not serialized.
 public sealed class HeroCombatState
 {
     public HeroController Controller { get; set; }
@@ -12,6 +12,11 @@ public sealed class HeroCombatState
     // Mutable field is intentional: legacy AdvanceCycle(ref timer) stays exact.
     public float AttackTimer;
     public AttackMode WindupMode { get; set; }
+    // Changes whenever this state starts a new life. Old projectiles cannot
+    // hit a respawned actor just because the Controller object was reused.
+    public int LifeVersion { get; private set; }
+    public bool CanFight => Controller != null && Controller.IsDeployed &&
+        Data != null && CurrentHP > 0;
     public AttackMode SelectedMode =>
         Controller != null ? Controller.attackMode : WindupMode;
 
@@ -19,6 +24,7 @@ public sealed class HeroCombatState
     // The selected attack mode remains on HeroController, as in .54g.
     public void BeginLife(EntityDataSO data, int maxHP)
     {
+        LifeVersion++;
         Data = data;
         MaxHP = maxHP;
         CurrentHP = maxHP;

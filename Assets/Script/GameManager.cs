@@ -34,7 +34,8 @@ public class GameManager : MonoBehaviour
     private int waveSpawnCount, retryWaveSize;
     [Min(0f)] public float waveDelay = 1.5f;
     public float CurrentWaveDelay => BattleMotion.WaveDelay(waveDelay,
-        heroController != null ? Mathf.Max(0f, heroController.moveSpeed) : 150f);
+        combatManager != null ? Mathf.Max(0f,combatManager.ActiveHeroMovementSpeed) :
+        heroController != null ? Mathf.Max(0f,heroController.moveSpeed) : 150f);
     private bool hasDeployed = false;
     private readonly Queue<string> recentEvents = new Queue<string>();
     private readonly Queue<string> recentDamage = new Queue<string>();
@@ -399,7 +400,9 @@ public class GameManager : MonoBehaviour
 
     void LateUpdate()
     {
-        if (!hasDeployed || Time.timeScale == 0f || heroController == null || !heroController.IsDeployed ||
+        if (!hasDeployed || Time.timeScale == 0f ||
+            (combatManager != null ? !combatManager.HasLivingHero :
+             heroController == null || !heroController.IsDeployed) ||
             environmentManager == null || nextWaveCoroutine != null || activeMonsters.Count == 0) return;
         foreach (var monster in activeMonsters)
         {
@@ -415,7 +418,10 @@ public class GameManager : MonoBehaviour
         activeMonsters.Clear();
         // Keep HP/EXP/map progress. Cancel old life identities and aim points,
         // then replay the unfinished wave after the normal delay.
-        heroController.SpawnHero();
+        // Preserve .54g when primary lives. If only a companion survives,
+        // do not silently resurrect the primary while repeating a wave.
+        if (heroController != null && heroController.IsDeployed)
+            heroController.SpawnHero();
         retryWaveSize = Mathf.Clamp(waveSpawnCount, 1, 3);
         UpdateEventLog("Quái thoát mép phải: sinh lại đợt đang dở, không cộng tiến trình map.");
         nextWaveCoroutine = StartCoroutine(WaitAndCallNextWave());
