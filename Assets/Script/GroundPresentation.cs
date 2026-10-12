@@ -12,7 +12,7 @@ public class GroundPresentation : MonoBehaviour
     private readonly List<RectTransform> distantTiles = new List<RectTransform>();
     private readonly List<RectTransform> farTiles = new List<RectTransform>();
     private Sprite generatedTreeSprite, generatedMountainSprite;
-    private Texture2D generatedTreeTexture, generatedMountainTexture;
+    private UnityEngine.Object generatedTreeTexture, generatedMountainTexture;
     private Color farTint, distantTint;
     private readonly List<RectTransform> tiles = new List<RectTransform>();
     private readonly List<RectTransform> decorations = new List<RectTransform>();
@@ -122,7 +122,7 @@ public class GroundPresentation : MonoBehaviour
     }
     // Source bitmaps are bundled as base64 TextAssets for this temporary preview.
     // Avoids depending on custom TextureImporter settings or unstable sprite GUIDs.
-    private static Sprite LoadPreviewSprite(string resource, out Texture2D texture)
+    private static Sprite LoadPreviewSprite(string resource, out UnityEngine.Object texture)
     {
         texture = null;
 #if UNITY_5_3_OR_NEWER
