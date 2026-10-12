@@ -92,6 +92,15 @@ public class HeroController : MonoBehaviour
         if (!IsDead) CurrentState = HeroState.Idle;
     }
 
+    public float EffectiveMoveSpeed()
+    {
+        var manager = CombatManager.Instance;
+        var state = manager != null ? manager.StateFor(this) : null;
+        return state == null || state.Data == null ? Mathf.Max(0f,moveSpeed) :
+            Mathf.Max(0f,CombatStats.Get(state.Data,CombatStatId.MovementSpeed,
+                moveSpeed,ElementType.Vo,new [] { CombatStats.StanceTag(attackMode) }));
+    }
+
     public void TickMovement(EnvironmentManager space, float dt)
     {
         MovementDistanceThisFrame = 0f;
@@ -106,7 +115,7 @@ public class HeroController : MonoBehaviour
             CurrentState = HeroState.Returning;
             // No current enemy: explore straight left at the current Y.
             // Y only changes while a melee Hero approaches a selected target.
-            p.x -= Mathf.Max(0f, moveSpeed) * dt;
+            p.x -= EffectiveMoveSpeed() * dt;
             MovementDistanceThisFrame = Mathf.Abs(p.x - startX);
             space.SetPosition(heroRect, p);
             HandleAnimation(true, false);
@@ -114,7 +123,7 @@ public class HeroController : MonoBehaviour
         }
 
         Vector2 target = space.Position(CurrentTarget.Rect);
-        p.x = BattleMotion.ForwardApproach(p.x, target.x, attackRange, moveSpeed, dt, -1);
+        p.x = BattleMotion.ForwardApproach(p.x, target.x, attackRange, EffectiveMoveSpeed(), dt, -1);
         if (attackMode == AttackMode.Melee && Mathf.Abs(target.x - p.x) > attackRange + .1f)
             p.y = Mathf.MoveTowards(p.y, target.y, laneSpeed * dt);
         MovementDistanceThisFrame = Mathf.Abs(p.x - startX);
@@ -267,13 +276,19 @@ public class HeroController : MonoBehaviour
         var lines = new List<string> { "Cấp: " + data.currentLevel + " · " + (attackMode == AttackMode.Melee ? "Cận chiến" : attackMode == AttackMode.RangedPhysical ? "Cung" : "Phép"),
             "HP: " + currentHP + "/" + maxHP,
             "EXP: " + data.currentExp + "/" + data.expToNextLevel,
-            "ATK cơ bản: " + data.baseDamage + " + " + data.addedDamage + " = " + data.GetCalculatedDamage() };
+            "ATK: " + data.baseDamage + " + " + data.addedDamage +
+            " (+/- dac tinh) = " + data.GetCalculatedDamage(attackMode) };
         for (int i = 0; i < data.spiritRoots.Count; i++)
             lines.Add("ATK " + IdentityDisplay.Element(data.spiritRoots[i]) + ": " +
-                (data.GetCalculatedDamage() * data.rootWeights[i]).ToString("0.##") + " (" +
+                (data.GetCalculatedDamage(attackMode) * data.rootWeights[i]).ToString("0.##") + " (" +
                 IdentityDisplay.Tier(data.rootTiers[i]) + ", " + data.rootWeights[i].ToString("P0") + ")");
-        float interval = CombatBalance.AttackInterval(attackMode, data.baseAttackSpeed, CombatBalance.HeroDev != null);
-        lines.Add("Di chuyển: " + moveSpeed.ToString("0.##") + " đơn vị/giây");
+        float effectiveSpeed = CombatStats.Get(data,CombatStatId.AttackSpeed,
+            data.baseAttackSpeed,ElementType.Vo,new [] { CombatStats.StanceTag(attackMode) });
+        float interval = CombatBalance.AttackInterval(attackMode,effectiveSpeed,CombatBalance.HeroDev != null);
+        lines.Add("Di chuyển: " + EffectiveMoveSpeed().ToString("0.##") + " đơn vị/giây");
+        lines.Add("Giáp: " + CombatStats.Get(data,CombatStatId.Armor).ToString("0.##") +
+            " · Kháng phép: " + CombatStats.Get(data,CombatStatId.MagicResistance).ToString("0.##"));
+        lines.Add("Hồi HP/giây: " + CombatStats.Get(data,CombatStatId.HealthRegeneration).ToString("0.##"));
         lines.Add("Tốc đánh: " + (1f / interval).ToString("0.##") + " đòn/giây");
         lines.Add("Nhịp đánh: " + interval.ToString("0.##") + " giây/đòn");
         lines.Add("Tầm đánh: " + attackRange.ToString("0.##"));
