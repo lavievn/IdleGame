@@ -20,6 +20,7 @@ public sealed class CombatResistanceSettings
     public float armorHalfReduction = 100f;
     public float magicResistanceHalfReduction = 100f;
     public float maximumSchoolReduction = .85f;
+    public float maximumSchoolVulnerability = .5f;
     public float maximumElementReduction = .75f;
     public float minimumElementReduction = -.5f;
 }
@@ -68,9 +69,10 @@ public static class CombatDamage
                 CombatStatId.MagicResistance,0f,ElementType.Vo,incomingTags);
             float half = part.school == DamageSchool.Physical ?
                 settings.armorHalfReduction : settings.magicResistanceHalfReduction;
-            double reduction = Math.Max(0d,resistance) /
-                (Math.Max(.001d,half) + Math.Max(0d,resistance));
-            reduction = Math.Min(Math.Max(0d,settings.maximumSchoolReduction),reduction);
+            double reduction = resistance /
+                (Math.Max(.001d,half) + Math.Abs(resistance));
+            reduction = Math.Max(-Math.Max(0d,settings.maximumSchoolVulnerability),
+                Math.Min(Math.Max(0d,settings.maximumSchoolReduction),reduction));
             float elemental = CombatStats.Get(defender,
                 CombatStatId.ElementResistance,0f,part.element,incomingTags);
             double elementalReduction = Math.Max(settings.minimumElementReduction,
