@@ -84,6 +84,28 @@ public class EntityDataSO : ScriptableObject
         { combatStatsVersion = CombatStats.SchemaVersion; isDirty = true; }
     }
 
+    public bool AddCharacterTag(string tag)
+    {
+        if (string.IsNullOrEmpty(tag)) return false;
+        tag = tag.Trim();
+        NormalizeCombatStats();
+        if (characterTags.Exists(x => string.Equals(x,tag,System.StringComparison.OrdinalIgnoreCase)))
+            return false;
+        characterTags.Add(tag);
+        isDirty = true;
+        return true;
+    }
+
+    public bool RemoveCharacterTag(string tag)
+    {
+        if (string.IsNullOrEmpty(tag)) return false;
+        NormalizeCombatStats();
+        int changed = characterTags.RemoveAll(x =>
+            string.Equals(x,tag.Trim(),System.StringComparison.OrdinalIgnoreCase));
+        if (changed > 0) isDirty = true;
+        return changed > 0;
+    }
+
     public void AddCombatModifier(CombatStatModifier modifier)
     {
         if (modifier == null) return;
