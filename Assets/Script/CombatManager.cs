@@ -491,7 +491,9 @@ public class CombatManager : MonoBehaviour
         if (target == null || attacker == null || attacker.Data == null) return;
         int damage = CombatDamage.ResolveLegacy(trace.elementDamage,attacker.Data,target.data,
             sourceMode ?? attacker.SelectedMode,resistanceSettings);
-        if (gameManager!=null) gameManager.RecordDamage(trace.Describe(1f,1,damage));
+        if (gameManager!=null)
+            gameManager.RecordDamage(trace.Describe(1f,1,trace.elementDamage) +
+                (damage != trace.elementDamage ? "\n0.0.51 — Sau bổ trợ và phòng ngự: " + damage : ""));
         DealDamageFromHero(target,damage,attacker,impactSourceX);
     }
     private void DealDamageToMonster(ActiveMonsterInfo target,int finalDmg,float? impactSourceX=null)
@@ -581,9 +583,12 @@ public class CombatManager : MonoBehaviour
                 sourceMode,resistanceSettings);
         float mapScale=WorldNames.MonsterDamageScale(victim.Data.MapVisits);
         int hardScale=gameManager!=null && gameManager.IsHardMode?2:1;
+        int previousPipelineDamage = trace == null ? damage :
+            Mathf.Max(1,Mathf.RoundToInt(trace.elementDamage*mapScale*hardScale));
         damage=Mathf.Max(1,Mathf.RoundToInt(damage*mapScale*hardScale));
         if (gameManager!=null && trace!=null)
-            gameManager.RecordDamage(trace.Describe(mapScale,hardScale,damage));
+            gameManager.RecordDamage(trace.Describe(mapScale,hardScale,previousPipelineDamage) +
+                (damage != previousPipelineDamage ? "\n0.0.51 — Sau bổ trợ và phòng ngự: " + damage : ""));
         victim.CurrentHP=Mathf.Max(0,victim.CurrentHP-damage);
         if (gameManager!=null)
         {
