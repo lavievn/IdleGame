@@ -15,7 +15,7 @@
 
 ## Chỉnh trong Unity Inspector
 
-**Công thức kháng:** `Hierarchy → GameObject CombatManager → Component CombatManager → 0.0.51 - GIAP / KHANG PHEP / KHANG HE → Resistance Settings`:
+**Công thức kháng:** `Hierarchy → GameController → Component CombatManager → 0.0.51 - GIAP / KHANG PHEP / KHANG HE → Resistance Settings`:
 
 | Trường | Mặc định | Ý nghĩa |
 |---|---:|---|
@@ -26,7 +26,7 @@
 | `maximumElementReduction` | 0.75 | Kháng từng nguyên tố tối đa 75% |
 | `minimumElementReduction` | -0.50 | Kháng hệ âm làm tăng sát thương nhận tối đa 50% |
 
-**Đặc tính nhân vật:** `Hierarchy → GameManager → Hero Data SO (nhấp vào asset được gán) → 0.0.51 - THUOC TINH / DAC TINH`. Chỉnh `Character Tags` và `Combat Stat Modifiers`. Đây là thiết lập trên asset mẫu; hãy kiểm thử trên **New Game** để game tạo bản dữ liệu runtime và không ghi đè save cũ.
+**Đặc tính nhân vật:** `Hierarchy → GameController → Component GameManager → Hero Data SO (nhấp vào asset được gán) → 0.0.51 - THUOC TINH / DAC TINH`. Chỉnh `Character Tags` và `Combat Stat Modifiers`. Đây là thiết lập trên asset mẫu; hãy kiểm thử trên **New Game** để game tạo bản dữ liệu runtime và không ghi đè save cũ.
 
 Ví dụ modifier mẫu để thử:
 
