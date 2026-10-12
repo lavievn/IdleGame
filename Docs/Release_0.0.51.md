@@ -1,0 +1,63 @@
+# 0.0.51 — Nền thuộc tính, đặc tính và phòng ngự
+
+**Nền:** main 0.0.50 (commit `4ed0020`). **Nhánh kiểm thử:** `feature/0.0.51-combat-stats`. Chưa gộp main hoặc phát hành chính thức.
+
+## Đã triển khai
+
+- `CombatStatId` và `CombatStatModifier`: lưu nguồn (`sourceId`), thuộc tính, cộng thẳng (`flat`), cộng theo tỷ lệ (`percent`), nguyên tố, điều kiện thẻ `requiredTags` / `blockedTags`.
+- `EntityDataSO.characterTags`, `combatStatModifiers`, `combatStatsVersion`: có lưu Unity JSON cùng Hero chính; đọc save 0.0.50 sẽ khởi tạo các danh sách mới rỗng, không sinh ngẫu nhiên lại khi tải. API `AddCharacterTag`, `RemoveCharacterTag`, `AddCombatModifier`, `RemoveModifiersBySource` đánh dấu dữ liệu cần lưu.
+- HP và ATK đọc qua cùng bộ thuộc tính; không sửa ngược `baseHealth`/`baseDamage` hoặc điểm thuộc tính. HP theo thế Cận/Cung/Phép vẫn giữ công thức cũ; cộng đồ áp dụng sau hệ số của HP nền. `CombatManager.RefreshRegisteredHeroStats(controller)` làm mới HP theo cùng tỷ lệ, không hồi sinh nhân vật đã chết.
+- Tốc chạy, tốc đánh và hồi HP tự động của từng Hero dùng bộ thuộc tính; hồi HP tích lũy phần thập phân, có thể kiểm chứng ở nhịp khung hình thấp. Hồi máu sau khi hạ quái hỗ trợ bonus có điều kiện.
+- `CombatDamage`: một chiêu có nhiều `CombatDamagePart`, mỗi phần riêng `DamageSchool.Physical/Magical` và `ElementType`. Giáp chỉ tác động sát thương vật lý, kháng phép chỉ tác động phép, kháng hệ chỉ tác động phần mang đúng hệ. Tổng cộng sau khi kháng riêng từng phần rồi làm tròn một lần.
+- Giáp/kháng phép sử dụng hiệu quả giảm dần, và giới hạn chống miễn nhiễm; giá trị âm gây yếu kháng thực sự nhưng có giới hạn. `CombatManager` dùng công thức mới cho các đòn cận và đạn bay hai chiều.
+- **Tương thích 0.0.50:** đòn thường vẫn đi qua `SynergyMath` tính các hệ số linh căn cũ, và `CombatDamage.ResolveLegacy` chỉ thêm tầng phòng ngự; không có modifier thì không thêm tính toán/đối tượng tạm ở mỗi hit. Đòn thường hiện tại phân loại Cận/Cung = vật lý Vô, Phép = phép Vô **ở tầng giáp/kháng mới**. Hiệu ứng linh căn 0.0.50 vẫn được giữ nguyên ở tầng trước. Chưa thay toàn bộ đòn thường thành skill mang nguyên tố riêng.
+- Hiển thị Giáp, Kháng phép, Hồi HP và ATK/tốc chạy tính lại ở bảng thông số Hero.
+
+## Chỉnh trong Unity Inspector
+
+**Công thức kháng:** `Hierarchy → GameObject CombatManager → Component CombatManager → 0.0.51 - GIAP / KHANG PHEP / KHANG HE → Resistance Settings`:
+
+| Trường | Mặc định | Ý nghĩa |
+|---|---:|---|
+| `armorHalfReduction` | 100 | 100 giáp cho 50% giảm vật lý nếu chưa đụng giới hạn |
+| `magicResistanceHalfReduction` | 100 | 100 kháng phép cho 50% giảm phép |
+| `maximumSchoolReduction` | 0.85 | Giảm tối đa 85% cho từng loại |
+| `maximumSchoolVulnerability` | 0.50 | Kháng âm có thể làm nhận thêm tối đa 50% |
+| `maximumElementReduction` | 0.75 | Kháng từng nguyên tố tối đa 75% |
+| `minimumElementReduction` | -0.50 | Kháng hệ âm làm tăng sát thương nhận tối đa 50% |
+
+**Đặc tính nhân vật:** `Hierarchy → GameManager → Hero Data SO (nhấp vào asset được gán) → 0.0.51 - THUOC TINH / DAC TINH`. Chỉnh `Character Tags` và `Combat Stat Modifiers`. Đây là thiết lập trên asset mẫu; hãy kiểm thử trên **New Game** để game tạo bản dữ liệu runtime và không ghi đè save cũ.
+
+Ví dụ modifier mẫu để thử:
+
+- `stat=Armor; flat=100`: giảm 50% phần vật lý.
+- `stat=MagicResistance; flat=-100`: nhận thêm 50% phần phép (do giới hạn yếu kháng).
+- `stat=ElementResistance; element=Hoa; flat=.25`: giảm 25% phần mang Hỏa.
+- `stat=ElementDamagePercent; element=Hoa; percent=.20`: tăng 20% phần sát thương Hỏa.
+- `stat=MovementSpeed; flat=50; requiredTags=["terrain:forest"]` + `characterTags=["terrain:forest"]`: tăng tốc chạy khi đủ thẻ điều kiện.
+
+Trường `percent` trên các thuộc tính chỉ số thường = tỷ lệ nhân với **giá trị gốc** (ví dụ `MovementSpeed percent=.1` tăng 10% tốc gốc). Trên các thuộc tính đã có chữ `Percent` và `ElementResistance`, `flat` / `percent` đều biểu diễn **giá trị tỷ lệ trực tiếp** (`.20` là 20%). `Armor` và `MagicResistance` là điểm phòng ngự, không phải tỷ lệ giảm cố định.
+
+**Dữ liệu đang chơi:** nếu thay danh sách modifier bằng mã trong lúc Hero đang sống, hãy gọi `CombatManager.RefreshRegisteredHeroStats(hero)` để cập nhật Max HP mà không đổi sai tỷ lệ. UI kho đồ sau này sẽ tự gọi hàm này. Chỉnh Inspector trên asset trong Play Mode chưa có cơ chế tự động chuyển vào bản sao Hero đang chơi.
+
+## Đã khai báo nhưng chưa đưa vào gameplay
+
+- `CastSpeed`, `CooldownReductionPercent`, `ManaRegeneration`: cấu trúc thuộc tính có sẵn; chưa có kỹ năng thực hay thanh linh lực để áp dụng.
+- `ElementDamagePercent` dùng được trong `CombatDamage.Resolve` cho chiêu nhiều phần, nhưng **chưa có hệ tạo/thi triển kỹ năng mới**. Hệ linh căn hiện tại không thay thế bằng mô hình kỹ năng mới.
+- Tag địa hình/vũ khí chưa có hệ thống tự cấp/tháo từ trang bị hoặc map. Có thể thử bằng cách cấp `characterTags` hoặc context API.
+- Chưa có kho đồ, vũ khí ngẫu nhiên, xuất thân ngẫu nhiên, kỳ ngộ, hồi phục theo thời gian offline, lưu đồng đội B2.
+
+## Kiểm thử hồi quy và giới hạn
+
+- `Tests~/Version0051StatsRegression.cs` kiểm tra nhiều phần sát thương, yếu kháng và giới hạn, lọc tag, tỷ lệ Max HP khi thêm/tháo đặc tính, hồi HP theo thời gian, tốc chạy có điều kiện và chiến đấu thực tế với quái.
+- `Tests~/run.sh` đã bao gồm `CombatStats.cs` và `CombatDamage.cs`.
+- **Chưa chạy Unity Editor, Windows build hay Mono test trên môi trường cập nhật GitHub**. Thư viện mô phỏng `Tests~/UnityStub.cs` không xác minh được quá trình Unity JSON ghi danh sách modifier phức tạp; cần test save/load trên Unity thật trước khi gộp main.
+
+## Checklist kiểm thử Unity
+
+1. Console không có lỗi sau khi Pull và mở Scene.
+2. New Game không có modifier: sát thương và chuyển động vẫn giống 0.0.50.
+3. Chọn asset dữ liệu Hero rồi thử Armor/MagicResistance/Hoa Resistance; quái cận/Phép tấn công và ghi log đúng.
+4. Thử modifier MovementSpeed +50, Attack +5, MaxHealth +100, HealthRegeneration +3 rồi xác nhận UI và chiến đấu.
+5. Thử cả hai Hero B2 cùng đánh, Hero tử vong ẩn ngay và camera vẫn hoạt động.
+6. Sao lưu save 0.0.50; Load thử để chắc chắn cấp, linh căn, map không đổi; sau đó lưu và nạp lại các modifier trên Unity.
