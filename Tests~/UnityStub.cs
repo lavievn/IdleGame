@@ -154,6 +154,7 @@ namespace UnityEngine
     public class SerializeField : Attribute { }
     public class TooltipAttribute : Attribute { public TooltipAttribute(string s){} }
     public class HeaderAttribute : Attribute { public HeaderAttribute(string s) { } }
+    public class ContextMenu : Attribute { public ContextMenu(string s) { } }
     public class RangeAttribute : Attribute { public RangeAttribute(float a,float b) { } }
     public class MinAttribute : Attribute { public MinAttribute(float a) { } }
     public class DefaultExecutionOrder : Attribute { public DefaultExecutionOrder(int v) { } }
