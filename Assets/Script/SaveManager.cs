@@ -80,6 +80,10 @@ public class SaveManager : MonoBehaviour
                 // Old saves lack a stance field; do not inherit the
                 // template asset's current Inspector stance by accident.
                 entityData.savedAttackMode = TuTienCore.AttackMode.Melee;
+                entityData.inventoryVersion = 0;
+                entityData.inventory = new System.Collections.Generic.List<InventoryStack>();
+                entityData.equippedItemId = "";
+                entityData.testItemsGranted = false;
                 entityData.combatStatsVersion = 0;
                 entityData.characterTags = new System.Collections.Generic.List<string>();
                 entityData.combatStatModifiers = new System.Collections.Generic.List<CombatStatModifier>();
@@ -104,6 +108,7 @@ public class SaveManager : MonoBehaviour
                 entityData.NormalizeRoots();
                 entityData.NormalizeMapProgress();
                 entityData.NormalizeCombatStats();
+                EquipmentInventory.Normalize(entityData);
                 // Corrupt/future enum values never pass to a HeroController.
                 if (entityData.savedAttackMode != TuTienCore.AttackMode.Melee &&
                     entityData.savedAttackMode != TuTienCore.AttackMode.RangedPhysical &&
