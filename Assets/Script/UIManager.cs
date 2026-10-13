@@ -506,7 +506,7 @@ public class UIManager : MonoBehaviour
         {
             if (transparentWindow != null)
                 transparentWindow.ResizeWindow(ManagementWindowLayout.TargetWidth,
-                    ManagementWindowLayout.TargetHeight);
+                    ManagementWindowLayout.TargetHeight,true);
             else
                 Screen.SetResolution(ManagementWindowLayout.TargetWidth,
                     ManagementWindowLayout.TargetHeight,FullScreenMode.Windowed);
@@ -522,7 +522,7 @@ public class UIManager : MonoBehaviour
             int oldHeight=ManagementWindowLayout.CompactHeight;
             ManagementWindowLayout.Collapse();
             if (transparentWindow != null)
-                transparentWindow.ResizeWindow(oldWidth,oldHeight);
+                transparentWindow.ResizeWindow(oldWidth,oldHeight,true);
             else Screen.SetResolution(oldWidth,oldHeight,FullScreenMode.Windowed);
         }
         if (inventoryPauseCaptured)
