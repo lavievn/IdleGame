@@ -25,6 +25,7 @@ public class TransparentWindow : MonoBehaviour
     private WindowPointerGesture gesture = new WindowPointerGesture();
     private bool resizing;
     private int queuedResizeWidth,queuedResizeHeight;
+    private bool queuedResizeKeepBottom;
     private CLIENTRECT resizeWorkArea;
     private bool dragging;
     private POINT resizePosition;
@@ -297,7 +298,7 @@ public class TransparentWindow : MonoBehaviour
             ManagementWindowLayout.MinimumWindowWidth);
     }
 
-    public void ResizeWindow(int width, int height)
+    public void ResizeWindow(int width, int height,bool preserveBottomLeft=false)
     {
 #if UNITY_STANDALONE_WIN && !UNITY_EDITOR
         if (hWnd == IntPtr.Zero) return;
@@ -307,12 +308,20 @@ public class TransparentWindow : MonoBehaviour
             // restore the compact preset, rather than getting stuck wide.
             queuedResizeWidth=width;
             queuedResizeHeight=height;
+            queuedResizeKeepBottom=preserveBottomLeft;
             return;
         }
         queuedResizeWidth=queuedResizeHeight=0;
+        queuedResizeKeepBottom=false;
         CLIENTRECT rect;
         hasResizePosition = GetWindowRect(hWnd, out rect);
-        if (hasResizePosition) resizePosition = new POINT { X = rect.left, Y = rect.top };
+        if (hasResizePosition)
+        {
+            // Keep the compact gameplay's bottom-left DESKTOP position stable
+            // when the management window grows upward and to the right.
+            int y=preserveBottomLeft?rect.bottom-height:rect.top;
+            resizePosition = new POINT { X = rect.left, Y = y };
+        }
         resizeWorkArea = WorkArea();
         resizing = true; dragging = false; gesture.Cancel();
         Screen.SetResolution(width, height, FullScreenMode.Windowed);
@@ -359,9 +368,11 @@ public class TransparentWindow : MonoBehaviour
         if (queuedResizeWidth>0)
         {
             int nextWidth=queuedResizeWidth,nextHeight=queuedResizeHeight;
+            bool keepBottom=queuedResizeKeepBottom;
             queuedResizeWidth=queuedResizeHeight=0;
+            queuedResizeKeepBottom=false;
             if (nextWidth!=width || nextHeight!=height)
-                ResizeWindow(nextWidth,nextHeight);
+                ResizeWindow(nextWidth,nextHeight,keepBottom);
         }
 #else
         yield break;
