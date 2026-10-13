@@ -29,8 +29,8 @@ public sealed class InventoryPanelUI : MonoBehaviour
     };
 
     private UIManager ui;
-    private RectTransform root, headerBacking, equipmentBacking, inventoryBacking;
-    private TextMeshProUGUI header, summary, detail, bagStatus;
+    private RectTransform root, headerBacking, equipmentBacking, inventoryBacking, topBanner;
+    private TextMeshProUGUI header, summary, detail, bagStatus, bannerText;
     private RectTransform[] slotButtons = new RectTransform[8];
     private TextMeshProUGUI[] slotTexts = new TextMeshProUGUI[8];
     private RectTransform[] bagButtons = new RectTransform[20];
@@ -110,6 +110,13 @@ public sealed class InventoryPanelUI : MonoBehaviour
         if(ui==null || hud==null)return null;
         var panel=ui.gameObject.AddComponent<InventoryPanelUI>();
         panel.ui=ui;
+        panel.topBanner=Backdrop(hud,"052_ExpandedKnowledgeBanner",
+            new Color(.048f,.105f,.119f,.965f));
+        panel.bannerText=ui.MakeLabel(panel.topBanner,
+            "HÀNH TRANG TU SĨ  ·  VẬT PHẨM & PHÁP KHÍ",
+            Vector2.zero,new Vector2(460f,80f));
+        panel.bannerText.alignment=TextAlignmentOptions.Center;
+        panel.bannerText.raycastTarget=false;
         panel.root=Backdrop(hud,"052_ExpandedInventory",new Color(.046f,.082f,.098f,.99f));
         panel.headerBacking=Backdrop(panel.root,"SilkTitleBacking",
             new Color(.10f,.19f,.21f,.99f));
@@ -157,9 +164,13 @@ public sealed class InventoryPanelUI : MonoBehaviour
         panel.MakeButton("InventoryClose","Đóng  ×",panel.Close);
 
         if(ui.transparentWindow!=null)
+        {
             ui.transparentWindow.RegisterClickable(panel.root);
+            ui.transparentWindow.RegisterClickable(panel.topBanner);
+        }
         panel.Layout(Screen.width,Screen.height,Screen.width,Screen.height);
         panel.root.gameObject.SetActive(false);
+        panel.topBanner.gameObject.SetActive(false);
         return panel;
     }
 
@@ -190,6 +201,7 @@ public sealed class InventoryPanelUI : MonoBehaviour
     {
         if(root==null || !root.gameObject.activeSelf)return;
         root.gameObject.SetActive(false);
+        if(topBanner!=null)topBanner.gameObject.SetActive(false);
         if(ui!=null)ui.OnInventoryDismissed();
     }
 
@@ -434,6 +446,13 @@ public sealed class InventoryPanelUI : MonoBehaviour
         }
         int pages=Math.Max(1,(entries.Count+bagButtons.Length-1)/bagButtons.Length);
         bagStatus.text="TÚI ĐỒ · "+entries.Count+" món  ["+(page+1)+"/"+pages+"]";
+        if(bannerText!=null)
+            bannerText.text=hero==null?
+                "HÀNH TRANG TU SĨ\nBảo vật trong túi Càn Khôn" :
+                "HÀNH TRANG TU SĨ\n"+
+                "Cấp "+hero.currentLevel+"  ·  Bản đồ "+hero.mapNumber+
+                "  ·  Vàng "+hero.gold+"\n"+
+                "Tâm pháp · Võ học · Luyện chế: sẽ mở trong các giai đoạn tiếp theo";
         equipText.text=selected!=null && !selected.equipped && (selected.gear!=null || selected.legacy) ?
             "Trang bị" : "—";
         removeText.text=selected!=null && selected.equipped?"Tháo":"—";
@@ -469,6 +488,22 @@ public sealed class InventoryPanelUI : MonoBehaviour
         float x=overlayFallback ? Mathf.Max(0f,(windowWidth-w)*.5f) : combatWidth;
         float y=overlayFallback ? Mathf.Max(0f,(windowHeight-h)*.5f) : 0f;
         Place(root,x,y,w,h);
+        float bannerHeight=windowHeight-combatHeight;
+        bool showBanner=ManagementWindowLayout.Expanded &&
+            bannerHeight>40f && !overlayFallback;
+        if(topBanner!=null)
+        {
+            topBanner.gameObject.SetActive(IsOpen && showBanner);
+            if(showBanner)
+            {
+                Place(topBanner,0f,0f,combatWidth,bannerHeight);
+                var bannerRect=(RectTransform)bannerText.transform;
+                Place(bannerRect,16f,Mathf.Max(15f,(bannerHeight-110f)*.5f),
+                    combatWidth-32f,110f);
+                UIManager.ReadableText(bannerText,Mathf.Min(19f,Mathf.Max(14f,combatWidth/45f)));
+                bannerText.color=new Color(.81f,.85f,.73f,1f);
+            }
+        }
         Place(headerBacking,4f,4f,w-8f,31f);
         Place(equipmentBacking,5f,40f,Mathf.Min(188f,w*.36f),h-44f);
         Place(inventoryBacking,Mathf.Min(188f,w*.36f)+9f,40f,
