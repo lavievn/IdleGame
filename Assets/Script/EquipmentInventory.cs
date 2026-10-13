@@ -73,7 +73,7 @@ public static class EquipmentInventory
         var unique = new List<InventoryStack>();
         foreach (var entry in hero.inventory)
         {
-            if (entry == null || EquipmentCatalog.Find(entry.itemId) == null || entry.quantity <= 0)
+            if (entry == null || string.IsNullOrEmpty(entry.itemId) || entry.quantity <= 0)
             { changed = true; continue; }
             int quantity = Math.Min(MaxQuantity, entry.quantity);
             InventoryStack existing = unique.Find(x => x.itemId == entry.itemId);
@@ -109,7 +109,7 @@ public static class EquipmentInventory
 
     public static bool Add(EntityDataSO hero, string itemId, int quantity = 1)
     {
-        if (hero == null || EquipmentCatalog.Find(itemId) == null ||
+        if (hero == null || string.IsNullOrEmpty(itemId) ||
             quantity <= 0 || quantity > MaxQuantity) return false;
         if (hero.inventory == null) hero.inventory = new List<InventoryStack>();
         var item = hero.inventory.Find(x => x != null && x.itemId == itemId);
@@ -145,7 +145,8 @@ public static class EquipmentInventory
     public static bool Equip(EntityDataSO hero, string itemId)
     {
         if (hero == null || EquipmentCatalog.Find(itemId) == null ||
-            Count(hero,itemId) <= 0 || hero.equippedItemId == itemId) return false;
+            Count(hero,itemId) <= 0 || hero.equippedItemId == itemId ||
+            EquipmentRuntime.Equipped(hero,EquipmentSlot.Artifact) != null) return false;
         if (!string.IsNullOrEmpty(hero.equippedItemId) &&
             !CanAdd(hero,hero.equippedItemId)) return false;
         var stack = hero.inventory.Find(x => x != null && x.itemId == itemId);
