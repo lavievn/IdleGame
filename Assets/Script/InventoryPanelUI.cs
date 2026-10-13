@@ -4,9 +4,9 @@ using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 
-// 0.0.52: a compact-friendly item window docked OUTSIDE the fixed combat
-// viewport. Pixel-inspired layout: equipped slots left, bag grid right,
-// selected item's complete saved stats below. No runtime sprite asset needed.
+// 0.0.52: docked Xianxia inventory: ink/jade/brass-inspired temporary
+// vector surfaces, not pixel art. Final book/jade ornament sprites can
+// replace only the presentation; item layout and battle logic stay intact.
 public sealed class InventoryPanelUI : MonoBehaviour
 {
     private sealed class Entry
@@ -29,7 +29,7 @@ public sealed class InventoryPanelUI : MonoBehaviour
     };
 
     private UIManager ui;
-    private RectTransform root;
+    private RectTransform root, headerBacking, equipmentBacking, inventoryBacking;
     private TextMeshProUGUI header, summary, detail, bagStatus;
     private RectTransform[] slotButtons = new RectTransform[8];
     private TextMeshProUGUI[] slotTexts = new TextMeshProUGUI[8];
@@ -73,12 +73,12 @@ public sealed class InventoryPanelUI : MonoBehaviour
     {
         switch(rarity)
         {
-            case EquipmentRarity.Hoang:return new Color(.45f,.34f,.15f,1f);
-            case EquipmentRarity.Huyen:return new Color(.20f,.38f,.54f,1f);
-            case EquipmentRarity.Dia:return new Color(.26f,.43f,.24f,1f);
-            case EquipmentRarity.Thien:return new Color(.49f,.24f,.54f,1f);
-            case EquipmentRarity.Tien:return new Color(.58f,.33f,.10f,1f);
-            default:return new Color(.26f,.22f,.17f,1f);
+            case EquipmentRarity.Hoang:return new Color(.34f,.32f,.25f,1f);
+            case EquipmentRarity.Huyen:return new Color(.17f,.32f,.41f,1f);
+            case EquipmentRarity.Dia:return new Color(.19f,.38f,.29f,1f);
+            case EquipmentRarity.Thien:return new Color(.34f,.26f,.52f,1f);
+            case EquipmentRarity.Tien:return new Color(.49f,.38f,.18f,1f);
+            default:return new Color(.15f,.24f,.27f,1f);
         }
     }
     private static void ColorButton(RectTransform rect,Color color)
@@ -93,7 +93,7 @@ public sealed class InventoryPanelUI : MonoBehaviour
     {
         var result=ui.SmallButton(root,name,caption,new Vector2(0f,1f),
             new Vector2(0f,1f),Vector2.zero,new Vector2(60f,36f),()=>click());
-        ColorButton(result,new Color(.24f,.14f,.10f,.98f));
+        ColorButton(result,new Color(.16f,.29f,.30f,.98f));
         return result;
     }
     private TextMeshProUGUI MakeText(string name,string caption)
@@ -110,8 +110,14 @@ public sealed class InventoryPanelUI : MonoBehaviour
         if(ui==null || hud==null)return null;
         var panel=ui.gameObject.AddComponent<InventoryPanelUI>();
         panel.ui=ui;
-        panel.root=Backdrop(hud,"052_ExpandedInventory",new Color(.10f,.055f,.047f,.985f));
-        panel.header=panel.MakeText("InventoryTitle","TRANG BỊ  /  KHO ĐỒ");
+        panel.root=Backdrop(hud,"052_ExpandedInventory",new Color(.046f,.082f,.098f,.99f));
+        panel.headerBacking=Backdrop(panel.root,"SilkTitleBacking",
+            new Color(.10f,.19f,.21f,.99f));
+        panel.equipmentBacking=Backdrop(panel.root,"JadeEquipBacking",
+            new Color(.078f,.145f,.16f,.96f));
+        panel.inventoryBacking=Backdrop(panel.root,"InkBagBacking",
+            new Color(.055f,.115f,.13f,.96f));
+        panel.header=panel.MakeText("InventoryTitle","LINH KHÍ  ·  TRANG BỊ & TÚI CÀN KHÔN");
         panel.summary=panel.MakeText("InventoryStats","");
         panel.detail=panel.MakeText("SelectedItemDetails","");
         panel.bagStatus=panel.MakeText("BagPage","");
@@ -374,8 +380,8 @@ public sealed class InventoryPanelUI : MonoBehaviour
             }
             slotTexts[i].text=title+"\n"+name;
             ColorButton(slotButtons[i],gear!=null?RarityColor(gear.rarity):
-                (name!="Trống" ? new Color(.39f,.27f,.12f,1f) :
-                    new Color(.21f,.15f,.12f,1f)));
+                (name!="Trống" ? new Color(.32f,.34f,.22f,1f) :
+                    new Color(.11f,.22f,.24f,1f)));
         }
         for(int i=0;i<bagButtons.Length;i++)
         {
@@ -387,10 +393,10 @@ public sealed class InventoryPanelUI : MonoBehaviour
                 entry.gear==null?"":"\n"+EquipmentFoundation.RarityName(entry.gear.rarity));
             Color color=entry!=null && entry.gear!=null ?
                 RarityColor(entry.gear.rarity) :
-                entry!=null?new Color(.29f,.25f,.17f,1f):
-                new Color(.15f,.11f,.095f,1f);
+                entry!=null?new Color(.20f,.29f,.28f,1f):
+                new Color(.095f,.17f,.19f,1f);
             if(entry!=null && entry.key==selectedKey)
-                color=new Color(.70f,.46f,.16f,1f);
+                color=new Color(.58f,.46f,.21f,1f);
             ColorButton(bagButtons[i],color);
         }
         if(hero==null)
@@ -461,6 +467,10 @@ public sealed class InventoryPanelUI : MonoBehaviour
         float x=overlayFallback ? Mathf.Max(0f,(windowWidth-w)*.5f) : combatWidth;
         float y=overlayFallback ? Mathf.Max(0f,(windowHeight-h)*.5f) : 0f;
         Place(root,x,y,w,h);
+        Place(headerBacking,4f,4f,w-8f,31f);
+        Place(equipmentBacking,5f,40f,Mathf.Min(188f,w*.36f),h-44f);
+        Place(inventoryBacking,Mathf.Min(188f,w*.36f)+9f,40f,
+            Mathf.Max(100f,w-Mathf.Min(188f,w*.36f)-15f),h-44f);
         Place((RectTransform)header.transform,12f,9f,w-110f,25f);
         Place(FindButton("InventoryClose"),w-94f,7f,86f,26f);
 
@@ -474,20 +484,25 @@ public sealed class InventoryPanelUI : MonoBehaviour
             float tabW=(gridW-8f)/3f;
             Place(tabButtons[i],gridX+i*(tabW+4f),36f,tabW,25f);
             ColorButton(tabButtons[i],filter==i?
-                new Color(.49f,.29f,.12f,1f):new Color(.24f,.14f,.10f,1f));
+                new Color(.25f,.46f,.40f,1f):new Color(.14f,.26f,.28f,1f));
         }
         Place(FindButton("InventoryPrev"),w-94f,64f,40f,26f);
         Place(FindButton("InventoryNext"),w-51f,64f,40f,26f);
-        float slotW=(left-16f)/2f, slotH=48f;
+        float slotW=(left-16f)/2f;
+        float slotH=Mathf.Max(27f,Mathf.Min(48f,(h-185f)/4f-4f));
+        float slotStep=slotH+4f;
         for(int i=0;i<Slots.Length;i++)
-            Place(slotButtons[i],8f+(i%2)*(slotW+2f),72f+(i/2)*52f,slotW,slotH);
-        Place((RectTransform)summary.transform,10f,286f,left-8f,79f);
+            Place(slotButtons[i],8f+(i%2)*(slotW+2f),
+                72f+(i/2)*slotStep,slotW,slotH);
+        float summaryY=72f+4f*slotStep+7f;
+        Place((RectTransform)summary.transform,10f,summaryY,left-8f,
+            Mathf.Max(16f,h-summaryY-78f));
         Place(FindButton("InventoryGrantCharms"),9f,h-63f,left-8f,26f);
         Place(FindButton("InventoryGrantSword"),9f,h-33f,left-8f,26f);
 
         const int cols=5, rows=4;
         float cellW=(gridW-12f)/cols;
-        float cellH=Mathf.Max(25f,Mathf.Min(48f,(h-224f)/rows));
+        float cellH=Mathf.Max(25f,Mathf.Min(58f,(h-250f)/rows));
         float bagY=96f;
         for(int i=0;i<bagButtons.Length;i++)
             Place(bagButtons[i],gridX+(i%cols)*(cellW+2f),
@@ -506,10 +521,12 @@ public sealed class InventoryPanelUI : MonoBehaviour
         if(root==null)return;
         foreach(var text in root.GetComponentsInChildren<TextMeshProUGUI>(true))
         {
-            UIManager.ReadableText(text,Mathf.Min(14f,Mathf.Max(11f,lastWidth/110f)));
-            text.color=new Color(1f,.86f,.65f,1f);
+            UIManager.ReadableText(text,Mathf.Min(15f,Mathf.Max(11f,lastWidth/105f)));
+            text.color=new Color(.89f,.91f,.83f,1f);
         }
         header.alignment=TextAlignmentOptions.Left;
+        header.color=new Color(.88f,.75f,.48f,1f);
+        bagStatus.color=new Color(.50f,.83f,.75f,1f);
         summary.alignment=TextAlignmentOptions.TopLeft;
         detail.alignment=TextAlignmentOptions.TopLeft;
         bagStatus.alignment=TextAlignmentOptions.Left;
