@@ -61,3 +61,18 @@ Trường `percent` trên các thuộc tính chỉ số thường = tỷ lệ nh
 4. Thử modifier MovementSpeed +50, Attack +5, MaxHealth +100, HealthRegeneration +3 rồi xác nhận UI và chiến đấu.
 5. Thử cả hai Hero B2 cùng đánh, Hero tử vong ẩn ngay và camera vẫn hoạt động.
 6. Sao lưu save 0.0.50; Load thử để chắc chắn cấp, linh căn, map không đổi; sau đó lưu và nạp lại các modifier trên Unity.
+
+## Bổ sung menu lưu thủ công (bản sửa sau kiểm thử)
+
+**Nguyên nhân:** `SaveMenuUI` cũ vẫn chứa nút Save1/Save2 nhưng đã bị ẩn khi `UIManager.ConfigureSystemMenu` dựng trang menu mới. `GameManager.ForceManualSave` vẫn tồn tại, nhưng không có đường bấm từ menu đang hiển thị.
+
+**Đã sửa trên cùng nhánh:**
+
+- `Menu → Lưu thủ công → Lưu vào ô 1 / Lưu vào ô 2`, kèm `Quay lại`.
+- Nếu ô đang có dữ liệu, xuất hiện trang **Xác nhận ghi đè / Hủy**. Chỉ ghi sau khi đồng ý.
+- Lưu thành công: đóng Menu, ghi vào nhật ký sự kiện. Lỗi ghi tệp: giữ menu và hiện `LƯU THẤT BẠI`.
+- Lưu tay dùng trực tiếp `GameManager.TryManualSave` → `SaveManager.SaveGame`; chỉ cho phép hai ô lưu tay khi Hero đang chạy, không ghi nhầm ô autosave.
+- Menu chính có **5** mục; hệ thống tự chia hàng trong khung menu, không che nút.
+- `Tests~/ManualSaveMenuRegression.cs`: kiểm thử lần lưu đầu, hủy ghi đè, xác nhận ghi đè và không tác động ô còn lại.
+
+**Kiểm thử Unity trực tiếp cần làm:** trong màn chơi chọn Menu → Lưu thủ công → Ô 1; đổi thuộc tính rồi chọn lại Ô 1 để xác nhận ghi đè; sau đó vào Tải bản lưu → Save 1 và kiểm tra dữ liệu. Trước lần đầu nên sao lưu thư mục `Saves` để giữ ô lưu hiện tại. Chưa xác minh qua Unity Editor thật.
