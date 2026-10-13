@@ -494,7 +494,7 @@ public class GameManager : MonoBehaviour
     {
         if (HasPendingConfirmation) return;
         pendingChoice = MenuChoice.NewGame;
-        ShowConfirmation("Chơi mới sẽ xóa toàn bộ bản lưu tự động và hai ô lưu tay. Bạn có chắc muốn bắt đầu lại từ đầu?");
+        ShowConfirmation("Chơi mới sẽ đặt lại ô lưu tự động để bắt đầu nhân vật mới. Hai ô lưu thủ công được giữ nguyên. Bạn có muốn tiếp tục?");
     }
     private void ShowConfirmation(string message)
     {
@@ -505,7 +505,7 @@ public class GameManager : MonoBehaviour
     {
         if (HasPendingConfirmation) return;
         OnNewGameClicked();
-        ShowConfirmation("Đặt lại nhân vật sẽ xóa bản lưu tự động và hai ô lưu tay, tạo nhân vật mới từ cấp 1. Bạn có muốn tiếp tục?");
+        ShowConfirmation("Đặt lại nhân vật sẽ tạo nhân vật cấp 1 mới và thay ô lưu tự động. Hai ô lưu thủ công được giữ nguyên. Bạn có muốn tiếp tục?");
     }
     public void OnConfirmResetClicked()
     {
@@ -531,8 +531,10 @@ public class GameManager : MonoBehaviour
         }
         else
         {
-            if (saveManager == null || !saveManager.DeleteAllSaves())
-            { UpdateEventLog("Không xóa được bản lưu. Chưa tạo trò chơi mới."); return; }
+            // A new run owns the autosave only. Manual slots belong to the
+            // player and must never be deleted or overwritten by New Game.
+            if (saveManager == null || !saveManager.ResetAutoSave())
+            { UpdateEventLog("Không đặt lại được ô lưu tự động. Chưa tạo trò chơi mới."); return; }
             hasDeployed = false;
             CancelNextWave();
             ClearTestCompanions();
