@@ -43,10 +43,15 @@ public class MonsterController : MonoBehaviour
         var rt = dmgTextPrototype.transform as RectTransform;
         if (rt == null) return;
         rt.SetParent(rect, false);
+        // Anchor the actual glyphs, not just their UI box, at the monster's
+        // visual middle. Previously the label started above and to the left.
         rt.anchorMin = rt.anchorMax = new Vector2(.5f,.5f);
         rt.pivot = new Vector2(.5f,.5f);
-        rt.anchoredPosition = new Vector2(0f, rect.rect.height * .18f);
+        rt.anchoredPosition = Vector2.zero;
         rt.sizeDelta = new Vector2(130f,40f);
+        rt.localScale = Vector3.one;
+        rt.SetAsLastSibling();
+        dmgTextPrototype.alignment = TextAlignmentOptions.Center;
         dmgTextPrototype.raycastTarget = false;
         damageTextHome = rt.localPosition;
     }
@@ -212,8 +217,10 @@ public class MonsterController : MonoBehaviour
         {
             elapsed = Mathf.Min(DamagePopupMotion.Duration,elapsed+Time.deltaTime);
             if (dmgTextPrototype == null) yield break;
+            // Match Hero damage: rise vertically from the hit recipient's
+            // body centre instead of drifting to the left/front.
             dmgTextPrototype.transform.localPosition = damageTextHome + new Vector3(
-                DamagePopupMotion.X(elapsed,awaySign),DamagePopupMotion.Y(elapsed),0f);
+                0f, DamagePopupMotion.Y(elapsed), 0f);
             dmgTextPrototype.alpha = DamagePopupMotion.Alpha(elapsed);
             yield return null;
         }
