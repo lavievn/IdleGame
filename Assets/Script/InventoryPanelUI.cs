@@ -42,6 +42,15 @@ public sealed class InventoryPanelUI : MonoBehaviour
             ui.SmallButton(panel.root,"GrantSamples","Nhận 2 vật phẩm thử (1 lần)",
                 new Vector2(.5f,1f),new Vector2(.5f,1f),Vector2.zero,
                 new Vector2(300,32),panel.Grant),
+            ui.SmallButton(panel.root,"DemoSword","Nhận Thiết Kiếm thử (1 lần)",
+                new Vector2(.5f,1f),new Vector2(.5f,1f),Vector2.zero,
+                new Vector2(300,32),panel.GrantSword),
+            ui.SmallButton(panel.root,"EquipSword","Trang bị Thiết Kiếm",
+                new Vector2(.5f,1f),new Vector2(.5f,1f),Vector2.zero,
+                new Vector2(300,32),panel.EquipSword),
+            ui.SmallButton(panel.root,"RemoveSword","Tháo vũ khí",
+                new Vector2(.5f,1f),new Vector2(.5f,1f),Vector2.zero,
+                new Vector2(300,32),panel.RemoveSword),
             ui.SmallButton(panel.root,"InventoryClose","Đóng",
                 new Vector2(.5f,1f),new Vector2(.5f,1f),Vector2.zero,
                 new Vector2(300,32),panel.Close)
@@ -90,6 +99,34 @@ public sealed class InventoryPanelUI : MonoBehaviour
         Refresh();
     }
 
+    private void GrantSword()
+    {
+        var gm=Manager();
+        if(gm!=null) gm.GrantDemoSword();
+        Refresh();
+    }
+
+    private void EquipSword()
+    {
+        var gm=Manager();
+        if(gm==null || gm.HeroData==null || gm.HeroData.equipmentItems==null) return;
+        foreach(var item in gm.HeroData.equipmentItems)
+            if(item!=null && !item.isEquipped &&
+                item.templateId==EquipmentFoundation.DemoSword)
+            {
+                gm.EquipGear(item.instanceId,EquipmentSlot.Weapon);
+                break;
+            }
+        Refresh();
+    }
+
+    private void RemoveSword()
+    {
+        var gm=Manager();
+        if(gm!=null) gm.UnequipGear(EquipmentSlot.Weapon);
+        Refresh();
+    }
+
     public void Refresh()
     {
         if (details == null) return;
@@ -103,15 +140,49 @@ public sealed class InventoryPanelUI : MonoBehaviour
             EquipmentInventory.Count(hero,EquipmentCatalog.HealthCharm) +
             "  |  " + EquipmentCatalog.Attack.name + " x" +
             EquipmentInventory.Count(hero,EquipmentCatalog.AttackCharm) +
-            (hero.testItemsGranted ? "\nĐã nhận vật phẩm thử." :
-                "\nCó thể nhận 2 vật phẩm thử một lần.");
+            (hero.testItemsGranted ? " · Quà hộ phù: đã nhận" :
+                " · Quà hộ phù: chưa nhận") +
+            "\n" + SlotRow(hero,EquipmentSlot.Weapon,"Vũ khí") +
+            "   |   " + SlotRow(hero,EquipmentSlot.Head,"Mũ") +
+            "\n" + SlotRow(hero,EquipmentSlot.Chest,"Áo") +
+            "   |   " + SlotRow(hero,EquipmentSlot.Boots,"Giày") +
+            "\n" + SlotRow(hero,EquipmentSlot.Artifact,"Pháp bảo") +
+            "   |   " + SlotRow(hero,EquipmentSlot.Necklace,"Dây chuyền") +
+            "\n" + SlotRow(hero,EquipmentSlot.RingLeft,"Nhẫn 1") +
+            "   |   " + SlotRow(hero,EquipmentSlot.RingRight,"Nhẫn 2") +
+            "\nThiết Kiếm trong kho: " + CountLooseSword(hero) +
+            " · Thử kiếm: " + (hero.demoSwordGranted ? "đã nhận" : "chưa nhận");
+    }
+
+    private string SlotRow(EntityDataSO hero,EquipmentSlot slot,string title)
+    {
+        var item=EquipmentRuntime.Equipped(hero,slot);
+        if(item==null)
+        {
+            if(slot==EquipmentSlot.Artifact &&
+                !string.IsNullOrEmpty(hero.equippedItemId))
+                return title+": "+EquipmentCatalog.Find(hero.equippedItemId)?.name;
+            return title+": —";
+        }
+        var definition=EquipmentFoundation.FindTemplate(item.templateId);
+        return title+": "+(definition==null ? "?" : definition.name)+
+            " ["+EquipmentFoundation.RarityName(item.rarity)+" "+item.level+"]";
+    }
+
+    private static int CountLooseSword(EntityDataSO hero)
+    {
+        int count=0;
+        if(hero.equipmentItems!=null) foreach(var item in hero.equipmentItems)
+            if(item!=null && !item.isEquipped &&
+                item.templateId==EquipmentFoundation.DemoSword) count++;
+        return count;
     }
 
     public void Layout(float width,float height)
     {
         if (root == null) return;
-        float w = Mathf.Min(470f,Mathf.Max(220f,width-14f));
-        float h = Mathf.Min(350f,Mathf.Max(210f,height-14f));
+        float w = Mathf.Min(520f,Mathf.Max(220f,width-14f));
+        float h = Mathf.Min(510f,Mathf.Max(250f,height-14f));
         root.sizeDelta = new Vector2(w,h);
         root.anchoredPosition = Vector2.zero;
         var titleRect = (RectTransform)title.transform;
@@ -122,16 +193,17 @@ public sealed class InventoryPanelUI : MonoBehaviour
         var detailRect = (RectTransform)details.transform;
         detailRect.anchorMin = detailRect.anchorMax = new Vector2(.5f,1f);
         detailRect.pivot = new Vector2(.5f,.5f);
-        detailRect.anchoredPosition = new Vector2(0f,-70f);
-        detailRect.sizeDelta = new Vector2(w-18f,70f);
-        float row = (h-110f)/5f;
+        detailRect.anchoredPosition = new Vector2(0f,-105f);
+        detailRect.sizeDelta = new Vector2(w-18f,145f);
+        float actionTop = 190f;
+        float row = (h-actionTop)/actions.Length;
         for(int i=0;i<actions.Length;i++)
         {
             var b = actions[i];
             b.anchorMin = b.anchorMax = new Vector2(.5f,1f);
             b.pivot = new Vector2(.5f,1f);
-            b.sizeDelta = new Vector2(w-22f,Mathf.Max(17f,row-4f));
-            b.anchoredPosition = new Vector2(0f,-110f-i*row);
+            b.sizeDelta = new Vector2(w-22f,Mathf.Max(12f,row-3f));
+            b.anchoredPosition = new Vector2(0f,-actionTop-i*row);
         }
     }
 }
