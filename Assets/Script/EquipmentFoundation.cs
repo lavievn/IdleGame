@@ -207,7 +207,8 @@ public static class EquipmentFoundation
             (int)item.rarity < (int)EquipmentRarity.Common ||
             (int)item.rarity > (int)EquipmentRarity.Tien ||
             item.refineLevel < 0 || item.refineLevel > MaximumRefineLevel ||
-            item.mainStats == null || item.mainStats.Count == 0 ||
+            item.mainStats == null || item.mainStats.Count != 1 ||
+            item.mainStats[0] == null || item.mainStats[0].stat != template.mainStat ||
             item.extraStats == null || item.extraStats.Count > MaximumExtraLines(item.level))
             return false;
         foreach(var line in item.mainStats) if (!ValidLine(line)) return false;
