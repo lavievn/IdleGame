@@ -70,6 +70,19 @@ public class EntityDataSO : ScriptableObject
     public int statPoints = 0;
     public int addedHealth = 0;
     public int addedDamage = 0;
+
+    // Persist the primary Hero's selected stance independently of its
+    // long-term weapon/martial-arts aptitudes (future character generation).
+    public AttackMode savedAttackMode = AttackMode.Melee;
+    public void SetSavedAttackMode(AttackMode mode)
+    {
+        if (mode != AttackMode.Melee && mode != AttackMode.RangedPhysical &&
+            mode != AttackMode.RangedMagic) return;
+        if (savedAttackMode == mode) return;
+        savedAttackMode = mode;
+        isDirty = true;
+    }
+
     [Header("0.0.51 - THUOC TINH / DAC TINH")]
     public int combatStatsVersion = 1;
     public List<string> characterTags = new List<string>();
