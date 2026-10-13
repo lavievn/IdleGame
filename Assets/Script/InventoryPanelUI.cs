@@ -114,14 +114,16 @@ public sealed class InventoryPanelUI : MonoBehaviour
         float h = Mathf.Min(350f,Mathf.Max(210f,height-14f));
         root.sizeDelta = new Vector2(w,h);
         root.anchoredPosition = Vector2.zero;
-        title.rectTransform.anchorMin = title.rectTransform.anchorMax = new Vector2(.5f,1f);
-        title.rectTransform.pivot = new Vector2(.5f,.5f);
-        title.rectTransform.anchoredPosition = new Vector2(0f,-18f);
-        title.rectTransform.sizeDelta = new Vector2(w-12f,28f);
-        details.rectTransform.anchorMin = details.rectTransform.anchorMax = new Vector2(.5f,1f);
-        details.rectTransform.pivot = new Vector2(.5f,.5f);
-        details.rectTransform.anchoredPosition = new Vector2(0f,-70f);
-        details.rectTransform.sizeDelta = new Vector2(w-18f,70f);
+        var titleRect = (RectTransform)title.transform;
+        titleRect.anchorMin = titleRect.anchorMax = new Vector2(.5f,1f);
+        titleRect.pivot = new Vector2(.5f,.5f);
+        titleRect.anchoredPosition = new Vector2(0f,-18f);
+        titleRect.sizeDelta = new Vector2(w-12f,28f);
+        var detailRect = (RectTransform)details.transform;
+        detailRect.anchorMin = detailRect.anchorMax = new Vector2(.5f,1f);
+        detailRect.pivot = new Vector2(.5f,.5f);
+        detailRect.anchoredPosition = new Vector2(0f,-70f);
+        detailRect.sizeDelta = new Vector2(w-18f,70f);
         float row = (h-110f)/5f;
         for(int i=0;i<actions.Length;i++)
         {
