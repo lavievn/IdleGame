@@ -67,6 +67,31 @@ partial class MotionRegression
             ManagementWindowLayout.ResolveResize(1150,647);
         });
 
+        Run("0.0.52 explicit window-size change must not relearn stale dimensions",()=>{
+            ManagementWindowLayout.SetCompact(800,450);
+            ManagementWindowLayout.RequestCompact(1150,647);
+            Check(ManagementWindowLayout.CompactWidth==1150 &&
+                  ManagementWindowLayout.CompactHeight==647,
+                  "new combat preset requested");
+            Check(ManagementWindowLayout.CompactResizePending,
+                  "old Screen size is temporarily stale");
+            ManagementWindowLayout.ResolveResize(800,450);
+            Check(ManagementWindowLayout.CompactResizePending,
+                  "stale frame cannot discard the requested preset");
+            Check(!ManagementWindowLayout.Expand(1920,1080),
+                  "management dock must wait for compact resize completion");
+            ManagementWindowLayout.ResolveResize(1150,647);
+            Check(!ManagementWindowLayout.CompactResizePending,
+                  "new desktop preset finished");
+            Check(ManagementWindowLayout.Expand(1920,1080),
+                  "management can expand from new 1150 width");
+            Check(ManagementWindowLayout.CombatPixels(
+                ManagementWindowLayout.TargetWidth)==1150,
+                "new compact size maintained as world projection width");
+            ManagementWindowLayout.Collapse();
+            ManagementWindowLayout.ResolveResize(1150,647);
+        });
+
         Run("0.0.52 zero-width or impossible desktop dimensions never produce invalid battle scale",()=>{
             ManagementWindowLayout.SetCompact(800,450);
             Check(!ManagementWindowLayout.Expand(1120,900),
