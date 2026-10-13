@@ -56,6 +56,14 @@ public class UIManager : MonoBehaviour
         else Debug.LogWarning("[InventoryArt] InventoryPanelUI chưa được tạo; mở Play Mode trước.");
     }
 
+    [ContextMenu("0.0.52 UI - In bang kich thuoc UI vao Console")]
+    public void PrintInventoryLayoutSizes()
+    {
+        if (inventoryUI == null)
+            Debug.LogWarning("[UI SIZE 0.0.52] Hãy chạy Play Mode và mở Kho đồ trước khi đo.");
+        else inventoryUI.PrintLayoutSizes();
+    }
+
     [Header("POPUP THOÁT GAME")]
     public GameObject exitConfirmPopup; // Bảng hỏi "Bạn có muốn thoát..."
 
