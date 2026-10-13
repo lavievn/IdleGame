@@ -25,7 +25,17 @@ public class UIManager : MonoBehaviour
     [ContextMenu("0.0.52 - Ap dung anh Inventory (Play Mode)")]
     public void ApplyInventoryArtFromInspector()
     {
-        if (inventoryUI != null) inventoryUI.Refresh();
+        if (inventoryArtTheme == null)
+        {
+            Debug.LogWarning("[InventoryArt] UIManager chưa gắn InventoryArtTheme. Chọn UIManager trong Scene để gán Theme.");
+            return;
+        }
+        if (inventoryUI != null)
+        {
+            inventoryUI.Refresh();
+            Debug.Log("[InventoryArt] Đã cập nhật Sprite của Kho đồ từ Theme trong Inspector.");
+        }
+        else Debug.LogWarning("[InventoryArt] InventoryPanelUI chưa được tạo; mở Play Mode trước.");
     }
 
     [Header("POPUP THOÁT GAME")]
@@ -41,6 +51,10 @@ public class UIManager : MonoBehaviour
 
     void Start()
     {
+        if (inventoryArtTheme == null)
+            Debug.LogWarning("[InventoryArt] UIManager thiếu InventoryArtTheme; giao diện Kho đồ sẽ dùng màu mặc định.");
+        else
+            Debug.Log("[InventoryArt] Đã kết nối InventoryArtTheme, đang sử dụng bộ Sprite từ Inspector.");
         ManagementWindowLayout.SetCompact(Screen.width,Screen.height);
         InstallReadableCanvas();
         ConfigureSystemMenu();
