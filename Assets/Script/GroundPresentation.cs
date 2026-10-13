@@ -72,17 +72,27 @@ public class GroundPresentation : MonoBehaviour
         presentation.grassHeight = main.rect.height * Mathf.Abs(main.localScale.y);
         Sprite decorationSprite = primaryImage.sprite;
         // Two distance bands. Both are visual-only and never modify Ground coordinates.
-        presentation.generatedTreeSprite = LoadPreviewSprite("Parallax/ParallaxTreesTest",
-            out presentation.generatedTreeTexture);
-        presentation.generatedMountainSprite = LoadPreviewSprite("Parallax/ParallaxMountainsTest",
-            out presentation.generatedMountainTexture);
-        Sprite mountain = presentation.generatedMountainSprite != null
-            ? presentation.generatedMountainSprite : source.sprite;
-        Sprite trees = presentation.generatedTreeSprite != null
-            ? presentation.generatedTreeSprite : source.sprite;
-        presentation.distantTint = presentation.generatedMountainSprite != null
+        // Inspector assets take precedence. Keep shipped preview sprites as
+        // a fallback so existing 0.0.52 scenes still render without setup.
+        if (environment.customFarTrees == null)
+            presentation.generatedTreeSprite = LoadPreviewSprite("Parallax/ParallaxTreesTest",
+                out presentation.generatedTreeTexture);
+        if (environment.customDistantMountains == null)
+            presentation.generatedMountainSprite = LoadPreviewSprite("Parallax/ParallaxMountainsTest",
+                out presentation.generatedMountainTexture);
+        Sprite mountain = environment.customDistantMountains != null
+            ? environment.customDistantMountains
+            : presentation.generatedMountainSprite != null
+                ? presentation.generatedMountainSprite : source.sprite;
+        Sprite trees = environment.customFarTrees != null
+            ? environment.customFarTrees
+            : presentation.generatedTreeSprite != null
+                ? presentation.generatedTreeSprite : source.sprite;
+        presentation.distantTint = environment.customDistantMountains != null ||
+            presentation.generatedMountainSprite != null
             ? Color.white : new Color(.07f, .07f, .08f, 1f);
-        presentation.farTint = presentation.generatedTreeSprite != null
+        presentation.farTint = environment.customFarTrees != null ||
+            presentation.generatedTreeSprite != null
             ? Color.white : FixedTint;
         for (int i = 0; i < 3; i++)
         {
