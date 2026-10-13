@@ -58,6 +58,7 @@ public class EnvironmentManager : MonoBehaviour
     private Canvas battleCanvas;
     private float logicalWidth;
     private int presentationWidth;
+    private int presentationCombatWidth;
 
     // The battle keeps one coordinate system for its entire lifetime. Resizing
     // changes only the screen-space projection, never anchors/ranges/shot endpoints.
@@ -97,10 +98,18 @@ public class EnvironmentManager : MonoBehaviour
 
     public void SyncBattleProjection()
     {
-        if (battleCanvas == null || Screen.width <= 0 || presentationWidth == Screen.width) return;
-        presentationWidth = Screen.width;
-        battleCanvas.scaleFactor = Screen.width / logicalWidth;
-        // Unity owns the Canvas rect. Do not resize/reposition Ground or actors here.
+        if (battleCanvas == null || Screen.width <= 0) return;
+        int projectedWidth=ManagementWindowLayout.CombatPixels(Screen.width);
+        if (presentationWidth == Screen.width &&
+            presentationCombatWidth == projectedWidth) return;
+        presentationWidth=Screen.width;
+        presentationCombatWidth=projectedWidth;
+        battleCanvas.scaleFactor=
+            ManagementWindowLayout.BattleCanvasScale(Screen.width,logicalWidth);
+        // Only the projection's origin changes: the world-space Ground,
+        // Hero, Monster and projectile coordinates remain untouched.
+        battleArea.anchoredPosition=new Vector2(
+            ManagementWindowLayout.BattleLocalOffsetX(Screen.width,logicalWidth),0f);
     }
 
     public bool HasLoopingTerrain => groundPresentation != null;
