@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Text.RegularExpressions;
 
 using UnityEngine;
 
@@ -105,6 +106,15 @@ public class SaveManager : MonoBehaviour
                 entityData.rootWeights = new System.Collections.Generic.List<float>();
                 entityData.hybridSecondaryRace = TuTienCore.RaceType.YeuThu;
                 JsonUtility.FromJsonOverwrite(jsonData, entityData);
+                // A partial load of only inventory/equipment must NEVER count
+                // as a successful progress rollback. Verify ALL present
+                // authoritative progression fields before normalization.
+                if (!MatchesSavedProgress(jsonData,entityData))
+                {
+                    Debug.LogError("[SaveManager] Incomplete progress restore from " +
+                        slot + "; refusing to resume a mixed-era character.");
+                    return false;
+                }
                 entityData.NormalizeRoots();
                 entityData.NormalizeMapProgress();
                 entityData.NormalizeCombatStats();
@@ -126,6 +136,44 @@ public class SaveManager : MonoBehaviour
             Debug.LogWarning($"[SaveManager] Không thể load hoặc file trống ở slot {slot}");
             return false;
         }
+    }
+
+    // A slot preview uses values from the actual JSON file, not the running
+    // Hero or an Inspector template. This helps distinguish an older manual
+    // snapshot from the more recent autosave.
+    public bool TryGetSlotProgress(SaveSlot slot, out int level, out int map)
+    {
+        level = 0; map = 0;
+        string json = LoadGame(slot.ToString());
+        if (string.IsNullOrEmpty(json) ||
+            !TryReadInteger(json,"currentLevel",out level) || level < 1)
+            return false;
+        if (!TryReadInteger(json,"mapNumber",out map)) map = 1;
+        return true;
+    }
+
+    private static bool TryReadInteger(string json, string field, out int value)
+    {
+        value = 0;
+        // Exact JSON property match; never confuse currentLevel with a
+        // modifier field. Unity serializes these progression fields as ints.
+        var match = Regex.Match(json,"\\\"" + Regex.Escape(field) +
+            "\\\"\\s*:\\s*(-?[0-9]+)");
+        return match.Success && int.TryParse(match.Groups[1].Value,out value);
+    }
+
+    private static bool MatchesSavedProgress(string json, EntityDataSO data)
+    {
+        int value;
+        if (!TryReadInteger(json,"currentLevel",out value) || value < 1 ||
+            data.currentLevel != value) return false;
+        return (!TryReadInteger(json,"currentExp",out value) || data.currentExp == value)
+            && (!TryReadInteger(json,"statPoints",out value) || data.statPoints == value)
+            && (!TryReadInteger(json,"addedDamage",out value) || data.addedDamage == value)
+            && (!TryReadInteger(json,"addedHealth",out value) || data.addedHealth == value)
+            && (!TryReadInteger(json,"mapNumber",out value) || data.mapNumber == value)
+            && (!TryReadInteger(json,"completedWavesInMap",out value) ||
+                data.completedWavesInMap == value);
     }
 
     // =========================================================
