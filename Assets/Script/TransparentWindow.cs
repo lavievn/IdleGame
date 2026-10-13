@@ -24,6 +24,7 @@ public class TransparentWindow : MonoBehaviour
     private bool previousButtonDown;
     private WindowPointerGesture gesture = new WindowPointerGesture();
     private bool resizing;
+    private int queuedResizeWidth,queuedResizeHeight;
     private CLIENTRECT resizeWorkArea;
     private bool dragging;
     private POINT resizePosition;
@@ -287,7 +288,16 @@ public class TransparentWindow : MonoBehaviour
     public void ResizeWindow(int width, int height)
     {
 #if UNITY_STANDALONE_WIN && !UNITY_EDITOR
-        if (hWnd == IntPtr.Zero || resizing) return;
+        if (hWnd == IntPtr.Zero) return;
+        if (resizing)
+        {
+            // Closing inventory during an async SetResolution must still
+            // restore the compact preset, rather than getting stuck wide.
+            queuedResizeWidth=width;
+            queuedResizeHeight=height;
+            return;
+        }
+        queuedResizeWidth=queuedResizeHeight=0;
         CLIENTRECT rect;
         hasResizePosition = GetWindowRect(hWnd, out rect);
         if (hasResizePosition) resizePosition = new POINT { X = rect.left, Y = rect.top };
@@ -334,6 +344,13 @@ public class TransparentWindow : MonoBehaviour
                     SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE | SWP_NOSENDCHANGING);
         }
         previousButtonDown = NativeButtonDown(); resizing = false;
+        if (queuedResizeWidth>0)
+        {
+            int nextWidth=queuedResizeWidth,nextHeight=queuedResizeHeight;
+            queuedResizeWidth=queuedResizeHeight=0;
+            if (nextWidth!=width || nextHeight!=height)
+                ResizeWindow(nextWidth,nextHeight);
+        }
 #else
         yield break;
 #endif
