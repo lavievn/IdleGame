@@ -106,3 +106,17 @@ Trường `percent` trên các thuộc tính chỉ số thường = tỷ lệ nh
 **Bài test bổ sung:** `Tests~/HeroDamagePopupRegression.cs` kiểm tra neo và căn chữ ở giữa thân, không trôi ngang khi phát sinh sát thương, theo Hero khi di chuyển với tỷ lệ Canvas khác nhau, ẩn chữ khi chết/ẩn Hero và chữ của đồng đội không ảnh hưởng Hero chính.
 
 **Kiểm thử trực tiếp:** Pull cùng nhánh, mở Play Mode, để quái đánh Hero ở cự ly gần và từ xa; quan sát chữ **xuất hiện giữa thân rồi đi thẳng lên**, ở cả Cận chiến/Cung/Phép. Sau đó thử gọi đồng đội B2.
+
+## Bổ sung: Căn đúng tâm sát thương cho cả Hero và quái vật
+
+Người kiểm thử xác nhận số sát thương vẫn lệch **lên trên/bên trái** so với đối tượng và yêu cầu hiệu ứng xuất phát **đúng giữa thân cả hai loại nhân vật**.
+
+**Nguyên nhân còn tồn tại:** chữ quái vẫn dùng `anchoredPosition.y = 18% chiều cao` và `TextMeshProUGUI` không được căn giữa, cộng thêm độ trôi X theo `DamagePopupMotion.X`. Cả hai lớp từng chụp vị trí gốc bằng `localPosition` rồi gán lại trong coroutine; tọa độ này không phản ánh đúng tâm mới nếu `RectTransform` nhân vật đổi kích thước/pivot trong thời gian chạy.
+
+**Đã sửa:**
+- `HeroController` và `MonsterController` đều đặt `TextAlignmentOptions.Center`, `anchorMin/Max = pivot = (0.5,0.5)`, `anchoredPosition=(0,0)`, đưa chữ về trực tiếp dưới `heroRect` hoặc `monster.Rect`.
+- Bỏ cách lưu/khôi phục `localPosition` cũ; dùng `RectTransform.anchoredPosition` làm tọa độ xuất phát và chuyển động, luôn bắt đầu `(0,0)`, sau đó `(0, DamagePopupMotion.Y(t))`.
+- Cả hai loại chữ chỉ bay lên theo trục Y, không bị đẩy sang trái/phải bởi hướng tấn công. Không thay đổi giá trị sát thương, HP hay logic chọn mục tiêu.
+- Thêm bài kiểm thử vào `Tests~/HeroDamagePopupRegression.cs`: đúng tâm ở tỷ lệ 0.5/1/2, kích thước đối tượng đổi trong lúc chữ bay, tái sử dụng quái từ pool, nhiều Hero.
+  
+**Kiểm thử Play Mode:** Hero nhận sát thương của quái và quái nhận sát thương từ Hero. Kiểm tra cả lúc đứng yên và lúc di chuyển, với hình ảnh Cận chiến/Cung/Phép; con số phải xuất hiện ngay giữa ô thân thể và đi thẳng lên. Chưa được kiểm chứng bằng Unity Editor trong môi trường này.
