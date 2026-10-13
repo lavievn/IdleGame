@@ -298,7 +298,13 @@ public class TransparentWindow : MonoBehaviour
             ManagementWindowLayout.MinimumWindowWidth);
     }
 
-    public void ResizeWindow(int width, int height,bool preserveBottomLeft=false)
+    // Preserve the original 2-argument signature for Inspector calls and
+    // older code; management mode uses the explicit 3-argument overload.
+    public void ResizeWindow(int width,int height)
+    {
+        ResizeWindow(width,height,false);
+    }
+    public void ResizeWindow(int width, int height,bool preserveBottomLeft)
     {
 #if UNITY_STANDALONE_WIN && !UNITY_EDITOR
         if (hWnd == IntPtr.Zero) return;
