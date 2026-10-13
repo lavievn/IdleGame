@@ -41,7 +41,7 @@ public class HeroController : MonoBehaviour
     private Coroutine fadeDmgCoroutine;
     private Coroutine attackFeedbackCoroutine;
     private MagicChargeBar chargeBar;
-    private Vector3 damageTextHome;
+    private RectTransform damageTextRect;
 
     void Awake()
     {
@@ -78,7 +78,7 @@ public class HeroController : MonoBehaviour
         rt.SetAsLastSibling();
         dmgTextPrototype.alignment = TextAlignmentOptions.Center;
         dmgTextPrototype.raycastTarget = false;
-        damageTextHome = rt.localPosition;
+        damageTextRect = rt;
     }
     void OnDisable()
     {
@@ -230,7 +230,7 @@ public class HeroController : MonoBehaviour
         if (dmgTextPrototype != null)
         {
             dmgTextPrototype.alpha = 0f;
-            dmgTextPrototype.transform.localPosition = damageTextHome;
+            if (damageTextRect != null) damageTextRect.anchoredPosition = Vector2.zero;
         }
     }
 
@@ -306,10 +306,14 @@ public class HeroController : MonoBehaviour
     public void ShowDamage(int damageAmount, float awaySign)
     {
         if (dmgTextPrototype == null) return;
+        if (damageTextRect == null) AlignDamageTextToBody();
+        if (damageTextRect == null) return;
         UIManager.ReadableWorldText(dmgTextPrototype);
         dmgTextPrototype.text = "-" + damageAmount;
         dmgTextPrototype.alpha = 1f;
-        dmgTextPrototype.transform.localPosition = damageTextHome;
+        // AnchoredPosition remains relative to the CURRENT body midpoint,
+        // even if the actor rect or window is resized during combat.
+        damageTextRect.anchoredPosition = Vector2.zero;
         if (fadeDmgCoroutine != null) StopCoroutine(fadeDmgCoroutine);
         fadeDmgCoroutine = StartCoroutine(FadeDamageTextRoutine(awaySign));
     }
@@ -319,16 +323,15 @@ public class HeroController : MonoBehaviour
         while (elapsed < DamagePopupMotion.Duration)
         {
             elapsed = Mathf.Min(DamagePopupMotion.Duration, elapsed + Time.deltaTime);
-            if (dmgTextPrototype == null) yield break;
-            // Received damage originates in the Hero's body centre and
-            // floats straight upward. Horizontal drift previously made the
-            // number appear ahead of the Hero, especially in bow/magic stance.
-            dmgTextPrototype.transform.localPosition = damageTextHome + new Vector3(
-                0f, DamagePopupMotion.Y(elapsed), 0f);
+            if (dmgTextPrototype == null || damageTextRect == null) yield break;
+            // Animate relative to the body's own middle, never in cached
+            // local/world coordinates or toward the Hero's facing direction.
+            damageTextRect.anchoredPosition =
+                new Vector2(0f, DamagePopupMotion.Y(elapsed));
             dmgTextPrototype.alpha = DamagePopupMotion.Alpha(elapsed);
             yield return null;
         }
-        if (dmgTextPrototype != null) dmgTextPrototype.transform.localPosition = damageTextHome;
+        if (damageTextRect != null) damageTextRect.anchoredPosition = Vector2.zero;
         fadeDmgCoroutine = null;
     }
     public void HandleAnimation(bool isMoving, bool isFighting)
