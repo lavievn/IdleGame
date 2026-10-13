@@ -89,6 +89,8 @@ public class UIManager : MonoBehaviour
             if (item == null || !item.isActiveAndEnabled || item.GetRect() == null) continue;
             if (gm != null && gm.HasPendingConfirmation && !item.transform.IsChildOf(gm.confirmationPopup.transform)) continue;
             if (devUI != null && devUI.IsOpen && !item.transform.IsChildOf(devUI.Root)) continue;
+            if (inventoryUI != null && inventoryUI.IsOpen &&
+                !item.transform.IsChildOf(inventoryUI.Root)) continue;
             if (damagePanel != null && damagePanel.activeSelf && (gm == null || !gm.HasPendingConfirmation) && !item.transform.IsChildOf(damagePanel.transform)) continue;
             if (!RectTransformUtility.RectangleContainsScreenPoint(item.GetRect(), mousePos, null)) continue;
             if (hit == null || item.transform.IsChildOf(hit.transform)) hit = item;
@@ -275,6 +277,9 @@ public class UIManager : MonoBehaviour
         pauseRect = pause;
         devButton = SmallButton(canvas,"DEVBButton","DEVB",new Vector2(1,1),new Vector2(1,1),new Vector2(-120,-4),new Vector2(56,24),OpenDevBalance);
         statsButton = SmallButton(canvas,"StatsButton","Chỉ số",new Vector2(1,1),new Vector2(1,1),new Vector2(-180,-4),new Vector2(60,24),OpenHeroStats);
+        inventoryButton = SmallButton(canvas,"InventoryButton","Kho đồ",new Vector2(1,1),
+            new Vector2(1,1),new Vector2(-244,-4),new Vector2(62,24),OpenInventory);
+        inventoryUI = InventoryPanelUI.Install(this,hudCanvas);
         devUI = new DevBalanceUI(this, hudCanvas);
         heroForUI = hero;
         InstallAttackModeButtons();
@@ -348,7 +353,11 @@ public class UIManager : MonoBehaviour
             gm != null && gm.gameOverPanel != null && gm.gameOverPanel.activeInHierarchy,
             gm != null && gm.confirmationPopup != null && gm.confirmationPopup.activeInHierarchy,
             (damagePanel != null && damagePanel.activeSelf) || (devUI != null && devUI.IsOpen) ||
-            (systemMenu != null && systemMenu.activeInHierarchy));
+            (systemMenu != null && systemMenu.activeInHierarchy) ||
+            (inventoryUI != null && inventoryUI.IsOpen));
+        if (inventoryUI != null && inventoryUI.IsOpen &&
+            (gm == null || !gm.IsGameplayHUDVisible)) inventoryUI.Close();
+        if (inventoryButton != null) inventoryButton.gameObject.SetActive(shown);
         if (statsPanel != null) statsPanel.gameObject.SetActive(shown && Screen.height >= 290);
         for (int i=0;i<attackButtons.Length;i++)
             if (attackButtons[i] != null) attackButtons[i].gameObject.SetActive(shown);
@@ -462,10 +471,20 @@ public class UIManager : MonoBehaviour
     }
     public void OpenDevBalance()
     {
-        CloseDamageInfo(); CloseSystemMenu(); if (devUI != null) devUI.Open();
+        CloseDamageInfo(); CloseSystemMenu();
+        if (inventoryUI != null) inventoryUI.Close();
+        if (devUI != null) devUI.Open();
     }
 
-    private RectTransform hudCanvas, pauseRect, devButton, statsButton, statsPanel;
+    public void OpenInventory()
+    {
+        if (inventoryUI == null || (devUI != null && devUI.IsOpen)) return;
+        CloseDamageInfo(); CloseSystemMenu();
+        inventoryUI.Open();
+    }
+
+    private RectTransform hudCanvas, pauseRect, devButton, statsButton, inventoryButton, statsPanel;
+    private InventoryPanelUI inventoryUI;
     private RectTransform mapTitleRect;
     private TMPro.TextMeshProUGUI mapTitleText, mapDebugText;
     private Coroutine mapTitleRoutine;
@@ -649,6 +668,9 @@ public class UIManager : MonoBehaviour
         PlaceUI(pauseRect,new Vector2(1,1),new Vector2(1,1),new Vector2(-4,-4),new Vector2(76,24));
         PlaceUI(devButton,new Vector2(1,1),new Vector2(1,1),new Vector2(-84,-4),new Vector2(52,24));
         PlaceUI(statsButton,new Vector2(1,1),new Vector2(1,1),new Vector2(-140,-4),new Vector2(60,24));
+        PlaceUI(inventoryButton,new Vector2(1,1),new Vector2(1,1),
+            new Vector2(-204,-4),new Vector2(62,24));
+        if (inventoryUI != null) inventoryUI.Layout(w,h);
         // Full stats sit below the 3 top-right tools. Combat log takes the left column.
         float rightWidth = StatsColumnWidth(w);
         float leftWidth = Mathf.Max(150f,w-rightWidth-18f);
