@@ -267,6 +267,23 @@ public class TransparentWindow : MonoBehaviour
         if (GetMonitorInfo(MonitorFromWindow(hWnd, 2), ref info)) return info.work;
         return new CLIENTRECT { right = GetSystemMetrics(0), bottom = GetSystemMetrics(1) };
     }
+    // Prevent a right-docked inventory from extending beyond the active
+    // monitor. In the Editor, use a generous test canvas; Game View size is
+    // controlled by the Editor and may ignore SetResolution.
+    public int GetMaximumUsableWidth()
+    {
+#if UNITY_STANDALONE_WIN && !UNITY_EDITOR
+        if (hWnd != IntPtr.Zero)
+        {
+            CLIENTRECT area=WorkArea();
+            return Mathf.Max(ManagementWindowLayout.MinimumWindowWidth,
+                area.right-area.left);
+        }
+#endif
+        return Mathf.Max(Screen.width+ManagementWindowLayout.PreferredSidePanel,
+            ManagementWindowLayout.MinimumWindowWidth);
+    }
+
     public void ResizeWindow(int width, int height)
     {
 #if UNITY_STANDALONE_WIN && !UNITY_EDITOR
