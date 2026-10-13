@@ -699,6 +699,7 @@ public class UIManager : MonoBehaviour
             heroForUI.FullStatDetails.Split('\n').Length;
         // Do NOT relearn the compact preset during asynchronous collapse:
         // Screen.width may still equal the expanded dimensions for a frame.
+        ManagementWindowLayout.ResolveResize(Screen.width,Screen.height);
         if (controlsChanged || Screen.width != layoutWidth || Screen.height != layoutHeight || lines != layoutStatLines)
             LayoutReadableUI();
         RefreshCombatHUDVisibility();
