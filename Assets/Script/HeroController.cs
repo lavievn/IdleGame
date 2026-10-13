@@ -69,8 +69,14 @@ public class HeroController : MonoBehaviour
         rt.SetParent(heroRect, false);
         rt.anchorMin = rt.anchorMax = new Vector2(.5f,.5f);
         rt.pivot = new Vector2(.5f,.5f);
-        rt.anchoredPosition = new Vector2(0f, heroRect.rect.height * .18f);
+        // Both the TEXT GLYPHS and its RectTransform must be centred.
+        // The scene's Hero_DMG_Text originally used left-aligned TMP text:
+        // a wide centred box still drew the numbers to the side of the Hero.
+        rt.anchoredPosition = Vector2.zero;
         rt.sizeDelta = new Vector2(130f,40f);
+        rt.localScale = Vector3.one;
+        rt.SetAsLastSibling();
+        dmgTextPrototype.alignment = TextAlignmentOptions.Center;
         dmgTextPrototype.raycastTarget = false;
         damageTextHome = rt.localPosition;
     }
@@ -314,8 +320,11 @@ public class HeroController : MonoBehaviour
         {
             elapsed = Mathf.Min(DamagePopupMotion.Duration, elapsed + Time.deltaTime);
             if (dmgTextPrototype == null) yield break;
+            // Received damage originates in the Hero's body centre and
+            // floats straight upward. Horizontal drift previously made the
+            // number appear ahead of the Hero, especially in bow/magic stance.
             dmgTextPrototype.transform.localPosition = damageTextHome + new Vector3(
-                DamagePopupMotion.X(elapsed, awaySign), DamagePopupMotion.Y(elapsed), 0f);
+                0f, DamagePopupMotion.Y(elapsed), 0f);
             dmgTextPrototype.alpha = DamagePopupMotion.Alpha(elapsed);
             yield return null;
         }
