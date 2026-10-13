@@ -141,6 +141,10 @@ public class GameManager : MonoBehaviour
                 ? new List<CombatStatModifier>()
                 : new List<CombatStatModifier>(data.combatStatModifiers);
             data.RemoveModifiersBySource(EquipmentInventory.ModifierSource);
+            data.combatStatModifiers.RemoveAll(mod=>mod!=null && mod.sourceId!=null &&
+                mod.sourceId.StartsWith(EquipmentFoundation.SourcePrefix,
+                    System.StringComparison.Ordinal));
+            data.equipmentItems = new List<EquipmentInstance>();
             data.inventory = new List<InventoryStack>();
             data.equippedItemId = "";
             data.testItemsGranted = false;
@@ -276,6 +280,7 @@ public class GameManager : MonoBehaviour
         // Randomized combat aptitudes belong to future character generation.
         runtimeHeroData.savedAttackMode = AttackMode.Melee;
         EquipmentInventory.InitializeNewRun(runtimeHeroData);
+        EquipmentRuntime.InitializeNewRun(runtimeHeroData);
         runtimeHeroData.originHealth = Mathf.Max(1,heroDataSO != null ? heroDataSO.baseHealth : CombatBalance.HeroHealth(1));
         runtimeHeroData.meleeGrowthBonus = 0;
         runtimeHeroData.meleeGrowthThroughLevel = 1;
@@ -381,6 +386,33 @@ public class GameManager : MonoBehaviour
     {
         if (runtimeHeroData != null && heroController != null)
             heroController.ChangeAttackMode((int)runtimeHeroData.savedAttackMode);
+    }
+
+    // V2 individual gear: all 8 positions share one canonical inventory.
+    public bool GrantDemoSword()
+    {
+        if (!IsGameplayHUDVisible || runtimeHeroData == null) return false;
+        if (!EquipmentRuntime.GrantDemoSword(runtimeHeroData)) return false;
+        UpdateEventLog("Đã nhận Thiết Kiếm thử nghiệm.");
+        return true;
+    }
+    public bool EquipGear(string instanceId,EquipmentSlot slot)
+    {
+        if (!IsGameplayHUDVisible || runtimeHeroData == null ||
+            !EquipmentRuntime.Equip(runtimeHeroData,instanceId,slot)) return false;
+        if (combatManager != null)
+            combatManager.RefreshRegisteredHeroStats(heroController,true);
+        UpdateEventLog("Đã trang bị vào ô " + slot + ".");
+        return true;
+    }
+    public bool UnequipGear(EquipmentSlot slot)
+    {
+        if (!IsGameplayHUDVisible || runtimeHeroData == null ||
+            !EquipmentRuntime.Unequip(runtimeHeroData,slot)) return false;
+        if (combatManager != null)
+            combatManager.RefreshRegisteredHeroStats(heroController,true);
+        UpdateEventLog("Đã tháo trang bị ở ô " + slot + ".");
+        return true;
     }
 
     // Inventory and equipment UI only affects the current run and primary Hero.
