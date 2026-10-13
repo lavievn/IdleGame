@@ -3848,6 +3848,7 @@ MonoBehaviour:
   mapMenu: {fileID: 726454875}
   groundImage: {fileID: 224967181}
   transparentWindow: {fileID: 0}
+  inventoryArtTheme: {fileID: 11400000, guid: 018466481bee20c47b57b503844a9071, type: 2}
   exitConfirmPopup: {fileID: 0}
 --- !u!114 &649540127
 MonoBehaviour:
