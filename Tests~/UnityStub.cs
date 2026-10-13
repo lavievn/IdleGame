@@ -144,6 +144,7 @@ namespace UnityEngine
     {
         public float r,g,b,a;
         public Color(float r,float g,float b,float a=1f) { this.r=r;this.g=g;this.b=b;this.a=a; }
+        public static Color white { get { return new Color(1f,1f,1f,1f); } }
     }
     public class CanvasRenderer : Component { }
     public class Sprite : Object { }
@@ -165,7 +166,7 @@ namespace UnityEngine.UI
       public ScaleMode uiScaleMode; public UnityEngine.Vector2 referenceResolution;
     }
     public class Image : UnityEngine.MonoBehaviour {
-      public enum Type { Simple }
+      public enum Type { Simple, Sliced }
       public float fillAmount; public UnityEngine.Color color;public UnityEngine.Sprite sprite;public Type type;public bool preserveAspect,raycastTarget;
     }
     public class GraphicRaycaster : UnityEngine.Component { }
