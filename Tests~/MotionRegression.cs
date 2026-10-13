@@ -318,6 +318,7 @@ partial class MotionRegression
         SaveRollbackRegressionTests();
         MultiSlotEquipmentRegressionTests();
         ManagementWindowRegressionTests();
+        InventoryArtThemeRegressionTests();
         BalanceTests();
         BalanceSimulations();
         Console.WriteLine("PASS: "+tests+" regression scenarios (Unity test doubles; not Play Mode).");
