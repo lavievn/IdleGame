@@ -124,14 +124,24 @@ public class UIManager : MonoBehaviour
         var rootClick = systemMenu.GetComponent<CustomInteractable>();
         if (rootClick != null) rootClick.onClickEvent = new UnityEvent();
         mainPage = MakePage("SystemMain", "MENU HỆ THỐNG", root);
+        savePage = MakePage("SystemSave", "LƯU THỦ CÔNG", root);
+        overwritePage = MakePage("SystemOverwrite", "XÁC NHẬN GHI ĐÈ", root);
         loadPage = MakePage("SystemLoad", "TẢI BẢN LƯU", root);
         sizePage = MakePage("SystemSize", "KÍCH THƯỚC CỬA SỔ", root);
+        saveTitle = savePage.GetComponentInChildren<TMPro.TextMeshProUGUI>(true);
+        overwriteTitle = overwritePage.GetComponentInChildren<TMPro.TextMeshProUGUI>(true);
         MakeMenuButton(mainPage, "Exit", "Thoát", 0, ConfirmExit);
-        MakeMenuButton(mainPage, "Load", "Tải bản lưu", 1, () => ShowPage(loadPage));
-        MakeMenuButton(mainPage, "Reset", "Đặt lại nhân vật", 2, () => {
+        MakeMenuButton(mainPage, "Save", "Lưu thủ công", 1, OpenManualSaveMenu);
+        MakeMenuButton(mainPage, "Load", "Tải bản lưu", 2, () => ShowPage(loadPage));
+        MakeMenuButton(mainPage, "Reset", "Đặt lại nhân vật", 3, () => {
             CloseSystemMenu(); var gm = Object.FindFirstObjectByType<GameManager>(); if (gm != null) gm.OnResetClicked();
         });
-        MakeMenuButton(mainPage, "WindowSize", "Kích thước cửa sổ", 3, () => ShowPage(sizePage));
+        MakeMenuButton(mainPage, "WindowSize", "Kích thước cửa sổ", 4, () => ShowPage(sizePage));
+        MakeMenuButton(savePage, "Save1", "Lưu vào ô 1", 0, () => SaveToSlot(SaveSlot.ManualSave1));
+        MakeMenuButton(savePage, "Save2", "Lưu vào ô 2", 1, () => SaveToSlot(SaveSlot.ManualSave2));
+        MakeMenuButton(savePage, "SaveBack", "Quay lại", 2, () => ShowPage(mainPage));
+        MakeMenuButton(overwritePage, "OverwriteYes", "Xác nhận ghi đè", 0, ConfirmManualOverwrite);
+        MakeMenuButton(overwritePage, "OverwriteNo", "Hủy", 1, OpenManualSaveMenu);
         MakeMenuButton(loadPage, "LoadSave1", "Save 1", 0, () => LoadSlot(SaveSlot.ManualSave1));
         MakeMenuButton(loadPage, "LoadSave2", "Save 2", 1, () => LoadSlot(SaveSlot.ManualSave2));
         MakeMenuButton(loadPage, "LoadAuto", "Auto", 2, () => LoadSlot(SaveSlot.AutoSave));
@@ -171,8 +181,9 @@ public class UIManager : MonoBehaviour
         }
     }
 
-    private GameObject mainPage, loadPage, sizePage;
-    private TMPro.TextMeshProUGUI menuFontTemplate;
+    private GameObject mainPage, savePage, overwritePage, loadPage, sizePage;
+    private TMPro.TextMeshProUGUI menuFontTemplate, saveTitle, overwriteTitle;
+    private SaveSlot pendingManualSlot;
     private GameObject MakePage(string name, string title, RectTransform parent)
     {
         var go = new GameObject(name, typeof(RectTransform));
@@ -650,14 +661,24 @@ public class UIManager : MonoBehaviour
         foreach(var rect in Object.FindObjectsByType<RectTransform>(FindObjectsInactive.Include,FindObjectsSortMode.None))
             if (rect.gameObject.name == "MenuArea") PlaceUI(rect,new Vector2(1,0),new Vector2(1,0),new Vector2(-4,4),new Vector2(64,24));
         if (systemMenu != null) {
-            float mw = Mathf.Min(340,w-12), mh = Mathf.Min(260,h-12);
+            float mw = Mathf.Min(340,w-12), mh = Mathf.Min(320,h-12);
             PlaceUI((RectTransform)systemMenu.transform,new Vector2(1,0),new Vector2(1,0),new Vector2(-6,6),new Vector2(mw,mh));
-            foreach(var page in new[]{mainPage,loadPage,sizePage}) if (page != null) {
-                float row = (mh-28)/4; int index = 0;
+            foreach(var page in new[]{mainPage,savePage,overwritePage,loadPage,sizePage}) if (page != null) {
+                int buttonCount = 0;
+                foreach(Transform child in page.transform)
+                    if (child.GetComponent<CustomInteractable>() != null) buttonCount++;
+                float row = (mh-28)/Mathf.Max(1,buttonCount);
+                int index = 0;
                 foreach(Transform child in page.transform) {
                     var rect = child as RectTransform; if (rect == null) continue;
-                    if (child.GetComponent<CustomInteractable>() == null) PlaceUI(rect,new Vector2(0,1),new Vector2(.5f,.5f),new Vector2(mw/2,-12),new Vector2(mw-12,22));
-                    else { PlaceUI(rect,new Vector2(0,1),new Vector2(.5f,.5f),new Vector2(mw/2,-28-row*(index+.5f)),new Vector2(mw-12,row-3)); index++; }
+                    if (child.GetComponent<CustomInteractable>() == null)
+                        PlaceUI(rect,new Vector2(0,1),new Vector2(.5f,.5f),
+                            new Vector2(mw/2,-12),new Vector2(mw-12,22));
+                    else {
+                        PlaceUI(rect,new Vector2(0,1),new Vector2(.5f,.5f),
+                            new Vector2(mw/2,-28-row*(index+.5f)),new Vector2(mw-12,row-3));
+                        index++;
+                    }
                 }
             }
         }
@@ -727,8 +748,55 @@ public class UIManager : MonoBehaviour
     private void ShowPage(GameObject page)
     {
         if (mainPage != null) mainPage.SetActive(mainPage == page);
+        if (savePage != null) savePage.SetActive(savePage == page);
+        if (overwritePage != null) overwritePage.SetActive(overwritePage == page);
         if (loadPage != null) loadPage.SetActive(loadPage == page);
         if (sizePage != null) sizePage.SetActive(sizePage == page);
+    }
+
+    private void OpenManualSaveMenu()
+    {
+        if (saveTitle != null) saveTitle.text = "LƯU THỦ CÔNG";
+        ShowPage(savePage);
+    }
+
+    private void SaveToSlot(SaveSlot slot)
+    {
+        if (slot != SaveSlot.ManualSave1 && slot != SaveSlot.ManualSave2) return;
+        var gm = Object.FindFirstObjectByType<GameManager>();
+        if (gm == null)
+        {
+            if (saveTitle != null) saveTitle.text = "KHÔNG TÌM THẤY GAME";
+            return;
+        }
+        if (gm.HasSaveSlot(slot))
+        {
+            pendingManualSlot = slot;
+            if (overwriteTitle != null) overwriteTitle.text =
+                slot == SaveSlot.ManualSave1 ? "GHI ĐÈ Ô 1?" : "GHI ĐÈ Ô 2?";
+            ShowPage(overwritePage);
+            return;
+        }
+        WriteManualSlot(gm,slot);
+    }
+
+    private void ConfirmManualOverwrite()
+    {
+        // Do not trigger extra writes when the confirmation page is inactive.
+        if (overwritePage == null || !overwritePage.activeSelf) return;
+        var gm = Object.FindFirstObjectByType<GameManager>();
+        WriteManualSlot(gm,pendingManualSlot);
+    }
+
+    private void WriteManualSlot(GameManager gm,SaveSlot slot)
+    {
+        if (gm != null && gm.TryManualSave(slot))
+        {
+            CloseSystemMenu();
+            return;
+        }
+        if (saveTitle != null) saveTitle.text = "LƯU THẤT BẠI";
+        ShowPage(savePage);
     }
     public void CloseSystemMenu() { if (systemMenu != null) systemMenu.SetActive(false); ShowPage(mainPage); }
     private void LoadSlot(SaveSlot slot)
