@@ -13,6 +13,7 @@ public static class ManagementWindowLayout
     public static int CompactWidth { get; private set; }
     public static int CompactHeight { get; private set; }
     public static bool Expanded { get; private set; }
+    public static bool CollapsePending { get; private set; }
     public static int TargetWidth { get; private set; }
     public static int TargetHeight { get; private set; }
 
@@ -23,6 +24,7 @@ public static class ManagementWindowLayout
         CompactHeight=Math.Max(MinimumWindowHeight,height);
         TargetWidth=CompactWidth;
         TargetHeight=CompactHeight;
+        CollapsePending=false;
     }
     public static bool Expand(int maxDesktopWidth,int maxDesktopHeight)
     {
@@ -32,6 +34,7 @@ public static class ManagementWindowLayout
         if(available<MinimumSidePanel)return false;
         int extra=Math.Min(MaximumSidePanel,Math.Min(PreferredSidePanel,available));
         Expanded=true;
+        CollapsePending=false;
         TargetWidth=CompactWidth+extra;
         // Inventory needs room for affixes and tooltips, while the game stays
         // at its original bottom-left viewport (never stretched vertically).
@@ -42,17 +45,25 @@ public static class ManagementWindowLayout
     public static void Collapse()
     {
         Expanded=false;
+        CollapsePending=true;
         TargetWidth=CompactWidth;
         TargetHeight=CompactHeight;
     }
+    public static void ResolveResize(int actualWidth,int actualHeight)
+    {
+        if(CollapsePending && actualWidth==CompactWidth &&
+            actualHeight==CompactHeight)CollapsePending=false;
+    }
     public static int CombatPixels(int actualWindowWidth)
     {
-        return Expanded ? Math.Min(CompactWidth,Math.Max(1,actualWindowWidth))
+        return (Expanded || CollapsePending) ?
+            Math.Min(CompactWidth,Math.Max(1,actualWindowWidth))
             : Math.Max(1,actualWindowWidth);
     }
     public static int CombatHeight(int actualWindowHeight)
     {
-        return Expanded ? Math.Min(CompactHeight,Math.Max(1,actualWindowHeight))
+        return (Expanded || CollapsePending) ?
+            Math.Min(CompactHeight,Math.Max(1,actualWindowHeight))
             : Math.Max(1,actualWindowHeight);
     }
     public static float BattleCanvasScale(int actualWindowWidth,float logicalBattleWidth)
