@@ -1,0 +1,64 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 658311c7f9e244cdb1e33d39ecbf465b, type: 3}
+  m_Name: InventoryArtTheme_Default
+  m_EditorClassIdentifier: 
+  inventoryWindowFrame: {fileID: 0}
+  inventoryHeader: {fileID: 0}
+  equipmentPanel: {fileID: 0}
+  bagPanel: {fileID: 0}
+  itemDetailsPanel: {fileID: 0}
+  miniStatsPanel: {fileID: 0}
+  bagSlot: {fileID: 0}
+  selectedBagSlot: {fileID: 0}
+  equipmentSlot: {fileID: 0}
+  normalTab: {fileID: 0}
+  selectedTab: {fileID: 0}
+  actionButton: {fileID: 0}
+  scrollbarTrack: {fileID: 0}
+  scrollbarHandle: {fileID: 0}
+  heroAreaBackground: {fileID: 0}
+  heroSplashFrame: {fileID: 0}
+  mapTitlePlate: {fileID: 0}
+  hangingOrnament: {fileID: 0}
+  defaultHeroSplash: {fileID: 0}
+  defaultMapSplash: {fileID: 0}
+  mapArts:
+  - mapNumber: 1
+    displayName: Map 1 (tuy chon)
+    mapSplash: {fileID: 0}
+    heroSplash: {fileID: 0}
+    titlePlate: {fileID: 0}
+    ornament: {fileID: 0}
+  - mapNumber: 2
+    displayName: Map 2 (tuy chon)
+    mapSplash: {fileID: 0}
+    heroSplash: {fileID: 0}
+    titlePlate: {fileID: 0}
+    ornament: {fileID: 0}
+  - mapNumber: 3
+    displayName: Map 3 (tuy chon)
+    mapSplash: {fileID: 0}
+    heroSplash: {fileID: 0}
+    titlePlate: {fileID: 0}
+    ornament: {fileID: 0}
+  - mapNumber: 4
+    displayName: Map 4 (tuy chon)
+    mapSplash: {fileID: 0}
+    heroSplash: {fileID: 0}
+    titlePlate: {fileID: 0}
+    ornament: {fileID: 0}
+  slicedResizablePanels: 0
+  preserveSplashAspect: 1
+  mapOpacity: 1
+  textColor: {r: 0.89, g: 0.91, b: 0.83, a: 1}
+  accentTextColor: {r: 0.88, g: 0.75, b: 0.48, a: 1}
