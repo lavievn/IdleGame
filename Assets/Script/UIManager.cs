@@ -134,7 +134,7 @@ public class UIManager : MonoBehaviour
         overwriteTitle = overwritePage.GetComponentInChildren<TMPro.TextMeshProUGUI>(true);
         MakeMenuButton(mainPage, "Exit", "Thoát", 0, ConfirmExit);
         MakeMenuButton(mainPage, "Save", "Lưu thủ công", 1, OpenManualSaveMenu);
-        MakeMenuButton(mainPage, "Load", "Tải bản lưu", 2, () => ShowPage(loadPage));
+        MakeMenuButton(mainPage, "Load", "Tải bản lưu", 2, OpenLoadMenu);
         MakeMenuButton(mainPage, "Reset", "Đặt lại nhân vật", 3, () => {
             CloseSystemMenu(); var gm = Object.FindFirstObjectByType<GameManager>(); if (gm != null) gm.OnResetClicked();
         });
@@ -774,6 +774,34 @@ public class UIManager : MonoBehaviour
         if (overwritePage != null) overwritePage.SetActive(overwritePage == page);
         if (loadPage != null) loadPage.SetActive(loadPage == page);
         if (sizePage != null) sizePage.SetActive(sizePage == page);
+    }
+
+    private void OpenLoadMenu()
+    {
+        // Read the ACTUAL snapshot on disk. AutoSave can be much newer than
+        // ManualSave1/2, even if all three belong to the same character.
+        var saves = Object.FindFirstObjectByType<SaveManager>();
+        RefreshLoadChoice("LoadSave1","Ô 1",SaveSlot.ManualSave1,saves);
+        RefreshLoadChoice("LoadSave2","Ô 2",SaveSlot.ManualSave2,saves);
+        RefreshLoadChoice("LoadAuto","Tự động",SaveSlot.AutoSave,saves);
+        ShowPage(loadPage);
+    }
+
+    private void RefreshLoadChoice(string objectName,string label,
+        SaveSlot slot,SaveManager saves)
+    {
+        if (loadPage == null) return;
+        foreach(Transform child in loadPage.transform)
+        {
+            if (child.gameObject.name != objectName) continue;
+            var text = child.GetComponentInChildren<TMPro.TextMeshProUGUI>(true);
+            if (text == null) break;
+            int level,map;
+            text.text = saves != null && saves.TryGetSlotProgress(slot,out level,out map)
+                ? label + "  ·  Cấp " + level + "  ·  Map " + map
+                : label + "  ·  Trống";
+            break;
+        }
     }
 
     private void OpenManualSaveMenu()
