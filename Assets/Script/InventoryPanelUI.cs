@@ -46,6 +46,19 @@ public sealed class InventoryPanelUI : MonoBehaviour
     private int lastWidth,lastHeight;
     private bool overlayFallback;
 
+    // Visual-only guides on UI work branch. Cached per RectTransform to avoid
+    // rebuilding GameObjects whenever inventory tabs or window sizes change.
+    private sealed class LayoutGuide
+    {
+        public RectTransform rect;
+        public Image shade;
+        public Image[] edges;
+        public TextMeshProUGUI title;
+    }
+    private readonly Dictionary<RectTransform,LayoutGuide> layoutGuides =
+        new Dictionary<RectTransform,LayoutGuide>();
+    private bool lastLayoutDebugEnabled;
+
     public bool IsOpen => root != null && root.gameObject.activeSelf;
     public Transform Root => root;
     public Transform DecorationRoot => topBanner;
@@ -473,6 +486,7 @@ public sealed class InventoryPanelUI : MonoBehaviour
             EquipmentFoundation.IsSlotAllowed(selected.gear,EquipmentSlot.RingRight) ?
                 "Nhẫn phải" : "—";
         ApplyTheme();
+        UpdateLayoutDebug();
     }
 
     private static string ShortName(string name)
@@ -580,6 +594,7 @@ public sealed class InventoryPanelUI : MonoBehaviour
         Place(removeButton,gridX+2f*(actionW+4f),actionY,actionW,31f);
         StyleText();
         ApplyTheme();
+        UpdateLayoutDebug();
     }
     // Apply all Sprite references by name, never by scene hierarchy search.
     // Sprite fields stay on UIManager via its persistent ScriptableObject
@@ -691,6 +706,164 @@ public sealed class InventoryPanelUI : MonoBehaviour
             summary.color=art.textColor;
             detail.color=art.textColor;
             bagStatus.color=art.accentTextColor;
+        }
+    }
+
+    // RectTransform is measured AFTER Layout and asset application. Height x
+    // Width is shown exactly in that order, in Unity canvas units (pixels for
+    // our ScreenSpaceOverlay Canvas with scaleFactor 1).
+    private static RectTransform CreateGuidePart(Transform parent,string name,
+        Color color)
+    {
+        var go=new GameObject(name,typeof(RectTransform),
+            typeof(CanvasRenderer),typeof(Image));
+        var rect=(RectTransform)go.transform;
+        rect.SetParent(parent,false);
+        var image=go.GetComponent<Image>();
+        image.color=color;
+        image.raycastTarget=false; // never steals a click from item controls
+        return rect;
+    }
+
+    private LayoutGuide FindOrCreateGuide(RectTransform target)
+    {
+        LayoutGuide guide;
+        if(layoutGuides.TryGetValue(target,out guide))return guide;
+        guide=new LayoutGuide();
+        guide.rect=CreateGuidePart(target,"__052_LayoutGuide",
+            ui.inventoryDebugFill);
+        guide.rect.anchorMin=Vector2.zero;
+        guide.rect.anchorMax=Vector2.one;
+        guide.rect.pivot=new Vector2(.5f,.5f);
+        guide.rect.anchoredPosition=Vector2.zero;
+        guide.rect.sizeDelta=Vector2.zero;
+        guide.rect.SetAsLastSibling();
+        guide.shade=guide.rect.GetComponent<Image>();
+        guide.edges=new Image[4];
+        for(int i=0;i<4;i++)
+        {
+            var edge=CreateGuidePart(guide.rect,"Edge_"+i,
+                ui.inventoryDebugOutline);
+            guide.edges[i]=edge.GetComponent<Image>();
+        }
+        var labelGO=new GameObject("LayoutGuideLabel",typeof(RectTransform),
+            typeof(CanvasRenderer),typeof(TextMeshProUGUI));
+        var labelRect=(RectTransform)labelGO.transform;
+        labelRect.SetParent(guide.rect,false);
+        labelRect.anchorMin=labelRect.anchorMax=new Vector2(0f,1f);
+        labelRect.pivot=new Vector2(0f,1f);
+        labelRect.anchoredPosition=new Vector2(4f,-3f);
+        guide.title=labelGO.GetComponent<TextMeshProUGUI>();
+        guide.title.raycastTarget=false;
+        guide.title.alignment=TextAlignmentOptions.TopLeft;
+        guide.title.overflowMode=TextOverflowModes.Overflow;
+        guide.title.enableWordWrapping=false;
+        layoutGuides.Add(target,guide);
+        return guide;
+    }
+
+    private static void SetGuideEdge(Image image,float x,float y,
+        float width,float height,Color color)
+    {
+        var rect=(RectTransform)image.transform;
+        rect.anchorMin=rect.anchorMax=new Vector2(0f,1f);
+        rect.pivot=new Vector2(0f,1f);
+        rect.anchoredPosition=new Vector2(x,-y);
+        rect.sizeDelta=new Vector2(width,height);
+        image.color=color;
+        image.raycastTarget=false;
+    }
+
+    private void Guide(RectTransform target,string name,bool nineSliceRecommended)
+    {
+        if(target==null)return;
+        var item=FindOrCreateGuide(target);
+        item.rect.gameObject.SetActive(true);
+        item.shade.color=ui.inventoryDebugFill;
+        item.shade.raycastTarget=false;
+        float w=Mathf.Max(1f,target.rect.width);
+        float h=Mathf.Max(1f,target.rect.height);
+        Color color=ui.inventoryDebugOutline;
+        float thickness=Mathf.Min(2f,Mathf.Min(w,h)*.08f);
+        SetGuideEdge(item.edges[0],0f,0f,w,thickness,color);
+        SetGuideEdge(item.edges[1],0f,h-thickness,w,thickness,color);
+        SetGuideEdge(item.edges[2],0f,0f,thickness,h,color);
+        SetGuideEdge(item.edges[3],w-thickness,0f,thickness,h,color);
+        var img=target.GetComponent<Image>();
+        string actual=img==null || img.sprite==null?"chưa gán":
+            img.type==Image.Type.Sliced?"Sliced":"Simple";
+        int height=Mathf.RoundToInt(h),width=Mathf.RoundToInt(w);
+        bool compact=w<120f || h<56f;
+        string nineSlice=nineSliceRecommended?"NÊN":"KHÔNG";
+        item.title.text=compact?
+            name+"  "+height+"x"+width+"  9S:"+(nineSliceRecommended?"Có":"Không"):
+            name+"\nCao x Rộng: "+height+" x "+width+
+            "\n9-slice: "+nineSlice+" · "+actual;
+        item.title.color=ui.inventoryDebugText;
+        float size=compact?Mathf.Min(10f,Mathf.Max(7f,h*.32f)):12f;
+        UIManager.ReadableText(item.title,size);
+        item.title.enableWordWrapping=false;
+        item.title.overflowMode=TextOverflowModes.Overflow;
+        var textRect=(RectTransform)item.title.transform;
+        textRect.sizeDelta=new Vector2(Mathf.Max(1f,w-5f),
+            compact?Mathf.Max(12f,h-3f):Mathf.Min(56f,h-3f));
+    }
+
+    // Safe for both Inspector toggling during Play and the normal Layout path.
+    // All rectangles are real RectTransform values, not inferred screenshot
+    // pixels. Small cells use a one-line label to keep their UI clickable.
+    public void UpdateLayoutDebug()
+    {
+        if(ui==null || root==null)return;
+        bool enabled=ui.inventoryLayoutDebug;
+        lastLayoutDebugEnabled=enabled;
+        if(!enabled)
+        {
+            foreach(var visual in layoutGuides.Values)
+                if(visual.rect!=null)visual.rect.gameObject.SetActive(false);
+            return;
+        }
+        Guide(root,"[01] INVENTORY TỔNG",true);
+        Guide(headerBacking,"[02] THANH TIÊU ĐỀ",true);
+        Guide(equipmentBacking,"[03] KHUNG TRANG BỊ",true);
+        Guide(inventoryBacking,"[04] KHUNG TÚI ĐỒ",true);
+        Guide(miniStatsBacking!=null && miniStatsBacking.gameObject.activeSelf ?
+            miniStatsBacking:(RectTransform)summary.transform,
+            "[05] CHỈ SỐ",true);
+        Guide(detailBacking!=null && detailBacking.gameObject.activeSelf ?
+            detailBacking:(RectTransform)detail.transform,
+            "[06] CHI TIẾT VẬT PHẨM",true);
+        Guide(topBanner,"[07] VÙNG HERO / MAP",false);
+        Guide(mapNamePlate!=null && mapNamePlate.gameObject.activeSelf ?
+            mapNamePlate:(RectTransform)bannerText.transform,
+            "[08] TIÊU ĐỀ MAP",false);
+        Guide(slotButtons[0],"[09] Ô TRANG BỊ",false);
+        Guide(bagButtons[0],"[10] Ô TÚI ĐỒ",false);
+        Guide(tabButtons[0],"[11] TAB",true);
+        Guide(FindButton("InventoryClose"),"[12] NÚT",true);
+    }
+
+    private void LateUpdate()
+    {
+        if(ui!=null && lastLayoutDebugEnabled!=ui.inventoryLayoutDebug)
+            UpdateLayoutDebug();
+    }
+
+    public void PrintLayoutSizes()
+    {
+        if(root==null)return;
+        string[] names={"Inventory","Header","Equipment","Bag","MiniStats",
+            "Details","HeroMap","MapName","EquipCell","BagCell","Tab","Close"};
+        RectTransform[] rects={root,headerBacking,equipmentBacking,inventoryBacking,
+            miniStatsBacking,detailBacking,topBanner,mapNamePlate,
+            slotButtons[0],bagButtons[0],tabButtons[0],FindButton("InventoryClose")};
+        for(int i=0;i<rects.Length;i++)
+        {
+            var rect=rects[i];
+            if(rect==null)continue;
+            Debug.Log("[UI SIZE 0.0.52] "+names[i]+": Cao x Rộng = "+
+                Mathf.RoundToInt(rect.rect.height)+" x "+
+                Mathf.RoundToInt(rect.rect.width));
         }
     }
 
