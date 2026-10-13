@@ -14,6 +14,7 @@ public static class ManagementWindowLayout
     public static int CompactHeight { get; private set; }
     public static bool Expanded { get; private set; }
     public static int TargetWidth { get; private set; }
+    public static int TargetHeight { get; private set; }
 
     public static void SetCompact(int width,int height)
     {
@@ -21,8 +22,9 @@ public static class ManagementWindowLayout
         CompactWidth=Math.Max(MinimumWindowWidth,width);
         CompactHeight=Math.Max(MinimumWindowHeight,height);
         TargetWidth=CompactWidth;
+        TargetHeight=CompactHeight;
     }
-    public static bool Expand(int maxDesktopWidth)
+    public static bool Expand(int maxDesktopWidth,int maxDesktopHeight)
     {
         if(Expanded)return true;
         if(CompactWidth<=0 || CompactHeight<=0)return false;
@@ -31,12 +33,17 @@ public static class ManagementWindowLayout
         int extra=Math.Min(MaximumSidePanel,Math.Min(PreferredSidePanel,available));
         Expanded=true;
         TargetWidth=CompactWidth+extra;
+        // Inventory needs room for affixes and tooltips, while the game stays
+        // at its original bottom-left viewport (never stretched vertically).
+        TargetHeight=Math.Min(Math.Max(CompactHeight,680),
+            Math.Max(CompactHeight,maxDesktopHeight));
         return true;
     }
     public static void Collapse()
     {
         Expanded=false;
         TargetWidth=CompactWidth;
+        TargetHeight=CompactHeight;
     }
     public static int CombatPixels(int actualWindowWidth)
     {
