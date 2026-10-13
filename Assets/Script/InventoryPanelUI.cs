@@ -30,6 +30,8 @@ public sealed class InventoryPanelUI : MonoBehaviour
 
     private UIManager ui;
     private RectTransform root, headerBacking, equipmentBacking, inventoryBacking, topBanner;
+    private RectTransform detailBacking, miniStatsBacking;
+    private RectTransform mapArtwork, heroArtwork, heroArtworkFrame, mapNamePlate, hangingOrnament;
     private TextMeshProUGUI header, summary, detail, bagStatus, bannerText;
     private RectTransform[] slotButtons = new RectTransform[8];
     private TextMeshProUGUI[] slotTexts = new TextMeshProUGUI[8];
@@ -113,6 +115,13 @@ public sealed class InventoryPanelUI : MonoBehaviour
         panel.ui=ui;
         panel.topBanner=Backdrop(hud,"052_ExpandedKnowledgeBanner",
             new Color(.048f,.105f,.119f,.965f));
+        // Separate visual layers. All are disabled when no Sprite is assigned,
+        // so a clean default look remains usable without artwork.
+        panel.mapArtwork=Backdrop(panel.topBanner,"Art_MapSplash",Color.white);
+        panel.heroArtwork=Backdrop(panel.topBanner,"Art_HeroSplash",Color.white);
+        panel.heroArtworkFrame=Backdrop(panel.topBanner,"Art_HeroSplashFrame",Color.white);
+        panel.mapNamePlate=Backdrop(panel.topBanner,"Art_MapNamePlate",Color.white);
+        panel.hangingOrnament=Backdrop(panel.topBanner,"Art_MapHangingOrnament",Color.white);
         panel.bannerText=ui.MakeLabel(panel.topBanner,
             "HÀNH TRANG TU SĨ  ·  VẬT PHẨM & PHÁP KHÍ",
             Vector2.zero,new Vector2(460f,80f));
@@ -125,6 +134,8 @@ public sealed class InventoryPanelUI : MonoBehaviour
             new Color(.078f,.145f,.16f,.96f));
         panel.inventoryBacking=Backdrop(panel.root,"InkBagBacking",
             new Color(.055f,.115f,.13f,.96f));
+        panel.miniStatsBacking=Backdrop(panel.root,"Art_MiniHeroStatsFrame",Color.white);
+        panel.detailBacking=Backdrop(panel.root,"Art_ItemDetailsFrame",Color.white);
         panel.header=panel.MakeText("InventoryTitle","LINH KHÍ  ·  TRANG BỊ & TÚI CÀN KHÔN");
         panel.summary=panel.MakeText("InventoryStats","");
         panel.detail=panel.MakeText("SelectedItemDetails","");
@@ -170,6 +181,7 @@ public sealed class InventoryPanelUI : MonoBehaviour
             ui.transparentWindow.RegisterClickable(panel.topBanner);
         }
         panel.Layout(Screen.width,Screen.height,Screen.width,Screen.height);
+        panel.ApplyTheme();
         panel.root.gameObject.SetActive(false);
         panel.topBanner.gameObject.SetActive(false);
         return panel;
@@ -460,6 +472,7 @@ public sealed class InventoryPanelUI : MonoBehaviour
         equipRightText.text=selected!=null && selected.gear!=null && !selected.equipped &&
             EquipmentFoundation.IsSlotAllowed(selected.gear,EquipmentSlot.RingRight) ?
                 "Nhẫn phải" : "—";
+        ApplyTheme();
     }
 
     private static string ShortName(string name)
@@ -499,8 +512,17 @@ public sealed class InventoryPanelUI : MonoBehaviour
             {
                 Place(topBanner,0f,0f,combatWidth,bannerHeight);
                 var bannerRect=(RectTransform)bannerText.transform;
-                Place(bannerRect,16f,Mathf.Max(15f,(bannerHeight-110f)*.5f),
-                    combatWidth-32f,110f);
+                Place(bannerRect,25f,18f,
+                    Mathf.Min(460f,combatWidth-48f),88f);
+                Place(mapArtwork,0f,0f,combatWidth,bannerHeight);
+                Place(heroArtwork,combatWidth*.44f,8f,
+                    combatWidth*.40f,Mathf.Max(32f,bannerHeight-14f));
+                Place(heroArtworkFrame,combatWidth*.42f,0f,
+                    combatWidth*.46f,bannerHeight);
+                Place(mapNamePlate,12f,10f,
+                    Mathf.Min(490f,combatWidth*.62f),110f);
+                Place(hangingOrnament,combatWidth-104f,5f,96f,
+                    Mathf.Max(35f,bannerHeight-10f));
                 UIManager.ReadableText(bannerText,Mathf.Min(19f,Mathf.Max(14f,combatWidth/45f)));
                 bannerText.color=new Color(.81f,.85f,.73f,1f);
             }
@@ -535,6 +557,8 @@ public sealed class InventoryPanelUI : MonoBehaviour
         float summaryY=72f+4f*slotStep+7f;
         Place((RectTransform)summary.transform,10f,summaryY,left-8f,
             Mathf.Max(16f,h-summaryY-78f));
+        Place(miniStatsBacking,7f,Mathf.Max(35f,summaryY-6f),
+            left+1f,Mathf.Max(25f,h-summaryY-70f));
         Place(FindButton("InventoryGrantCharms"),9f,h-63f,left-8f,26f);
         Place(FindButton("InventoryGrantSword"),9f,h-33f,left-8f,26f);
 
@@ -548,6 +572,8 @@ public sealed class InventoryPanelUI : MonoBehaviour
         float detailY=bagY+rows*(cellH+3f)+4f;
         float actionY=h-39f;
         Place((RectTransform)detail.transform,gridX,detailY,gridW,Mathf.Max(18f,actionY-detailY-3f));
+        Place(detailBacking,gridX-4f,detailY-4f,gridW+8f,
+            Mathf.Max(24f,actionY-detailY+2f));
         float actionW=(gridW-8f)/3f;
         Place(equipButton,gridX,actionY,actionW,31f);
         Place(equipRightButton,gridX+actionW+4f,actionY,actionW,31f);
