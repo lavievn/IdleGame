@@ -120,3 +120,18 @@ Người kiểm thử xác nhận số sát thương vẫn lệch **lên trên/b
 - Thêm bài kiểm thử vào `Tests~/HeroDamagePopupRegression.cs`: đúng tâm ở tỷ lệ 0.5/1/2, kích thước đối tượng đổi trong lúc chữ bay, tái sử dụng quái từ pool, nhiều Hero.
   
 **Kiểm thử Play Mode:** Hero nhận sát thương của quái và quái nhận sát thương từ Hero. Kiểm tra cả lúc đứng yên và lúc di chuyển, với hình ảnh Cận chiến/Cung/Phép; con số phải xuất hiện ngay giữa ô thân thể và đi thẳng lên. Chưa được kiểm chứng bằng Unity Editor trong môi trường này.
+
+## Quy tắc 3 ô lưu: Chơi mới/Đặt lại không được xóa lưu thủ công
+
+**Lỗi:** `GameManager.OnConfirmResetClicked()` trước đây gọi `SaveManager.DeleteAllSaves()`, xóa cả `AutoSave.json`, `ManualSave1.json` và `ManualSave2.json` khi người chơi chọn **Chơi mới** hoặc **Đặt lại nhân vật**.
+
+**Sửa trên nhánh 0.0.51:**
+
+- Thay đường xóa tất cả bằng `SaveManager.ResetAutoSave()`: chỉ xóa `AutoSave.json` và `AutoSave.tmp` còn sót, rồi tạo Hero cấp 1 mới và lưu lại **AutoSave**.
+- **Hai ô thủ công tồn tại độc lập:** `ManualSave1.json` và `ManualSave2.json` không bị xóa hay ghi đè trong Chơi mới, Đặt lại, Tiếp tục, hoặc Chơi lại sau khi thua. Chỉ thao tác **Lưu thủ công → Ô 1 / Ô 2** mới cập nhật ô được chọn (nếu có dữ liệu, yêu cầu xác nhận ghi đè).
+- **Thất bại → Chơi lại** giữ cơ chế cũ: khi thua lưu tiến trình/điểm hồi sinh vào AutoSave, khi chọn Chơi lại tiếp tục Hero hiện có; không tác động lưu tay.
+- Đã cập nhật thông báo xác nhận của **Chơi mới** và **Đặt lại nhân vật** để ghi rõ hai ô lưu tay được giữ nguyên.
+- Mã cũ `DeleteAllSaves` đã được thay bằng thao tác riêng `ResetAutoSave` để tránh đường gọi nhầm từ UI.
+- Kiểm thử hồi quy mới trong `Tests~/MenuRegression.cs` xác nhận: Hủy không thay file; Chơi mới chỉ thay Auto; Đặt lại chỉ thay Auto; bản lưu tay cũ vẫn tải được sau reset; khi thua/Chơi lại lưu tay giữ **nguyên nội dung**, kể cả `.tmp` của lưu tay.
+
+**Cách thử trong Unity:** Lưu Hero vào cả Ô 1 và Ô 2, ghi nhớ cấp/đặc tính; bấm **Đặt lại nhân vật**, xác nhận. Hero mới ở cấp 1 nhưng menu Tải bản lưu phải vẫn cho tải được cả hai ô cũ. Thử thêm tình huống chết rồi Chơi lại và Chơi mới từ màn hình đầu. Unity Play Mode cần được người phát triển xác minh.
