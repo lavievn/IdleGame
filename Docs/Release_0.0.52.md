@@ -53,3 +53,17 @@ Báo lỗi từ Unity: lưu khi nhân vật cấp thấp và đang trang bị v�
 - Thêm `Tests~/SaveRollbackRegression.cs`: lưu thủ công ở cấp 1 với hộ phù HP, lên cấp và tăng ATK, đổi đồ, sau đó tải đúng Ô 1; xác nhận cấp/EXP/điểm cộng/map/ATK/Hộ phù đều trở về thời điểm lưu, `CombatManager` trỏ tới Hero mới nạp, HP có thể hồi đầy. Test riêng xác minh AutoSave cấp 10 không thể lẫn vào thao tác tải thủ công Ô 1 cấp 1.
 
 **Lưu ý về chẩn đoán:** Chưa có tệp `ManualSave1.json` tại thời điểm xảy ra lỗi nên chưa thể khẳng định lỗi do nhầm ô tải, ghi đè snapshot hay lỗi Unity-runtime khác. Bản sửa tăng tính quan sát và chặn nạp một phần, không giả định nguyên nhân khi chưa có bằng chứng. Nếu vẫn tái hiện, kiểm tra nhãn cấp trên ba nút Tải và nhật ký `[SaveLoad]` trong Unity Console; gửi bản sao tệp `ManualSave1.json` (sao lưu trước).
+
+## Giai đoạn 2 của 0.0.52 — Nền nhiều vị trí trang bị (chưa chạy Unity)
+
+Sau khi kiểm thử Save/Load cấp/EXP/map ổn định, nền được mở rộng từ **1 ô Hộ phù** sang **8 ô trang bị**. Tài liệu đầy đủ: [Equipment_0.0.52_Schema.md](Equipment_0.0.52_Schema.md).
+
+- Thêm `EquipmentFoundation.cs` và `EquipmentRuntime.cs`, với lớp `EquipmentInstance` có mã độc lập, cấp, phẩm chất, rèn, chỉ số chính/phụ và ô đang trang bị.
+- Đã chốt phẩm chất **Phổ thông → Hoàng → Huyền → Địa → Thiên → Tiên**. Các xác suất 0,005% (Thiên) và 0,001% (Tiên) chỉ là mốc cho bảng rơi đồ tương lai, chưa có rơi đồ.
+- Thêm `ProfessionProgress`, `LearnedProfessionRecipe`, `LearnedSupportSkill`, `CraftingRecipeData`, `RefinementRuleData` làm **dữ liệu nền**, chưa chế tạo hay tiêu vàng thật.
+- `SaveManager` reset phần dữ liệu mới khi đọc save trước 0.0.52 và xây lại Modifier từ đúng các trang bị đang mặc, không sinh lại giá trị ngẫu nhiên.
+- Sửa kho cộng dồn cũ để nguyên liệu ID mới không bị xóa bởi bước normalize.
+- UI Kho đồ có thử **Nhận Thiết Kiếm → Trang bị Thiết Kiếm → Tháo vũ khí** và bảng 8 ô. Hai hộ phù hiện có không đổi.
+- Kiểm thử hồi quy tại `Tests~/MultiSlotEquipmentRegression.cs`: tất cả 8 ô, 2 nhẫn độc lập, dữ liệu nghề, vật phẩm Thiên có 1 dòng Hỏa, ràng buộc kiểu trang bị, lưu/tải cá thể trang bị + vàng + cấp nghề, giữ chỉ số khác như cũ.
+
+**Lưu ý:** Chưa có lần biên dịch hoặc chạy kiểm thử trực tiếp trong Unity Editor. Hãy sao lưu dữ liệu Saves trước khi Pull và Play Mode.
