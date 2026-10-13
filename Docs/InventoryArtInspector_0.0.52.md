@@ -54,3 +54,13 @@ Các ô trống sẽ lấy hình mặc định ở nhóm 03. Tránh trùng Map N
 - Không cần gán Sprite trong GameObject `052_ExpandedInventory` được tạo lúc chạy: lớp đó là động, sẽ bị tạo lại. Chỉ chỉnh **Theme asset** trên `UIManager`.
 
 **Phạm vi:** lớp hình ảnh, không chỉnh dữ liệu vật phẩm, chỉ số hoặc lưu/tải. Vẫn cần chạy kiểm thử trong Unity trước khi chốt.
+
+## Khắc phục: đã gán Sprite nhưng giao diện vẫn dùng màu cũ
+
+**Nguyên nhân thực tế (hotfix 2026-10-13):** `Assets/InventoryArtTheme.asset` chứa Sprite hợp lệ nhưng Scene `MainGame.unity` / `SampleScene.unity` **không có tham chiếu** `UIManager.inventoryArtTheme`. Do đó `InventoryPanelUI.ApplyTheme` nhận `null`, mọi mục trở về màu mặc định.
+
+**Đã sửa trong Git:** cả hai Scene tham chiếu `Assets/InventoryArtTheme.asset`. Lớp `InventoryArtThemeEditor` hiển thị trạng thái Scene hiện tại, cảnh báo khi `UIManager` chưa gán Theme và cung cấp nút **Gắn Theme này vào UIManager trong Scene** (chỉ ở Edit Mode, có Undo + đánh dấu Scene cần lưu). `UIManager.Start` ghi một dòng `[InventoryArt]` để xác minh trong Unity Console.
+
+**Nếu bạn đã chỉnh Scene trên máy và không muốn Pull đè thay đổi:** mở `MainGame`, chọn GameObject có `UIManager` → tìm mục `Inventory Art Theme` → kéo `Assets/InventoryArtTheme.asset` vào → lưu Scene. Hoặc chọn trực tiếp Theme asset và bấm nút gắn tự động. Vào Play Mode, mở Kho đồ, kiểm tra hình. Nếu đổi Sprite trong Play Mode, trên `UIManager` chọn context menu `0.0.52 - Ap dung anh Inventory (Play Mode)` để làm mới.
+
+**Chú ý:** bản build Windows đã xuất **không tự cập nhật** từ thay đổi Inspector/Scene. Muốn thấy kết quả trong file EXE cần Build lại Unity sau khi kiểm tra trong Editor.
