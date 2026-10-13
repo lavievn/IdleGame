@@ -560,7 +560,14 @@ public class GameManager : MonoBehaviour
         if (hasDeployed || HasPendingConfirmation) return;
         if (!CanContinue) { UpdateEventLog("Không tìm thấy bản lưu để tiếp tục."); return; }
         pendingChoice = MenuChoice.Continue;
-        ShowConfirmation(manualSelection ? "Bạn có muốn tiếp tục từ ô lưu vừa chọn không?" : "Bạn có muốn tiếp tục từ bản lưu gần nhất không?");
+        int level,map;
+        string name = continueSlot == SaveSlot.AutoSave ? "Tự động" :
+            continueSlot == SaveSlot.ManualSave1 ? "Ô 1" : "Ô 2";
+        ShowConfirmation(saveManager != null &&
+            saveManager.TryGetSlotProgress(continueSlot,out level,out map)
+                ? "Tiếp tục từ " + name + " — Cấp " + level + ", Map " + map +
+                    "? (Hai ô lưu tay không bị thay đổi)"
+                : "Bạn có muốn tiếp tục từ " + name + " không?");
     }
     public void OnNewGameClicked()
     {
@@ -595,6 +602,18 @@ public class GameManager : MonoBehaviour
                 if (startMenu != null) startMenu.Refresh();
                 return;
             }
+            int storedLevel,storedMap;
+            if (!saveManager.TryGetSlotProgress(continueSlot,out storedLevel,out storedMap) ||
+                loaded.currentLevel != storedLevel)
+            {
+                Destroy(loaded);
+                Debug.LogError("[SaveLoad] Continue snapshot level mismatch in " + continueSlot);
+                if (startMenu != null) startMenu.Refresh();
+                return;
+            }
+            Debug.Log("[SaveLoad] Continue from " + continueSlot +
+                ": level=" + loaded.currentLevel + " EXP=" + loaded.currentExp +
+                " map=" + loaded.mapNumber);
             if (runtimeHeroData != null) Destroy(runtimeHeroData);
             runtimeHeroData = loaded;
             recentEvents.Clear(); recentDamage.Clear(); fullEventHistory.Clear();
