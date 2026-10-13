@@ -811,7 +811,9 @@ public class UIManager : MonoBehaviour
             if (!text.transform.IsChildOf(hudCanvas)) continue;
             // The inventory has independent font hierarchy and sizes; the
             // global compact HUD style would otherwise enlarge 20 grid cells.
-            if (inventoryUI != null && text.transform.IsChildOf(inventoryUI.Root)) continue;
+            if (inventoryUI != null &&
+                (text.transform.IsChildOf(inventoryUI.Root) ||
+                 text.transform.IsChildOf(inventoryUI.DecorationRoot))) continue;
             bool compact = text.transform.parent != null && text.transform.parent.GetComponent<CustomInteractable>() != null;
             if (text == mapTitleText || text == mapDebugText) continue; // Map labels own their fonts.
             float fontSize = text == (gm != null ? gm.eventLogText : null) ? 16f :
