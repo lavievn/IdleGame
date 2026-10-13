@@ -356,14 +356,29 @@ public class GameManager : MonoBehaviour
     }
 
     // --- CÁC HÀM XỬ LÝ SAVE/LOAD TỪ UI MỚI ---
+    // UI 0.0.51: saving a manual slot is only available after deployment.
+    // The result must come from actual IO rather than assuming a file was written.
+    public bool TryManualSave(SaveSlot slot)
+    {
+        if (slot != SaveSlot.ManualSave1 && slot != SaveSlot.ManualSave2)
+            return false;
+        if (!hasDeployed || HasPendingConfirmation || runtimeHeroData == null ||
+            saveManager == null)
+        {
+            UpdateEventLog("Chưa thể lưu thủ công tại thời điểm này.");
+            return false;
+        }
+        bool saved = saveManager.SaveGame(runtimeHeroData, slot);
+        UpdateEventLog(saved ?
+            "Đã lưu tiến trình vào " + (slot == SaveSlot.ManualSave1 ? "ô 1." : "ô 2.") :
+            "Lỗi lưu thủ công: chưa ghi được tệp. Kiểm tra thư mục Saves.");
+        return saved;
+    }
+
+    // Keep old scene/SaveMenuUI method bindings compatible.
     public void ForceManualSave(int slotIndex)
     {
-        SaveSlot slot = (SaveSlot)slotIndex;
-        if (saveManager != null && runtimeHeroData != null && !HasPendingConfirmation)
-        {
-            saveManager.SaveGame(runtimeHeroData, slot);
-            UpdateEventLog($"Đã lưu tiến trình vào: {slot}");
-        }
+        TryManualSave((SaveSlot)slotIndex);
     }
 
     public void ForceManualLoad(int slotIndex) { TryLoadSlot((SaveSlot)slotIndex, false); }
