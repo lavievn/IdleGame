@@ -14,6 +14,7 @@ public static class ManagementWindowLayout
     public static int CompactHeight { get; private set; }
     public static bool Expanded { get; private set; }
     public static bool CollapsePending { get; private set; }
+    public static bool CompactResizePending { get; private set; }
     public static int TargetWidth { get; private set; }
     public static int TargetHeight { get; private set; }
 
@@ -25,11 +26,20 @@ public static class ManagementWindowLayout
         TargetWidth=CompactWidth;
         TargetHeight=CompactHeight;
         CollapsePending=false;
+        CompactResizePending=false;
+    }
+    // A requested in-game size change resolves asynchronously. Do not learn
+    // Screen.width from a stale frame until Windows confirms the new size.
+    public static void RequestCompact(int width,int height)
+    {
+        SetCompact(width,height);
+        CompactResizePending=true;
     }
     public static bool Expand(int maxDesktopWidth,int maxDesktopHeight)
     {
         if(Expanded)return true;
-        if(CompactWidth<=0 || CompactHeight<=0)return false;
+        if(CompactResizePending || CollapsePending ||
+            CompactWidth<=0 || CompactHeight<=0)return false;
         int available=Math.Max(0,maxDesktopWidth-CompactWidth);
         if(available<MinimumSidePanel)return false;
         int extra=Math.Min(MaximumSidePanel,Math.Min(PreferredSidePanel,available));
@@ -51,8 +61,11 @@ public static class ManagementWindowLayout
     }
     public static void ResolveResize(int actualWidth,int actualHeight)
     {
-        if(CollapsePending && actualWidth==CompactWidth &&
-            actualHeight==CompactHeight)CollapsePending=false;
+        if(actualWidth==CompactWidth && actualHeight==CompactHeight)
+        {
+            CollapsePending=false;
+            CompactResizePending=false;
+        }
     }
     public static int CombatPixels(int actualWindowWidth)
     {
