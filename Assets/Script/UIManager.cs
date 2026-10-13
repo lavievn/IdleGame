@@ -15,6 +15,18 @@ public class UIManager : MonoBehaviour
     public Image groundImage;
     public TransparentWindow transparentWindow;
 
+    [Header("0.0.52 - ASSET KHO DO / TU TIEN")]
+    [Tooltip("Tao asset: Assets > Create > Tu Tien > UI > Inventory Art Theme. " +
+        "Keo vao day de tu gan Sprite cho kho do, panel chi so, hero va tung map.")]
+    public InventoryArtTheme inventoryArtTheme;
+
+    // UI is created at runtime. Keep all artwork editable on this persistent
+    // scene component, never on the temporary InventoryPanelUI component.
+    public void ApplyInventoryArtFromInspector()
+    {
+        if (inventoryUI != null) inventoryUI.Refresh();
+    }
+
     [Header("POPUP THOÁT GAME")]
     public GameObject exitConfirmPopup; // Bảng hỏi "Bạn có muốn thoát..."
 
