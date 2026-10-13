@@ -261,6 +261,9 @@ public class GameManager : MonoBehaviour
         runtimeHeroData.currentExp = 0;
         runtimeHeroData.expToNextLevel = 100;
         runtimeHeroData.addedHealth = runtimeHeroData.addedDamage = runtimeHeroData.statPoints = 0;
+        // New characters start with the established melee test stance.
+        // Randomized combat aptitudes belong to future character generation.
+        runtimeHeroData.savedAttackMode = AttackMode.Melee;
         runtimeHeroData.originHealth = Mathf.Max(1,heroDataSO != null ? heroDataSO.baseHealth : CombatBalance.HeroHealth(1));
         runtimeHeroData.meleeGrowthBonus = 0;
         runtimeHeroData.meleeGrowthThroughLevel = 1;
@@ -356,6 +359,18 @@ public class GameManager : MonoBehaviour
         CallNextWave();
     }
 
+    private void CaptureSelectedStance()
+    {
+        if (runtimeHeroData != null && heroController != null)
+            runtimeHeroData.SetSavedAttackMode(heroController.attackMode);
+    }
+
+    private void RestoreSelectedStance()
+    {
+        if (runtimeHeroData != null && heroController != null)
+            heroController.ChangeAttackMode((int)runtimeHeroData.savedAttackMode);
+    }
+
     // --- CÁC HÀM XỬ LÝ SAVE/LOAD TỪ UI MỚI ---
     // UI 0.0.51: saving a manual slot is only available after deployment.
     // The result must come from actual IO rather than assuming a file was written.
@@ -369,6 +384,7 @@ public class GameManager : MonoBehaviour
             UpdateEventLog("Chưa thể lưu thủ công tại thời điểm này.");
             return false;
         }
+        CaptureSelectedStance();
         bool saved = saveManager.SaveGame(runtimeHeroData, slot);
         UpdateEventLog(saved ?
             "Đã lưu tiến trình vào " + (slot == SaveSlot.ManualSave1 ? "ô 1." : "ô 2.") :
@@ -410,6 +426,7 @@ public class GameManager : MonoBehaviour
 
         // 3. Đưa người chơi về Màn Hình Chờ an toàn
         runtimeHeroData.ApplyHeroBalance();
+        RestoreSelectedStance();
         if (heroController != null) heroController.SetIdentityVisual(runtimeHeroData);
         SetupPreGameUI();
         RestoreProgress();
@@ -424,9 +441,11 @@ public class GameManager : MonoBehaviour
         while (true)
         {
             yield return new WaitForSeconds(10f);
-            if (hasDeployed && !HasPendingConfirmation && runtimeHeroData != null && runtimeHeroData.isDirty && saveManager != null)
+            if (hasDeployed && !HasPendingConfirmation && runtimeHeroData != null && saveManager != null)
             {
-                saveManager.SaveGame(runtimeHeroData, SaveSlot.AutoSave);
+                CaptureSelectedStance();
+                if (runtimeHeroData.isDirty)
+                    saveManager.SaveGame(runtimeHeroData, SaveSlot.AutoSave);
             }
         }
     }
@@ -443,6 +462,7 @@ public class GameManager : MonoBehaviour
             runtimeHeroData.RestartRegionAfterDefeat();
             RestoreProgress();
             UpdateEventLog("Thất bại: quay về map đầu của " + WorldNames.Region(runtimeHeroData.regionTheme) + ", đợt 1/5. Giữ cấp và chỉ số nhân vật.");
+            CaptureSelectedStance();
             if (saveManager != null) saveManager.SaveGame(runtimeHeroData, SaveSlot.AutoSave);
         }
         if (gameOverPanel != null) { gameOverPanel.SetActive(true); gameOverPanel.transform.SetAsLastSibling(); }
@@ -507,6 +527,7 @@ public class GameManager : MonoBehaviour
             runtimeHeroData = loaded;
             recentEvents.Clear(); recentDamage.Clear(); fullEventHistory.Clear();
             runtimeHeroData.ApplyHeroBalance();
+            RestoreSelectedStance();
         }
         else
         {
@@ -527,6 +548,7 @@ public class GameManager : MonoBehaviour
         if (heroController != null) heroController.SetIdentityVisual(runtimeHeroData);
         if (UIManager.Instance != null) UIManager.Instance.ApplyDifficultyVisual(IsHardMode);
         DeployHero();
+        CaptureSelectedStance();
         if (saveManager != null && !saveManager.SaveGame(runtimeHeroData, SaveSlot.AutoSave))
             UpdateEventLog("Đã bắt đầu nhưng chưa ghi được bản lưu. Kiểm tra quyền ghi thư mục Saves.");
     }
@@ -540,12 +562,11 @@ public class GameManager : MonoBehaviour
 
     public void SetHeroAttackMode(int modeIndex)
     {
-        if (heroController != null)
-        {
-            heroController.ChangeAttackMode(modeIndex);
-            if (combatManager != null) combatManager.OnHeroAttackModeChanged();
-            UpdateEventLog($"Đổi thế: {(AttackMode)modeIndex}");
-        }
+        if (heroController == null || modeIndex < 0 || modeIndex > 2) return;
+        heroController.ChangeAttackMode(modeIndex);
+        CaptureSelectedStance();
+        if (combatManager != null) combatManager.OnHeroAttackModeChanged();
+        UpdateEventLog($"Đổi thế: {(AttackMode)modeIndex}");
     }
 
     private void CallNextWave()
@@ -650,5 +671,10 @@ public class GameManager : MonoBehaviour
         ClearTestCompanions();
     }
 
-    private void OnApplicationQuit() { if (saveManager != null && hasDeployed && runtimeHeroData != null) saveManager.SaveGame(runtimeHeroData, SaveSlot.AutoSave); }
+    private void OnApplicationQuit()
+    {
+        if (saveManager == null || !hasDeployed || runtimeHeroData == null) return;
+        CaptureSelectedStance();
+        saveManager.SaveGame(runtimeHeroData, SaveSlot.AutoSave);
+    }
 }
