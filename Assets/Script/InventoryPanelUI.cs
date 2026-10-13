@@ -579,6 +579,7 @@ public sealed class InventoryPanelUI : MonoBehaviour
         Place(equipRightButton,gridX+actionW+4f,actionY,actionW,31f);
         Place(removeButton,gridX+2f*(actionW+4f),actionY,actionW,31f);
         StyleText();
+        ApplyTheme();
     }
     // Apply all Sprite references by name, never by scene hierarchy search.
     // Sprite fields stay on UIManager via its persistent ScriptableObject
