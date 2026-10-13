@@ -142,19 +142,24 @@ public class SaveManager : MonoBehaviour
         return found;
     }
 
-    public bool DeleteAllSaves()
+    // New Game and Reset must NEVER touch the two manually controlled slots.
+    // Remove only the old autosave (and its leftover temporary write) before
+    // creating the fresh Hero. ManualSave1/2 remain byte-for-byte unchanged.
+    public bool ResetAutoSave()
     {
         try
         {
-            foreach (SaveSlot slot in Enum.GetValues(typeof(SaveSlot)))
-            {
-                DeleteSave(slot);
-                string temp = Path.Combine(saveDirectory, slot + TEMP_EXTENSION);
-                if (File.Exists(temp)) File.Delete(temp);
-            }
+            string finalPath = Path.Combine(saveDirectory, SaveSlot.AutoSave + SAVE_EXTENSION);
+            string tempPath = Path.Combine(saveDirectory, SaveSlot.AutoSave + TEMP_EXTENSION);
+            if (File.Exists(finalPath)) File.Delete(finalPath);
+            if (File.Exists(tempPath)) File.Delete(tempPath);
             return true;
         }
-        catch (Exception e) { Debug.LogError("Không xóa được bản lưu: " + e.Message); return false; }
+        catch (Exception e)
+        {
+            Debug.LogError("Không thể đặt lại ô lưu tự động: " + e.Message);
+            return false;
+        }
     }
 
     public void SaveGame(string slotName, string jsonData) { WriteToFile(slotName, jsonData); }
