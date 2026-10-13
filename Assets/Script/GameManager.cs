@@ -231,6 +231,7 @@ public class GameManager : MonoBehaviour
         (gameOverPanel == null || !gameOverPanel.activeInHierarchy) &&
         (confirmationPopup == null || !confirmationPopup.activeInHierarchy);
     public bool CanContinue => saveManager != null && (manualSelection ? saveManager.HasSave(continueSlot) : saveManager.TryGetLatestSlot(out continueSlot));
+    public bool HasSaveSlot(SaveSlot slot) => saveManager != null && saveManager.HasSave(slot);
 
     void Start()
     {
