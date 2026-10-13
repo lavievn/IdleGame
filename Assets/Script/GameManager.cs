@@ -133,6 +133,17 @@ public class GameManager : MonoBehaviour
             actor.attackMode = RandomUnusedTestMode();
 
             data = Instantiate(runtimeHeroData);
+            // B2 companions are temporary test combatants, not persistent
+            // equipped characters. Copy the modifier collection first so
+            // removing gear never mutates the primary Hero (test doubles may
+            // shallow-clone ScriptableObjects).
+            data.combatStatModifiers = data.combatStatModifiers == null
+                ? new List<CombatStatModifier>()
+                : new List<CombatStatModifier>(data.combatStatModifiers);
+            data.RemoveModifiersBySource(EquipmentInventory.ModifierSource);
+            data.inventory = new List<InventoryStack>();
+            data.equippedItemId = "";
+            data.testItemsGranted = false;
             data.entityName = "Đồng đội B2-" + number;
             data.currentExp = 0;
             data.isDirty = false;
