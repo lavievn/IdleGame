@@ -10,10 +10,10 @@ public class EnvironmentManager : MonoBehaviour
     [SerializeField] private RectTransform[] groundDetails;
     [SerializeField] private RectTransform battleArea;
 
-    [Header("0.0.52 - SPRITE NEN XA (GROUND 2 / GROUND 3)")]
-    [Tooltip("Anh nui xa / lop parallax sau cung. De trong de dung anh xem thu hien tai.")]
+    [Header("0.0.52 - NEN XA (GOUND SKY / MOUNTAIN)")]
+    [Tooltip("Lop sau cung: SkyDistant.png. Mac dinh tai Resources/Parallax/SkyDistant; keo Sprite vao day neu muon thay theo map. Toc do 10%, scale 169%.")]
     public Sprite customDistantMountains;
-    [Tooltip("Anh lop cay / trang tri phia truoc nui xa. De trong de dung anh xem thu hien tai.")]
+    [Tooltip("Lop nui phia truoc: MountainNear.png. Mac dinh tai Resources/Parallax/MountainNear; co the override tu Inspector. Toc do 30%, scale 130%.")]
     public Sprite customFarTrees;
 
     [Min(0f)] public float scrollSpeed = 150f;
