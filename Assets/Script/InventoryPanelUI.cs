@@ -46,6 +46,7 @@ public sealed class InventoryPanelUI : MonoBehaviour
 
     public bool IsOpen => root != null && root.gameObject.activeSelf;
     public Transform Root => root;
+    public Transform DecorationRoot => topBanner;
 
     private static RectTransform Backdrop(Transform parent,string name,Color color)
     {
