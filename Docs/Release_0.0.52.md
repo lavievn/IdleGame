@@ -67,3 +67,13 @@ Sau khi kiểm thử Save/Load cấp/EXP/map ổn định, nền được mở r
 - Kiểm thử hồi quy tại `Tests~/MultiSlotEquipmentRegression.cs`: tất cả 8 ô, 2 nhẫn độc lập, dữ liệu nghề, vật phẩm Thiên có 1 dòng Hỏa, ràng buộc kiểu trang bị, lưu/tải cá thể trang bị + vàng + cấp nghề, giữ chỉ số khác như cũ.
 
 **Lưu ý:** Chưa có lần biên dịch hoặc chạy kiểm thử trực tiếp trong Unity Editor. Hãy sao lưu dữ liệu Saves trước khi Pull và Play Mode.
+
+## Bổ sung Inspector — Gắn asset nghệ thuật không cần sửa mã
+
+- Thêm `Assets/Script/InventoryArtTheme.cs` (ScriptableObject) và `Assets/InventoryArtTheme_Default.asset` (4 ô map mẫu) cùng đầy đủ Unity `.meta`.
+- **UIManager Inspector** có trường `Inventory Art Theme`. Khi chạy, `InventoryPanelUI` sinh từ mã sẽ đọc theme này và gán Sprite trực tiếp cho khung inventory, ô trang bị, ô túi, trạng thái được chọn, nút, chi tiết món, khung chỉ số, banner map, trang trí treo, splash Hero và ảnh nền từng map.
+- **EnvironmentManager Inspector** có `customDistantMountains` / `customFarTrees` để thay riêng hai lớp parallax Ground, giữ nguyên ảnh preview nếu để trống.
+- Hệ thống chỉ gán artwork, không thay cấp Hero, các Modifier, SaveManager, tọa độ chiến đấu hay logic rơi đồ. Có thể thay toàn bộ ảnh về sau bằng cách chọn Sprite khác.
+- Các ảnh trống không bắt buộc: panel dùng lại nền cũ; artwork chỉ xuất hiện khi có Sprite hợp lệ.
+- Các trường `scrollbarTrack` / `scrollbarHandle` là **chỗ dự phòng**, chưa kết nối ScrollRect (kho vẫn phân trang).
+- Chi tiết gán ảnh: [InventoryArtTheme_0.0.52.md](InventoryArtTheme_0.0.52.md). Chưa có kiểm thử Unity Play Mode và Windows Build thực tế; cần xác nhận trên máy phát triển.
