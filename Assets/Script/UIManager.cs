@@ -20,6 +20,23 @@ public class UIManager : MonoBehaviour
         "Keo vao day de tu gan Sprite cho kho do, panel chi so, hero va tung map.")]
     public InventoryArtTheme inventoryArtTheme;
 
+    [Header("0.0.52 UI WORKSPACE - DO KICH THUOC ASSET")]
+    [Tooltip("Bật hướng dẫn đo Cao x Rộng trực tiếp trên cửa sổ Kho đồ.")]
+    public bool inventoryLayoutDebug = true;
+    [Tooltip("Lớp phủ xanh tối trong suốt. Chỉ để đo bố cục, không nhận click.")]
+    public Color inventoryDebugFill = new Color(.035f,.17f,.20f,.16f);
+    [Tooltip("Viền xanh ngọc để xác định đúng kích thước từng RectTransform.")]
+    public Color inventoryDebugOutline = new Color(.18f,.72f,.73f,.95f);
+    [Tooltip("Màu chữ đo kích thước trên overlay.")]
+    public Color inventoryDebugText = new Color(.87f,.98f,.92f,1f);
+
+    [ContextMenu("0.0.52 UI - Bat/Tat khung do kich thuoc (Play Mode)")]
+    public void ToggleInventoryLayoutDebug()
+    {
+        inventoryLayoutDebug = !inventoryLayoutDebug;
+        if (inventoryUI != null) inventoryUI.UpdateLayoutDebug();
+    }
+
     // UI is created at runtime. Keep all artwork editable on this persistent
     // scene component, never on the temporary InventoryPanelUI component.
     [ContextMenu("0.0.52 - Ap dung anh Inventory (Play Mode)")]
@@ -33,6 +50,7 @@ public class UIManager : MonoBehaviour
         if (inventoryUI != null)
         {
             inventoryUI.Refresh();
+            inventoryUI.UpdateLayoutDebug();
             Debug.Log("[InventoryArt] Đã cập nhật Sprite của Kho đồ từ Theme trong Inspector.");
         }
         else Debug.LogWarning("[InventoryArt] InventoryPanelUI chưa được tạo; mở Play Mode trước.");
