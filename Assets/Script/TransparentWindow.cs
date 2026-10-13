@@ -271,6 +271,18 @@ public class TransparentWindow : MonoBehaviour
     // Prevent a right-docked inventory from extending beyond the active
     // monitor. In the Editor, use a generous test canvas; Game View size is
     // controlled by the Editor and may ignore SetResolution.
+    public int GetMaximumUsableHeight()
+    {
+#if UNITY_STANDALONE_WIN && !UNITY_EDITOR
+        if (hWnd != IntPtr.Zero)
+        {
+            CLIENTRECT area=WorkArea();
+            return Mathf.Max(ManagementWindowLayout.MinimumWindowHeight,
+                area.bottom-area.top);
+        }
+#endif
+        return Mathf.Max(Screen.height,680);
+    }
     public int GetMaximumUsableWidth()
     {
 #if UNITY_STANDALONE_WIN && !UNITY_EDITOR
