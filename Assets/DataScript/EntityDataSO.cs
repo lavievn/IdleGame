@@ -88,6 +88,14 @@ public class EntityDataSO : ScriptableObject
     public List<string> characterTags = new List<string>();
     public List<CombatStatModifier> combatStatModifiers = new List<CombatStatModifier>();
 
+    [Header("0.0.52 - KHO DO / TRANG BI")]
+    public int inventoryVersion = 1;
+    // Shared bag for the current run; equipped item leaves the bag.
+    public List<InventoryStack> inventory = new List<InventoryStack>();
+    public string equippedItemId = "";
+    // Old saves can claim one set of sample items from the inventory panel.
+    public bool testItemsGranted;
+
     // Used by save migration and test-created/old characters. Does NOT reroll.
     public void NormalizeCombatStats()
     {
