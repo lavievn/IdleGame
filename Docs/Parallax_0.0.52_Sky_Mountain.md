@@ -13,7 +13,7 @@
 
 ## Thiết lập trên máy
 
-Ảnh nhị phân không được thêm bằng thao tác sửa văn bản GitHub. Bộ **`IdleGame_0.0.52_Parallax_Sky_Mountain.zip`** chứa chính xác cấu trúc:
+Hai **ảnh nguồn** đã được người phát triển đẩy lên `Assets/UI` với các tên tự động: `0a83e2334a010b0daf08ab7003640c28f5eaafa76e7e0-5VJ3ZD.png` (Sky) và `5ff2f57a755cde917084c175655071974a3804d0ac0d0-nOY6YG_fw1200.webp` (Mountain). Các ảnh này chưa ở dạng **Sprite chuẩn trong Resources** (đặc biệt WebP chưa phải PNG). Bộ **`IdleGame_0.0.52_Parallax_Sky_Mountain.zip`** chứa chính xác cấu trúc:
 
 ```
 Assets/
@@ -29,4 +29,4 @@ Assets/
 
 **Kiểm thử:** Vào map bất kỳ, xác nhận ảnh núi vàng xa nhất, ảnh núi xanh trước nó, tốc độ núi xanh 30% so với Grass1, Hero/quái đòn đánh giữ nguyên. Kéo thay đổi cửa sổ và mở/đóng Kho đồ, kiểm tra phông nền không làm reset vị trí map. Nếu thiếu Sprite thì Console không báo lỗi, dùng ảnh xem thử cũ. Không có kiểm thử Unity Play Mode trực tiếp ở môi trường trợ lý.
 
-**Chưa cập nhật:** hai tệp ảnh nhị phân **chưa nằm trong GitHub branch**, chỉ có mã tra cứu và tài liệu; cần thêm chúng từ ZIP sau khi Pull. Không nên xác nhận rằng branch tự có hai PNG mới khi chưa import.
+**Chưa cập nhật:** hai **bản PNG chuẩn hóa với tên mới** trong `Resources/Parallax` chưa được commit trực tiếp bằng API chỉnh sửa văn bản; cần chép chúng từ ZIP vào Unity sau khi Pull, rồi commit cả PNG và META nếu muốn đồng bộ đến các máy khác. Những ảnh **nguồn** đã nằm trên nhánh Github.
