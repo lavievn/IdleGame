@@ -32,18 +32,91 @@ partial class MotionRegression
                 Check(Get<bool>(gm,"hasDeployed"),"starts after confirmation");
             } finally { Directory.Delete(dir,true); }
         });
-        Run("new game deletes all slots only after confirmation and resets hero",()=>{
+        Run("New Game resets autosave only and preserves both manual saves byte-for-byte",()=>{
             var f=new Field();SaveManager save;string dir;var gm=MenuManager(f,out save,out dir);
             try {
-                foreach(SaveSlot slot in Enum.GetValues(typeof(SaveSlot)))Check(save.SaveGame(HeroAt(20),slot),"old slot saved");
+                Check(save.SaveGame(HeroAt(20),SaveSlot.AutoSave),"old autosave created");
+                Check(save.SaveGame(HeroAt(35),SaveSlot.ManualSave1),"manual slot 1 created");
+                Check(save.SaveGame(HeroAt(68),SaveSlot.ManualSave2),"manual slot 2 created");
+                string manual1=File.ReadAllText(Path.Combine(dir,"ManualSave1.json"));
+                string manual2=File.ReadAllText(Path.Combine(dir,"ManualSave2.json"));
+                File.WriteAllText(Path.Combine(dir,"AutoSave.tmp"),"stale autosave temp");
+                File.WriteAllText(Path.Combine(dir,"ManualSave1.tmp"),"keep manual temp unchanged");
+
                 gm.OnNewGameClicked();gm.OnCancelResetClicked();
-                foreach(SaveSlot slot in Enum.GetValues(typeof(SaveSlot)))Check(save.HasSave(slot),"cancel preserves every slot");
+                var oldAuto=HeroAt(1);
+                Check(save.LoadGame(oldAuto,SaveSlot.AutoSave)&&oldAuto.currentLevel==20,
+                    "cancel does not touch existing autosave");
+                Check(File.ReadAllText(Path.Combine(dir,"ManualSave1.json"))==manual1 &&
+                      File.ReadAllText(Path.Combine(dir,"ManualSave2.json"))==manual2,
+                    "cancel never touches manual slots");
+
                 gm.OnNewGameClicked();gm.OnConfirmResetClicked();
-                var data=Get<EntityDataSO>(gm,"runtimeHeroData");Check(data.currentLevel==1&&data.currentExp==0&&!gm.IsHardMode,"fresh hero normal mode");
-                Check(!save.HasSave(SaveSlot.ManualSave1)&&!save.HasSave(SaveSlot.ManualSave2),"old manual slots removed");
-                var loaded=HeroAt(99);Check(save.LoadGame(loaded,SaveSlot.AutoSave)&&loaded.currentLevel==1,"new autosave replaces old");
-                gm.OnConfirmResetClicked();Check(data==Get<EntityDataSO>(gm,"runtimeHeroData"),"double confirmation ignored");
+                var data=Get<EntityDataSO>(gm,"runtimeHeroData");
+                Check(data.currentLevel==1&&data.currentExp==0&&!gm.IsHardMode,
+                    "new Hero starts at level 1");
+                Check(File.ReadAllText(Path.Combine(dir,"ManualSave1.json"))==manual1 &&
+                      File.ReadAllText(Path.Combine(dir,"ManualSave2.json"))==manual2,
+                    "New Game retains both manual files exactly");
+                Check(!File.Exists(Path.Combine(dir,"AutoSave.tmp")),
+                    "stale autosave temp cleared during reset");
+                Check(File.ReadAllText(Path.Combine(dir,"ManualSave1.tmp"))=="keep manual temp unchanged",
+                    "manual temporary file is not removed");
+                var loaded=HeroAt(99);
+                Check(save.LoadGame(loaded,SaveSlot.AutoSave)&&loaded.currentLevel==1,
+                    "new autosave replaces old run");
+                gm.OnConfirmResetClicked();
+                Check(data==Get<EntityDataSO>(gm,"runtimeHeroData"),
+                    "duplicate confirmation ignored");
+                Check(File.ReadAllText(Path.Combine(dir,"ManualSave1.json"))==manual1 &&
+                      File.ReadAllText(Path.Combine(dir,"ManualSave2.json"))==manual2,
+                    "duplicate confirmation never touches manual saves");
             } finally { Directory.Delete(dir,true); }
+        });
+        Run("Reset Character also keeps manual saves and can still load old manual Hero",()=>{
+            var f=new Field();SaveManager save;string dir;var gm=MenuManager(f,out save,out dir);
+            try {
+                Check(save.SaveGame(HeroAt(12),SaveSlot.AutoSave),"autosave seeded");
+                Check(save.SaveGame(HeroAt(30),SaveSlot.ManualSave1),"manual 1 seeded");
+                Check(save.SaveGame(HeroAt(45),SaveSlot.ManualSave2),"manual 2 seeded");
+                string manual1=File.ReadAllText(Path.Combine(dir,"ManualSave1.json"));
+                string manual2=File.ReadAllText(Path.Combine(dir,"ManualSave2.json"));
+                gm.OnResetClicked();gm.OnConfirmResetClicked();
+                var fresh=HeroAt(99);
+                Check(save.LoadGame(fresh,SaveSlot.AutoSave)&&fresh.currentLevel==1,
+                    "reset character creates new autosave");
+                Check(File.ReadAllText(Path.Combine(dir,"ManualSave1.json"))==manual1 &&
+                      File.ReadAllText(Path.Combine(dir,"ManualSave2.json"))==manual2,
+                    "reset does not overwrite or delete manual slots");
+                Check(gm.LoadAndContinue(SaveSlot.ManualSave2),"can load old manual slot after reset");
+                Check(gm.HeroData.currentLevel==45,"old manual progress restored");
+                Check(File.ReadAllText(Path.Combine(dir,"ManualSave1.json"))==manual1 &&
+                      File.ReadAllText(Path.Combine(dir,"ManualSave2.json"))==manual2,
+                    "loading a manual slot does not write into it");
+            } finally {Directory.Delete(dir,true);}
+        });
+        Run("death and Retry keep manual snapshots untouched",()=>{
+            var f=new Field();SaveManager save;string dir;var gm=MenuManager(f,out save,out dir);
+            try {
+                Check(save.SaveGame(HeroAt(25),SaveSlot.ManualSave1),"manual 1 seeded");
+                Check(save.SaveGame(HeroAt(40),SaveSlot.ManualSave2),"manual 2 seeded");
+                string manual1=File.ReadAllText(Path.Combine(dir,"ManualSave1.json"));
+                string manual2=File.ReadAllText(Path.Combine(dir,"ManualSave2.json"));
+                var hero=HeroAt(9);Set(gm,"runtimeHeroData",hero);
+                Set(gm,"hasDeployed",true);
+                gm.OnHeroDied();
+                var readAuto=HeroAt(1);
+                Check(save.LoadGame(readAuto,SaveSlot.AutoSave)&&readAuto.currentLevel==9,
+                    "defeat updates autosave without resetting level");
+                Check(File.ReadAllText(Path.Combine(dir,"ManualSave1.json"))==manual1 &&
+                      File.ReadAllText(Path.Combine(dir,"ManualSave2.json"))==manual2,
+                    "defeat leaves manual snapshots untouched");
+                gm.OnRetryClicked();
+                Check(Get<bool>(gm,"hasDeployed"),"Retry resumes Hero");
+                Check(File.ReadAllText(Path.Combine(dir,"ManualSave1.json"))==manual1 &&
+                      File.ReadAllText(Path.Combine(dir,"ManualSave2.json"))==manual2,
+                    "Retry leaves manual snapshots untouched");
+            } finally {Directory.Delete(dir,true);}
         });
         Run("missing or corrupt save never starts a phantom continue",()=>{
             var f=new Field();SaveManager save;string dir;var gm=MenuManager(f,out save,out dir);
