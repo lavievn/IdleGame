@@ -1,0 +1,40 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 658311c7f9e244cdb1e33d39ecbf465b, type: 3}
+  m_Name: InventoryArtTheme
+  m_EditorClassIdentifier: Assembly-CSharp::InventoryArtTheme
+  inventoryWindowFrame: {fileID: 6111190105927289193, guid: cac3c5e55060ca6438feec25235e845e, type: 3}
+  inventoryHeader: {fileID: 5199484893468689805, guid: 7ff2f0a12c0f2714d95d35203de046de, type: 3}
+  equipmentPanel: {fileID: 4425735926515300278, guid: 5c351a620d49aab4b9d3d1435fba3aff, type: 3}
+  bagPanel: {fileID: 3165464276639018238, guid: 109962600a5ea4f43b40e553ccd1892a, type: 3}
+  itemDetailsPanel: {fileID: 7704843869063456975, guid: b65e45eac7f75af4eb8ca129ea5c6ec7, type: 3}
+  miniStatsPanel: {fileID: 0}
+  bagSlot: {fileID: -7906452421240420752, guid: eab77f65e2c3a7a41b02595ea5e1a3b2, type: 3}
+  selectedBagSlot: {fileID: 0}
+  equipmentSlot: {fileID: -9155022059905883562, guid: cbcb288fdde5de443b34071837f94317, type: 3}
+  normalTab: {fileID: 2530564911472380330, guid: e77d154298b8b024eaeeff745ed702d4, type: 3}
+  selectedTab: {fileID: 2530564911472380330, guid: e77d154298b8b024eaeeff745ed702d4, type: 3}
+  actionButton: {fileID: 0}
+  scrollbarTrack: {fileID: 0}
+  scrollbarHandle: {fileID: 0}
+  heroAreaBackground: {fileID: 0}
+  heroSplashFrame: {fileID: 0}
+  mapTitlePlate: {fileID: 0}
+  hangingOrnament: {fileID: 0}
+  defaultHeroSplash: {fileID: 0}
+  defaultMapSplash: {fileID: 0}
+  mapArts: []
+  slicedResizablePanels: 0
+  preserveSplashAspect: 1
+  mapOpacity: 1
+  textColor: {r: 0.89, g: 0.91, b: 0.83, a: 1}
+  accentTextColor: {r: 0.88, g: 0.75, b: 0.48, a: 1}
