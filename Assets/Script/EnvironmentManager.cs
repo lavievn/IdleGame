@@ -9,6 +9,13 @@ public class EnvironmentManager : MonoBehaviour
     [Header("MÔI TRƯỜNG")]
     [SerializeField] private RectTransform[] groundDetails;
     [SerializeField] private RectTransform battleArea;
+
+    [Header("0.0.52 - SPRITE NEN XA (GROUND 2 / GROUND 3)")]
+    [Tooltip("Anh nui xa / lop parallax sau cung. De trong de dung anh xem thu hien tai.")]
+    public Sprite customDistantMountains;
+    [Tooltip("Anh lop cay / trang tri phia truoc nui xa. De trong de dung anh xem thu hien tai.")]
+    public Sprite customFarTrees;
+
     [Min(0f)] public float scrollSpeed = 150f;
 
     [Header("VÙNG CAMERA - tỷ lệ chiều rộng Ground")]
