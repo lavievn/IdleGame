@@ -135,11 +135,39 @@ public static class EquipmentFoundation
     public const int MaximumItemLevel = 999;
     public const int MaximumRefineLevel = 100;
 
-    private static readonly EquipmentTemplate sword = new EquipmentTemplate(
-        DemoSword,"Thiết Kiếm",EquipmentSlot.Weapon,CombatStatId.Attack);
-
+    // Extend via catalog data later; these initial templates establish
+    // real slot compatibility, but no other gear is generated/dropped yet.
+    private static readonly EquipmentTemplate[] templates = {
+        new EquipmentTemplate(DemoSword,"Thiết Kiếm",EquipmentSlot.Weapon,CombatStatId.Attack),
+        new EquipmentTemplate("base:head","Mũ vải",EquipmentSlot.Head,CombatStatId.Armor),
+        new EquipmentTemplate("base:chest","Áo vải",EquipmentSlot.Chest,CombatStatId.Armor),
+        new EquipmentTemplate("base:boots","Giày vải",EquipmentSlot.Boots,CombatStatId.MovementSpeed),
+        new EquipmentTemplate("base:artifact","Pháp bảo",EquipmentSlot.Artifact,CombatStatId.MaxHealth),
+        new EquipmentTemplate("base:necklace","Dây chuyền",EquipmentSlot.Necklace,CombatStatId.MagicResistance),
+        new EquipmentTemplate("base:ring","Nhẫn",EquipmentSlot.RingLeft,CombatStatId.Attack)
+    };
     public static EquipmentTemplate FindTemplate(string id)
-    { return string.Equals(id,DemoSword,StringComparison.Ordinal) ? sword : null; }
+    {
+        if(string.IsNullOrEmpty(id)) return null;
+        foreach(var item in templates)
+            if(string.Equals(item.id,id,StringComparison.Ordinal)) return item;
+        return null;
+    }
+    public static EquipmentInstance CreateCommon(string templateId,int level,float baseStat)
+    {
+        var template=FindTemplate(templateId);
+        if(template==null || level<1 || level>MaximumItemLevel ||
+            float.IsNaN(baseStat) || float.IsInfinity(baseStat)) return null;
+        var main=new ItemStatLine {stat=template.mainStat,flat=baseStat};
+        if(template.slot==EquipmentSlot.Weapon)
+            main.requiredTags.Add("stance:melee");
+        return new EquipmentInstance {
+            instanceId=Guid.NewGuid().ToString("N"),
+            templateId=templateId,level=level,
+            rarity=EquipmentRarity.Common,refineLevel=0,
+            mainStats=new List<ItemStatLine>{main}
+        };
+    }
 
     public static string RarityName(EquipmentRarity rarity)
     {
@@ -167,16 +195,7 @@ public static class EquipmentFoundation
     // their stats will be rolled using a dedicated data table later.
     public static EquipmentInstance CreateDemoSword()
     {
-        return new EquipmentInstance {
-            instanceId = Guid.NewGuid().ToString("N"),
-            templateId = DemoSword, level = 1, rarity = EquipmentRarity.Common,
-            refineLevel = 0, mainStats = new List<ItemStatLine> {
-                new ItemStatLine {
-                    stat = CombatStatId.Attack, flat = 10f,
-                    requiredTags = new List<string>{"stance:melee"}
-                }
-            }
-        };
+        return CreateCommon(DemoSword,1,10f);
     }
 
     // Pure-data validation; never silently fabricate random stats on load.
