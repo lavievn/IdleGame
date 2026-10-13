@@ -76,3 +76,18 @@ Trường `percent` trên các thuộc tính chỉ số thường = tỷ lệ nh
 - `Tests~/ManualSaveMenuRegression.cs`: kiểm thử lần lưu đầu, hủy ghi đè, xác nhận ghi đè và không tác động ô còn lại.
 
 **Kiểm thử Unity trực tiếp cần làm:** trong màn chơi chọn Menu → Lưu thủ công → Ô 1; đổi thuộc tính rồi chọn lại Ô 1 để xác nhận ghi đè; sau đó vào Tải bản lưu → Save 1 và kiểm tra dữ liệu. Trước lần đầu nên sao lưu thư mục `Saves` để giữ ô lưu hiện tại. Chưa xác minh qua Unity Editor thật.
+
+## Sửa lưu/khôi phục dạng chiến đấu Hero
+
+**Nguyên nhân:** ba nút dạng đánh tác động `HeroController.attackMode`, nhưng save chỉ chứa `EntityDataSO`. Trước bản sửa, lưu lúc sử dụng Cung rồi tải lại sẽ giữ Modifier `stance:bow` nhưng chế độ đánh trở về dạng tồn tại trên Controller (thường là Cận).
+
+**Bản sửa:**
+
+- Trường `EntityDataSO.savedAttackMode` được Unity JSON lưu cùng tiến trình Hero chính. `GameManager.SetHeroAttackMode` đồng bộ ngay vào dữ liệu save và đánh dấu `isDirty` khi đổi thế.
+- Lưu thủ công (hai ô), autosave định kỳ, autosave khi thua, autosave sau bắt đầu mới và autosave lúc thoát ứng dụng đều ghi chế độ đang dùng.
+- Tải từ menu trong game (`TryLoadSlot`) và tiếp tục từ menu khởi động (`OnConfirmResetClicked`) đều gọi `RestoreSelectedStance` **trước khi** `CombatManager.SetupHeroInfo` tính HP. Khi tải Cung/Phép, nút đang chọn, Max HP và những Modifier `stance:bow`/`stance:magic` được khôi phục theo cùng chế độ.
+- Save cũ 0.0.50/0.0.51 chưa có `savedAttackMode` sẽ mặc định **Cận chiến**, không kế thừa giá trị trong asset mẫu. Enum ngoài 0/1/2 bị coi là không hợp lệ và trở về Cận.
+- **Không** ngẫu nhiên dạng đánh khi tạo nhân vật; ba nút thử nghiệm vẫn dùng được. Đồng đội B2 tiếp tục có dạng chiến đấu tách biệt; bản lưu vẫn chỉ lưu Hero chính.
+- Đã thêm `Tests~/AttackModeSaveRegression.cs` với các trường hợp: đổi thế đánh dấu save cần ghi, lưu/tải từ menu, tiếp tục từ màn hình đầu và tương thích save cũ/hỏng.
+
+**Kiểm thử Unity:** Chọn Cung, thêm `test_bow` +20 ATK, lưu Ô 1; thoát Play Mode, xóa `test_bow` trong asset mẫu, Play → Tải Ô 1. Hero phải tự vào Cung và thấy ATK cộng thêm ngay, không cần bấm chọn Cung. Thử lại với Phép và lưu tự động. Kiểm thử chạy trong Unity Editor trên máy người phát triển vẫn cần xác nhận.
