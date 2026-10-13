@@ -981,6 +981,8 @@ public class UIManager : MonoBehaviour
         ManagementWindowLayout.RequestCompact(width,height);
         if (transparentWindow != null)
             transparentWindow.ResizeWindow(width,height);
+        else
+            Screen.SetResolution(width,height,FullScreenMode.Windowed);
         CloseSystemMenu();
     }
 
