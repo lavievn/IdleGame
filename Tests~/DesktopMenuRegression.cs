@@ -28,7 +28,7 @@ partial class MotionRegression
             Check(System.Array.IndexOf(window.clickableUI,click.GetRect())>=0,"red trigger registered for Windows");
             ui.HandleMouseClick(click.GetRect().position);Check(ui.systemMenu.activeSelf,"red click opens menu");
             var visible=ui.systemMenu.GetComponentsInChildren<CustomInteractable>();
-            Check(visible.Length==4,"only four main actions, old scale and save controls hidden");
+            Check(visible.Length==5,"five main actions including restored manual save, old controls hidden");
             foreach(var item in visible)if(item.gameObject.name=="WindowSize")ui.HandleMouseClick(item.GetRect().position);
             visible=ui.systemMenu.GetComponentsInChildren<CustomInteractable>();Check(visible.Length==4,"size page only three sizes and back");
             bool has800=false,has250=false;
