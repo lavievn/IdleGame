@@ -426,6 +426,12 @@ public class GameManager : MonoBehaviour
         }
         CaptureSelectedStance();
         bool saved = saveManager.SaveGame(runtimeHeroData, slot);
+        if (saved)
+            Debug.Log("[SaveLoad] Saved " + slot + ": level=" +
+                runtimeHeroData.currentLevel + " EXP=" + runtimeHeroData.currentExp +
+                " map=" + runtimeHeroData.mapNumber +
+                " ATK=" + runtimeHeroData.GetCalculatedDamage(heroController != null ?
+                    heroController.attackMode : AttackMode.Melee));
         UpdateEventLog(saved ?
             "Đã lưu tiến trình vào " + (slot == SaveSlot.ManualSave1 ? "ô 1." : "ô 2.") :
             "Lỗi lưu thủ công: chưa ghi được tệp. Kiểm tra thư mục Saves.");
@@ -447,6 +453,16 @@ public class GameManager : MonoBehaviour
 
         var loaded = Instantiate(heroDataSO != null ? heroDataSO : runtimeHeroData);
         if (!saveManager.LoadGame(loaded, slot)) { Destroy(loaded); UpdateEventLog("Không đọc được bản lưu."); return false; }
+        // A manual load must roll back ALL progression, not just the equipment.
+        // Verify the actual JSON snapshot before replacing the live character.
+        int fileLevel,fileMap;
+        if (!saveManager.TryGetSlotProgress(slot,out fileLevel,out fileMap) ||
+            loaded.currentLevel != fileLevel)
+        {
+            Debug.LogError("[SaveLoad] Snapshot level mismatch in " + slot);
+            Destroy(loaded);
+            return false;
+        }
         // 1. Dọn dẹp sạch sẽ chiến trường tránh kẹt Coroutine
         hasDeployed = false;
         CancelNextWave();
@@ -470,8 +486,24 @@ public class GameManager : MonoBehaviour
         if (heroController != null) heroController.SetIdentityVisual(runtimeHeroData);
         SetupPreGameUI();
         RestoreProgress();
-        UpdateEventLog($"Đã tải dữ liệu từ: {slot}");
-        if (deploy) DeployHero();
+        UpdateEventLog("Đã tải " + slot + ": cấp " + loaded.currentLevel +
+            ", EXP " + loaded.currentExp + ", map " + loaded.mapNumber + ".");
+        if (deploy)
+        {
+            DeployHero();
+            if (combatManager != null)
+            {
+                var state = combatManager.CurrentHeroCombatState;
+                if (state.Data != runtimeHeroData ||
+                    state.MaxHP != runtimeHeroData.GetCalculatedHealth(
+                        heroController != null ? heroController.attackMode : AttackMode.Melee))
+                    Debug.LogError("[SaveLoad] Combat state did not bind to the loaded Hero. " +
+                        "Report this to the developer before continuing.");
+            }
+        }
+        Debug.Log("[SaveLoad] Loaded " + slot + ": level=" +
+            runtimeHeroData.currentLevel + " EXP=" + runtimeHeroData.currentExp +
+            " map=" + runtimeHeroData.mapNumber);
         return true;
     }
     // ------------------------------------------
