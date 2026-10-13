@@ -90,6 +90,47 @@ partial class MotionRegression
                 "other ring remains active");
         });
 
+        Run("0.0.52 all eight slots can be independently occupied and removed",()=>{
+            var hero=HeroAt(1);
+            EquipmentInventory.InitializeNewRun(hero);
+            EquipmentRuntime.InitializeNewRun(hero);
+            string[] templates={"sample:iron_sword","base:head","base:chest",
+                "base:boots","base:artifact","base:necklace","base:ring","base:ring"};
+            EquipmentSlot[] slots={EquipmentSlot.Weapon,EquipmentSlot.Head,
+                EquipmentSlot.Chest,EquipmentSlot.Boots,EquipmentSlot.Artifact,
+                EquipmentSlot.Necklace,EquipmentSlot.RingLeft,EquipmentSlot.RingRight};
+            for(int i=0;i<slots.Length;i++)
+            {
+                var piece=EquipmentFoundation.CreateCommon(templates[i],1,i+1);
+                Check(piece!=null && EquipmentRuntime.AddInstance(hero,piece),
+                    "slot item created");
+                Check(EquipmentRuntime.Equip(hero,piece.instanceId,slots[i]),
+                    "slot accepts its own template");
+            }
+            Check(GearOwnedModifierCount(hero)==8,
+                "each worn slot contributes once");
+            foreach(var slot in slots)
+            {
+                Check(EquipmentRuntime.Equipped(hero,slot)!=null,
+                    "occupied slot visible");
+                Check(EquipmentRuntime.Unequip(hero,slot),
+                    "slot can be cleared without losing the item");
+            }
+            Check(GearOwnedModifierCount(hero)==0 &&
+                hero.equipmentItems.Count==8,
+                "eight pieces remain in bag with zero active gear effects");
+        });
+
+        Run("0.0.52 crafting material stacks are not destroyed by v1 bag migration",()=>{
+            var hero=HeroAt(1);
+            EquipmentInventory.InitializeNewRun(hero);
+            Check(EquipmentInventory.Add(hero,"ore:iron",3),
+                "stackable unknown material accepted");
+            EquipmentInventory.Normalize(hero);
+            Check(EquipmentInventory.Count(hero,"ore:iron")==3,
+                "material is not deleted for missing trinket catalog entry");
+        });
+
         Run("0.0.52 rolled stats survive normalize without re-roll",()=>{
             var hero=HeroAt(1);
             EquipmentRuntime.InitializeNewRun(hero);
