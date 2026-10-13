@@ -135,6 +135,74 @@ partial class MotionRegression
                 "legacy charm blocked while new Artifact is worn");
         });
 
+        Run("0.0.52 manual snapshot restores unique gear, rarity, affixes and professions",()=>{
+            var f=new Field();SaveManager save;string dir;
+            MenuManager(f,out save,out dir);
+            try
+            {
+                var hero=HeroAt(7);
+                EquipmentInventory.InitializeNewRun(hero);
+                EquipmentRuntime.InitializeNewRun(hero);
+                var sword=EquipmentFoundation.CreateDemoSword();
+                sword.level=11;
+                sword.rarity=EquipmentRarity.Thien;
+                sword.refineLevel=3;
+                sword.mainStats[0].flat=18f;
+                sword.extraStats.Add(new ItemStatLine {
+                    stat=CombatStatId.ElementDamagePercent,
+                    flat=.05f,element=ElementType.Hoa
+                });
+                Check(EquipmentRuntime.AddInstance(hero,sword),"unique sword added");
+                Check(EquipmentRuntime.Equip(hero,sword.instanceId,EquipmentSlot.Weapon),
+                    "unique sword equipped");
+                hero.gold=837L;
+                hero.professionProgress.Add(new ProfessionProgress {
+                    profession=SupportProfession.Forging,level=4,experience=99
+                });
+                hero.learnedRecipes.Add(new LearnedProfessionRecipe {
+                    recipeId="forge:iron",learnedRank=2
+                });
+                hero.learnedSupportSkills.Add(new LearnedSupportSkill {
+                    skillId="support:armor",level=3
+                });
+                int savedAttack=hero.GetCalculatedDamage(AttackMode.Melee);
+                Check(save.SaveGame(hero,SaveSlot.ManualSave1),"saved snapshot");
+                hero.currentLevel=19;hero.gold=0; // mutate active character
+                EquipmentRuntime.Unequip(hero,EquipmentSlot.Weapon);
+                var loaded=HeroAt(1);
+                loaded.equipmentItems=new List<EquipmentInstance> {
+                    EquipmentFoundation.CreateDemoSword()
+                };
+                Check(save.LoadGame(loaded,SaveSlot.ManualSave1),"loaded snapshot");
+                var restored=EquipmentRuntime.Equipped(loaded,EquipmentSlot.Weapon);
+                Check(loaded.currentLevel==7 && restored!=null,
+                    "level and equipped weapon rolled back together");
+                Check(restored.instanceId==sword.instanceId &&
+                      restored.level==11 &&
+                      restored.rarity==EquipmentRarity.Thien &&
+                      restored.refineLevel==3,"same unique item and refinement retained");
+                Check(restored.mainStats.Count==1 && restored.mainStats[0].flat==18f &&
+                      restored.extraStats.Count==1 &&
+                      restored.extraStats[0].element==ElementType.Hoa,
+                    "main and optional elemental rolls retained");
+                Check(loaded.GetCalculatedDamage(AttackMode.Melee)==savedAttack,
+                    "loaded weapon effect not based on current future progression");
+                Check(GearOwnedModifierCount(loaded)==2,
+                    "rederived one modifier per actual line, without duplicate");
+                Check(loaded.gold==837L &&
+                      loaded.professionProgress.Count==1 &&
+                      loaded.professionProgress[0].level==4 &&
+                      loaded.learnedRecipes[0].learnedRank==2 &&
+                      loaded.learnedSupportSkills[0].level==3,
+                    "gold, forging, recipes and buffs survived the save");
+                EquipmentRuntime.Normalize(loaded);
+                Check(GearOwnedModifierCount(loaded)==2 &&
+                      loaded.GetCalculatedDamage(AttackMode.Melee)==savedAttack,
+                    "repeat migration cannot increase power");
+            }
+            finally {System.IO.Directory.Delete(dir,true);}
+        });
+
         Run("0.0.52 professions and refinement are pure save schemas",()=>{
             var hero=HeroAt(1);
             EquipmentRuntime.InitializeNewRun(hero);
