@@ -311,6 +311,7 @@ partial class MotionRegression
         Version0051StatsTests();
         TerrainTests();
         MenuDifficultyTests();
+        ManualSaveMenuTests();
         BalanceTests();
         BalanceSimulations();
         Console.WriteLine("PASS: "+tests+" regression scenarios (Unity test doubles; not Play Mode).");
