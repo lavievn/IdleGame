@@ -77,6 +77,9 @@ public class SaveManager : MonoBehaviour
                 if (!jsonData.TrimStart().StartsWith("{") || !jsonData.Contains("\"currentLevel\"")) return false;
                 // JsonUtility.FromJsonOverwrite leaves template values intact for
                 // missing fields. Clear 0.0.51 lists before loading 0.0.50 saves.
+                // Old saves lack a stance field; do not inherit the
+                // template asset's current Inspector stance by accident.
+                entityData.savedAttackMode = TuTienCore.AttackMode.Melee;
                 entityData.combatStatsVersion = 0;
                 entityData.characterTags = new System.Collections.Generic.List<string>();
                 entityData.combatStatModifiers = new System.Collections.Generic.List<CombatStatModifier>();
@@ -101,6 +104,14 @@ public class SaveManager : MonoBehaviour
                 entityData.NormalizeRoots();
                 entityData.NormalizeMapProgress();
                 entityData.NormalizeCombatStats();
+                // Corrupt/future enum values never pass to a HeroController.
+                if (entityData.savedAttackMode != TuTienCore.AttackMode.Melee &&
+                    entityData.savedAttackMode != TuTienCore.AttackMode.RangedPhysical &&
+                    entityData.savedAttackMode != TuTienCore.AttackMode.RangedMagic)
+                {
+                    entityData.savedAttackMode = TuTienCore.AttackMode.Melee;
+                    entityData.isDirty = true;
+                }
                 return entityData.currentLevel >= 1;
             }
             catch (Exception e) { Debug.LogError("Không đọc được bản lưu: " + e.Message); return false; }
