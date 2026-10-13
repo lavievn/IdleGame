@@ -500,14 +500,16 @@ public class UIManager : MonoBehaviour
         int maxWidth=transparentWindow != null ?
             transparentWindow.GetMaximumUsableWidth() :
             Screen.width+ManagementWindowLayout.PreferredSidePanel;
-        if (ManagementWindowLayout.Expand(maxWidth))
+        int maxHeight=transparentWindow != null ?
+            transparentWindow.GetMaximumUsableHeight() : Mathf.Max(680,Screen.height);
+        if (ManagementWindowLayout.Expand(maxWidth,maxHeight))
         {
             if (transparentWindow != null)
                 transparentWindow.ResizeWindow(ManagementWindowLayout.TargetWidth,
-                    ManagementWindowLayout.CompactHeight);
+                    ManagementWindowLayout.TargetHeight);
             else
                 Screen.SetResolution(ManagementWindowLayout.TargetWidth,
-                    ManagementWindowLayout.CompactHeight,FullScreenMode.Windowed);
+                    ManagementWindowLayout.TargetHeight,FullScreenMode.Windowed);
         }
         LayoutReadableUI();
     }
@@ -695,9 +697,8 @@ public class UIManager : MonoBehaviour
         }
         int lines = heroForUI == null || string.IsNullOrEmpty(heroForUI.FullStatDetails) ? 9 :
             heroForUI.FullStatDetails.Split('\n').Length;
-        if (!ManagementWindowLayout.Expanded &&
-            (Screen.width != layoutWidth || Screen.height != layoutHeight))
-            ManagementWindowLayout.SetCompact(Screen.width,Screen.height);
+        // Do NOT relearn the compact preset during asynchronous collapse:
+        // Screen.width may still equal the expanded dimensions for a frame.
         if (controlsChanged || Screen.width != layoutWidth || Screen.height != layoutHeight || lines != layoutStatLines)
             LayoutReadableUI();
         RefreshCombatHUDVisibility();
@@ -798,6 +799,9 @@ public class UIManager : MonoBehaviour
         // readable pixel font, rather than shrinking a 1920px canvas to 250px.
         foreach(var text in Object.FindObjectsByType<TMPro.TextMeshProUGUI>(FindObjectsInactive.Include,FindObjectsSortMode.None)) {
             if (!text.transform.IsChildOf(hudCanvas)) continue;
+            // The inventory has independent font hierarchy and sizes; the
+            // global compact HUD style would otherwise enlarge 20 grid cells.
+            if (inventoryUI != null && text.transform.IsChildOf(inventoryUI.Root)) continue;
             bool compact = text.transform.parent != null && text.transform.parent.GetComponent<CustomInteractable>() != null;
             if (text == mapTitleText || text == mapDebugText) continue; // Map labels own their fonts.
             float fontSize = text == (gm != null ? gm.eventLogText : null) ? 16f :
@@ -961,11 +965,10 @@ public class UIManager : MonoBehaviour
     private void ExecuteScale(int width)
     {
         if (transparentWindow == null) transparentWindow = FindObjectOfType<TransparentWindow>();
+        int height = Mathf.RoundToInt(width * (9f / 16f));
+        ManagementWindowLayout.SetCompact(width,height);
         if (transparentWindow != null)
-        {
-            int height = Mathf.RoundToInt(width * (9f / 16f));
-            transparentWindow.ResizeWindow(width, height);
-        }
+            transparentWindow.ResizeWindow(width,height);
         CloseSystemMenu();
     }
 
