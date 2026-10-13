@@ -22,6 +22,7 @@ public class UIManager : MonoBehaviour
 
     // UI is created at runtime. Keep all artwork editable on this persistent
     // scene component, never on the temporary InventoryPanelUI component.
+    [ContextMenu("0.0.52 - Ap dung anh Inventory (Play Mode)")]
     public void ApplyInventoryArtFromInspector()
     {
         if (inventoryUI != null) inventoryUI.Refresh();
