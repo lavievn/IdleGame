@@ -71,41 +71,47 @@ public class GroundPresentation : MonoBehaviour
         presentation.grassY = environment.Position(main).y;
         presentation.grassHeight = main.rect.height * Mathf.Abs(main.localScale.y);
         Sprite decorationSprite = primaryImage.sprite;
-        // Two distance bands. Both are visual-only and never modify Ground coordinates.
-        // Inspector assets take precedence. Keep shipped preview sprites as
-        // a fallback so existing 0.0.52 scenes still render without setup.
-        if (environment.customFarTrees == null)
-            presentation.generatedTreeSprite = LoadPreviewSprite("Parallax/ParallaxTreesTest",
-                out presentation.generatedTreeTexture);
-        if (environment.customDistantMountains == null)
+        // Back-to-front layering: distant SKY silhouette (10%, 169% scale),
+        // near MOUNTAIN silhouette (30%, 130% scale), Grass1, then actors.
+        // These are visual layers only: combat and Ground coordinates are not moved.
+        // Priority: Inspector override > production Sprite from Resources
+        // > the old small base64 preview > old source image.
+        Sprite sky = environment.customDistantMountains;
+        Sprite mountain = environment.customFarTrees;
+#if UNITY_5_3_OR_NEWER
+        if (sky == null) sky = Resources.Load<Sprite>("Parallax/SkyDistant");
+        if (mountain == null) mountain = Resources.Load<Sprite>("Parallax/MountainNear");
+#endif
+        if (sky == null)
+        {
             presentation.generatedMountainSprite = LoadPreviewSprite("Parallax/ParallaxMountainsTest",
                 out presentation.generatedMountainTexture);
-        Sprite mountain = environment.customDistantMountains != null
-            ? environment.customDistantMountains
-            : presentation.generatedMountainSprite != null
-                ? presentation.generatedMountainSprite : source.sprite;
-        Sprite trees = environment.customFarTrees != null
-            ? environment.customFarTrees
-            : presentation.generatedTreeSprite != null
-                ? presentation.generatedTreeSprite : source.sprite;
-        presentation.distantTint = environment.customDistantMountains != null ||
-            presentation.generatedMountainSprite != null
+            sky = presentation.generatedMountainSprite;
+        }
+        if (mountain == null)
+        {
+            presentation.generatedTreeSprite = LoadPreviewSprite("Parallax/ParallaxTreesTest",
+                out presentation.generatedTreeTexture);
+            mountain = presentation.generatedTreeSprite;
+        }
+        presentation.distantTint = sky != null
             ? Color.white : new Color(.07f, .07f, .08f, 1f);
-        presentation.farTint = environment.customFarTrees != null ||
-            presentation.generatedTreeSprite != null
+        presentation.farTint = mountain != null
             ? Color.white : FixedTint;
+        if (sky == null) sky = source.sprite;
+        if (mountain == null) mountain = source.sprite;
         for (int i = 0; i < 3; i++)
         {
-            var distant = presentation.CreateImage("Ground Mountain Parallax " + (i + 1),
-                mountain, presentation.distantTint);
+            var distant = presentation.CreateImage("Ground Sky Parallax " + (i + 1),
+                sky, presentation.distantTint);
             distant.pivot = new Vector2(0f, area.pivot.y);
             presentation.distantTiles.Add(distant);
             distant.SetSiblingIndex(i);
         }
         for (int i = 0; i < 3; i++)
         {
-            var far = presentation.CreateImage("Ground Tree Parallax " + (i + 1),
-                trees, presentation.farTint);
+            var far = presentation.CreateImage("Ground Mountain Parallax " + (i + 1),
+                mountain, presentation.farTint);
             far.pivot = new Vector2(0f, area.pivot.y);
             presentation.farTiles.Add(far);
             far.SetSiblingIndex(presentation.distantTiles.Count + i);
