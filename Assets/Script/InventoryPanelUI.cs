@@ -406,7 +406,9 @@ public sealed class InventoryPanelUI : MonoBehaviour
         }
         else
         {
-            summary.text="Cấp "+hero.currentLevel+" · Vàng "+hero.gold+
+            summary.text=lastHeight<440 ?
+                "Cấp "+hero.currentLevel+" · Đã mặc "+CountWorn(hero)+"/8" :
+                "Cấp "+hero.currentLevel+" · Vàng "+hero.gold+
                 "\nHP "+hero.GetCalculatedHealth(hero.savedAttackMode)+
                 " · ATK "+hero.GetCalculatedDamage(hero.savedAttackMode)+
                 "\nĐồ trong kho: "+entries.Count+
