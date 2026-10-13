@@ -28,6 +28,7 @@ public class UIManager : MonoBehaviour
 
     void Start()
     {
+        ManagementWindowLayout.SetCompact(Screen.width,Screen.height);
         InstallReadableCanvas();
         ConfigureSystemMenu();
         ConfigureGameplayPanels();
@@ -258,7 +259,7 @@ public class UIManager : MonoBehaviour
     {
         var gm = Object.FindFirstObjectByType<GameManager>();
         var hero = Object.FindFirstObjectByType<HeroController>();
-        Transform canvas = hudCanvas;
+        Transform canvas = combatUIRoot;
         if (canvas == null) return;
         if (menuFontTemplate == null && gm != null) menuFontTemplate = gm.eventLogText;
         if (menuFontTemplate == null && hero != null) menuFontTemplate = hero.atkStatusText;
@@ -280,7 +281,7 @@ public class UIManager : MonoBehaviour
         inventoryButton = SmallButton(canvas,"InventoryButton","Kho đồ",new Vector2(1,1),
             new Vector2(1,1),new Vector2(-244,-4),new Vector2(62,24),OpenInventory);
         inventoryUI = InventoryPanelUI.Install(this,hudCanvas);
-        devUI = new DevBalanceUI(this, hudCanvas);
+        devUI = new DevBalanceUI(this, combatUIRoot);
         heroForUI = hero;
         InstallAttackModeButtons();
         // Only a B2 test control. Future permanent companions are a separate feature.
@@ -476,14 +477,60 @@ public class UIManager : MonoBehaviour
         if (devUI != null) devUI.Open();
     }
 
+    private bool wasPausedBeforeInventory;
+    private bool inventoryPauseCaptured;
+
     public void OpenInventory()
     {
-        if (inventoryUI == null || (devUI != null && devUI.IsOpen)) return;
+        if (inventoryUI == null || (devUI != null && devUI.IsOpen) ||
+            inventoryUI.IsOpen) return;
+        var gm=Object.FindFirstObjectByType<GameManager>();
+        if (gm == null || !gm.IsGameplayHUDVisible) return;
         CloseDamageInfo(); CloseSystemMenu();
+        wasPausedBeforeInventory=IsPaused;
+        inventoryPauseCaptured=true;
+        SetPaused(true);
         inventoryUI.Open();
+        if (!inventoryUI.IsOpen) { OnInventoryDismissed(); return; }
+
+        // Windows: add a right-side strip. If the monitor cannot fit it, the
+        // same UI falls back to a bounded overlay inside the compact window.
+        if (transparentWindow == null)
+            transparentWindow=Object.FindFirstObjectByType<TransparentWindow>();
+        int maxWidth=transparentWindow != null ?
+            transparentWindow.GetMaximumUsableWidth() :
+            Screen.width+ManagementWindowLayout.PreferredSidePanel;
+        if (ManagementWindowLayout.Expand(maxWidth))
+        {
+            if (transparentWindow != null)
+                transparentWindow.ResizeWindow(ManagementWindowLayout.TargetWidth,
+                    ManagementWindowLayout.CompactHeight);
+            else
+                Screen.SetResolution(ManagementWindowLayout.TargetWidth,
+                    ManagementWindowLayout.CompactHeight,FullScreenMode.Windowed);
+        }
+        LayoutReadableUI();
     }
 
-    private RectTransform hudCanvas, pauseRect, devButton, statsButton, inventoryButton, statsPanel;
+    public void OnInventoryDismissed()
+    {
+        if (ManagementWindowLayout.Expanded)
+        {
+            int oldWidth=ManagementWindowLayout.CompactWidth;
+            int oldHeight=ManagementWindowLayout.CompactHeight;
+            ManagementWindowLayout.Collapse();
+            if (transparentWindow != null)
+                transparentWindow.ResizeWindow(oldWidth,oldHeight);
+            else Screen.SetResolution(oldWidth,oldHeight,FullScreenMode.Windowed);
+        }
+        if (inventoryPauseCaptured)
+        {
+            inventoryPauseCaptured=false;
+            SetPaused(wasPausedBeforeInventory);
+        }
+    }
+
+    private RectTransform hudCanvas, combatUIRoot, pauseRect, devButton, statsButton, inventoryButton, statsPanel;
     private InventoryPanelUI inventoryUI;
     private RectTransform mapTitleRect;
     private TMPro.TextMeshProUGUI mapTitleText, mapDebugText;
@@ -496,8 +543,8 @@ public class UIManager : MonoBehaviour
     // A separate presentation label: does not change map progress or world coordinates.
     private void ConfigureMapTitle()
     {
-        if (hudCanvas == null || mapTitleRect != null) return;
-        mapTitleText = MakeLabel(hudCanvas,"",Vector2.zero,new Vector2(560,85));
+        if (combatUIRoot == null || mapTitleRect != null) return;
+        mapTitleText = MakeLabel(combatUIRoot,"",Vector2.zero,new Vector2(560,85));
         mapTitleRect = (RectTransform)mapTitleText.transform;
         mapTitleRect.gameObject.name = "AnimatedMapTitle";
         mapTitleText.alignment = TMPro.TextAlignmentOptions.Center;
@@ -567,7 +614,7 @@ public class UIManager : MonoBehaviour
     {
         if (mapTitleRect == null || mapTitleText == null) return;
         float t = MapTitleMotion.Progress(mapTitleElapsed);
-        float w = Mathf.Max(1f,Screen.width);
+        float w = Mathf.Max(1f,ManagementWindowLayout.CombatPixels(Screen.width));
         float rightWidth = StatsColumnWidth(w);
         float leftWidth = Mathf.Max(150f,w-rightWidth-18f);
         // Center of window -> small persistent title under left combat log.
@@ -612,6 +659,13 @@ public class UIManager : MonoBehaviour
         var go = new GameObject("Readable HUD",typeof(RectTransform),typeof(Canvas),typeof(GraphicRaycaster));
         var canvas = go.GetComponent<Canvas>(); canvas.renderMode = RenderMode.ScreenSpaceOverlay; canvas.sortingOrder = 100; canvas.scaleFactor = 1;
         hudCanvas = (RectTransform)go.transform;
+        var battlefieldHud = new GameObject("Compact HUD Viewport",typeof(RectTransform));
+        combatUIRoot = (RectTransform)battlefieldHud.transform;
+        combatUIRoot.SetParent(hudCanvas,false);
+        combatUIRoot.anchorMin = combatUIRoot.anchorMax = Vector2.zero;
+        combatUIRoot.pivot = Vector2.zero;
+        combatUIRoot.anchoredPosition = Vector2.zero;
+        combatUIRoot.sizeDelta = new Vector2(Screen.width,Screen.height);
         var gm = Object.FindFirstObjectByType<GameManager>();
         var oldRoot = systemMenu != null ? systemMenu.transform.parent : gm != null && gm.eventLog != null ? gm.eventLog.transform.parent : null;
         var move = new List<Transform>();
@@ -619,12 +673,12 @@ public class UIManager : MonoBehaviour
             if (child.gameObject.name == "Ground") continue;
             move.Add(child);
         }
-        foreach(var child in move) child.SetParent(hudCanvas,false);
+        foreach(var child in move) child.SetParent(combatUIRoot,false);
         if (gm != null) {
-            if (gm.preGameUI != null) gm.preGameUI.transform.SetParent(hudCanvas,false);
-            if (gm.confirmationPopup != null) gm.confirmationPopup.transform.SetParent(hudCanvas,false);
-            if (gm.gameOverPanel != null) gm.gameOverPanel.transform.SetParent(hudCanvas,false);
-            if (gm.eventLog != null) gm.eventLog.transform.SetParent(hudCanvas,false);
+            if (gm.preGameUI != null) gm.preGameUI.transform.SetParent(combatUIRoot,false);
+            if (gm.confirmationPopup != null) gm.confirmationPopup.transform.SetParent(combatUIRoot,false);
+            if (gm.gameOverPanel != null) gm.gameOverPanel.transform.SetParent(combatUIRoot,false);
+            if (gm.eventLog != null) gm.eventLog.transform.SetParent(combatUIRoot,false);
         }
     }
     void LateUpdate()
@@ -641,6 +695,9 @@ public class UIManager : MonoBehaviour
         }
         int lines = heroForUI == null || string.IsNullOrEmpty(heroForUI.FullStatDetails) ? 9 :
             heroForUI.FullStatDetails.Split('\n').Length;
+        if (!ManagementWindowLayout.Expanded &&
+            (Screen.width != layoutWidth || Screen.height != layoutHeight))
+            ManagementWindowLayout.SetCompact(Screen.width,Screen.height);
         if (controlsChanged || Screen.width != layoutWidth || Screen.height != layoutHeight || lines != layoutStatLines)
             LayoutReadableUI();
         RefreshCombatHUDVisibility();
@@ -664,13 +721,16 @@ public class UIManager : MonoBehaviour
         hudCanvas.pivot = new Vector2(.5f,.5f); hudCanvas.sizeDelta = new Vector2(Screen.width,Screen.height);
         hudCanvas.position = new Vector3(Screen.width*.5f,Screen.height*.5f,0);
         var gm = Object.FindFirstObjectByType<GameManager>();
-        float w = Screen.width, h = Screen.height;
+        float w = ManagementWindowLayout.CombatPixels(Screen.width);
+        float h = ManagementWindowLayout.CombatHeight(Screen.height);
+        if (combatUIRoot != null)
+            PlaceUI(combatUIRoot,Vector2.zero,Vector2.zero,Vector2.zero,new Vector2(w,h));
         PlaceUI(pauseRect,new Vector2(1,1),new Vector2(1,1),new Vector2(-4,-4),new Vector2(76,24));
         PlaceUI(devButton,new Vector2(1,1),new Vector2(1,1),new Vector2(-84,-4),new Vector2(52,24));
         PlaceUI(statsButton,new Vector2(1,1),new Vector2(1,1),new Vector2(-140,-4),new Vector2(60,24));
         PlaceUI(inventoryButton,new Vector2(1,1),new Vector2(1,1),
             new Vector2(-204,-4),new Vector2(62,24));
-        if (inventoryUI != null) inventoryUI.Layout(w,h);
+        if (inventoryUI != null) inventoryUI.Layout(w,h,Screen.width,Screen.height);
         // Full stats sit below the 3 top-right tools. Combat log takes the left column.
         float rightWidth = StatsColumnWidth(w);
         float leftWidth = Mathf.Max(150f,w-rightWidth-18f);
