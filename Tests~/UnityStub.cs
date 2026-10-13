@@ -234,6 +234,14 @@ namespace UnityEngine {
     fields.Add("\""+f.Name+"\":["+string.Join(",",nums.ToArray())+"]");
    }
    else if(f.FieldType==typeof(string)) fields.Add("\""+f.Name+"\":\""+f.GetValue(value)+"\"");
+   else if(f.FieldType==typeof(bool))
+    fields.Add("\""+f.Name+"\":"+((bool)f.GetValue(value)?"true":"false"));
+   else if(f.FieldType==typeof(List<InventoryStack>)) {
+    var items=(List<InventoryStack>)f.GetValue(value);var rows=new List<string>();
+    if(items!=null)foreach(var item in items)if(item!=null)
+     rows.Add("{\"itemId\":\""+item.itemId+"\",\"quantity\":"+item.quantity+"}");
+    fields.Add("\""+f.Name+"\":["+string.Join(",",rows.ToArray())+"]");
+   }
    else if(f.FieldType==typeof(List<TuTienCore.ElementType>)) {var roots=(List<TuTienCore.ElementType>)f.GetValue(value);var nums=new List<string>();if(roots!=null)foreach(var root in roots)nums.Add(((int)root).ToString());fields.Add("\""+f.Name+"\":["+string.Join(",",nums.ToArray())+"]");}
   }return "{"+string.Join(",",fields)+"}"; }
   public static void FromJsonOverwrite(string json,object value) { foreach(var f in value.GetType().GetFields()) {
@@ -243,6 +251,26 @@ namespace UnityEngine {
      if(item.Trim().Length>0)list.Add(Convert.ChangeType(item.Trim(),f.FieldType.GetGenericArguments()[0],System.Globalization.CultureInfo.InvariantCulture));f.SetValue(value,list);}continue;
    }
    if(f.FieldType==typeof(string)) {var str=System.Text.RegularExpressions.Regex.Match(json,"\""+f.Name+"\"\\s*:\\s*\"([^\"]*)\"");if(str.Success)f.SetValue(value,str.Groups[1].Value);continue;}
+   if(f.FieldType==typeof(bool)) {
+    var flag=System.Text.RegularExpressions.Regex.Match(json,"\""+f.Name+"\"\\s*:\\s*(true|false)");
+    if(flag.Success)f.SetValue(value,flag.Groups[1].Value=="true");continue;
+   }
+   if(f.FieldType==typeof(List<InventoryStack>)) {
+    var arr=System.Text.RegularExpressions.Regex.Match(json,"\""+f.Name+"\"\\s*:\\s*\\[([^]]*)\\]");
+    if(arr.Success) {
+     var items=new List<InventoryStack>();
+     foreach(System.Text.RegularExpressions.Match entry in
+       System.Text.RegularExpressions.Regex.Matches(arr.Groups[1].Value,"\\{[^{}]*\\}")) {
+      var id=System.Text.RegularExpressions.Regex.Match(entry.Value,"\"itemId\"\\s*:\\s*\"([^\"]*)\"");
+      var qty=System.Text.RegularExpressions.Regex.Match(entry.Value,"\"quantity\"\\s*:\\s*([0-9]+)");
+      if(id.Success&&qty.Success)items.Add(new InventoryStack {
+       itemId=id.Groups[1].Value,quantity=int.Parse(qty.Groups[1].Value)
+      });
+     }
+     f.SetValue(value,items);
+    }
+    continue;
+   }
    if(f.FieldType==typeof(List<TuTienCore.ElementType>)) {var arr=System.Text.RegularExpressions.Regex.Match(json,"\""+f.Name+"\"\\s*:\\s*\\[([^]]*)\\]");if(arr.Success){var roots=new List<TuTienCore.ElementType>();foreach(var item in arr.Groups[1].Value.Split(','))if(item.Trim().Length>0)roots.Add((TuTienCore.ElementType)int.Parse(item.Trim()));f.SetValue(value,roots);}continue;}
    var m=System.Text.RegularExpressions.Regex.Match(json,"\""+f.Name+"\"\\s*:\\s*(-?[0-9.]+)");if(!m.Success)continue;
    if(f.FieldType==typeof(int))f.SetValue(value,int.Parse(m.Groups[1].Value));
