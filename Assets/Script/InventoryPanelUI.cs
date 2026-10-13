@@ -580,6 +580,119 @@ public sealed class InventoryPanelUI : MonoBehaviour
         Place(removeButton,gridX+2f*(actionW+4f),actionY,actionW,31f);
         StyleText();
     }
+    // Apply all Sprite references by name, never by scene hierarchy search.
+    // Sprite fields stay on UIManager via its persistent ScriptableObject
+    // reference, since this panel is generated only when the game starts.
+    private static void FrameArt(RectTransform rect,Sprite sprite,Color fallback,bool sliced)
+    {
+        if(rect==null)return;
+        var image=rect.GetComponent<Image>();
+        if(image==null)return;
+        image.sprite=sprite;
+        image.color=sprite!=null?Color.white:fallback;
+        image.type=sprite!=null && sliced ? Image.Type.Sliced : Image.Type.Simple;
+        image.preserveAspect=false;
+        image.raycastTarget=false;
+    }
+
+    private static void OptionalArt(RectTransform rect,Sprite sprite,
+        bool preserveAspect,bool sliced=false,float opacity=1f)
+    {
+        if(rect==null)return;
+        var image=rect.GetComponent<Image>();
+        if(image==null)return;
+        image.sprite=sprite;
+        image.type=sliced && sprite!=null?Image.Type.Sliced:Image.Type.Simple;
+        image.preserveAspect=preserveAspect;
+        image.color=new Color(1f,1f,1f,Mathf.Clamp01(opacity));
+        image.raycastTarget=false;
+        rect.gameObject.SetActive(sprite!=null);
+    }
+
+    // A theme may be hot-swapped in the Inspector during Play Mode: reopen
+    // the inventory, or call UIManager.ApplyInventoryArtFromInspector.
+    public void ApplyTheme()
+    {
+        if(ui==null || root==null)return;
+        InventoryArtTheme art=ui.inventoryArtTheme;
+        bool sliced=art!=null && art.slicedResizablePanels;
+        FrameArt(root,art==null?null:art.inventoryWindowFrame,
+            new Color(.046f,.082f,.098f,.99f),sliced);
+        FrameArt(headerBacking,art==null?null:art.inventoryHeader,
+            new Color(.10f,.19f,.21f,.99f),sliced);
+        FrameArt(equipmentBacking,art==null?null:art.equipmentPanel,
+            new Color(.078f,.145f,.16f,.96f),sliced);
+        FrameArt(inventoryBacking,art==null?null:art.bagPanel,
+            new Color(.055f,.115f,.13f,.96f),sliced);
+        OptionalArt(miniStatsBacking,art==null?null:art.miniStatsPanel,false,sliced);
+        OptionalArt(detailBacking,art==null?null:art.itemDetailsPanel,false,sliced);
+        FrameArt(topBanner,art==null?null:art.heroAreaBackground,
+            new Color(.048f,.105f,.119f,.965f),sliced);
+
+        for(int i=0;i<slotButtons.Length;i++)
+        {
+            var image=slotButtons[i]==null?null:slotButtons[i].GetComponent<Image>();
+            Color fallback=image==null?Color.white:image.color;
+            FrameArt(slotButtons[i],art==null?null:art.equipmentSlot,fallback,false);
+        }
+        for(int i=0;i<bagButtons.Length;i++)
+        {
+            int absolute=page*bagButtons.Length+i;
+            bool selected=absolute<entries.Count && entries[absolute].key==selectedKey;
+            Sprite sprite=art==null?null:
+                (selected && art.selectedBagSlot!=null ? art.selectedBagSlot : art.bagSlot);
+            var image=bagButtons[i]==null?null:bagButtons[i].GetComponent<Image>();
+            Color fallback=image==null?Color.white:image.color;
+            // Use a selected tint when there is no dedicated selected sprite.
+            FrameArt(bagButtons[i],sprite,fallback,false);
+            if(sprite!=null && selected && (art==null || art.selectedBagSlot==null))
+                bagButtons[i].GetComponent<Image>().color=new Color(.94f,.85f,.57f,1f);
+        }
+        for(int i=0;i<tabButtons.Length;i++)
+        {
+            Sprite sprite=art==null?null:
+                (i==filter && art.selectedTab!=null ? art.selectedTab : art.normalTab);
+            FrameArt(tabButtons[i],sprite,i==filter?
+                new Color(.25f,.46f,.40f,1f):new Color(.14f,.26f,.28f,1f),false);
+        }
+        foreach(string name in new [] {
+            "InventoryClose","InventoryPrev","InventoryNext",
+            "InventoryGrantCharms","InventoryGrantSword"
+        })
+        {
+            var button=FindButton(name);
+            FrameArt(button,art==null?null:art.actionButton,
+                new Color(.16f,.29f,.30f,.98f),false);
+        }
+        FrameArt(equipButton,art==null?null:art.actionButton,
+            new Color(.16f,.29f,.30f,.98f),false);
+        FrameArt(equipRightButton,art==null?null:art.actionButton,
+            new Color(.16f,.29f,.30f,.98f),false);
+        FrameArt(removeButton,art==null?null:art.actionButton,
+            new Color(.16f,.29f,.30f,.98f),false);
+
+        EntityDataSO hero=Hero();
+        InventoryMapArt map=art==null || hero==null?null:art.FindMap(hero.mapNumber);
+        bool preserve=art==null || art.preserveSplashAspect;
+        OptionalArt(mapArtwork,map!=null && map.mapSplash!=null?map.mapSplash:
+            art==null?null:art.defaultMapSplash,preserve,false,
+            art==null?1f:art.mapOpacity);
+        OptionalArt(heroArtwork,map!=null && map.heroSplash!=null?map.heroSplash:
+            art==null?null:art.defaultHeroSplash,true);
+        OptionalArt(heroArtworkFrame,art==null?null:art.heroSplashFrame,false);
+        OptionalArt(mapNamePlate,map!=null && map.titlePlate!=null?map.titlePlate:
+            art==null?null:art.mapTitlePlate,false,sliced);
+        OptionalArt(hangingOrnament,map!=null && map.ornament!=null?map.ornament:
+            art==null?null:art.hangingOrnament,true);
+        if(art!=null)
+        {
+            header.color=art.accentTextColor;
+            summary.color=art.textColor;
+            detail.color=art.textColor;
+            bagStatus.color=art.accentTextColor;
+        }
+    }
+
     public void StyleText()
     {
         if(root==null)return;
