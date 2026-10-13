@@ -47,7 +47,10 @@ partial class MotionRegression
                 Vector3 before=labelRect.position;
                 f.space.SetPosition(f.hero.heroRect,
                     f.space.Position(f.hero.heroRect)+new Vector2(70f,0f));
-                Near(labelRect.position.x,before.x+70f,
+                Vector3 expectedAfter=f.hero.heroRect.TransformPoint(
+                    new Vector3(f.hero.heroRect.rect.center.x,
+                                f.hero.heroRect.rect.center.y,0f));
+                Near(labelRect.position.x,expectedAfter.x,
                     "damage label follows actual Hero while moving");
                 f.hero.HideHero();
                 Check(label.alpha==0f,"HideHero clears popup");
