@@ -236,6 +236,8 @@ namespace UnityEngine {
    else if(f.FieldType==typeof(string)) fields.Add("\""+f.Name+"\":\""+f.GetValue(value)+"\"");
    else if(f.FieldType==typeof(bool))
     fields.Add("\""+f.Name+"\":"+((bool)f.GetValue(value)?"true":"false"));
+   else if(NestedEquipmentSaveStub.Supports(f.FieldType))
+    fields.Add("\""+f.Name+"\":"+NestedEquipmentSaveStub.Encode(f.GetValue(value)));
    else if(f.FieldType==typeof(List<InventoryStack>)) {
     var items=(List<InventoryStack>)f.GetValue(value);var rows=new List<string>();
     if(items!=null)foreach(var item in items)if(item!=null)
@@ -245,6 +247,9 @@ namespace UnityEngine {
    else if(f.FieldType==typeof(List<TuTienCore.ElementType>)) {var roots=(List<TuTienCore.ElementType>)f.GetValue(value);var nums=new List<string>();if(roots!=null)foreach(var root in roots)nums.Add(((int)root).ToString());fields.Add("\""+f.Name+"\":["+string.Join(",",nums.ToArray())+"]");}
   }return "{"+string.Join(",",fields)+"}"; }
   public static void FromJsonOverwrite(string json,object value) { foreach(var f in value.GetType().GetFields()) {
+   if(NestedEquipmentSaveStub.Supports(f.FieldType)) {
+    NestedEquipmentSaveStub.ReadInto(json,value,f);continue;
+   }
    if(f.FieldType==typeof(List<int>) || f.FieldType==typeof(List<float>)) {
     var arr=System.Text.RegularExpressions.Regex.Match(json,"\""+f.Name+"\"\\s*:\\s*\\[([^]]*)\\]");
     if(arr.Success){var list=(System.Collections.IList)Activator.CreateInstance(f.FieldType);foreach(var item in arr.Groups[1].Value.Split(','))
