@@ -30,6 +30,44 @@ public sealed class InventoryArtThemeEditor : Editor
             "Mọi ô bỏ trống đều có màu nền dự phòng.\n" +
             "Chọn UIManager trong Scene và kéo Theme này vào trường Inventory Art Theme.",
             MessageType.Info);
+        var theme=(InventoryArtTheme)target;
+        // The theme is a data asset. Editing its Sprite fields does not
+        // connect it to the UIManager that builds InventoryPanelUI at runtime.
+        var managers=Object.FindObjectsByType<UIManager>(
+            FindObjectsInactive.Include,FindObjectsSortMode.None);
+        int disconnected=0;
+        foreach(var manager in managers)
+            if(manager!=null && manager.inventoryArtTheme!=theme) disconnected++;
+        if(managers.Length==0)
+            EditorGUILayout.HelpBox(
+                "Chưa tìm thấy UIManager trong Scene đang mở. Hãy mở MainGame.",
+                MessageType.Warning);
+        else if(disconnected>0)
+        {
+            EditorGUILayout.HelpBox(
+                "Có "+disconnected+" UIManager chưa gắn Theme này. " +
+                "Sprite sẽ KHÔNG xuất hiện khi mở Kho đồ cho đến khi gắn Theme vào UIManager.",
+                MessageType.Warning);
+            if(!Application.isPlaying &&
+                GUILayout.Button("Gắn Theme này vào UIManager trong Scene"))
+            {
+                foreach(var manager in managers)
+                {
+                    if(manager==null || manager.inventoryArtTheme==theme)continue;
+                    Undo.RecordObject(manager,"Assign Inventory Art Theme");
+                    manager.inventoryArtTheme=theme;
+                    EditorUtility.SetDirty(manager);
+                    if(manager.gameObject.scene.IsValid())
+                        UnityEditor.SceneManagement.EditorSceneManager.MarkSceneDirty(
+                            manager.gameObject.scene);
+                }
+            }
+        }
+        else
+            EditorGUILayout.HelpBox(
+                "Theme đã được gắn vào UIManager trong Scene.",
+                MessageType.Info);
+
         Section("01 · CỬA SỔ & KHUNG",ref showWindow,WindowFields);
         Section("02 · Ô VẬT PHẨM & NÚT",ref showCells,CellFields);
         Section("03 · HERO & BẢN ĐỒ",ref showHero,HeroFields);
@@ -50,7 +88,6 @@ public sealed class InventoryArtThemeEditor : Editor
 
         serializedObject.ApplyModifiedProperties();
         EditorGUILayout.Space(8);
-        var theme=(InventoryArtTheme)target;
         if(theme.slicedResizablePanels)
         {
             foreach(var property in WindowFields)
