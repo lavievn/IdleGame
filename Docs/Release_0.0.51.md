@@ -91,3 +91,18 @@ Trường `percent` trên các thuộc tính chỉ số thường = tỷ lệ nh
 - Đã thêm `Tests~/AttackModeSaveRegression.cs` với các trường hợp: đổi thế đánh dấu save cần ghi, lưu/tải từ menu, tiếp tục từ màn hình đầu và tương thích save cũ/hỏng.
 
 **Kiểm thử Unity:** Chọn Cung, thêm `test_bow` +20 ATK, lưu Ô 1; thoát Play Mode, xóa `test_bow` trong asset mẫu, Play → Tải Ô 1. Hero phải tự vào Cung và thấy ATK cộng thêm ngay, không cần bấm chọn Cung. Thử lại với Phép và lưu tự động. Kiểm thử chạy trong Unity Editor trên máy người phát triển vẫn cần xác nhận.
+
+## Sửa vị trí chữ sát thương Hero (kiểm thử từ các bản trước)
+
+**Nguyên nhân từ mã/Scene:** `Hero_DMG_Text` neo vào `Hero` nhưng TextMeshPro của Scene đặt **căn trái**. Khung chữ rộng 130 nên glyph lệch khỏi thân. Ngoài ra `HeroController.FadeDamageTextRoutine` trước đó gọi `DamagePopupMotion.X`, đẩy chữ sang ngang tới 48 đơn vị; nhìn như chữ phát sinh từ phía trước Hero.
+
+**Sửa trong `HeroController.cs`:**
+
+- `AlignDamageTextToBody`: gắn `Hero_DMG_Text` vào đúng `heroRect`, `anchor/pivot=(0.5,0.5)`, `anchoredPosition=(0,0)`, `TextAlignmentOptions.Center`; chuyển chữ lên trước trong thứ tự vẽ bằng `SetAsLastSibling`.
+- `ShowDamage` vẫn hiển thị lượng sát thương và đặt lại vị trí gốc khi có hit mới.
+- `FadeDamageTextRoutine`: chữ sát thương Hero **bay lên thẳng đứng** từ giữa thân; không dùng `DamagePopupMotion.X`. Quái vật không bị thay đổi cách hiển thị.
+- Không thay nguồn gây sát thương, độ lớn, logic HP, camera hoặc ảnh hưởng đến mỗi Hero/đồng đội khác.
+
+**Bài test bổ sung:** `Tests~/HeroDamagePopupRegression.cs` kiểm tra neo và căn chữ ở giữa thân, không trôi ngang khi phát sinh sát thương, theo Hero khi di chuyển với tỷ lệ Canvas khác nhau, ẩn chữ khi chết/ẩn Hero và chữ của đồng đội không ảnh hưởng Hero chính.
+
+**Kiểm thử trực tiếp:** Pull cùng nhánh, mở Play Mode, để quái đánh Hero ở cự ly gần và từ xa; quan sát chữ **xuất hiện giữa thân rồi đi thẳng lên**, ở cả Cận chiến/Cung/Phép. Sau đó thử gọi đồng đội B2.
