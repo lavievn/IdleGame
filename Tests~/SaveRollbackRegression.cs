@@ -28,6 +28,11 @@ partial class MotionRegression
                 int savedMap=hero.mapNumber;
                 int savedPoints=hero.statPoints;
                 Check(gm.TryManualSave(SaveSlot.ManualSave1),"snapshot at level 1");
+                int savedLevel,savedPreviewMap;
+                Check(save.TryGetSlotProgress(SaveSlot.ManualSave1,
+                          out savedLevel,out savedPreviewMap) &&
+                      savedLevel==1 && savedPreviewMap==savedMap,
+                    "load UI preview reads exact level and map from snapshot");
                 string json=File.ReadAllText(Path.Combine(dir,"ManualSave1.json"));
                 Check(json.Contains("\"currentLevel\":1") ||
                       json.Contains("\"currentLevel\": 1"),
@@ -78,6 +83,13 @@ partial class MotionRegression
                     "level 1 manual slot");
                 Check(save.SaveGame(later,SaveSlot.AutoSave),
                     "level 10 autosave from same run");
+                int manualLevel,manualMap,autoLevel,autoMap;
+                Check(save.TryGetSlotProgress(SaveSlot.ManualSave1,
+                          out manualLevel,out manualMap) && manualLevel==1,
+                    "Manual Save 1 preview identifies level 1");
+                Check(save.TryGetSlotProgress(SaveSlot.AutoSave,
+                          out autoLevel,out autoMap) && autoLevel==10,
+                    "AutoSave preview identifies newer level 10 progress");
                 Check(gm.LoadAndContinue(SaveSlot.ManualSave1),
                     "explicit load slot 1");
                 Check(gm.HeroData.currentLevel==1,
