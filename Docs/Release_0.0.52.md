@@ -40,3 +40,16 @@ Nhánh `feature/0.0.52-inventory-equipment` kế thừa trạng thái kiểm th�
 ## Phạm vi chưa thực hiện
 
 Chưa có hệ thống vật phẩm ngẫu nhiên, rơi đồ, phân loại trang bị, nâng cấp, điều kiện sử dụng, chuyển đồ giữa nhiều Hero cố định hoặc trang bị trên nhân vật B2. Chưa thể xác nhận biên dịch/chạy Play Mode trực tiếp trong môi trường thực thi này; cần phản hồi kiểm thử từ Unity.
+
+## Hotfix — Khôi phục toàn bộ tiến trình, không chỉ trang bị
+
+Báo lỗi từ Unity: lưu khi nhân vật cấp thấp và đang trang bị vật phẩm, sau đó lên cấp/đổi chỉ số và tải lại — trang bị khôi phục nhưng cấp độ/sức mạnh vẫn là trạng thái mới. Đây là sai nghiêm trọng đối với checkpoint/cốt truyện. **HP khi tải có thể chủ ý hồi đầy**, vì `HeroCombatState.BeginLife` khởi tạo lại trạng thái chiến đấu, nhưng tiến trình bền vững phải quay về snapshot đã lưu.
+
+Đã thêm biện pháp chống tiếp tục ở trạng thái pha trộn:
+
+- `SaveManager.LoadGame` kiểm tra các trường tiến trình có mặt trong JSON (cấp, EXP, điểm chỉ số chưa dùng, chỉ số cộng thêm, số map/số đợt) **khớp dữ liệu vừa giải mã** trước khi chấp nhận tải. Nếu chỉ phục hồi một phần, thao tác tải trả về `false`, không thay thế nhân vật hiện tại bằng một Hero nửa cũ nửa mới.
+- `GameManager.LoadAndContinue` và đường **Tiếp tục** từ menu đầu xác minh cấp độ nạp bằng cấp độ trong tệp. Lúc lưu và tải, Unity Console ghi cụ thể ô/cấp độ/EXP/map, giúp xác định tệp có lưu đúng snapshot không.
+- Khi mở **Menu → Tải bản lưu**, ba nút **Ô 1, Ô 2, Tự động** hiển thị **cấp độ và map đọc từ tệp thực tế**. Quan trọng: AutoSave có thể là cấp 10 trong khi ô lưu tay là cấp 1. Chỉ bấm Ô 1 mới tải checkpoint Ô 1; bấm Tự động sẽ tải snapshot mới hơn nếu AutoSave đã cập nhật.
+- Thêm `Tests~/SaveRollbackRegression.cs`: lưu thủ công ở cấp 1 với hộ phù HP, lên cấp và tăng ATK, đổi đồ, sau đó tải đúng Ô 1; xác nhận cấp/EXP/điểm cộng/map/ATK/Hộ phù đều trở về thời điểm lưu, `CombatManager` trỏ tới Hero mới nạp, HP có thể hồi đầy. Test riêng xác minh AutoSave cấp 10 không thể lẫn vào thao tác tải thủ công Ô 1 cấp 1.
+
+**Lưu ý về chẩn đoán:** Chưa có tệp `ManualSave1.json` tại thời điểm xảy ra lỗi nên chưa thể khẳng định lỗi do nhầm ô tải, ghi đè snapshot hay lỗi Unity-runtime khác. Bản sửa tăng tính quan sát và chặn nạp một phần, không giả định nguyên nhân khi chưa có bằng chứng. Nếu vẫn tái hiện, kiểm tra nhãn cấp trên ba nút Tải và nhật ký `[SaveLoad]` trong Unity Console; gửi bản sao tệp `ManualSave1.json` (sao lưu trước).
