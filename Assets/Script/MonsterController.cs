@@ -26,7 +26,7 @@ public class MonsterController : MonoBehaviour
     private Coroutine attackFeedbackCoroutine;
     private MagicChargeBar chargeBar;
     private Coroutine fadeDmgCoroutine;
-    private Vector3 damageTextHome;
+    private RectTransform damageTextRect;
 
     void Awake()
     {
@@ -53,7 +53,7 @@ public class MonsterController : MonoBehaviour
         rt.SetAsLastSibling();
         dmgTextPrototype.alignment = TextAlignmentOptions.Center;
         dmgTextPrototype.raycastTarget = false;
-        damageTextHome = rt.localPosition;
+        damageTextRect = rt;
     }
     void OnEnable()
     {
@@ -165,7 +165,7 @@ public class MonsterController : MonoBehaviour
         if (dmgTextPrototype != null)
         {
             dmgTextPrototype.alpha = 0f;
-            dmgTextPrototype.transform.localPosition = damageTextHome;
+            if (damageTextRect != null) damageTextRect.anchoredPosition = Vector2.zero;
         }
     }
 
@@ -203,10 +203,12 @@ public class MonsterController : MonoBehaviour
     public void ShowDamage(int damageAmount, float awaySign)
     {
         if (dmgTextPrototype == null) return;
+        if (damageTextRect == null) AlignDamageTextToBody();
+        if (damageTextRect == null) return;
         UIManager.ReadableWorldText(dmgTextPrototype);
         dmgTextPrototype.text = "-" + damageAmount;
         dmgTextPrototype.alpha = 1f;
-        dmgTextPrototype.transform.localPosition = damageTextHome;
+        damageTextRect.anchoredPosition = Vector2.zero;
         if (fadeDmgCoroutine != null) StopCoroutine(fadeDmgCoroutine);
         fadeDmgCoroutine = StartCoroutine(FadeDamageTextRoutine(awaySign));
     }
@@ -216,15 +218,15 @@ public class MonsterController : MonoBehaviour
         while (elapsed < DamagePopupMotion.Duration)
         {
             elapsed = Mathf.Min(DamagePopupMotion.Duration,elapsed+Time.deltaTime);
-            if (dmgTextPrototype == null) yield break;
-            // Match Hero damage: rise vertically from the hit recipient's
-            // body centre instead of drifting to the left/front.
-            dmgTextPrototype.transform.localPosition = damageTextHome + new Vector3(
-                0f, DamagePopupMotion.Y(elapsed), 0f);
+            if (dmgTextPrototype == null || damageTextRect == null) yield break;
+            // Always rise vertically from the CURRENT monster body centre.
+            // This works with all spawn pivots and pooled monsters.
+            damageTextRect.anchoredPosition =
+                new Vector2(0f, DamagePopupMotion.Y(elapsed));
             dmgTextPrototype.alpha = DamagePopupMotion.Alpha(elapsed);
             yield return null;
         }
-        if (dmgTextPrototype != null) dmgTextPrototype.transform.localPosition = damageTextHome;
+        if (damageTextRect != null) damageTextRect.anchoredPosition = Vector2.zero;
         fadeDmgCoroutine = null;
     }
 }
