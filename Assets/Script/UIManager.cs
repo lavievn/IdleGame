@@ -700,6 +700,15 @@ public class UIManager : MonoBehaviour
         // Do NOT relearn the compact preset during asynchronous collapse:
         // Screen.width may still equal the expanded dimensions for a frame.
         ManagementWindowLayout.ResolveResize(Screen.width,Screen.height);
+        // TransparentWindow sets its startup resolution asynchronously. Once
+        // settled, learn the real compact size, but never learn a transient
+        // expanded frame or an in-progress explicit size preset.
+        if (!ManagementWindowLayout.Expanded &&
+            !ManagementWindowLayout.CollapsePending &&
+            !ManagementWindowLayout.CompactResizePending &&
+            (ManagementWindowLayout.CompactWidth != Screen.width ||
+             ManagementWindowLayout.CompactHeight != Screen.height))
+            ManagementWindowLayout.SetCompact(Screen.width,Screen.height);
         if (controlsChanged || Screen.width != layoutWidth || Screen.height != layoutHeight || lines != layoutStatLines)
             LayoutReadableUI();
         RefreshCombatHUDVisibility();
@@ -967,7 +976,7 @@ public class UIManager : MonoBehaviour
     {
         if (transparentWindow == null) transparentWindow = FindObjectOfType<TransparentWindow>();
         int height = Mathf.RoundToInt(width * (9f / 16f));
-        ManagementWindowLayout.SetCompact(width,height);
+        ManagementWindowLayout.RequestCompact(width,height);
         if (transparentWindow != null)
             transparentWindow.ResizeWindow(width,height);
         CloseSystemMenu();
