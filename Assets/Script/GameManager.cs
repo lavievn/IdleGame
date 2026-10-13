@@ -264,6 +264,7 @@ public class GameManager : MonoBehaviour
         // New characters start with the established melee test stance.
         // Randomized combat aptitudes belong to future character generation.
         runtimeHeroData.savedAttackMode = AttackMode.Melee;
+        EquipmentInventory.InitializeNewRun(runtimeHeroData);
         runtimeHeroData.originHealth = Mathf.Max(1,heroDataSO != null ? heroDataSO.baseHealth : CombatBalance.HeroHealth(1));
         runtimeHeroData.meleeGrowthBonus = 0;
         runtimeHeroData.meleeGrowthThroughLevel = 1;
@@ -369,6 +370,34 @@ public class GameManager : MonoBehaviour
     {
         if (runtimeHeroData != null && heroController != null)
             heroController.ChangeAttackMode((int)runtimeHeroData.savedAttackMode);
+    }
+
+    // Inventory and equipment UI only affects the current run and primary Hero.
+    // HP is recalculated by the existing CombatManager ratio-preserving path.
+    public bool EquipInventoryItem(string itemId)
+    {
+        if (!IsGameplayHUDVisible || runtimeHeroData == null) return false;
+        if (!EquipmentInventory.Equip(runtimeHeroData,itemId)) return false;
+        if (combatManager != null) combatManager.RefreshRegisteredHeroStats(heroController,true);
+        UpdateEventLog("Đã trang bị: " + EquipmentCatalog.Find(itemId).name);
+        return true;
+    }
+
+    public bool UnequipInventoryItem()
+    {
+        if (!IsGameplayHUDVisible || runtimeHeroData == null) return false;
+        if (!EquipmentInventory.Unequip(runtimeHeroData)) return false;
+        if (combatManager != null) combatManager.RefreshRegisteredHeroStats(heroController,true);
+        UpdateEventLog("Đã tháo vật phẩm về kho.");
+        return true;
+    }
+
+    public bool GrantInventorySamples()
+    {
+        if (!IsGameplayHUDVisible || runtimeHeroData == null) return false;
+        if (!EquipmentInventory.GrantSamples(runtimeHeroData)) return false;
+        UpdateEventLog("Đã nhận hai hộ phù thử nghiệm.");
+        return true;
     }
 
     // --- CÁC HÀM XỬ LÝ SAVE/LOAD TỪ UI MỚI ---
