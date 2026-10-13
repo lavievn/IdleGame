@@ -291,6 +291,7 @@ partial class MotionRegression
             Near(f.space.Position(f.hero.heroRect).x,x,"pause position");Near(f.space.CurrentCameraSpeed,0,"pause speed");
         });
         NewFeatureTests();
+        HeroDamagePopupTests();
         DesktopMenuTests();
         IdentityMapTests();
         ElementWorldTests();
