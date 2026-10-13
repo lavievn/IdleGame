@@ -3849,6 +3849,10 @@ MonoBehaviour:
   groundImage: {fileID: 224967181}
   transparentWindow: {fileID: 0}
   inventoryArtTheme: {fileID: 11400000, guid: 018466481bee20c47b57b503844a9071, type: 2}
+  inventoryLayoutDebug: 1
+  inventoryDebugFill: {r: 0.035, g: 0.17, b: 0.2, a: 0.16}
+  inventoryDebugOutline: {r: 0.18, g: 0.72, b: 0.73, a: 0.95}
+  inventoryDebugText: {r: 0.87, g: 0.98, b: 0.92, a: 1}
   exitConfirmPopup: {fileID: 0}
 --- !u!114 &649540127
 MonoBehaviour:
