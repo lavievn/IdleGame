@@ -96,6 +96,17 @@ public class EntityDataSO : ScriptableObject
     // Old saves can claim one set of sample items from the inventory panel.
     public bool testItemsGranted;
 
+    [Header("0.0.52 - TRANG BI CA THE / NGHE PHU")]
+    // Serialized with the same Hero snapshot as level/EXP/map. These are
+    // canonical item instances: equipped flag/slot is stored on each item.
+    public int equipmentVersion = 0;
+    public List<EquipmentInstance> equipmentItems = new List<EquipmentInstance>();
+    public long gold;
+    public List<ProfessionProgress> professionProgress = new List<ProfessionProgress>();
+    public List<LearnedProfessionRecipe> learnedRecipes = new List<LearnedProfessionRecipe>();
+    public List<LearnedSupportSkill> learnedSupportSkills = new List<LearnedSupportSkill>();
+    public bool demoSwordGranted;
+
     // Used by save migration and test-created/old characters. Does NOT reroll.
     public void NormalizeCombatStats()
     {
