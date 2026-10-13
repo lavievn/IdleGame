@@ -817,12 +817,11 @@ public sealed class InventoryPanelUI : MonoBehaviour
         if(ui==null || root==null)return;
         bool enabled=ui.inventoryLayoutDebug;
         lastLayoutDebugEnabled=enabled;
-        if(!enabled)
-        {
-            foreach(var visual in layoutGuides.Values)
-                if(visual.rect!=null)visual.rect.gameObject.SetActive(false);
-            return;
-        }
+        // First hide previously rendered labels: a region can switch between
+        // its Sprite backing and plain text fallback while Theme is edited.
+        foreach(var visual in layoutGuides.Values)
+            if(visual.rect!=null)visual.rect.gameObject.SetActive(false);
+        if(!enabled)return;
         Guide(root,"[01] INVENTORY TỔNG",true);
         Guide(headerBacking,"[02] THANH TIÊU ĐỀ",true);
         Guide(equipmentBacking,"[03] KHUNG TRANG BỊ",true);
