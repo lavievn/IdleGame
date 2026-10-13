@@ -44,7 +44,6 @@ partial class MotionRegression
                 Near(labelRect.position.x,expected.x,
                     "received damage only rises, never drifts toward facing side");
                 Check(labelRect.position.y>expected.y,"floating text rises");
-                Vector3 before=labelRect.position;
                 f.space.SetPosition(f.hero.heroRect,
                     f.space.Position(f.hero.heroRect)+new Vector2(70f,0f));
                 Vector3 expectedAfter=f.hero.heroRect.TransformPoint(
