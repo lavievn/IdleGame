@@ -1,3 +1,21 @@
+# IdleGame — Trạng thái phát triển cập nhật 14/10/2026
+
+**Checkpoint mới nhất đang làm:** `feature/0.0.52-refinement` (trang bị và luyện khí) → chuẩn bị tích hợp BGM. **Trên GitHub bản đang xem chưa có thư mục `Assets/BGM`**, nên bước đưa nhạc vào game và gộp `main` đang **chờ người phát triển push 21 file**. Không nhầm checkpoint này với mục lịch sử 0.0.50/0.0.51/.54g bên dưới.
+
+| Mảng | Tiến độ hiện tại | Chưa có / kế tiếp |
+| --- | --- | --- |
+| **UI** | Khung HUD, kho 8 ô trang bị, chi tiết kiếm, cửa sổ rèn, bố cục kiểm thử; một số asset đang được vẽ/thử | Hoàn thiện bộ giao diện, hiệu ứng và bảng 5 ô võ học |
+| **Gameplay – sát thương** | Chiến đấu tự động, wave/map, cận chiến/cung/phép *thử nghiệm*, linh căn, xử lý sát thương và cộng chỉ số có điều kiện | Phân biệt công kích vật lý/phép cơ bản độc lập với kiểu tung chiêu; đòn thường theo loại vũ khí |
+| **Gameplay – võ học** | Đã thảo luận hướng thiết kế; **chưa triển khai** hệ học/trang bị/thi triển võ học | 5 ô ưu tiên từ trái qua phải; người chơi sắp xếp hoặc **Auto**; không có chiêu hợp lệ thì đánh thường |
+| **AI võ học** | Đã định hướng: chế độ cơ bản theo ưu tiên | **Chiến đấu thông minh** mở khóa vĩnh viễn sau chuỗi sự kiện/tâm pháp; người chơi bật/tắt tùy ý, không tốn vật liệu |
+| **Vũ khí/trang bị** | 8 ô; kiếm và nguyên liệu thử; cấp đồ, rèn thường/đặc biệt, phẩm Phổ thông→Tiên; dòng phụ mở khi lên phẩm, hạ phẩm thì khóa mà không mất; người phát triển xác nhận thử logic ổn | Rơi đồ, xác suất/cân bằng, nhiều vũ khí, vật liệu chính thức, liên kết võ học |
+| **Âm thanh** | Đã có kế hoạch sử dụng bộ BGM do người phát triển tạo, chia nhóm `BGM1`–`BGM5`; **chưa tích hợp file vào nhánh kiểm tra** | Nhận 21 file tại `Assets/BGM`, nhóm ≥4 bản/chủ đề, ngẫu nhiên theo cụm 5 map, chuyển âm 10 giây; SFX và lồng tiếng chưa có |
+| **Hạ tầng** | Save/Load, nền Windows overlay và test logic có sẵn | Thử Play Mode/EXE theo thay đổi mới, kiểm thử âm thanh và hồi quy ổn định |
+
+**Tài liệu tiến trình mới nhất:** [Docs/Development_Roadmap.md](Docs/Development_Roadmap.md). **Tài liệu quy tắc rèn:** [Docs/Forge_Test_0.0.52.md](Docs/Forge_Test_0.0.52.md). Các mục cũ dưới đây là nhật ký lịch sử theo thời điểm phát triển, không phải trạng thái của nhánh mới nhất.
+
+---
+
 ## Đang kiểm thử 0.0.51 — nền thuộc tính chiến đấu
 
 **Nhánh `feature/0.0.51-combat-stats`, chưa gộp `main`.** Từ bản `main` 0.0.50 đã thêm `CombatStats` và `CombatDamage`: điểm cộng/trừ có điều kiện, giáp, kháng phép/hệ, tổn thương theo nhiều phần, hồi HP, tốc chạy/tốc đánh và định dạng lưu thuộc tính. Chưa có hệ thi triển skill, kho đồ hoặc xuất thân ngẫu nhiên. Hướng dẫn Inspector, thử trên Unity và giới hạn: [Docs/Release_0.0.51.md](Docs/Release_0.0.51.md). **Chưa được người phát triển nghiệm thu**; không coi thử nghiệm mới là đã hoàn thành.
