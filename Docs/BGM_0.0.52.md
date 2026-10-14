@@ -5,7 +5,7 @@
 - ZIP cập nhật `BGM(1).zip` đã được mở và kiểm tra giải mã: **19 bản nhạc map + 1 bản opening**. Cả 20 tệp có đuôi `.m4a` nhưng mã hóa audio là **Opus trong MP4**; để Unity nhập đáng tin cậy hơn đã chuẩn bị bản chuyển sang **OGG/Vorbis**, giữ nguyên thời lượng/tên nền.
 - Nhóm **BGM1, BGM2, BGM3, BGM5** có 4 bài (`BGMn.ogg`, `BGMn (1).ogg`, `(2)`, `(3)`). **BGM4 chỉ có 3 bài** (bản nền, (1), (2)); thiếu 1 bài theo mục tiêu ≥4.
 - `opening.ogg` là nhạc màn hình đầu (Chơi mới / Tiếp tục và thông báo xác nhận); **chưa làm cảnh opening mới**.
-- **Lưu ý phân phối:** các tệp nhị phân OGG trong ZIP người dùng gửi không thể chuyển trực tiếp qua kết nối GitHub hiện tại. Mã tích hợp đã được commit ở nhánh riêng, **chưa có tệp nhạc trong GitHub** và chưa thể xác nhận âm thanh thực trong Unity. Cần chép bộ `Assets/BGM` vào dự án và đưa lên GitHub bằng máy người phát triển (hoặc phương thức đẩy file binary tương đương) trước khi tuyên bố hoàn thành và merge.
+- **Lưu ý phân phối:** các tệp nhị phân OGG trong ZIP người dùng gửi không thể chuyển trực tiếp qua kết nối GitHub hiện tại. Mã tích hợp đã được commit vào GitHub, **chưa có tệp nhạc nhị phân trong GitHub** và chưa thể xác nhận âm thanh thực trong Unity. Cần chép bộ `Assets/BGM` vào dự án và đưa lên GitHub bằng máy người phát triển (hoặc phương thức đẩy file binary tương đương) trước khi tuyên bố hoàn thành và merge.
 
 ## Ánh xạ Suno và vùng 5 map
 
