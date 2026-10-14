@@ -109,6 +109,24 @@ public static class EquipmentRuntime
         foreach(var item in hero.equipmentItems)
         {
             if(item==null) {changed=true;continue;}
+            // v2 saves did not have hidden/known/active fields. Preserve EVERY
+            // rolled stat as previously revealed and usable, with no rerolls.
+            if(item.affixSchemaVersion==0 &&
+               EquipmentFoundation.IsValid(item))
+            {
+                item.affixSlotCount=item.extraStats.Count;
+                item.potentialRarity=item.rarity;
+                item.highestRefineLevel=Math.Max(item.highestRefineLevel,item.refineLevel);
+                item.hasBeenRefined=item.hasBeenRefined || item.refineLevel>0;
+                foreach(var line in item.extraStats)
+                {
+                    line.revealed=true;
+                    line.requiredItemLevel=1;
+                    line.requiredRefineLevel=0;
+                }
+                item.affixSchemaVersion=EquipmentFoundation.AffixSchemaVersion;
+                changed=true;
+            }
             bool legitimate=EquipmentFoundation.IsValid(item);
             bool unique= !string.IsNullOrEmpty(item.instanceId) &&
                 seenIds.Add(item.instanceId);
@@ -146,8 +164,10 @@ public static class EquipmentRuntime
                 expected.Add(item.mainStats[i].AsModifier(
                     EquipmentFoundation.SourcePrefix+item.instanceId+":m:"+i));
             for(int i=0;i<item.extraStats.Count;i++)
-                expected.Add(item.extraStats[i].AsModifier(
-                    EquipmentFoundation.SourcePrefix+item.instanceId+":a:"+i));
+                if(EquipmentFoundation.AffixState(item,item.extraStats[i]) ==
+                    EquipmentAffixState.Active)
+                    expected.Add(item.extraStats[i].AsModifier(
+                        EquipmentFoundation.SourcePrefix+item.instanceId+":a:"+i));
         }
         var actual=new List<CombatStatModifier>();
         foreach(var mod in hero.combatStatModifiers)
@@ -192,6 +212,11 @@ public static class EquipmentRuntime
         var output=new EquipmentInstance {
             instanceId=item.instanceId, templateId=item.templateId,
             level=item.level,rarity=item.rarity,refineLevel=item.refineLevel,
+            affixSchemaVersion=item.affixSchemaVersion,itemElement=item.itemElement,
+            potentialRarity=item.potentialRarity,affixSlotCount=item.affixSlotCount,
+            naturalRefineLimit=item.naturalRefineLimit,
+            highestRefineLevel=item.highestRefineLevel,
+            hasBeenRefined=item.hasBeenRefined,
             isEquipped=false,equippedSlot=item.equippedSlot
         };
         foreach(var line in item.mainStats) output.mainStats.Add(CopyLine(line));
@@ -203,6 +228,9 @@ public static class EquipmentRuntime
         return new ItemStatLine {
             stat=line.stat,flat=line.flat,percent=line.percent,
             element=line.element,anyElement=line.anyElement,
+            revealed=line.revealed,
+            requiredItemLevel=line.requiredItemLevel,
+            requiredRefineLevel=line.requiredRefineLevel,
             requiredTags=line.requiredTags==null?new List<string>():
                 new List<string>(line.requiredTags),
             blockedTags=line.blockedTags==null?new List<string>():
