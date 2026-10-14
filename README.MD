@@ -1,3 +1,13 @@
+# 0.0.53 — Nút Âm lượng (nhánh thử)
+
+**Đã xác minh `main` sau khi người phát triển push:** `Assets/BGM` có **19 bản nhạc map + `opening.ogg`**, cùng `Assets/Resources/MapBgmCatalog.asset`. Riêng BGM4 có 3 bài, còn chờ bản thứ tư.
+
+**Nhánh đang làm:** `feature/0.0.53` (**chưa merge `main`**). Đã thêm nút **Âm lượng** cỡ 62 × 24 ngay bên phải **Kho đồ**, bảng **−/+ 10% · Tắt/Bật nhạc**, lưu thiết lập sau khi thoát game. Âm lượng áp dụng tức thời cho BGM và opening, kể cả chuyển âm 10 giây. **Chưa kiểm thử thực tế trong Unity/Windows**. Xem [Docs/Release_0.0.53.md](Docs/Release_0.0.53.md).
+
+**Trạng thái các mảng:** UI cơ bản và luyện khí thử nghiệm đã hoạt động; võ học/AI nâng cao chưa triển khai; BGM đã có trong repo nhưng SFX/voice-over chưa có. Đọc [Docs/Development_Roadmap.md](Docs/Development_Roadmap.md) để xem tiến trình.
+
+---
+
 # IdleGame — Trạng thái phát triển cập nhật 14/10/2026
 
 **Checkpoint mới nhất:** 0.0.52 trang bị/luyện khí và phần mã phát BGM; **âm thanh nhị phân chưa có trên GitHub**, nên chỉ phát được khi nhập gói OGG vào `Assets/BGM` trong dự án Unity. Mã điều khiển và tài liệu dự kiến được hợp nhất vào `main`; tệp OGG cần được người phát triển bổ sung riêng. Không nhầm checkpoint này với mục lịch sử 0.0.50/0.0.51/.54g bên dưới.
