@@ -21,3 +21,4 @@ MonoBehaviour:
   splashLeft: {fileID: 0}
   splashRight: {fileID: 0}
   gameTitle: {fileID: 0}
+  edgeFeatherPixels: 48
