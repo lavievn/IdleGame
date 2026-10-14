@@ -104,6 +104,8 @@ public class TransparentWindow : MonoBehaviour
 #endif
     }
 
+    private bool nativeOpeningVolumeDrag;
+
     void Update()
     {
 #if UNITY_STANDALONE_WIN && !UNITY_EDITOR
@@ -116,6 +118,32 @@ public class TransparentWindow : MonoBehaviour
         POINT cursor;
         if (!GetCursorPos(out cursor)) return;
         Vector2 nativePoint = new Vector2(cursor.X, cursor.Y);
+        // Opening slider owns its own drag stream. Bypass the native window
+        // move gesture, otherwise dragging the volume bar moves the app itself.
+        var openingUI=UIManager.Instance;
+        if (pressed && openingUI != null)
+        {
+            Vector2 beginPoint;
+            if (TryGetPointerPosition(out beginPoint) &&
+                openingUI.TryBeginOpeningVolumeDrag(beginPoint))
+                nativeOpeningVolumeDrag=true;
+        }
+        if (nativeOpeningVolumeDrag)
+        {
+            if (down)
+            {
+                Vector2 dragPoint;
+                if (openingUI != null && TryGetPointerPosition(out dragPoint))
+                    openingUI.DragOpeningVolume(dragPoint);
+            }
+            else
+            {
+                if (openingUI != null) openingUI.EndOpeningVolumeDrag();
+                nativeOpeningVolumeDrag=false;
+            }
+            if(!isCurrentlyClickable) ToggleClickThrough(false);
+            return;
+        }
         if (pressed && (overClickable || overDraggable))
         {
             CLIENTRECT rect; Vector2 gamePoint;
