@@ -161,6 +161,23 @@ partial class MotionRegression
                 Check(save.LoadGame(read,SaveSlot.AutoSave)&&read.difficulty==0&&read.balanceVersion==0,"legacy absent fields reset");
             } finally {Directory.Delete(dir,true);}
         });
+        Run("return to title saves current progress and allows Continue",()=>{
+            var f=new Field();SaveManager save;string dir;var gm=MenuManager(f,out save,out dir);
+            try {
+                var hero=HeroAt(18);hero.currentExp=321;
+                Set(gm,"runtimeHeroData",hero);
+                Set(gm,"hasDeployed",true);
+                gm.preGameUI.SetActive(false);
+                Check(gm.ReturnToMainMenu(),"returned to title");
+                Check(!Get<bool>(gm,"hasDeployed")&&gm.preGameUI.activeSelf,
+                    "battle stopped and title visible");
+                Check(save.HasSave(SaveSlot.AutoSave),"AutoSave exists after return");
+                var read=HeroAt(1);
+                Check(save.LoadGame(read,SaveSlot.AutoSave)&&read.currentLevel==18 &&
+                    read.currentExp==321,"stored current character, not fresh state");
+                Check(gm.CanContinue,"Continue available at title");
+            } finally {Directory.Delete(dir,true);}
+        });
         Run("runtime opening builds four buttons and blocks empty continue",()=>{
             var f=new Field();SaveManager save;string dir;var gm=MenuManager(f,out save,out dir);
             try {
