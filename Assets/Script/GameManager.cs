@@ -352,9 +352,14 @@ public class GameManager : MonoBehaviour
     private void SetupPreGameUI()
     {
         if (UIManager.Instance != null) UIManager.Instance.HideMapTitle();
+        bool reopening = !preGameUI.activeInHierarchy;
         preGameUI.SetActive(true);
         preGameUI.transform.SetAsLastSibling();
-        if (startMenu != null) startMenu.Refresh();
+        if (startMenu != null)
+        {
+            if (reopening) startMenu.RestoreMenu();
+            else startMenu.Refresh();
+        }
         if (infoText != null) infoText.text = CanContinue
             ? "Tiếp tục hành trình đã lưu hoặc bắt đầu một hành trình mới."
             : "Chưa có bản lưu. Chọn Chơi mới để bắt đầu.";
