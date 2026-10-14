@@ -202,7 +202,7 @@ namespace TMPro {
   public UnityEngine.RectTransform textViewport;public TextMeshProUGUI textComponent;
   public void ActivateInputField(){isFocused=true;}
  }
- public enum TextAlignmentOptions { Center, TopLeft, Left }
+ public enum TextAlignmentOptions { Center, TopLeft, Left, BottomRight }
  public class TextMeshProUGUI : UnityEngine.Component { public TMP_FontAsset font=new TMP_FontAsset(); public object fontSharedMaterial; public FontStyles fontStyle; public FontWeight fontWeight;public TextOverflowModes overflowMode;public bool enableWordWrapping; public string text; public float alpha,fontSize,fontSizeMin,fontSizeMax; public bool enableAutoSizing,raycastTarget; public UnityEngine.Color color; public TextAlignmentOptions alignment; }
 }
 namespace UnityEngine.Pool
