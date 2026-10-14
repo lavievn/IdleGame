@@ -507,7 +507,9 @@ public sealed class InventoryPanelUI : MonoBehaviour
         forgeTitle.text="LÒ LUYỆN KHÍ  ·  "+EquipmentFoundation.RarityName(item.rarity);
         forgeCellTitle.text=EquipmentRefinement.DisplayName(item);
         forgeCellLevel.text="Lv."+item.level;
+        forgeCellLevel.alignment=TextAlignmentOptions.TopRight;
         forgeCellCount.text="+"+item.refineLevel+"  |  ĐB "+item.specialForgeCount;
+        forgeCellCount.alignment=TextAlignmentOptions.BottomRight;
         Color border=ForgeBorderColor(item.rarity);
         ColorButton(forgeCell,border);
         ColorButton(forgeProgressFill,border);
@@ -532,6 +534,7 @@ public sealed class InventoryPanelUI : MonoBehaviour
             "     (+ cấp/rèn: 1  ·  + đặc biệt: 10)";
         forgeMessage.text=lastForgeMessage;
         LayoutForge(root.rect.width,root.rect.height);
+        forgeOverlay.SetAsLastSibling();
     }
 
     private void LayoutForge(float width,float height)
