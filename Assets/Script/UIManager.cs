@@ -345,7 +345,10 @@ public class UIManager : MonoBehaviour
         devButton = SmallButton(canvas,"DEVBButton","DEVB",new Vector2(1,1),new Vector2(1,1),new Vector2(-120,-4),new Vector2(56,24),OpenDevBalance);
         statsButton = SmallButton(canvas,"StatsButton","Chỉ số",new Vector2(1,1),new Vector2(1,1),new Vector2(-180,-4),new Vector2(60,24),OpenHeroStats);
         inventoryButton = SmallButton(canvas,"InventoryButton","Kho đồ",new Vector2(1,1),
-            new Vector2(1,1),new Vector2(-244,-4),new Vector2(62,24),OpenInventory);
+            new Vector2(1,1),new Vector2(-308,-4),new Vector2(62,24),OpenInventory);
+        volumeButton = SmallButton(canvas,"MusicVolumeButton","Âm lượng",new Vector2(1,1),
+            new Vector2(1,1),new Vector2(-244,-4),new Vector2(62,24),ToggleMusicVolume);
+        musicVolumePanel = MusicVolumePanelUI.Install(this, canvas);
         inventoryUI = InventoryPanelUI.Install(this,hudCanvas);
         devUI = new DevBalanceUI(this, combatUIRoot);
         heroForUI = hero;
@@ -425,6 +428,8 @@ public class UIManager : MonoBehaviour
         if (inventoryUI != null && inventoryUI.IsOpen &&
             (gm == null || !gm.IsGameplayHUDVisible)) inventoryUI.Close();
         if (inventoryButton != null) inventoryButton.gameObject.SetActive(shown);
+        if (volumeButton != null) volumeButton.gameObject.SetActive(shown);
+        if (musicVolumePanel != null) musicVolumePanel.SetVisibleInGameplay(shown);
         if (statsPanel != null) statsPanel.gameObject.SetActive(shown && Screen.height >= 290);
         for (int i=0;i<attackButtons.Length;i++)
             if (attackButtons[i] != null) attackButtons[i].gameObject.SetActive(shown);
@@ -546,6 +551,13 @@ public class UIManager : MonoBehaviour
     private bool wasPausedBeforeInventory;
     private bool inventoryPauseCaptured;
 
+    public void ToggleMusicVolume()
+    {
+        var gm = Object.FindFirstObjectByType<GameManager>();
+        if (gm == null || !gm.IsGameplayHUDVisible || musicVolumePanel == null) return;
+        musicVolumePanel.Toggle();
+    }
+
     public void OpenInventory()
     {
         if (inventoryUI == null || (devUI != null && devUI.IsOpen) ||
@@ -598,7 +610,8 @@ public class UIManager : MonoBehaviour
         }
     }
 
-    private RectTransform hudCanvas, combatUIRoot, pauseRect, devButton, statsButton, inventoryButton, statsPanel;
+    private RectTransform hudCanvas, combatUIRoot, pauseRect, devButton, statsButton, inventoryButton, volumeButton, statsPanel;
+    private MusicVolumePanelUI musicVolumePanel;
     private InventoryPanelUI inventoryUI;
     private RectTransform mapTitleRect;
     private TMPro.TextMeshProUGUI mapTitleText, mapDebugText;
@@ -805,8 +818,13 @@ public class UIManager : MonoBehaviour
         PlaceUI(pauseRect,new Vector2(1,1),new Vector2(1,1),new Vector2(-4,-4),new Vector2(76,24));
         PlaceUI(devButton,new Vector2(1,1),new Vector2(1,1),new Vector2(-84,-4),new Vector2(52,24));
         PlaceUI(statsButton,new Vector2(1,1),new Vector2(1,1),new Vector2(-140,-4),new Vector2(60,24));
+        // Preserve pause/stats/dev positions. Shift Inventory left by one slot,
+        // placing Volume immediately to its right with matching 62x24 bounds.
         PlaceUI(inventoryButton,new Vector2(1,1),new Vector2(1,1),
+            new Vector2(-268,-4),new Vector2(62,24));
+        PlaceUI(volumeButton,new Vector2(1,1),new Vector2(1,1),
             new Vector2(-204,-4),new Vector2(62,24));
+        if (musicVolumePanel != null) musicVolumePanel.Layout();
         if (inventoryUI != null) inventoryUI.Layout(w,h,Screen.width,Screen.height);
         // Full stats sit below the 3 top-right tools. Combat log takes the left column.
         float rightWidth = StatsColumnWidth(w);
