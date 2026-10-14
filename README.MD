@@ -1,6 +1,6 @@
 # IdleGame — Trạng thái phát triển cập nhật 14/10/2026
 
-**Checkpoint mới nhất:** 0.0.52 trang bị/luyện khí và phần mã phát BGM; **âm thanh nhị phân chưa có trên GitHub**, nên chỉ phát được khi nhập gói OGG vào `Assets/BGM` trong dự án Unity. Nhánh thử hiện tại: `feature/0.0.52-bgm-progress`. Không nhầm checkpoint này với mục lịch sử 0.0.50/0.0.51/.54g bên dưới.
+**Checkpoint mới nhất:** 0.0.52 trang bị/luyện khí và phần mã phát BGM; **âm thanh nhị phân chưa có trên GitHub**, nên chỉ phát được khi nhập gói OGG vào `Assets/BGM` trong dự án Unity. Mã điều khiển và tài liệu dự kiến được hợp nhất vào `main`; tệp OGG cần được người phát triển bổ sung riêng. Không nhầm checkpoint này với mục lịch sử 0.0.50/0.0.51/.54g bên dưới.
 
 | Mảng | Tiến độ hiện tại | Chưa có / kế tiếp |
 | --- | --- | --- |
