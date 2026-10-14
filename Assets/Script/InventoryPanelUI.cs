@@ -38,8 +38,13 @@ public sealed class InventoryPanelUI : MonoBehaviour
     private RectTransform[] bagButtons = new RectTransform[20];
     private TextMeshProUGUI[] bagTexts = new TextMeshProUGUI[20];
     private RectTransform[] tabButtons = new RectTransform[3];
-    private RectTransform equipButton, equipRightButton, removeButton;
+    private RectTransform equipButton, equipRightButton, removeButton, forgeButton;
     private TextMeshProUGUI equipText, equipRightText, removeText;
+    private RectTransform forgeOverlay,forgeFrame,forgeCell,forgeCellInside,forgeProgressBack,forgeProgressFill;
+    private RectTransform[] forgePlus=new RectTransform[3],forgeMinus=new RectTransform[3];
+    private TextMeshProUGUI forgeTitle,forgeCellTitle,forgeCellLevel,forgeCellCount,
+        forgeInfo,forgeProgressLabel,forgeMaterialLabel,forgeMessage;
+    private string forgeItemId="",lastForgeMessage="";
     private readonly List<Entry> entries = new List<Entry>();
     private int filter, page;
     private string selectedKey = "";
@@ -113,6 +118,21 @@ public sealed class InventoryPanelUI : MonoBehaviour
         ColorButton(result,new Color(.16f,.29f,.30f,.98f));
         return result;
     }
+    private TextMeshProUGUI MakeForgeText(string name,string caption)
+    {
+        var label=ui.MakeLabel(forgeOverlay,caption,Vector2.zero,new Vector2(200f,30f));
+        label.gameObject.name=name;
+        label.alignment=TextAlignmentOptions.Center;
+        label.raycastTarget=false;
+        return label;
+    }
+    private RectTransform MakeForgeButton(string name,string caption,Action click)
+    {
+        var button=ui.SmallButton(forgeOverlay,name,caption,new Vector2(0f,1f),
+            new Vector2(0f,1f),Vector2.zero,new Vector2(50f,30f),()=>click());
+        ColorButton(button,new Color(.17f,.31f,.33f,1f));
+        return button;
+    }
     private TextMeshProUGUI MakeText(string name,string caption)
     {
         var label=ui.MakeLabel(root,caption,Vector2.zero,new Vector2(100f,40f));
@@ -180,14 +200,49 @@ public sealed class InventoryPanelUI : MonoBehaviour
         panel.MakeButton("InventoryPrev","◀",panel.PreviousPage);
         panel.MakeButton("InventoryNext","▶",panel.NextPage);
         panel.MakeButton("InventoryGrantCharms","Hộ phù mẫu",panel.GrantCharms);
-        panel.MakeButton("InventoryGrantSword","Kiếm mẫu",panel.GrantSword);
+        panel.MakeButton("InventoryGrantSword","Kiếm rèn mẫu",panel.GrantSword);
+        panel.MakeButton("InventoryGrantMaterials","Nguyên liệu +100",panel.GrantMaterials);
         panel.equipButton=panel.MakeButton("InventoryEquip","Trang bị",panel.EquipSelected);
         panel.equipRightButton=panel.MakeButton("InventoryEquipRingRight","Nhẫn phải",panel.EquipRight);
         panel.removeButton=panel.MakeButton("InventoryUnequip","Tháo",panel.RemoveSelected);
+        panel.forgeButton=panel.MakeButton("InventoryForge","Rèn",panel.OpenForge);
         panel.equipText=ButtonText(panel.equipButton);
         panel.equipRightText=ButtonText(panel.equipRightButton);
         panel.removeText=ButtonText(panel.removeButton);
         panel.MakeButton("InventoryClose","Đóng  ×",panel.Close);
+
+        // Modal is the last child of the inventory root: dim and intercept
+        // clicks on the original inventory without changing its layout.
+        panel.forgeOverlay=Backdrop(panel.root,"Forge_ModalDim",
+            new Color(.012f,.021f,.027f,.88f));
+        panel.forgeOverlay.GetComponent<Image>().raycastTarget=true;
+        panel.forgeFrame=Backdrop(panel.forgeOverlay,"Forge_Window",
+            new Color(.075f,.13f,.15f,1f));
+        panel.forgeCell=Backdrop(panel.forgeOverlay,"Forge_RarityBorder",Color.gray);
+        panel.forgeCellInside=Backdrop(panel.forgeOverlay,"Forge_ItemBackground",
+            new Color(.045f,.085f,.10f,1f));
+        panel.forgeProgressBack=Backdrop(panel.forgeOverlay,"Forge_ProgressTrack",
+            new Color(.08f,.16f,.18f,1f));
+        panel.forgeProgressFill=Backdrop(panel.forgeOverlay,"Forge_ProgressFill",
+            new Color(.40f,.64f,.50f,1f));
+        panel.forgeTitle=panel.MakeForgeText("Forge_Title","LÒ LUYỆN KHÍ · THỬ NGHIỆM");
+        panel.forgeCellTitle=panel.MakeForgeText("Forge_ItemName","");
+        panel.forgeCellLevel=panel.MakeForgeText("Forge_ItemLevel","");
+        panel.forgeCellCount=panel.MakeForgeText("Forge_ForgeCount","");
+        panel.forgeInfo=panel.MakeForgeText("Forge_Stats","");
+        panel.forgeProgressLabel=panel.MakeForgeText("Forge_ProgressText","");
+        panel.forgeMaterialLabel=panel.MakeForgeText("Forge_Materials","");
+        panel.forgeMessage=panel.MakeForgeText("Forge_Message","");
+        for(int i=0;i<3;i++)
+        {
+            int row=i;
+            panel.forgeMinus[i]=panel.MakeForgeButton("Forge_Down"+i,"−",
+                ()=>panel.ChangeForge(row,false));
+            panel.forgePlus[i]=panel.MakeForgeButton("Forge_Up"+i,"+",
+                ()=>panel.ChangeForge(row,true));
+        }
+        panel.MakeForgeButton("Forge_Close","Đóng ×",panel.CloseForge);
+        panel.forgeOverlay.gameObject.SetActive(false);
 
         if(ui.transparentWindow!=null)
         {
@@ -227,6 +282,8 @@ public sealed class InventoryPanelUI : MonoBehaviour
     public void Close()
     {
         if(root==null || !root.gameObject.activeSelf)return;
+        if(forgeOverlay!=null)forgeOverlay.gameObject.SetActive(false);
+        forgeItemId="";
         root.gameObject.SetActive(false);
         if(topBanner!=null)topBanner.gameObject.SetActive(false);
         if(ui!=null)ui.OnInventoryDismissed();
@@ -235,7 +292,7 @@ public sealed class InventoryPanelUI : MonoBehaviour
     private static string LabelForGear(EquipmentInstance item)
     {
         var template=EquipmentFoundation.FindTemplate(item.templateId);
-        return template==null?item.templateId:template.name;
+        return EquipmentRefinement.DisplayName(item);
     }
     private void RebuildEntries(EntityDataSO hero)
     {
@@ -345,7 +402,13 @@ public sealed class InventoryPanelUI : MonoBehaviour
     private void GrantSword()
     {
         var gm=Manager();
-        if(gm!=null)gm.GrantDemoSword();
+        if(gm!=null)gm.GrantForgeTestSword();
+        Refresh();
+    }
+    private void GrantMaterials()
+    {
+        var gm=Manager();
+        if(gm!=null)gm.GrantForgeMaterials();
         Refresh();
     }
     private void EquipSelected()
@@ -385,13 +448,21 @@ public sealed class InventoryPanelUI : MonoBehaviour
         Refresh();
     }
 
-    private string StatLine(ItemStatLine stat)
+    private string StatLine(EquipmentInstance item,ItemStatLine stat)
     {
         if(stat==null)return "";
-        string value=stat.flat!=0f ?
-            (stat.flat>0?"+":"")+stat.flat.ToString("0.##") : "";
-        if(stat.percent!=0f)
-            value+=" "+(stat.percent>0?"+":"")+(stat.percent*100f).ToString("0.##")+"%";
+        float power=EquipmentRefinement.PowerMultiplier(item);
+        float flat=stat.flat*power,percent=stat.percent*power;
+        bool ratio=stat.stat==CombatStatId.ElementDamagePercent ||
+            stat.stat==CombatStatId.PhysicalDamagePercent ||
+            stat.stat==CombatStatId.MagicalDamagePercent ||
+            stat.stat==CombatStatId.CooldownReductionPercent ||
+            stat.stat==CombatStatId.ElementResistance;
+        string value=flat!=0f ?
+            (flat>0?"+":"")+(ratio ? (flat*100f).ToString("0.##")+"%" :
+                flat.ToString("0.##")) : "";
+        if(percent!=0f)
+            value+=" "+(percent>0?"+":"")+(percent*100f).ToString("0.##")+"%";
         if(stat.stat==CombatStatId.ElementDamagePercent ||
             stat.stat==CombatStatId.ElementResistance)
             value+=" ("+stat.element+")";
@@ -459,15 +530,15 @@ public sealed class InventoryPanelUI : MonoBehaviour
                 var item=selected.gear;
                 detail.text=selected.name+" · "+EquipmentFoundation.RarityName(item.rarity)+
                     " · Cấp "+item.level+" · Rèn +"+item.refineLevel;
-                foreach(var line in item.mainStats)detail.text+="\nChính: "+StatLine(line);
+                foreach(var line in item.mainStats)detail.text+="\nChính: "+StatLine(item,line);
                 foreach(var line in item.extraStats)
                 {
                     var state=EquipmentFoundation.AffixState(item,line);
                     if(state==EquipmentAffixState.Hidden)
                         detail.text+="\nPhụ: ??? (Chưa khai mở)";
                     else if(state==EquipmentAffixState.KnownLocked)
-                        detail.text+="\nPhụ [Khóa]: "+StatLine(line);
-                    else detail.text+="\nPhụ: "+StatLine(line);
+                        detail.text+="\nPhụ [Khóa]: "+StatLine(item,line);
+                    else detail.text+="\nPhụ: "+StatLine(item,line);
                 }
                 int totalLines=item.affixSchemaVersion==
                     EquipmentFoundation.AffixSchemaVersion
@@ -494,6 +565,7 @@ public sealed class InventoryPanelUI : MonoBehaviour
                 "Cấp "+hero.currentLevel+"  ·  Bản đồ "+hero.mapNumber+
                 "  ·  Vàng "+hero.gold+"\n"+
                 "Tâm pháp · Võ học · Luyện chế: sẽ mở trong các giai đoạn tiếp theo";
+        if(forgeButton!=null)forgeButton.gameObject.SetActive(selected!=null && selected.gear!=null);
         equipText.text=selected!=null && !selected.equipped && (selected.gear!=null || selected.legacy) ?
             "Trang bị" : "—";
         removeText.text=selected!=null && selected.equipped?"Tháo":"—";
@@ -502,6 +574,7 @@ public sealed class InventoryPanelUI : MonoBehaviour
                 "Nhẫn phải" : "—";
         ApplyTheme();
         UpdateLayoutDebug();
+        if(forgeOverlay!=null && forgeOverlay.gameObject.activeSelf)RefreshForge();
     }
 
     private static string ShortName(string name)
@@ -585,11 +658,12 @@ public sealed class InventoryPanelUI : MonoBehaviour
                 72f+(i/2)*slotStep,slotW,slotH);
         float summaryY=72f+4f*slotStep+7f;
         Place((RectTransform)summary.transform,10f,summaryY,left-8f,
-            Mathf.Max(16f,h-summaryY-78f));
+            Mathf.Max(16f,h-summaryY-108f));
         Place(miniStatsBacking,7f,Mathf.Max(35f,summaryY-6f),
-            left+1f,Mathf.Max(25f,h-summaryY-70f));
-        Place(FindButton("InventoryGrantCharms"),9f,h-63f,left-8f,26f);
-        Place(FindButton("InventoryGrantSword"),9f,h-33f,left-8f,26f);
+            left+1f,Mathf.Max(25f,h-summaryY-100f));
+        Place(FindButton("InventoryGrantCharms"),9f,h-93f,left-8f,26f);
+        Place(FindButton("InventoryGrantSword"),9f,h-63f,left-8f,26f);
+        Place(FindButton("InventoryGrantMaterials"),9f,h-33f,left-8f,26f);
 
         const int cols=5, rows=4;
         float cellW=(gridW-12f)/cols;
@@ -607,7 +681,9 @@ public sealed class InventoryPanelUI : MonoBehaviour
         Place(equipButton,gridX,actionY,actionW,31f);
         Place(equipRightButton,gridX+actionW+4f,actionY,actionW,31f);
         Place(removeButton,gridX+2f*(actionW+4f),actionY,actionW,31f);
+        Place(forgeButton,gridX+gridW-75f,actionY-29f,75f,25f);
         StyleText();
+        LayoutForge(w,h);
         ApplyTheme();
         UpdateLayoutDebug();
     }
