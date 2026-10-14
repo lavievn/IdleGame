@@ -126,8 +126,10 @@ public static class EquipmentStatPreview
                 future.Add(item.mainStats[i].AsModifier(
                     EquipmentFoundation.SourcePrefix+item.instanceId+":m:"+i));
             for(int i=0;i<item.extraStats.Count;i++)
-                future.Add(item.extraStats[i].AsModifier(
-                    EquipmentFoundation.SourcePrefix+item.instanceId+":a:"+i));
+                if(EquipmentFoundation.AffixState(item,item.extraStats[i]) ==
+                    EquipmentAffixState.Active)
+                    future.Add(item.extraStats[i].AsModifier(
+                        EquipmentFoundation.SourcePrefix+item.instanceId+":a:"+i));
         }
 
         // Current comes from the real Hero modifier snapshot, including
