@@ -324,6 +324,7 @@ partial class MotionRegression
         InventoryArtThemeRegressionTests();
         MusicVolumeRegressionTests();
         OpeningCinematicRegressionTests();
+        OpeningSplashRegressionTests();
         OpeningSettingsRegressionTests();
         BalanceTests();
         BalanceSimulations();
