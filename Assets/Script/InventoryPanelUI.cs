@@ -668,10 +668,10 @@ public sealed class InventoryPanelUI : MonoBehaviour
             Color fallback=image==null?Color.white:image.color;
             if(art==null)
             {
-                var hero=Hero();
-                var gear=EquipmentRuntime.Equipped(hero,Slots[i]);
-                bool legacy=i==4 && hero!=null &&
-                    !string.IsNullOrEmpty(hero.equippedItemId);
+                var slotHero=Hero();
+                var gear=EquipmentRuntime.Equipped(slotHero,Slots[i]);
+                bool legacy=i==4 && slotHero!=null &&
+                    !string.IsNullOrEmpty(slotHero.equippedItemId);
                 fallback=gear!=null?RarityColor(gear.rarity):
                     legacy?new Color(.32f,.34f,.22f,1f):
                     new Color(.11f,.22f,.24f,1f);
