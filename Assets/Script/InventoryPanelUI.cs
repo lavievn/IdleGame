@@ -604,10 +604,12 @@ public sealed class InventoryPanelUI : MonoBehaviour
     {
         var item=EquipmentRuntime.Find(Hero(),forgeItemId);
         if(item==null)return "—";
-        return row==0 ? item.level.ToString() :
-            row==1 ? "+"+item.refineLevel+"  ("+item.forgeStageProgress+
-                "/"+EquipmentRefinement.RequiredAttempts(item.rarity)+")" :
-            "+"+item.specialForgeCount;
+        if(row==0)return item.level.ToString();
+        if(row==2)return "+"+item.specialForgeCount;
+        if(item.rarity>=item.forgeStageTargetRarity)
+            return "+"+item.refineLevel+"  [Đã chạm trần]";
+        return "+"+item.refineLevel+"  ("+item.forgeStageProgress+
+            "/"+EquipmentRefinement.RequiredAttempts(item.rarity)+")";
     }
 
     private string StatLine(EquipmentInstance item,ItemStatLine stat)
