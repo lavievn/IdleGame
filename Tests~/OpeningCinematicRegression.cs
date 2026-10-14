@@ -41,41 +41,54 @@ partial class MotionRegression
                 }
             }
             Check(cont&&fresh&&settings&&exit,"four menu actions");
-            bool hasSky=false,hasCloud=false,hasVideoBackground=false,hasFixedSplash=false;
+            bool hasSky=false,hasCloud=false,hasBackground=false;
+            OpeningHeroSplashVideo left=null,right=null;
             foreach (var obj in UnityEngine.Object.objects)
             {
                 var go=obj as GameObject;
                 if(go==null)continue;
                 if(go.name=="01 SKY - full background")hasSky=true;
                 if(go.name=="05 FRONT CLOUDS LEFT")hasCloud=true;
-                if(go.name=="00 VIDEO BACKGROUND - full window")hasVideoBackground=true;
-                if(go.name=="07 SPLASH VIDEO - FIXED NO PAN")hasFixedSplash=true;
+                if(go.name=="00 VIDEO BACKGROUND - full window")hasBackground=true;
+                if(go.name=="07 SPLASH LEFT - OVERSCAN")
+                    left=go.GetComponent<OpeningHeroSplashVideo>();
+                if(go.name=="08 SPLASH RIGHT - OVERSCAN")
+                    right=go.GetComponent<OpeningHeroSplashVideo>();
             }
-            Check(hasSky&&hasCloud&&hasVideoBackground&&hasFixedSplash,
-                "fixed splash and bottom background video layers");
-            OpeningHeroSplashVideo fixedVideo = null;
-            foreach(var obj in UnityEngine.Object.objects)
-            {
-                var go=obj as GameObject;
-                if(go!=null && go.name=="07 SPLASH VIDEO - FIXED NO PAN")
-                    fixedVideo=go.GetComponent<OpeningHeroSplashVideo>();
-            }
-            Check(fixedVideo!=null,"single fixed splash video script installed");
-            var group=fixedVideo.GetComponent<CanvasGroup>();
-            var frame=(RectTransform)fixedVideo.transform;
-            Vector2 position=frame.anchoredPosition;
-            fixedVideo.Tick(26f);
-            Near(group.alpha,0f,"splash hidden before cue");
-            fixedVideo.Tick(27f);
-            Near(group.alpha,0f,"splash begins fade at 27s");
-            fixedVideo.Tick(27.7f);
-            Check(group.alpha>0f && group.alpha<1f,"one initial fade in progress");
-            fixedVideo.Tick(28.5f);
-            Near(group.alpha,1f,"initial fade finished");
-            Near(frame.anchoredPosition.x,position.x,"no horizontal pan");
-            Near(frame.anchoredPosition.y,position.y,"no vertical pan");
-            fixedVideo.ResetToTitle();
-            Near(group.alpha,0f,"return to menu resets splash cue");
+            Check(hasSky&&hasCloud&&hasBackground&&left!=null&&right!=null,
+                "two fixed side splash panels and background video");
+            ui.Layout(600f,338f);
+            var leftBox=(RectTransform)left.transform;
+            var rightBox=(RectTransform)right.transform;
+            Check(leftBox.anchoredPosition.x<0f && rightBox.anchoredPosition.x>0f,
+                "splash frames remain on opposite sides");
+            Check(leftBox.sizeDelta.y>338f && rightBox.sizeDelta.y>338f,
+                "overscan panels are larger than the viewport height");
+            Check(leftBox.sizeDelta.x==rightBox.sizeDelta.x,
+                "the two panels have equal width");
+            var leftPos=leftBox.anchoredPosition;
+            var rightPos=rightBox.anchoredPosition;
+            var alphaLeft=left.GetComponent<CanvasGroup>();
+            var alphaRight=right.GetComponent<CanvasGroup>();
+            left.Tick(26f,null);right.Tick(26f,null);
+            Near(alphaLeft.alpha,0f,"both sides hidden before cue");
+            Near(alphaRight.alpha,0f,"right side hidden before cue");
+            left.Tick(27f,null);right.Tick(27f,left.CurrentPath);
+            Near(alphaLeft.alpha,0f,"left fade starts at 27s");
+            left.Tick(27.7f,null);right.Tick(27.7f,left.CurrentPath);
+            Check(alphaLeft.alpha>0f && alphaLeft.alpha<1f,
+                "initial fade is in progress");
+            left.Tick(29f,null);right.Tick(29f,left.CurrentPath);
+            Near(alphaLeft.alpha,1f,"fade reaches full opacity");
+            Near(alphaRight.alpha,1f,"right side fade reaches full opacity");
+            Near(leftBox.anchoredPosition.x,leftPos.x,"left frame does not pan");
+            Near(rightBox.anchoredPosition.x,rightPos.x,"right frame does not pan");
+            Near(leftBox.anchoredPosition.y,leftPos.y,"left frame stays vertically fixed");
+            Check(left.GetComponent<RectMask2D>()!=null &&
+                  right.GetComponent<RectMask2D>()!=null,
+                "oversized frames crop overflow artwork to their own bounds");
+            left.ResetToTitle();right.ResetToTitle();
+            Near(alphaLeft.alpha,0f,"return to title resets both splash cues");
 
             // Full-screen menu and art operate independently of combat transforms.
             ui.Layout(600f,338f);
