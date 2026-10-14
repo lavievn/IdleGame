@@ -914,7 +914,7 @@ public class UIManager : MonoBehaviour
                 gm.GetComponent<StartMenuUI>().IsCinematic &&
                 text.transform.IsChildOf(gm.preGameUI.transform)) continue;
             if (text.transform.parent != null &&
-                text.transform.parent.name.StartsWith("Opening Cinematic")) continue;
+                text.transform.parent.gameObject.name.StartsWith("Opening Cinematic")) continue;
             // The inventory has independent font hierarchy and sizes; the
             // global compact HUD style would otherwise enlarge 20 grid cells.
             if (inventoryUI != null &&
