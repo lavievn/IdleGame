@@ -42,6 +42,7 @@ public sealed class ItemStatLine
     public bool revealed = true; // old 0.0.52 data remains visible on migration
     public int requiredItemLevel = 1;
     public int requiredRefineLevel = 0;
+    public EquipmentRarity requiredRarity = EquipmentRarity.Common;
 
     public CombatStatModifier AsModifier(string sourceId)
     {
@@ -291,7 +292,8 @@ public static class EquipmentFoundation
                 (line.requiredItemLevel < 1 ||
                  line.requiredItemLevel > MaximumItemLevel ||
                  line.requiredRefineLevel < 0 ||
-                 line.requiredRefineLevel > MaximumRefineLevel))
+                 line.requiredRefineLevel > MaximumRefineLevel ||
+                 !Enum.IsDefined(typeof(EquipmentRarity),line.requiredRarity)))
                 return false;
         }
         return true;
@@ -302,7 +304,8 @@ public static class EquipmentFoundation
         if(item==null || line==null || !line.revealed)
             return EquipmentAffixState.Hidden;
         return item.level >= line.requiredItemLevel &&
-            item.refineLevel >= line.requiredRefineLevel
+            item.refineLevel >= line.requiredRefineLevel &&
+            item.rarity >= line.requiredRarity
             ? EquipmentAffixState.Active : EquipmentAffixState.KnownLocked;
     }
 
@@ -316,7 +319,8 @@ public static class EquipmentFoundation
         {
             if(line==null || line.revealed ||
                item.level<line.requiredItemLevel ||
-               item.refineLevel<line.requiredRefineLevel)continue;
+               item.refineLevel<line.requiredRefineLevel ||
+               item.rarity<line.requiredRarity)continue;
             line.revealed=true;
             changed=true;
         }
