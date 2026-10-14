@@ -80,3 +80,7 @@ Các số là **prototype** để xem nhịp và sẽ điều chỉnh sau khi th
 ## 8. Splash art thay đổi ngẫu nhiên (bổ sung)
 
 Thay vì chỉ có hai ảnh cố định, opening đã có module `OpeningSplashShowcase.cs`. Người phát triển thêm PNG/JPG hoặc MP4 vào `Assets/Resources/OpeningSplashArt/`, Unity lập danh mục và lựa chọn hai bên sau mốc 27 giây, zoom in/out có nhịp nhanh chậm và crossfade. Hai ô `splashLeft`/`splashRight` trong `OpeningArtTheme.asset` trở thành ảnh dự phòng nếu kho trống. **Xem [Opening_SplashArt_0.0.53.md](Opening_SplashArt_0.0.53.md)** để có quy trình nhập tài nguyên, giới hạn video, checklist Windows. Các mô tả hai ảnh cố định ở các phần lịch sử trên dành cho phiên bản trước khi thêm kho.
+
+## Quyết định cuối ngày 14/10/2026 — thay thiết kế splash trước đó
+
+Các đoạn mô tả hai splash art trái/phải, trình chiếu ngẫu nhiên và zoom tự động bên trên là **lịch sử đã được thay thế**. Trên nhánh mới nhất chỉ còn **một video splash trong khung đứng yên, fade in một lần ở giây 27**, còn zoom/cắt dựng bên trong tệp video của tác giả. Nền có thể thêm `opening.mp4` dưới tất cả mây/núi. Logo chữ **Bách Luyện Tiên Đồ** đã commit ở `Assets/Resources/OpeningTitleLogo.png` và đưa lên trên giữa. Xem [Opening_SplashArt_0.0.53.md](Opening_SplashArt_0.0.53.md) để lấy đường dẫn/định dạng đúng.
