@@ -1,4 +1,14 @@
-Một video splash duy nhất, hiển thị trong khung tĩnh kể từ giây 27.
+LƯU Ý: thư mục cũ dùng làm dự phòng tương thích.
+
+Ưu tiên sử dụng kho ngẫu nhiên mới:
+Assets/StreamingAssets/OpeningSplashArt/
+Thêm các tệp PNG/JPG/MP4 tùy ý vào đó, game sẽ chọn riêng cho
+khung trái và phải (đều tràn ra ngoài mép cửa sổ).
+
+Nếu kho mới trống, hệ thống vẫn nhận splash.mp4 trong thư mục cũ,
+và phát cùng tệp trên cả hai bên.
+
+Lịch sử: trước đây chỉ có một video splash ở giữa.
 
 Thêm splash.mp4 vào:
 Assets/StreamingAssets/OpeningSplash/splash.mp4
