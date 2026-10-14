@@ -9,6 +9,8 @@ partial class MotionRegression
     static void OpeningSettingsRegressionTests()
     {
         Run("0.0.53 opening settings: three exclusive sizes, draggable BGM, reset",()=>{
+            var previousUI=UIManager.Instance;
+            UIManager.Instance=null;
             var gm=new GameObject("Settings Test Game").AddComponent<GameManager>();
             gm.preGameUI=new GameObject("PreGame",typeof(RectTransform),typeof(Image));
             var canvas=new GameObject("UI Root",typeof(RectTransform));
@@ -43,6 +45,7 @@ partial class MotionRegression
             Call(menu,"CloseSettings");
             Check(!Get<GameObject>(menu,"settingsPage").activeSelf,"back returns to main menu");
             MapBgmController.SetVolume(.6f);
+            UIManager.Instance=previousUI;
         });
     }
 }
