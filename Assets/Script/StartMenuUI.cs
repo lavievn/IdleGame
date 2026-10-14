@@ -269,11 +269,15 @@ public class StartMenuUI : MonoBehaviour
             volumeTrack,screenPoint,null,out local))return;
         var rect=volumeTrack.rect;
         float fraction=(local.x-rect.xMin)/Mathf.Max(1f,rect.width);
-        MapBgmController.SetVolume(Mathf.Clamp01(fraction));
+        MapBgmController.PreviewVolume(Mathf.Clamp01(fraction));
         UpdateSettingVisuals();
     }
 
-    public void EndVolumeDrag(){volumeDragging=false;}
+    public void EndVolumeDrag()
+    {
+        if(volumeDragging)MapBgmController.SaveVolumePreference();
+        volumeDragging=false;
+    }
 
     private void SelectWindowSize(int width)
     {
