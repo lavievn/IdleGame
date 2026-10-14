@@ -131,6 +131,7 @@ namespace UnityEngine
         public static float Clamp(float value,float min,float max) { return Math.Max(min,Math.Min(max,value)); }
         public static int Clamp(int a,int b,int c) { return Math.Max(b,Math.Min(a,c)); }
         public static float MoveTowards(float a,float b,float d) { return a+Math.Sign(b-a)*Math.Min(Math.Abs(b-a),d); }
+        public static float Lerp(float a,float b,float t) { return a+(b-a)*Clamp01(t); }
         public static int RoundToInt(float a) { return (int)Math.Round(a); }
     }
     public static class Random
@@ -150,7 +151,27 @@ namespace UnityEngine
     public class Sprite : Object { }
     public enum RenderMode { ScreenSpaceOverlay }
     public class Canvas : Component { public RenderMode renderMode; public int sortingOrder,sortingLayerID,targetDisplay,additionalShaderChannels; public float scaleFactor; public static void ForceUpdateCanvases() { } }
-    public static class Time { public static float deltaTime=1f/60f,time,timeScale=1f; public static int frameCount; }
+    public static class Time { public static float deltaTime=1f/60f,unscaledDeltaTime=1f/60f,time,timeScale=1f; public static int frameCount; }
+    public class AudioClip : Object { public float length = 180f; }
+    public class AudioSource : MonoBehaviour
+    {
+        public bool playOnAwake,loop,isPlaying;
+        public float spatialBlend,volume,time;
+        public AudioClip clip;
+        public void Play() { isPlaying = clip != null; time = 0f; }
+        public void Stop() { isPlaying = false; }
+    }
+    public static class Resources
+    {
+        public static T Load<T>(string path) where T : Object { return null; }
+    }
+    public static class PlayerPrefs
+    {
+        private static readonly Dictionary<string,float> floats=new Dictionary<string,float>();
+        public static float GetFloat(string key,float fallback=0f) { float v;return floats.TryGetValue(key,out v)?v:fallback; }
+        public static void SetFloat(string key,float value) { floats[key]=value; }
+        public static void Save() { }
+    }
     public class SerializeField : Attribute { }
     public class TooltipAttribute : Attribute { public TooltipAttribute(string s){} }
     public class HeaderAttribute : Attribute { public HeaderAttribute(string s) { } }
