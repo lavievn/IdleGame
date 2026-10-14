@@ -169,3 +169,9 @@ Boss/elite, luật khắc sâu, crit/phòng thủ/buff/debuff, hiệu ứng theo
 ### Checkpoint B1 đã chốt
 
 Người phát triển xác nhận B1 đã xong sau commit mã `2308f25`. Chỉ cập nhật tài liệu chốt mốc, không thay code gameplay B1. B2 là hướng kế tiếp, không tự coi là được phê duyệt. Xem `Docs/B1_HeroCombatState.md`.
+
+### Cập nhật 0.0.53 — trang Cài đặt và trở lại opening
+
+- **Đã bổ sung trên nhánh:** trang Cài đặt hai cột với 3 lựa chọn cửa sổ 600/800/1150, thanh âm lượng kéo, khôi phục mặc định (800×450; âm lượng 60%) và Quay lại; nối chung bộ resize/BGM có sẵn.
+- **System Menu khi chơi:** nút Quay lại màn hình chính, lưu AutoSave thành công trước khi dừng wave/xóa đối tượng chiến đấu và tái hiện opening. Trường hợp lưu không thành công phải giữ nguyên màn chơi.
+- **Chưa kiểm thử Play Mode/Windows:** vận hành thực của thanh kéo với chuột native, layout sau resize, AutoSave/Continue sau quay về menu. Chưa gộp vào `main`.
