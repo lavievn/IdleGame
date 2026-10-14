@@ -233,6 +233,7 @@ public static class EquipmentRuntime
         };
         if(item.forgeHistory!=null) foreach(var stage in item.forgeHistory)
             if(stage!=null) output.forgeHistory.Add(new ForgeStageSnapshot {
+                checkpointVersion=stage.checkpointVersion,
                 previousRarity=stage.previousRarity,
                 stageStart=stage.stageStart,
                 stageTarget=stage.stageTarget,
