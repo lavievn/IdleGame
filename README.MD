@@ -1,3 +1,9 @@
+## 0.0.53 — Splash art ngẫu nhiên từ kho ảnh/video
+
+Đã bổ sung thư mục **`Assets/Resources/OpeningSplashArt/`** để thả thêm PNG/JPG (nhập `Sprite 2D and UI`) hoặc MP4/H.264. Unity tự cập nhật **`Assets/Resources/OpeningSplashCatalog.asset`** và opening chọn ngẫu nhiên sau mốc 27 giây, với zoom nhanh/chậm, kéo ra, trôi ngang và fade chồng ~0,7s. Kho trống tiếp tục dùng khối màu như trước. Video được phát tắt tiếng qua tối đa **một `VideoPlayer`** và một `RenderTexture` 512×896 nhằm tiết kiệm tài nguyên GPU. Chưa kiểm thử Unity/Windows; xem [Docs/Opening_SplashArt_0.0.53.md](Docs/Opening_SplashArt_0.0.53.md).
+
+---
+
 
 **Bổ sung .53 gần nhất:** Trang **Cài đặt** trong opening đã chuyển sang hai cột: chọn 600/800/1150, kéo thanh âm lượng 0–100%, **Khôi phục mặc định** (800×450/60%) và **Quay lại**. System Menu khi chơi có nút **Quay lại màn hình chính**, lưu AutoSave trước khi rời trận, phục hồi menu mây và nhạc opening. Có test logic độc lập nhưng **chưa nghiệm thu bằng Unity Play Mode/Windows overlay**.
 
