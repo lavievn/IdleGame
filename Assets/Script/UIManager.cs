@@ -19,6 +19,8 @@ public class UIManager : MonoBehaviour
     [Tooltip("Tao asset: Assets > Create > Tu Tien > UI > Inventory Art Theme. " +
         "Keo vao day de tu gan Sprite cho kho do, panel chi so, hero va tung map.")]
     public InventoryArtTheme inventoryArtTheme;
+    [Tooltip("Tắt để trở về màu mặc định trong khi tiếp tục giữ Sprite/Theme cho sau này.")]
+    public bool inventoryUseArtTheme = false;
 
     [Header("0.0.52 UI WORKSPACE - DO KICH THUOC ASSET")]
     [Tooltip("Bật hướng dẫn đo Cao x Rộng trực tiếp trên cửa sổ Kho đồ.")]
@@ -29,6 +31,8 @@ public class UIManager : MonoBehaviour
     public Color inventoryDebugOutline = new Color(.18f,.72f,.73f,.95f);
     [Tooltip("Màu chữ đo kích thước trên overlay.")]
     public Color inventoryDebugText = new Color(.87f,.98f,.92f,1f);
+    [Tooltip("Màu đỏ riêng cho số đo ở góc dưới phải.")]
+    public Color inventoryDebugSizeText = new Color(1f,.24f,.25f,1f);
 
     [ContextMenu("0.0.52 UI - Bat/Tat khung do kich thuoc (Play Mode)")]
     public void ToggleInventoryLayoutDebug()
@@ -42,16 +46,18 @@ public class UIManager : MonoBehaviour
     [ContextMenu("0.0.52 - Ap dung anh Inventory (Play Mode)")]
     public void ApplyInventoryArtFromInspector()
     {
-        if (inventoryArtTheme == null)
+        if (inventoryUseArtTheme && inventoryArtTheme == null)
         {
-            Debug.LogWarning("[InventoryArt] UIManager chưa gắn InventoryArtTheme. Chọn UIManager trong Scene để gán Theme.");
+            Debug.LogWarning("[InventoryArt] Đã bật Theme nhưng chưa gán InventoryArtTheme.");
             return;
         }
         if (inventoryUI != null)
         {
             inventoryUI.Refresh();
             inventoryUI.UpdateLayoutDebug();
-            Debug.Log("[InventoryArt] Đã cập nhật Sprite của Kho đồ từ Theme trong Inspector.");
+            Debug.Log(inventoryUseArtTheme
+                ? "[InventoryArt] Đã cập nhật Sprite từ Theme."
+                : "[InventoryArt] Theme đang tắt; dùng màu nền mặc định.");
         }
         else Debug.LogWarning("[InventoryArt] InventoryPanelUI chưa được tạo; mở Play Mode trước.");
     }
@@ -77,10 +83,12 @@ public class UIManager : MonoBehaviour
 
     void Start()
     {
-        if (inventoryArtTheme == null)
-            Debug.LogWarning("[InventoryArt] UIManager thiếu InventoryArtTheme; giao diện Kho đồ sẽ dùng màu mặc định.");
+        if (!inventoryUseArtTheme)
+            Debug.Log("[InventoryArt] Theme tạm tắt; Inventory sử dụng màu xanh tối mặc định.");
+        else if (inventoryArtTheme == null)
+            Debug.LogWarning("[InventoryArt] Đã bật Theme nhưng UIManager chưa gắn InventoryArtTheme.");
         else
-            Debug.Log("[InventoryArt] Đã kết nối InventoryArtTheme, đang sử dụng bộ Sprite từ Inspector.");
+            Debug.Log("[InventoryArt] Đang dùng Sprite từ InventoryArtTheme.");
         ManagementWindowLayout.SetCompact(Screen.width,Screen.height);
         InstallReadableCanvas();
         ConfigureSystemMenu();
