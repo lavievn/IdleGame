@@ -79,7 +79,7 @@ Shader "UI/OpeningSoftEdge"
                 fade = fade * fade * (3.0 - 2.0 * fade);
                 c.a *= _FeatherPixels <= 0.01 ? 1.0 : fade;
                 #ifdef UNITY_UI_CLIP_RECT
-                c.a *= UnityGet2DClipping(i.world,_ClipRect);
+                c.a *= UnityGet2DClipping(i.world.xy,_ClipRect);
                 #endif
                 return c;
             }
