@@ -1,3 +1,11 @@
+## 0.0.53 — Opening tiên cảnh bằng lớp màu (đang kiểm thử)
+
+Trên nhánh `feature/0.0.53` đã thêm opening thời gian thực **không dùng video**: các placeholder cho bầu trời, núi xa/gần, mây nhiều lớp, splash art trái/phải; 4 nút **Tiếp tục / Chơi mới / Cài đặt / Thoát**; hiệu ứng mây trôi, splash xuất hiện ở **27s**, lớp ảnh dạt và zoom giả lập vào gameplay trong **2,7s**. Gameplay không đổi tọa độ/camera combat và tạm dừng khi chuyển cảnh. Artwork được gán bằng `Assets/Resources/OpeningArtTheme.asset`; để trống thì hiện khối màu. `gameTitle` chưa có ảnh/tên nên tạm ẩn.
+
+**Chưa nghiệm thu Unity/Windows:** nút chuột màn hình đầu, luồng Save/Continue, hiển thị full màn hình ở 600/800/1150, độ mượt animation, chuyển BGM và khôi phục gameplay cần người phát triển kiểm thử. Xem [Docs/Opening_0.0.53.md](Docs/Opening_0.0.53.md).
+
+---
+
 # 0.0.53 — Nút Âm lượng (nhánh thử)
 
 **Đã xác minh `main` sau khi người phát triển push:** `Assets/BGM` có **19 bản nhạc map + `opening.ogg`**, cùng `Assets/Resources/MapBgmCatalog.asset`. Riêng BGM4 có 3 bài, còn chờ bản thứ tư.
