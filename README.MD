@@ -1,3 +1,13 @@
+## 0.0.53 — Logo và video opening (thiết kế mới nhất)
+
+**Đã tích hợp:** logo **Bách Luyện Tiên Đồ** dưới dạng PNG nền trong suốt tại `Assets/Resources/OpeningTitleLogo.png`, hiển thị **trên cùng, căn giữa** thay cho dòng trạng thái/giới thiệu gần giữa màn hình. Thêm **video nền tràn cửa sổ** nằm thấp nhất tại `Assets/StreamingAssets/OpeningBackground/opening.mp4` (do người phát triển tự thêm).
+
+**Splash Art thay đổi quyết định:** không còn trình chiếu ngẫu nhiên, không pan/zoom, không tự chuyển ảnh. Chỉ có **một khung đứng yên** ở giữa, sử dụng `Assets/StreamingAssets/OpeningSplash/splash.mp4`, bắt đầu **fade in một lần lúc giây 27** trong 1,4 giây; người phát triển sẽ tự dựng chuyển động/nhịp cắt trong video. Các lớp mây/núi và cơ chế vào gameplay vẫn được giữ. Hai video chưa có trong repository sẽ dùng nền/khung màu dự phòng. Không cần kéo font vào dự án.
+
+Hướng dẫn tệp MP4/kiểm thử: [Docs/Opening_SplashArt_0.0.53.md](Docs/Opening_SplashArt_0.0.53.md). **Đã commit mã và logo; chưa nghiệm thu Play Mode hoặc Windows Build.**
+
+---
+
 ## 0.0.53 — Splash art ngẫu nhiên từ kho ảnh/video
 
 Đã bổ sung thư mục **`Assets/Resources/OpeningSplashArt/`** để thả thêm PNG/JPG (nhập `Sprite 2D and UI`) hoặc MP4/H.264. Unity tự cập nhật **`Assets/Resources/OpeningSplashCatalog.asset`** và opening chọn ngẫu nhiên sau mốc 27 giây, với zoom nhanh/chậm, kéo ra, trôi ngang và fade chồng ~0,7s. Kho trống tiếp tục dùng khối màu như trước. Video được phát tắt tiếng qua tối đa **một `VideoPlayer`** và một `RenderTexture` 512×896 nhằm tiết kiệm tài nguyên GPU. Chưa kiểm thử Unity/Windows; xem [Docs/Opening_SplashArt_0.0.53.md](Docs/Opening_SplashArt_0.0.53.md).
