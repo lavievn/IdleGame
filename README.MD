@@ -10,7 +10,7 @@
 
 # IdleGame — Trạng thái phát triển cập nhật 14/10/2026
 
-**Checkpoint mới nhất:** 0.0.52 trang bị/luyện khí và phần mã phát BGM; **âm thanh nhị phân chưa có trên GitHub**, nên chỉ phát được khi nhập gói OGG vào `Assets/BGM` trong dự án Unity. Mã điều khiển và tài liệu dự kiến được hợp nhất vào `main`; tệp OGG cần được người phát triển bổ sung riêng. Không nhầm checkpoint này với mục lịch sử 0.0.50/0.0.51/.54g bên dưới.
+**Checkpoint trước 0.0.53:** 0.0.52 trang bị/luyện khí và nhạc BGM. Người phát triển đã push tệp OGG lên `main` ngày 14/10/2026 và catalog hiện lưu 19 bài BGM + opening. Không nhầm checkpoint này với mục lịch sử 0.0.50/0.0.51/.54g bên dưới.
 
 | Mảng | Tiến độ hiện tại | Chưa có / kế tiếp |
 | --- | --- | --- |
@@ -19,7 +19,7 @@
 | **Gameplay – võ học** | Đã thảo luận hướng thiết kế; **chưa triển khai** hệ học/trang bị/thi triển võ học | 5 ô ưu tiên từ trái qua phải; người chơi sắp xếp hoặc **Auto**; không có chiêu hợp lệ thì đánh thường |
 | **AI võ học** | Đã định hướng: chế độ cơ bản theo ưu tiên | **Chiến đấu thông minh** mở khóa vĩnh viễn sau chuỗi sự kiện/tâm pháp; người chơi bật/tắt tùy ý, không tốn vật liệu |
 | **Vũ khí/trang bị** | 8 ô; kiếm và nguyên liệu thử; cấp đồ, rèn thường/đặc biệt, phẩm Phổ thông→Tiên; dòng phụ mở khi lên phẩm, hạ phẩm thì khóa mà không mất; người phát triển xác nhận thử logic ổn | Rơi đồ, xác suất/cân bằng, nhiều vũ khí, vật liệu chính thức, liên kết võ học |
-| **Âm thanh** | Đã viết bộ phát 2 nguồn chuyển âm 10 giây, tự chọn bài và nhạc opening; đã kiểm tra và chuyển **19 BGM + 1 opening** sang OGG. **File nhạc chưa có trên GitHub** | Nhập bộ OGG vào `Assets/BGM` (BGM4 mới có 3/4 bài), kiểm thử Unity và bản Windows; SFX/lồng tiếng chưa có |
+| **Âm thanh** | 19 BGM + 1 opening OGG đã push `main` và có catalog; nhánh 0.0.53 bổ sung nút Âm lượng, bảng ±10%, tắt/bật nhạc và lưu thiết lập | BGM4 mới có 3/4 bài; cần kiểm thử 0.0.53 trên Unity/Windows; SFX/lồng tiếng chưa có |
 | **Hạ tầng** | Save/Load, nền Windows overlay và test logic có sẵn | Thử Play Mode/EXE theo thay đổi mới, kiểm thử âm thanh và hồi quy ổn định |
 
 **Tài liệu âm thanh:** [Docs/BGM_0.0.52.md](Docs/BGM_0.0.52.md). **Tài liệu tiến trình:** [Docs/Development_Roadmap.md](Docs/Development_Roadmap.md). **Tài liệu quy tắc rèn:** [Docs/Forge_Test_0.0.52.md](Docs/Forge_Test_0.0.52.md). Các mục cũ dưới đây là nhật ký lịch sử theo thời điểm phát triển, không phải trạng thái của nhánh mới nhất.
