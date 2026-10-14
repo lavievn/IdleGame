@@ -66,6 +66,8 @@ public sealed class InventoryPanelUI : MonoBehaviour
     private bool lastLayoutDebugEnabled;
 
     public bool IsOpen => root != null && root.gameObject.activeSelf;
+    public bool IsForgeOpen => forgeOverlay != null && forgeOverlay.gameObject.activeInHierarchy;
+    public Transform ForgeRoot => forgeOverlay;
     public Transform Root => root;
     public Transform DecorationRoot => topBanner;
 
@@ -479,6 +481,8 @@ public sealed class InventoryPanelUI : MonoBehaviour
         if(forgeOverlay!=null)forgeOverlay.gameObject.SetActive(false);
         forgeItemId="";
         lastForgeMessage="";
+        // Preserve selected item and return to the underlying inventory.
+        if(root!=null && root.gameObject.activeSelf)Refresh();
     }
     private void ChangeForge(int row,bool increase)
     {
@@ -527,8 +531,8 @@ public sealed class InventoryPanelUI : MonoBehaviour
         }
         forgeInfo.text="Chính: "+StatLine(item,item.mainStats[0])+
             "\nDòng phụ: "+count+"/"+item.extraStats.Count+details;
-        forgeProgressLabel.text="Ước lượng: "+EquipmentFoundation.RarityName(item.forgeStageStartRarity)+
-            " → "+EquipmentFoundation.RarityName(item.forgeStageTargetRarity)+
+        forgeProgressLabel.text="Phẩm: "+EquipmentFoundation.RarityName(item.rarity)+
+            " / Trần: "+EquipmentFoundation.RarityName(item.forgeStageTargetRarity)+
             "  ·  "+EquipmentRefinement.ProgressPercent(item)+"%";
         forgeMaterialLabel.text="Nguyên liệu rèn: "+material+
             "     (+ cấp/rèn: 1  ·  + đặc biệt: 10)";
@@ -601,7 +605,8 @@ public sealed class InventoryPanelUI : MonoBehaviour
         var item=EquipmentRuntime.Find(Hero(),forgeItemId);
         if(item==null)return "—";
         return row==0 ? item.level.ToString() :
-            row==1 ? "+"+item.refineLevel :
+            row==1 ? "+"+item.refineLevel+"  ("+item.forgeStageProgress+
+                "/"+EquipmentRefinement.RequiredAttempts(item.rarity)+")" :
             "+"+item.specialForgeCount;
     }
 
