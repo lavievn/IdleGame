@@ -12,7 +12,11 @@ public class StartMenuUI : MonoBehaviour
     private Button continueButton;
     private Button[] menuButtons;
     private GameObject menuPage, settingsPage;
-    private TextMeshProUGUI message, musicLabel;
+    private TextMeshProUGUI message, sizeLabel, musicLabel, volumeValueLabel;
+    private Button[] sizeButtons = new Button[3];
+    private RectTransform volumeTrack, volumeFill, volumeKnob;
+    private bool volumeDragging;
+    private int selectedWindowWidth;
     private CanvasGroup rootFade;
     private OpeningCinematicUI cinematic;
     private RectTransform root;
@@ -59,16 +63,22 @@ public class StartMenuUI : MonoBehaviour
         menu.menuButtons[3] = menu.MakeButton(template,menuRoot,"Thoát",
             new Vector2(0,-86),menu.ExitGame);
 
-        menu.musicLabel = menu.Label(textTemplate,settingsRoot,"ÂM LƯỢNG NHẠC",
-            new Vector2(0,125),new Vector2(380,40),18);
-        menu.MakeButton(template,settingsRoot,"Giảm 10%",
-            new Vector2(0,52),()=>menu.AdjustMusic(-.1f));
-        menu.MakeButton(template,settingsRoot,"Tăng 10%",
-            new Vector2(0,8),()=>menu.AdjustMusic(.1f));
-        menu.MakeButton(template,settingsRoot,"Tắt/Bật nhạc",
-            new Vector2(0,-36),menu.ToggleMusic);
+        menu.sizeLabel=menu.Label(textTemplate,settingsRoot,"Kích thước màn hình",
+            new Vector2(-160,44),new Vector2(170,32),15);
+        int[] widths={600,800,1150};
+        for(int i=0;i<widths.Length;i++)
+        {
+            int width=widths[i];
+            menu.sizeButtons[i]=menu.MakeButton(template,settingsRoot,
+                width.ToString(),new Vector2(-44+i*83,44),()=>menu.SelectWindowSize(width));
+        }
+        menu.musicLabel=menu.Label(textTemplate,settingsRoot,"Âm thanh",
+            new Vector2(-160,-12),new Vector2(170,32),15);
+        menu.BuildVolumeBar(textTemplate,settingsRoot);
+        menu.MakeButton(template,settingsRoot,"Khôi phục mặc định",
+            new Vector2(0,-86),menu.RestoreDefaultSettings);
         menu.MakeButton(template,settingsRoot,"Quay lại",
-            new Vector2(0,-80),menu.CloseSettings);
+            new Vector2(0,-122),menu.CloseSettings);
         menu.settingsPage.SetActive(false);
 
         if (gm.confirmationPopup != null) gm.confirmationPopup.SetActive(false);
@@ -163,10 +173,40 @@ public class StartMenuUI : MonoBehaviour
             Place((RectTransform)menuButtons[i].transform,
                 new Vector2(0,1.5f*spacing-i*spacing-7f),new Vector2(bw,bh));
         }
+        // Settings use a centered two-column grid, not the main menu's vertical list.
+        // The bar is a custom hit target to work in native Windows overlay mode.
+        float row1=Mathf.Clamp(h*.155f,35f,56f);
+        float row2=row1-56f;
+        float labelX=-Mathf.Min(w*.265f,155f);
+        float labelWidth=Mathf.Min(w*.32f,177f);
+        Place((RectTransform)sizeLabel.transform,new Vector2(labelX,row1),new Vector2(labelWidth,30));
+        Place((RectTransform)musicLabel.transform,new Vector2(labelX,row2),new Vector2(labelWidth,30));
+        float choiceWidth=Mathf.Clamp(w*.12f,52f,76f);
+        float gap=Mathf.Clamp(w*.01f,4f,9f);
+        float firstX=-choiceWidth-gap;
+        for(int i=0;i<3;i++)
+            Place((RectTransform)sizeButtons[i].transform,
+                new Vector2(firstX+i*(choiceWidth+gap),row1),
+                new Vector2(choiceWidth,30f));
+        float barWidth=Mathf.Clamp(w*.33f,125f,200f);
+        Place(volumeTrack,new Vector2(42f,row2),new Vector2(barWidth,28f));
+        Place(volumeFill,Vector2.zero,new Vector2(barWidth*MapBgmController.CurrentVolume,12f));
+        Place(volumeKnob,new Vector2(barWidth*(MapBgmController.CurrentVolume-.5f),0f),new Vector2(12f,24f));
+        Place((RectTransform)volumeValueLabel.transform,new Vector2(42f+barWidth*.5f+27f,row2),new Vector2(60f,30f));
         var settingsButtons=settingsPage.GetComponentsInChildren<Button>(true);
+        // First three are radio choices, last two are the bottom actions.
+        int actionIndex=0;
         for(int i=0;i<settingsButtons.Length;i++)
+        {
+            bool isRadio=false;
+            foreach(var b in sizeButtons)if(settingsButtons[i]==b)isRadio=true;
+            if(isRadio)continue;
+            float actionY=actionIndex==0 ? -h*.235f : -h*.385f;
             Place((RectTransform)settingsButtons[i].transform,
-                new Vector2(0,1.5f*spacing-i*spacing-7f),new Vector2(bw,bh));
+                new Vector2(0,actionY),new Vector2(Mathf.Min(210,w*.48f),bh));
+            actionIndex++;
+        }
+        UpdateSettingVisuals();
         // Only the menu is moved on resize. Art layer sizes are independent.
         if(cinematic!=null)cinematic.Layout();
     }
@@ -175,32 +215,119 @@ public class StartMenuUI : MonoBehaviour
     {
         menuPage.SetActive(false);
         settingsPage.SetActive(true);
-        UpdateMusicLabel();
+        selectedWindowWidth=ManagementWindowLayout.CompactWidth>0
+            ? ManagementWindowLayout.CompactWidth : Screen.width;
+        UpdateSettingVisuals();
     }
     private void CloseSettings()
     {
         settingsPage.SetActive(false);
         menuPage.SetActive(true);
+        EndVolumeDrag();
         Refresh();
     }
-    private void UpdateMusicLabel()
+    private void BuildVolumeBar(TextMeshProUGUI template,Transform parent)
     {
-        if(musicLabel!=null)
-            musicLabel.text="ÂM LƯỢNG NHẠC: "+Mathf.RoundToInt(MapBgmController.CurrentVolume*100f)+"%";
+        var go=new GameObject("Opening Volume Bar",typeof(RectTransform),
+            typeof(CanvasRenderer),typeof(Image),typeof(CustomInteractable));
+        volumeTrack=(RectTransform)go.transform;volumeTrack.SetParent(parent,false);
+        var bg=go.GetComponent<Image>();bg.color=new Color(.11f,.20f,.25f,.96f);
+        bg.raycastTarget=false;
+        var hit=go.GetComponent<CustomInteractable>();hit.onClickEvent=new UnityEvent();
+        var fill=new GameObject("Opening Volume Fill",typeof(RectTransform),
+            typeof(CanvasRenderer),typeof(Image));
+        volumeFill=(RectTransform)fill.transform;volumeFill.SetParent(volumeTrack,false);
+        fill.GetComponent<Image>().color=new Color(.49f,.76f,.80f,.95f);
+        fill.GetComponent<Image>().raycastTarget=false;
+        var thumb=new GameObject("Opening Volume Handle",typeof(RectTransform),
+            typeof(CanvasRenderer),typeof(Image));
+        volumeKnob=(RectTransform)thumb.transform;volumeKnob.SetParent(volumeTrack,false);
+        thumb.GetComponent<Image>().color=new Color(.94f,.96f,.99f,1f);
+        thumb.GetComponent<Image>().raycastTarget=false;
+        volumeValueLabel=Label(template,parent,"60%",new Vector2(0,-12),
+            new Vector2(55,30),15);
+        // Do not create a built-in uGUI Slider: native overlay mouse dragging
+        // is forwarded through UIManager and TransparentWindow.
     }
-    private void AdjustMusic(float step)
+
+    public bool TryBeginVolumeDrag(Vector2 screenPoint)
     {
-        MapBgmController.SetVolume(Mathf.RoundToInt(
-            Mathf.Clamp01(MapBgmController.CurrentVolume+step)*10f)/10f);
-        UpdateMusicLabel();
+        if(entryLocked || settingsPage==null || !settingsPage.activeInHierarchy ||
+            manager==null || manager.HasPendingConfirmation || volumeTrack==null ||
+            !RectTransformUtility.RectangleContainsScreenPoint(volumeTrack,screenPoint,null))
+            return false;
+        volumeDragging=true;
+        DragVolume(screenPoint);
+        return true;
     }
-    private float lastAudible=.6f;
-    private void ToggleMusic()
+
+    public void DragVolume(Vector2 screenPoint)
     {
+        if(!volumeDragging || volumeTrack==null || !settingsPage.activeInHierarchy)return;
+        Vector2 local;
+        if(!RectTransformUtility.ScreenPointToLocalPointInRectangle(
+            volumeTrack,screenPoint,null,out local))return;
+        var rect=volumeTrack.rect;
+        float fraction=(local.x-rect.xMin)/Mathf.Max(1f,rect.width);
+        MapBgmController.SetVolume(Mathf.Clamp01(fraction));
+        UpdateSettingVisuals();
+    }
+
+    public void EndVolumeDrag(){volumeDragging=false;}
+
+    private void SelectWindowSize(int width)
+    {
+        selectedWindowWidth=width;
+        var ui=UIManager.Instance;
+        if(ui!=null)ui.ApplyWindowSizeFromOpening(width);
+        else
+        {
+            int height=Mathf.RoundToInt(width*9f/16f);
+            ManagementWindowLayout.RequestCompact(width,height);
+            Screen.SetResolution(width,height,FullScreenMode.Windowed);
+        }
+        UpdateSettingVisuals();
+    }
+
+    private void RestoreDefaultSettings()
+    {
+        MapBgmController.SetVolume(.6f);
+        SelectWindowSize(800);
+        UpdateSettingVisuals();
+    }
+
+    private void UpdateSettingVisuals()
+    {
+        int[] widths={600,800,1150};
+        for(int i=0;i<sizeButtons.Length;i++)
+        {
+            if(sizeButtons[i]==null)continue;
+            var bg=sizeButtons[i].GetComponent<Image>();
+            bool selected=selectedWindowWidth==widths[i];
+            if(bg!=null)bg.color=selected
+                ? new Color(.34f,.59f,.54f,.98f)
+                : new Color(.06f,.18f,.24f,.94f);
+            var label=sizeButtons[i].GetComponentInChildren<TextMeshProUGUI>(true);
+            if(label!=null)label.text=(selected?"● ":"○ ")+widths[i];
+        }
         float volume=MapBgmController.CurrentVolume;
-        if(volume>.0001f){lastAudible=volume;MapBgmController.SetVolume(0f);}
-        else MapBgmController.SetVolume(lastAudible);
-        UpdateMusicLabel();
+        if(volumeValueLabel!=null)
+            volumeValueLabel.text=Mathf.RoundToInt(volume*100f)+"%";
+        if(volumeTrack!=null && volumeFill!=null && volumeKnob!=null)
+        {
+            float width=volumeTrack.rect.width;
+            // Both fill and handle remain purely visual; only the track hits.
+            var fill=volumeFill;
+            fill.anchorMin=new Vector2(0f,.5f);fill.anchorMax=new Vector2(0f,.5f);
+            fill.pivot=new Vector2(0f,.5f);
+            fill.anchoredPosition=new Vector2(-width*.5f,0f);
+            fill.sizeDelta=new Vector2(width*volume,12f);
+            var knob=volumeKnob;
+            knob.anchorMin=knob.anchorMax=new Vector2(.5f,.5f);
+            knob.pivot=new Vector2(.5f,.5f);
+            knob.anchoredPosition=new Vector2(width*(volume-.5f),0f);
+            knob.sizeDelta=new Vector2(12f,24f);
+        }
     }
     private void ExitGame(){Application.Quit();}
     public void Refresh()
@@ -220,6 +347,7 @@ public class StartMenuUI : MonoBehaviour
         lastClickFrame = -1;
         settingsPage.SetActive(false);
         menuPage.SetActive(true);
+        EndVolumeDrag();
         foreach (var b in menuButtons) if (b != null) b.interactable = true;
         if (cinematic != null) cinematic.ResetForMenu();
         Refresh();
