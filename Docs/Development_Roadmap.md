@@ -1,5 +1,50 @@
 # IdleGame — Rà soát kiến trúc và lộ trình theo giai đoạn
 
+## Cập nhật hiện hành — 14/10/2026 (0.0.52-refinement → chuẩn bị BGM)
+
+> **Nguồn trạng thái:** mã của nhánh `feature/0.0.52-refinement` và phản hồi Play Mode của người phát triển. Đây là checkpoint công việc, **chưa đồng nghĩa đã có BGM tích hợp hay đã gộp main**. Các mục lịch sử .54g/B1/B2 ở phía dưới vẫn được giữ để tra cứu, nhưng không phải tóm tắt mới nhất.
+
+### A. Giao diện (UI) — đang hoàn thiện
+
+- **Đã có:** HUD và menu nền, kho đồ, 8 vị trí trang bị thử, ô xem chi tiết vật phẩm, bảng rèn, màu phẩm chất và hiển thị dòng phụ ẩn/đã biết/khóa. Có công cụ kiểm tra kích thước bố cục.
+- **Đang làm:** nâng cấp mỹ thuật trên khung UI đã hoạt động; đã có một vài asset thử nghiệm, các asset giao diện còn đang vẽ và thay thế dần. Chưa chốt toàn bộ hình ảnh giao diện/hiệu ứng.
+- **Sau này:** bảng võ học với 5 ô ưu tiên từ trái qua phải, thao tác kéo/đổi vị trí, nút **Auto** tự sắp xếp; công tắc **Chiến đấu thông minh** chỉ hiện/sử dụng khi được mở khóa bằng sự kiện.
+
+### B. Gameplay & hệ thống sát thương — lõi đã hoạt động, thiết kế võ học đang chuẩn bị
+
+- **Đã có trong mã:** Hero/quái tự di chuyển, chiến đấu, wave/map, các đòn cận chiến/cung/phép thử, sát thương/linh căn/kháng, điều kiện cộng thuộc tính, hồi chiêu tấn công thử, camera và save. Có nền định tuyến nhiều Hero nhưng đội hình và kỹ năng thực chưa hoàn thiện.
+- **Đã kiểm thử một phần:** một số cơ chế sát thương từ trang bị và chuyển phương thức tấn công hiện tại. Ba nút Kiếm–Cung–Phép **chỉ là công cụ thử**, sẽ bỏ khi kỹ năng và đòn đánh thường theo vũ khí thay thế; không coi chúng là định hướng cuối.
+- **Đang thiết kế, CHƯA triển khai:** tách **công kích vật lý cơ bản** và **công kích pháp thuật cơ bản**; mỗi đòn/kỹ năng tự khai báo loại sát thương (vật lý/pháp thuật), thuộc tính ngũ hành và cách tung (gần/xa/diện rộng) độc lập. Đòn đánh thường vật lý là Vô hệ; vũ khí pháp thuật dùng đòn thường phép Vô hệ. Chỉ số trang bị đóng góp theo **loại sát thương**, không theo khoảng cách đánh; dòng cộng sát thương vật lý không tự tăng sát thương phép.
+- **Võ học tương lai:** năm ô ưu tiên; chiêu chỉ thi triển khi đủ linh lực, hồi chiêu, mục tiêu, tầm đánh; khi không có chiêu dùng được, luôn đánh thường tương ứng vũ khí (kiếm/đao/thương chém/đâm, cung/nỏ bắn, trượng/bùa/ấn phát pháp lực). Nhân vật có thể dùng cả võ học vật lý và pháp thuật, lựa chọn đầu tư quyết định hiệu quả.
+- **Auto cơ bản (chưa làm):** tự động sắp xếp thứ tự hoặc người chơi tự chỉnh ưu tiên trái→phải; chiến đấu xét lần lượt các chiêu khả dụng, di chuyển để vào tầm nhưng không để chiêu đang theo đuổi mục tiêu vô thời hạn chặn các chiêu sau.
+- **Chiến đấu thông minh (chưa làm):** **phần thưởng vĩnh viễn** sau chuỗi sự kiện/tàn quyển tâm pháp qua các mốc tiến trình, không tiêu hao vàng/vật liệu để vận hành. Đạt viên mãn mới mở khóa; người chơi được bật/tắt tùy ý. Khi bật có thể lựa chọn chiêu theo tình huống, phản đòn/né/khống chế hoặc phối hợp tốt hơn, nhưng cần cân bằng để không phủ nhận thứ tự thủ công. Tên tâm pháp, số chương, mốc mở khóa và thuật toán chưa chốt.
+
+### C. Vũ khí, trang bị & luyện khí — thử nghiệm logic đạt, chưa có vòng vật phẩm đầy đủ
+
+- **Đã có:** nhiều ô trang bị, kiếm thử, chỉ số chính/phụ, định danh từng item, kho vật phẩm cộng dồn, nâng cấp cấp item, rèn thường/đặc biệt, phẩm chất Phổ thông→Hoàng→Huyền→Địa→Thiên→Tiên, trần phẩm tự nhiên, mở khóa dòng theo **lần tăng phẩm chất**, hạ phẩm khóa lại dòng đã biết nhưng không quên và không tạo lại chỉ số. Save/Load metadata.
+- **Phản hồi kiểm thử 14/10:** người phát triển xác nhận các logic rèn, lên phẩm, level, mở/khóa dòng và hạ cấp đang ổn, **chưa phát hiện lỗi trong các trường hợp đã thử**. Không suy rộng thành toàn bộ hệ thống đã hoàn thiện.
+- **Chưa có/chưa chốt:** rơi đồ thật từ quái, bảng ngẫu nhiên/cân bằng chỉ số trên toàn bộ loại trang bị, giao dịch/phân rã, rèn thất bại, các phương pháp rèn rủi ro, nguồn vật liệu chính thức, tương tác sâu với võ học. Mốc 3/6/12/24/48 lượt thăng phẩm mới là cấu hình thử nghiệm.
+
+### D. Âm thanh — đang chuẩn bị tích hợp nhạc nền
+
+- **Nguồn đang chờ:** người phát triển dự kiến đưa **21 file âm thanh** vào `Assets/BGM`, đánh nhóm `BGM1`–`BGM5` theo hội thoại tạo nhạc Suno; hiện tại chỉ sản xuất đến nhóm 5. **Tại lần kiểm tra GitHub 14/10, nhánh refinement chưa có `Assets/BGM`, do đó chưa thể ghi “đã tích hợp”.**
+- **Quy tắc tích hợp đã yêu cầu:** mỗi chủ đề có tối thiểu 4 bản (có thể 5), phát ngẫu nhiên trong cùng chủ đề; một chủ đề kéo dài cụm 5 map nhỏ; chỉ đổi nhóm nhạc khi chuyển chủ đề; **chồng mờ/đổi bài 10 giây** giữa các bản và khi chuyển chủ đề.
+- **Điểm cần đối chiếu từ tệp mới:** thứ tự tên `BGM1`–`BGM5` với hệ thống **6 RegionTheme** (Sơn Lâm, Bình Nguyên, U Trạch, Hoang Mạc, Hải Vực, Cao Sơn) và **8 TerrainType** hiện có; chưa được phép suy diễn tên nhóm BGM theo thứ tự mã nguồn. Nhóm còn thiếu dùng phương án không phát nhạc/chưa có tệp, không gán sai.
+- **Chưa có:** hiệu ứng âm thanh (SFX), tiếng giao diện/đánh trúng/chiêu thức, thuyết minh/lồng tiếng (voice-over), tinh chỉnh âm lượng và độ trễ trong Windows build.
+
+### E. Các bước tiếp theo
+
+1. Nhận và **xác minh tệp BGM thực tế** cùng cách đặt tên; ánh xạ chủ đề chính xác, phát nhạc ngẫu nhiên với chuyển âm 10 giây, không reset khi đi qua từng map nhỏ trong cùng cụm.
+2. Kiểm thử Editor Play Mode, Windows overlay, pause/new game/load và chuyển chủ đề; tránh tạo nhiều AudioSource/khởi động lại bài liên tục; đánh giá lỗi nhập tệp dài và mức âm lượng.
+3. Hoàn thiện vòng trang bị + chỉ số vật lý/pháp thuật theo nguồn sát thương, sau đó tạo nền dữ liệu võ học và đòn đánh thường tương ứng vũ khí.
+4. Triển khai 5 ô ưu tiên với chế độ Auto sắp xếp và AI cơ bản; chuỗi tâm pháp mở khóa chiến đấu thông minh là giai đoạn tiến triển sau.
+5. Tiếp tục UI art, SFX, hiệu ứng võ học, boss/event/map khó, rồi cân bằng và kiểm thử dài hạn.
+
+**Cổng nghiệm thu trước khi gộp main:** thấy đủ file BGM đã push; đối chiếu nhóm đúng; các trường hợp thử map 1→5 (không đổi nhóm), map 5→6 (đổi nhóm), hết bài/chuyển bài 10 giây, ngừng/tiếp tục màn hình game, không gây lỗi Unity; đồng thời so sánh khác biệt nhánh và xác nhận không bỏ sót thay đổi trang bị đã nghiệm thu.
+
+---
+
+
 **Thời điểm rà soát:** 11/10/2026. **Mốc mã:** nhánh `feature/0.0.4.54g`, trên nền commit `7341e5269f51ce66bfdb7b4d962d674958a0f369`; tinh chỉnh Deadzone 38% được phát triển sau mốc này.
 **Trạng thái:** `.54g` đã được người phát triển **chấp nhận sử dụng và tuyên bố kết thúc vòng phát triển tính năng** (11/10/2026). Phần camera *chưa đạt hoàn toàn cảm giác mong muốn*, nhưng kiểm thử thực tế do người phát triển báo đạt với Hero đánh gần/xa, tốc độ nhanh/chậm. Các mục chưa được xác nhận riêng (save cũ, DPI, Play Mode tự động, Windows dài giờ...) vẫn là kiểm thử còn mở. **Lộ trình sau `.54g` là đề xuất kỹ thuật, không phải đã được duyệt triển khai.** `main` không tự được merge.
 **Cơ sở:** kiểm tra cây Git 233 tệp, 39 tệp C# (21 nguồn runtime/dữ liệu, 18 trong Tests~), README, Project_info_dev và các mô-đun quản lý màn hình, Hero, quái, chiến đấu, dữ liệu, lưu, camera, nền, UI, Windows overlay. Không thể thay thế việc chạy bản Unity/Windows ở máy phát triển.
