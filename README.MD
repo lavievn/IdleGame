@@ -1,6 +1,6 @@
 # IdleGame — Trạng thái phát triển cập nhật 14/10/2026
 
-**Checkpoint mới nhất đang làm:** `feature/0.0.52-refinement` (trang bị và luyện khí) → chuẩn bị tích hợp BGM. **Trên GitHub bản đang xem chưa có thư mục `Assets/BGM`**, nên bước đưa nhạc vào game và gộp `main` đang **chờ người phát triển push 21 file**. Không nhầm checkpoint này với mục lịch sử 0.0.50/0.0.51/.54g bên dưới.
+**Checkpoint mới nhất:** 0.0.52 trang bị/luyện khí và phần mã phát BGM; **âm thanh nhị phân chưa có trên GitHub**, nên chỉ phát được khi nhập gói OGG vào `Assets/BGM` trong dự án Unity. Nhánh thử hiện tại: `feature/0.0.52-bgm-progress`. Không nhầm checkpoint này với mục lịch sử 0.0.50/0.0.51/.54g bên dưới.
 
 | Mảng | Tiến độ hiện tại | Chưa có / kế tiếp |
 | --- | --- | --- |
@@ -9,10 +9,10 @@
 | **Gameplay – võ học** | Đã thảo luận hướng thiết kế; **chưa triển khai** hệ học/trang bị/thi triển võ học | 5 ô ưu tiên từ trái qua phải; người chơi sắp xếp hoặc **Auto**; không có chiêu hợp lệ thì đánh thường |
 | **AI võ học** | Đã định hướng: chế độ cơ bản theo ưu tiên | **Chiến đấu thông minh** mở khóa vĩnh viễn sau chuỗi sự kiện/tâm pháp; người chơi bật/tắt tùy ý, không tốn vật liệu |
 | **Vũ khí/trang bị** | 8 ô; kiếm và nguyên liệu thử; cấp đồ, rèn thường/đặc biệt, phẩm Phổ thông→Tiên; dòng phụ mở khi lên phẩm, hạ phẩm thì khóa mà không mất; người phát triển xác nhận thử logic ổn | Rơi đồ, xác suất/cân bằng, nhiều vũ khí, vật liệu chính thức, liên kết võ học |
-| **Âm thanh** | Đã có kế hoạch sử dụng bộ BGM do người phát triển tạo, chia nhóm `BGM1`–`BGM5`; **chưa tích hợp file vào nhánh kiểm tra** | Nhận 21 file tại `Assets/BGM`, nhóm ≥4 bản/chủ đề, ngẫu nhiên theo cụm 5 map, chuyển âm 10 giây; SFX và lồng tiếng chưa có |
+| **Âm thanh** | Đã viết bộ phát 2 nguồn chuyển âm 10 giây, tự chọn bài và nhạc opening; đã kiểm tra và chuyển **19 BGM + 1 opening** sang OGG. **File nhạc chưa có trên GitHub** | Nhập bộ OGG vào `Assets/BGM` (BGM4 mới có 3/4 bài), kiểm thử Unity và bản Windows; SFX/lồng tiếng chưa có |
 | **Hạ tầng** | Save/Load, nền Windows overlay và test logic có sẵn | Thử Play Mode/EXE theo thay đổi mới, kiểm thử âm thanh và hồi quy ổn định |
 
-**Tài liệu tiến trình mới nhất:** [Docs/Development_Roadmap.md](Docs/Development_Roadmap.md). **Tài liệu quy tắc rèn:** [Docs/Forge_Test_0.0.52.md](Docs/Forge_Test_0.0.52.md). Các mục cũ dưới đây là nhật ký lịch sử theo thời điểm phát triển, không phải trạng thái của nhánh mới nhất.
+**Tài liệu âm thanh:** [Docs/BGM_0.0.52.md](Docs/BGM_0.0.52.md). **Tài liệu tiến trình:** [Docs/Development_Roadmap.md](Docs/Development_Roadmap.md). **Tài liệu quy tắc rèn:** [Docs/Forge_Test_0.0.52.md](Docs/Forge_Test_0.0.52.md). Các mục cũ dưới đây là nhật ký lịch sử theo thời điểm phát triển, không phải trạng thái của nhánh mới nhất.
 
 ---
 
