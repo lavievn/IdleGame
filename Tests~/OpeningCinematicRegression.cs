@@ -97,5 +97,55 @@ partial class MotionRegression
             Check(OpeningCinematicUI.ShowcaseCueSeconds>=25f &&
                   OpeningCinematicUI.ShowcaseCueSeconds<=30f,"cinematic art cue");
         });
+
+        Run("0.0.53 splash draws two distinct media from the drop-in folder", () =>
+        {
+            string previous=Application.streamingAssetsPath;
+            string temp=System.IO.Path.Combine(System.IO.Path.GetTempPath(),
+                "opening-splash-test-"+Guid.NewGuid().ToString("N"));
+            string dir=System.IO.Path.Combine(temp,"OpeningSplashArt");
+            System.IO.Directory.CreateDirectory(dir);
+            try
+            {
+                System.IO.File.WriteAllBytes(System.IO.Path.Combine(dir,"a.png"),new byte[]{1,2,3});
+                System.IO.File.WriteAllBytes(System.IO.Path.Combine(dir,"b.jpg"),new byte[]{4,5,6});
+                Application.streamingAssetsPath=temp;
+                var parent=new GameObject("Two Splash Layers",typeof(RectTransform));
+                ((RectTransform)parent.transform).sizeDelta=new Vector2(800f,450f);
+                var left=OpeningHeroSplashVideo.Install((RectTransform)parent.transform,null,true);
+                var right=OpeningHeroSplashVideo.Install((RectTransform)parent.transform,null,false);
+                left.Tick(27f,null);
+                right.Tick(27f,left.CurrentPath);
+                Check(!string.IsNullOrEmpty(left.CurrentPath) &&
+                      !string.IsNullOrEmpty(right.CurrentPath),"both panels select media");
+                Check(left.CurrentPath!=right.CurrentPath,"avoid duplicate choices");
+                string previousLeft=left.CurrentPath;
+                left.Tick(100f,null);
+                Check(left.CurrentPath==previousLeft,"no automatic slideshow or scene cuts");
+                left.ResetToTitle();right.ResetToTitle();
+                Check(left.CurrentPath==null && right.CurrentPath==null,
+                    "return to menu permits new choices");
+            }
+            finally
+            {
+                Application.streamingAssetsPath=previous;
+                if(System.IO.Directory.Exists(temp))System.IO.Directory.Delete(temp,true);
+            }
+        });
+
+        Run("0.0.53 cloud feather can be configured without changing source assets",()=>{
+            Resources.Register("OpeningSoftEdge",new Shader());
+            try
+            {
+                var go=new GameObject("Feather Test",typeof(RectTransform),typeof(UnityEngine.UI.Image));
+                ((RectTransform)go.transform).sizeDelta=new Vector2(400f,210f);
+                var image=go.GetComponent<UnityEngine.UI.Image>();
+                var fade=go.AddComponent<OpeningEdgeFeather>();
+                fade.Configure(image,48f);
+                Check(image.material!=null,"feather material assigned to Image");
+                fade.Refresh();
+            }
+            finally{Resources.Unregister("OpeningSoftEdge");}
+        });
     }
 }
