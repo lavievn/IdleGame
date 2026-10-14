@@ -199,6 +199,9 @@ public static class EquipmentRefinement
             case Operation.SpecialDown:
                 if(item.forgeHistory==null || item.forgeHistory.Count==0)
                 {message="Không có chặng rèn đặc biệt để hoàn tác.";return false;}
+                if(item.forgeHistory[item.forgeHistory.Count-1]==null ||
+                   item.forgeHistory[item.forgeHistory.Count-1].checkpointVersion!=SchemaVersion)
+                {message="Chặng rèn thuộc bản thử cũ; không thể hoàn tác bằng luật mới.";return false;}
                 if(item.forgeStageProgress!=0 ||
                    item.rarity!=item.forgeStageStartRarity)
                 {message="Hãy trở lại đầu chặng hiện tại trước khi giảm rèn đặc biệt.";return false;}
@@ -239,6 +242,7 @@ public static class EquipmentRefinement
                 if(item.forgeHistory==null)
                     item.forgeHistory=new List<ForgeStageSnapshot>();
                 item.forgeHistory.Add(new ForgeStageSnapshot {
+                    checkpointVersion=SchemaVersion,
                     previousRarity=item.rarity,
                     stageStart=item.forgeStageStartRarity,
                     stageTarget=item.forgeStageTargetRarity,
