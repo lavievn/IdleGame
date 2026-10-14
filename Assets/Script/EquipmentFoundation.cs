@@ -105,6 +105,7 @@ public sealed class EquipmentInstance
 [Serializable]
 public sealed class ForgeStageSnapshot
 {
+    public int checkpointVersion = 0; // 0 = old ten-step prototype; cannot reverse using new rules
     public EquipmentRarity previousRarity;
     public EquipmentRarity stageStart;
     public EquipmentRarity stageTarget;
