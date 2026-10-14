@@ -86,6 +86,7 @@ namespace UnityEngine
     public class RectTransform : Transform
     {
         public Vector2 anchorMin, anchorMax, pivot = new Vector2(0.5f, 0f), sizeDelta = new Vector2(50f, 100f), anchoredPosition;
+        public Vector2 offsetMin, offsetMax;
         public Rect rect { get { var p=parent as RectTransform; float w=sizeDelta.x+(p==null?0:p.rect.width*(anchorMax.x-anchorMin.x)); float h=sizeDelta.y+(p==null?0:p.rect.height*(anchorMax.y-anchorMin.y)); return new Rect(-pivot.x*w,-pivot.y*h,w,h); } }
         private Vector3 anchor { get { var p = parent as RectTransform; return p == null ? Vector3.zero : new Vector3(p.rect.xMin+p.rect.width*(anchorMin.x+anchorMax.x)/2f,p.rect.yMin+p.rect.height*(anchorMin.y+anchorMax.y)/2f,0f); } }
         public override Vector3 localPosition { get { return anchor+(Vector3)anchoredPosition; } set { anchoredPosition = value-anchor; } }
@@ -148,6 +149,7 @@ namespace UnityEngine
         public static Color white { get { return new Color(1f,1f,1f,1f); } }
     }
     public class CanvasRenderer : Component { }
+    public class CanvasGroup : MonoBehaviour { public float alpha=1f; public bool interactable=true,blocksRaycasts=true; }
     public class Sprite : Object { }
     public enum RenderMode { ScreenSpaceOverlay }
     public class Canvas : Component { public RenderMode renderMode; public int sortingOrder,sortingLayerID,targetDisplay,additionalShaderChannels; public float scaleFactor; public static void ForceUpdateCanvases() { } }
