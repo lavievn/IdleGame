@@ -16,6 +16,7 @@ public sealed class OpeningCinematicUI : MonoBehaviour
     private RectTransform canvasArea, backdrop;
     private RectTransform sky, far, near, backCloud, cloudLeft, cloudRight;
     private Image baseImage;
+    private TextMeshProUGUI skyPlaceholderLabel;
     private CanvasGroup menuFade, backdropFade;
     private OpeningArtTheme theme;
     private OpeningBackgroundVideo videoBackground;
@@ -95,6 +96,7 @@ public sealed class OpeningCinematicUI : MonoBehaviour
         videoBackground=OpeningBackgroundVideo.Install(backdrop);
         sky=MakeLayer("01 SKY - full background",new Color(.23f,.48f,.59f,1f),
             art!=null?art.sky:null,font,"BẦU TRỜI / SKY",out baseImage);
+        skyPlaceholderLabel=sky.GetComponentInChildren<TextMeshProUGUI>(true);
         far=MakeLayer("02 FAR MOUNTAINS",new Color(.42f,.64f,.68f,1f),
             art!=null?art.farMountains:null,font,"NÚI XA / FAR MOUNTAINS",out ignored);
         near=MakeLayer("03 NEAR MOUNTAINS",new Color(.24f,.43f,.47f,1f),
@@ -142,12 +144,15 @@ public sealed class OpeningCinematicUI : MonoBehaviour
         if(entering) { AnimateEntry(dt);return; }
         if(game==null||game.preGameUI==null||!game.preGameUI.activeInHierarchy)return;
         elapsed+=dt;
+        bool showingBackgroundVideo=videoBackground!=null&&videoBackground.IsDisplaying;
         if(baseImage!=null)
         {
             var c=baseImage.color;
-            c.a=videoBackground!=null&&videoBackground.IsDisplaying?.18f:1f;
+            c.a=showingBackgroundVideo?.18f:1f;
             baseImage.color=c;
         }
+        if(skyPlaceholderLabel!=null && skyPlaceholderLabel.gameObject.activeSelf==showingBackgroundVideo)
+            skyPlaceholderLabel.gameObject.SetActive(!showingBackgroundVideo);
         float m=Mathf.Clamp01((elapsed-.65f)/MenuRevealSeconds);
         if(menuFade!=null)menuFade.alpha=m*m*(3f-2f*m);
         float w=backdrop.rect.width,h=backdrop.rect.height;
