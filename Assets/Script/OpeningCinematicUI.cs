@@ -13,7 +13,8 @@ public sealed class OpeningCinematicUI : MonoBehaviour
     private GameManager game;
     private StartMenuUI menu;
     private RectTransform canvasArea;
-    private CanvasGroup menuFade;
+    private CanvasGroup menuFade, backdropFade;
+    private float menuAlphaBeforeEntry;
     private RectTransform backdrop, sky, far, near, backCloud, cloudLeft, cloudRight;
     private RectTransform splashLeft, splashRight, title;
     private Image baseImage, leftCloudImage, rightCloudImage, splashLeftImage, splashRightImage;
@@ -40,6 +41,8 @@ public sealed class OpeningCinematicUI : MonoBehaviour
         cinematic.canvasArea = menuRoot;
         cinematic.menuFade = menuGroup;
         cinematic.backdrop = rect;
+        cinematic.backdropFade = layer.AddComponent<CanvasGroup>();
+        cinematic.backdropFade.blocksRaycasts = false;
         cinematic.theme = Resources.Load<OpeningArtTheme>("OpeningArtTheme");
         cinematic.Build(font);
         cinematic.Layout();
@@ -154,7 +157,7 @@ public sealed class OpeningCinematicUI : MonoBehaviour
     private void Update()
     {
         if (finished || backdrop == null) return;
-        float dt = Mathf.Min(.05f, Time.unscaledDeltaTime);
+        float dt = Mathf.Max(0f, Time.unscaledDeltaTime);
         if (entering) { AnimateEntry(dt); return; }
         if (game == null || game.preGameUI == null || !game.preGameUI.activeInHierarchy) return;
         elapsed += dt;
@@ -185,6 +188,7 @@ public sealed class OpeningCinematicUI : MonoBehaviour
         if (entering || finished) return;
         entering = true;
         enterElapsed = 0f;
+        menuAlphaBeforeEntry = menuFade != null ? menuFade.alpha : 1f;
         if (menu != null) menu.LockButtonsForEntry();
         if (menuFade != null) menuFade.interactable = false;
         Debug.Log("[Opening] Transition started; gameplay ready beneath cloud layers.");
@@ -197,7 +201,8 @@ public sealed class OpeningCinematicUI : MonoBehaviour
         float eased = t * t * (3f - 2f*t);
         float w = backdrop.rect.width;
         float h = backdrop.rect.height;
-        if (menuFade != null) menuFade.alpha = 1f - Mathf.Clamp01(t*2.2f);
+        if (menuFade != null) menuFade.alpha = menuAlphaBeforeEntry * (1f - Mathf.Clamp01(t*2.2f));
+        if (backdropFade != null) backdropFade.alpha = 1f - eased;
         splashLeftFade.alpha = splashRightFade.alpha = (1f-t)*(1f-t);
         splashLeft.anchoredPosition = new Vector2(-w*(.37f+.6f*eased),-h*.06f);
         splashRight.anchoredPosition = new Vector2(w*(.37f+.6f*eased),-h*.06f);
@@ -223,6 +228,7 @@ public sealed class OpeningCinematicUI : MonoBehaviour
         if (backdrop == null) return;
         finished = entering = false;
         elapsed = enterElapsed = 0f;
+        if (backdropFade != null) backdropFade.alpha = 1f;
         backdrop.gameObject.SetActive(true);
         backdrop.SetAsLastSibling();
         if (canvasArea != null) canvasArea.SetAsLastSibling();
