@@ -161,14 +161,14 @@ partial class MotionRegression
                 Check(save.LoadGame(read,SaveSlot.AutoSave)&&read.difficulty==0&&read.balanceVersion==0,"legacy absent fields reset");
             } finally {Directory.Delete(dir,true);}
         });
-        Run("runtime menu builds two buttons and blocks empty continue",()=>{
+        Run("runtime opening builds four buttons and blocks empty continue",()=>{
             var f=new Field();SaveManager save;string dir;var gm=MenuManager(f,out save,out dir);
             try {
                 var canvas=new GameObject(true);gm.preGameUI.transform.parent=canvas.transform;
                 var button=new GameObject(true);button.transform.parent=gm.preGameUI.transform;button.AddComponent<Button>();
                 var label=new GameObject(true);label.transform.parent=button.transform;label.AddComponent<TextMeshProUGUI>().text="Start";
                 var menu=StartMenuUI.Install(gm);Check(menu!=null,"built from scene templates");
-                var choices=gm.preGameUI.GetComponentsInChildren<Button>();Check(choices.Length==2,"two visible choices");
+                var choices=gm.preGameUI.GetComponentsInChildren<Button>();Check(choices.Length==4,"four visible opening choices");
                 int disabled=0;foreach(var b in choices)if(!b.interactable)disabled++;Check(disabled==1,"continue disabled without save");
                 Check(gm.confirmationPopup.GetComponentsInChildren<Button>(true).Length==2,"confirm and cancel exist");
             } finally {Directory.Delete(dir,true);}
