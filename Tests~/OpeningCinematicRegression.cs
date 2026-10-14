@@ -53,6 +53,29 @@ partial class MotionRegression
             }
             Check(hasSky&&hasCloud&&hasVideoBackground&&hasFixedSplash,
                 "fixed splash and bottom background video layers");
+            OpeningHeroSplashVideo fixedVideo = null;
+            foreach(var obj in UnityEngine.Object.objects)
+            {
+                var go=obj as GameObject;
+                if(go!=null && go.name=="07 SPLASH VIDEO - FIXED NO PAN")
+                    fixedVideo=go.GetComponent<OpeningHeroSplashVideo>();
+            }
+            Check(fixedVideo!=null,"single fixed splash video script installed");
+            var group=fixedVideo.GetComponent<CanvasGroup>();
+            var frame=(RectTransform)fixedVideo.transform;
+            Vector2 position=frame.anchoredPosition;
+            fixedVideo.Tick(26f);
+            Near(group.alpha,0f,"splash hidden before cue");
+            fixedVideo.Tick(27f);
+            Near(group.alpha,0f,"splash begins fade at 27s");
+            fixedVideo.Tick(27.7f);
+            Check(group.alpha>0f && group.alpha<1f,"one initial fade in progress");
+            fixedVideo.Tick(28.5f);
+            Near(group.alpha,1f,"initial fade finished");
+            Near(frame.anchoredPosition.x,position.x,"no horizontal pan");
+            Near(frame.anchoredPosition.y,position.y,"no vertical pan");
+            fixedVideo.ResetToTitle();
+            Near(group.alpha,0f,"return to menu resets splash cue");
 
             // Full-screen menu and art operate independently of combat transforms.
             ui.Layout(600f,338f);
