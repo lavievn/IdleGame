@@ -211,8 +211,10 @@ public sealed class OpeningCinematicUI : MonoBehaviour
         elapsed=enterElapsed=0f;
         if(backdropFade!=null)backdropFade.alpha=1f;
         if(heroVideo!=null)heroVideo.ResetToTitle();
-        if(videoBackground!=null)videoBackground.StartPlayback();
+        // Reactivate the parent before calling VideoPlayer.Play().
+        // VideoPlayer cannot reliably resume on an inactive GameObject.
         backdrop.gameObject.SetActive(true);
+        if(videoBackground!=null)videoBackground.StartPlayback();
         backdrop.SetAsLastSibling();
         if(canvasArea!=null)canvasArea.SetAsLastSibling();
         if(menuFade!=null){menuFade.alpha=0f;menuFade.interactable=true;}
