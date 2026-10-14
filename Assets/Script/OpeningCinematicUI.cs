@@ -23,6 +23,7 @@ public sealed class OpeningCinematicUI : MonoBehaviour
     private float elapsed, enterElapsed;
     private bool entering, finished, orderFixed;
     private OpeningArtTheme theme;
+    private OpeningSplashShowcase showcase;
 
     public static OpeningCinematicUI Install(GameManager gm, StartMenuUI startMenu,
         RectTransform menuRoot, CanvasGroup menuGroup, TextMeshProUGUI font)
@@ -115,6 +116,9 @@ public sealed class OpeningCinematicUI : MonoBehaviour
             art != null ? art.splashRight : null, font, "NHÂN VẬT PHẢI", out splashRightImage, out splashRightLabel);
         splashLeftFade = splashLeft.gameObject.AddComponent<CanvasGroup>();
         splashRightFade = splashRight.gameObject.AddComponent<CanvasGroup>();
+        showcase = gameObject.AddComponent<OpeningSplashShowcase>();
+        showcase.Configure(splashLeft,splashRight,splashLeftImage,splashRightImage,
+            splashLeftLabel,splashRightLabel);
         title = MakeLayer("09 GAME TITLE - optional", new Color(.34f,.43f,.48f,.30f),
             art != null ? art.gameTitle : null, font,
             "TÊN GAME (CHƯA CHỐT)", out img, out caption);
@@ -143,6 +147,7 @@ public sealed class OpeningCinematicUI : MonoBehaviour
         Place(splashLeft, new Vector2(-w*.37f,-h*.06f), new Vector2(w*.31f,h*.76f));
         Place(splashRight, new Vector2(w*.37f,-h*.06f), new Vector2(w*.31f,h*.76f));
         Place(title, new Vector2(0,h*.30f), new Vector2(w*.48f,h*.17f));
+        if(showcase!=null)showcase.Resize();
     }
 
     private static void Tint(Image image, float alpha)
@@ -180,7 +185,9 @@ public sealed class OpeningCinematicUI : MonoBehaviour
         cloudLeft.anchoredPosition = new Vector2(-w*.30f+Mathf.Sin(elapsed*.12f)*w*.035f,-h*.04f+Mathf.Sin(elapsed*.19f)*h*.014f);
         cloudRight.anchoredPosition = new Vector2(w*.30f+Mathf.Sin(elapsed*.11f+1.9f)*w*.032f,h*.04f+Mathf.Sin(elapsed*.16f)*h*.017f);
         far.localScale = new Vector3(1f+Mathf.Sin(elapsed*.13f)*.008f,1f+Mathf.Sin(elapsed*.13f)*.008f,1f);
-        UpdateShowcase(Mathf.Clamp01((elapsed - ShowcaseCueSeconds) / 2.2f));
+        float reveal=Mathf.Clamp01((elapsed - ShowcaseCueSeconds) / 2.2f);
+        UpdateShowcase(reveal);
+        if(showcase!=null)showcase.Tick(elapsed,dt,reveal);
     }
 
     private void UpdateShowcase(float t)
@@ -228,6 +235,7 @@ public sealed class OpeningCinematicUI : MonoBehaviour
         var c = baseImage.color; c.a = 1f - eased; baseImage.color = c;
         if (t < 1f) return;
         finished = true;
+        if (showcase != null) showcase.Deactivate();
         if (game != null && game.preGameUI != null) game.preGameUI.SetActive(false);
         if (UIManager.Instance != null) UIManager.Instance.SetPaused(false);
         backdrop.gameObject.SetActive(false);
@@ -240,6 +248,7 @@ public sealed class OpeningCinematicUI : MonoBehaviour
         finished = entering = orderFixed = false;
         elapsed = enterElapsed = 0f;
         if (backdropFade != null) backdropFade.alpha = 1f;
+        if (showcase != null) showcase.ResetShowcase();
         backdrop.gameObject.SetActive(true);
         backdrop.SetAsLastSibling();
         if (canvasArea != null) canvasArea.SetAsLastSibling();
