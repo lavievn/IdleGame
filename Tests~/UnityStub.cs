@@ -262,7 +262,7 @@ namespace UnityEngine.Events {
  public class UnityEvent { private UnityAction callback;public void AddListener(UnityAction a){callback+=a;} public void Invoke(){if(callback!=null)callback();} }
 }
 namespace UnityEngine {
- public static class Application { public static string persistentDataPath=System.IO.Path.Combine(System.IO.Path.GetTempPath(),"idle-tests-"+Guid.NewGuid());public static void Quit(){} }
+ public static class Application { public static string persistentDataPath=System.IO.Path.Combine(System.IO.Path.GetTempPath(),"idle-tests-"+Guid.NewGuid());public static string streamingAssetsPath=System.IO.Path.GetTempPath();public static void Quit(){} }
  public static class Debug { public static void Log(string s){} public static void LogWarning(string s){} public static void LogError(string s){System.Console.Error.WriteLine(s); } }
  public static class ColorUtility { public static bool TryParseHtmlString(string s,out Color c){c=new Color();return true;} }
  public static class RectTransformUtility {
@@ -339,7 +339,7 @@ namespace UnityEngine {
 
 namespace UnityEngine.Video
 {
-    public enum VideoSource { VideoClip }
+    public enum VideoSource { VideoClip, Url }
     public enum VideoRenderMode { RenderTexture }
     public enum VideoAudioOutputMode { None }
     public class VideoClip : UnityEngine.Object { public double length=11.5; }
@@ -350,11 +350,13 @@ namespace UnityEngine.Video
         public VideoRenderMode renderMode;
         public VideoAudioOutputMode audioOutputMode;
         public VideoClip clip;
+        public string url;
         public UnityEngine.RenderTexture targetTexture;
         public event System.Action<VideoPlayer> prepareCompleted;
         public event System.Action<VideoPlayer,string> errorReceived;
         public void Prepare(){ if(prepareCompleted!=null)prepareCompleted(this); }
         public void Play(){isPlaying=true;}
         public void Stop(){isPlaying=false;}
+        public void Pause(){isPlaying=false;}
     }
 }
