@@ -20,7 +20,7 @@ public sealed class OpeningCinematicUI : MonoBehaviour
     private CanvasGroup menuFade, backdropFade;
     private OpeningArtTheme theme;
     private OpeningBackgroundVideo videoBackground;
-    private OpeningHeroSplashVideo heroVideo;
+    private OpeningHeroSplashVideo splashLeft, splashRight;
     private float elapsed, enterElapsed, menuAlphaBeforeEntry;
     private bool entering, finished, orderFixed;
 
@@ -107,7 +107,8 @@ public sealed class OpeningCinematicUI : MonoBehaviour
             art!=null?art.leftClouds:null,font,"MÂY TRƯỚC / LEFT",out ignored);
         cloudRight=MakeLayer("06 FRONT CLOUDS RIGHT",new Color(.86f,.96f,1f,.84f),
             art!=null?art.rightClouds:null,font,"MÂY TRƯỚC / RIGHT",out ignored);
-        heroVideo=OpeningHeroSplashVideo.Install(backdrop,font);
+        splashLeft=OpeningHeroSplashVideo.Install(backdrop,font,true);
+        splashRight=OpeningHeroSplashVideo.Install(backdrop,font,false);
         // No duplicate game title here: logo is part of StartMenuUI instead.
     }
 
@@ -126,7 +127,8 @@ public sealed class OpeningCinematicUI : MonoBehaviour
         Place(backCloud,new Vector2(0f,h*.16f),new Vector2(w*1.2f,h*.44f));
         Place(cloudLeft,new Vector2(-w*.3f,-h*.04f),new Vector2(w*.67f,h*.91f));
         Place(cloudRight,new Vector2(w*.3f,h*.04f),new Vector2(w*.67f,h*.91f));
-        if(heroVideo!=null)heroVideo.Layout(w,h);
+        if(splashLeft!=null)splashLeft.Layout(w,h);
+        if(splashRight!=null)splashRight.Layout(w,h);
     }
 
     private void Update()
@@ -163,8 +165,9 @@ public sealed class OpeningCinematicUI : MonoBehaviour
             h*.04f+Mathf.Sin(elapsed*.16f)*h*.017f);
         far.localScale=new Vector3(1f+Mathf.Sin(elapsed*.13f)*.008f,
             1f+Mathf.Sin(elapsed*.13f)*.008f,1f);
-        // Fixed splash. Only one initial alpha fade is done by that component.
-        if(heroVideo!=null)heroVideo.Tick(elapsed);
+        // Independent left/right media selections, with only one initial fade each.
+        if(splashLeft!=null)splashLeft.Tick(elapsed,null);
+        if(splashRight!=null)splashRight.Tick(elapsed,splashLeft!=null?splashLeft.CurrentPath:null);
     }
 
     public bool IsEntering => entering;
@@ -187,7 +190,7 @@ public sealed class OpeningCinematicUI : MonoBehaviour
         if(menuFade!=null)menuFade.alpha=menuAlphaBeforeEntry*(1f-Mathf.Clamp01(t*2.2f));
         if(backdropFade!=null)backdropFade.alpha=1f-eased;
         // The clouds and sky move out to reveal real gameplay underneath.
-        // The splash VIDEO frame remains in exactly the same position;
+        // Both oversized splash frames remain absolutely stationary;
         // its visibility follows the overall opening fade only.
         cloudLeft.anchoredPosition=new Vector2(-w*(.3f+1.2f*eased),-h*.04f);
         cloudRight.anchoredPosition=new Vector2(w*(.3f+1.2f*eased),h*.04f);
@@ -197,7 +200,8 @@ public sealed class OpeningCinematicUI : MonoBehaviour
         sky.localScale=new Vector3(1f+.15f*eased,1f+.15f*eased,1f);
         if(t<1f)return;
         finished=true;
-        if(heroVideo!=null)heroVideo.StopVideo();
+        if(splashLeft!=null)splashLeft.StopVideo();
+        if(splashRight!=null)splashRight.StopVideo();
         if(videoBackground!=null)videoBackground.StopPlayback();
         if(game!=null&&game.preGameUI!=null)game.preGameUI.SetActive(false);
         if(UIManager.Instance!=null)UIManager.Instance.SetPaused(false);
@@ -210,7 +214,8 @@ public sealed class OpeningCinematicUI : MonoBehaviour
         finished=entering=orderFixed=false;
         elapsed=enterElapsed=0f;
         if(backdropFade!=null)backdropFade.alpha=1f;
-        if(heroVideo!=null)heroVideo.ResetToTitle();
+        if(splashLeft!=null)splashLeft.ResetToTitle();
+        if(splashRight!=null)splashRight.ResetToTitle();
         // Reactivate the parent before calling VideoPlayer.Play().
         // VideoPlayer cannot reliably resume on an inactive GameObject.
         backdrop.gameObject.SetActive(true);
