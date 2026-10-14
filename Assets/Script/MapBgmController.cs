@@ -25,12 +25,24 @@ public sealed class MapBgmController : MonoBehaviour
     public static float CurrentVolume => Instance != null
         ? Instance.musicVolume : Mathf.Clamp01(PlayerPrefs.GetFloat(VolumePreferenceKey, .6f));
 
-    public static void SetVolume(float value)
+    // Update continuously when the user drags, but flush preferences only
+    // on release. Avoid disk I/O on every input frame.
+    public static void PreviewVolume(float value)
     {
         value = Mathf.Clamp01(value);
         PlayerPrefs.SetFloat(VolumePreferenceKey, value);
-        PlayerPrefs.Save();
         if (Instance != null) Instance.musicVolume = value;
+    }
+
+    public static void SaveVolumePreference()
+    {
+        PlayerPrefs.Save();
+    }
+
+    public static void SetVolume(float value)
+    {
+        PreviewVolume(value);
+        SaveVolumePreference();
     }
 
     public static void Install(GameManager host)
