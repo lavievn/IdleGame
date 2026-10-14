@@ -66,3 +66,12 @@
 - Video hiển thị qua một VideoPlayer duy nhất vào RenderTexture 512×896, tắt tiếng, không chạy giải mã trong gameplay. Kho trống giữ hai ô màu cũ. Nếu chỉ có video, hai bên luân phiên để giới hạn tài nguyên; không dùng video tham chiếu trong build.
 - Tài liệu/cảnh báo dung lượng/codec, hướng dẫn gán assets và checklist: [Opening_SplashArt_0.0.53.md](Opening_SplashArt_0.0.53.md).
 - **Chưa xác minh với Unity Play Mode / Windows / CMP 40HX**; chưa gộp vào `main`.
+
+## Cập nhật cuối 0.0.53 — Logo Bách Luyện Tiên Đồ và hai video riêng biệt
+
+- **Tài nguyên chính thức đã commit:** `Assets/Resources/OpeningTitleLogo.png` (tách nền từ ảnh người phát triển gửi, không kèm tệp font). Logo căn trên giữa, thay dòng chữ giới thiệu cũ, luôn độc lập với trạng thái Chơi mới/Tiếp tục.
+- **Video nền** `OpeningBackgroundVideo.cs`: một tệp tùy chọn `Assets/StreamingAssets/OpeningBackground/opening.mp4` đặt sau toàn bộ mây/núi và menu, phủ viewport, tắt tiếng, lặp; không có video thì sky màu tiếp tục làm dự phòng.
+- **Video splash** `OpeningHeroSplashVideo.cs`: một khung cố định, không pan/zoom/crossfade/slideshow. Đọc `Assets/StreamingAssets/OpeningSplash/splash.mp4`; ở giây **27** chỉ fade in **một lần trong 1,4 giây**, sau đó video chạy/lặp tại vị trí đó. Không có video thì dùng khối màu nhãn. Phần dựng hiệu ứng nhân vật do video gốc đảm nhiệm.
+- **Đã bỏ mã cũ:** `OpeningSplashShowcase`, `OpeningSplashCatalog`, importer và test random slideshow không còn sử dụng. Hai MP4 **chưa được thêm** — bạn tự chép vào StreamingAssets để xem thử.
+- Nhạc `opening.ogg`, 4 nút, trang Cài đặt, lưu Save, mây trôi và cloud reveal lúc vào gameplay giữ nguyên.
+- Xem [Opening_SplashArt_0.0.53.md](Opening_SplashArt_0.0.53.md). **Chưa biên dịch hoặc nghe/xem trên Unity Editor/Windows** trong môi trường trợ lý.
