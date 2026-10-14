@@ -22,6 +22,7 @@ public sealed class OpeningHeroSplashVideo : MonoBehaviour
     private VideoPlayer player;
     private RenderTexture texture;
     private bool ready;
+    private bool preparedThisOpening, showing;
     private float revealElapsed;
 
     public static OpeningHeroSplashVideo Install(RectTransform parent, TextMeshProUGUI font)
@@ -87,7 +88,8 @@ public sealed class OpeningHeroSplashVideo : MonoBehaviour
 
     private void PrepareVideo()
     {
-        if(player!=null || rect==null)return;
+        if(rect==null)return;
+        if(player!=null){player.Prepare();return;}
         var path=Path.Combine(Application.streamingAssetsPath,DirectoryName,FileName);
         if(!File.Exists(path))return;
         // No decoder until the showcase cue. The RenderTexture bounds
@@ -111,6 +113,7 @@ public sealed class OpeningHeroSplashVideo : MonoBehaviour
     private void OnPrepared(VideoPlayer value)
     {
         if(value!=player)return;
+        if(!showing){value.Stop();return;}
         ready=true;
         surface.enabled=true;
         placeholder.enabled=false;
@@ -130,7 +133,12 @@ public sealed class OpeningHeroSplashVideo : MonoBehaviour
     public void Tick(float openingSeconds)
     {
         if(openingSeconds<OpeningCinematicUI.ShowcaseCueSeconds)return;
-        if(player==null)PrepareVideo();
+        if(!preparedThisOpening)
+        {
+            preparedThisOpening=true;
+            showing=true;
+            PrepareVideo();
+        }
         revealElapsed=openingSeconds-OpeningCinematicUI.ShowcaseCueSeconds;
         float t=Mathf.Clamp01(revealElapsed/RevealSeconds);
         group.alpha=t*t*(3f-2f*t);
@@ -138,12 +146,15 @@ public sealed class OpeningHeroSplashVideo : MonoBehaviour
 
     public void StopVideo()
     {
+        showing=false;
         if(player!=null)player.Stop();
         if(surface!=null)surface.enabled=false;
     }
     public void ResetToTitle()
     {
         revealElapsed=0f;
+        preparedThisOpening=false;
+        showing=false;
         group.alpha=0f;
         if(player!=null)player.Stop();
         ready=false;
