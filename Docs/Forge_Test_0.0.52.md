@@ -16,7 +16,7 @@
 
 ## Tương thích bản Save trước bản sửa
 - Bản kiếm cũ (chưa có forge schema) vẫn giữ nguyên các chỉ số cũ; chỉ bổ sung các trường tiến trình trống.
-- Kiếm đã lưu bằng bản forge schema 1 (bản 10 lượt nhảy thẳng đến trần) được chuyển sang schema 2 bằng cách **giữ nguyên phẩm chất, lượt rèn và dòng đã khám phá**, đồng thời đặt lại bộ đếm lượt trong phẩm cấp hiện tại. Các lần rèn kiểu cũ không được diễn giải lại thành phẩm cấp mới. Nên sao lưu Saves trước khi Pull.
+- Kiếm đã lưu bằng bản forge schema 1 (bản 10 lượt nhảy thẳng đến trần) được chuyển sang schema 2 bằng cách **giữ nguyên phẩm chất, lượt rèn và dòng đã khám phá**, đồng thời đặt lại bộ đếm lượt trong phẩm cấp hiện tại. Các lần rèn kiểu cũ không được diễn giải lại thành phẩm cấp mới. **Lịch sử chặng cũ vẫn được lưu nhưng không cho hoàn tác bằng luật mới** (đánh dấu checkpoint version). Chặng mới được tạo sau cập nhật có thể hoàn tác bình thường. Nên sao lưu Saves trước khi Pull.
 - Các bản Save schema 2 sau khi tăng/giảm/rèn đặc biệt lưu cấp, phẩm, trần tự nhiên, lịch sử chặng, tài nguyên và toàn bộ dữ liệu dòng phụ.
 
 ## Giao diện và xử lý click
