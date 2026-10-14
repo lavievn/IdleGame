@@ -175,3 +175,9 @@ Người phát triển xác nhận B1 đã xong sau commit mã `2308f25`. Chỉ 
 - **Đã bổ sung trên nhánh:** trang Cài đặt hai cột với 3 lựa chọn cửa sổ 600/800/1150, thanh âm lượng kéo, khôi phục mặc định (800×450; âm lượng 60%) và Quay lại; nối chung bộ resize/BGM có sẵn.
 - **System Menu khi chơi:** nút Quay lại màn hình chính, lưu AutoSave thành công trước khi dừng wave/xóa đối tượng chiến đấu và tái hiện opening. Trường hợp lưu không thành công phải giữ nguyên màn chơi.
 - **Chưa kiểm thử Play Mode/Windows:** vận hành thực của thanh kéo với chuột native, layout sau resize, AutoSave/Continue sau quay về menu. Chưa gộp vào `main`.
+
+### 0.0.53 — Kho ảnh/video splash mở rộng
+
+- **Đã viết và commit:** danh mục kho `Assets/Resources/OpeningSplashArt` tự quét PNG/JPG Sprite và MP4/H.264; hai vị trí splash chọn tài nguyên ngẫu nhiên, tối ưu một VideoPlayer, hiệu ứng zoom có tốc độ thay đổi và crossfade.
+- **Đang chờ:** người phát triển bổ sung ảnh/video thật, kiểm thử codec Windows, GPU/VRAM và độ mượt, điều chỉnh thời gian/khung nhân vật, phân loại splash, shader/particle sau khi nghiệm thu. Thư mục còn trống khi vừa pull, tiếp tục thấy các khối màu trước đó.
+- **Hướng dẫn:** [Opening_SplashArt_0.0.53.md](Opening_SplashArt_0.0.53.md).
