@@ -75,3 +75,11 @@
 - **Đã bỏ mã cũ:** `OpeningSplashShowcase`, `OpeningSplashCatalog`, importer và test random slideshow không còn sử dụng. Hai MP4 **chưa được thêm** — bạn tự chép vào StreamingAssets để xem thử.
 - Nhạc `opening.ogg`, 4 nút, trang Cài đặt, lưu Save, mây trôi và cloud reveal lúc vào gameplay giữ nguyên.
 - Xem [Opening_SplashArt_0.0.53.md](Opening_SplashArt_0.0.53.md). **Chưa biên dịch hoặc nghe/xem trên Unity Editor/Windows** trong môi trường trợ lý.
+
+## Cập nhật mới nhất — Splash hai bên, ngẫu nhiên, không tự pan/zoom
+
+- **Thay cho một khung cố định ở giữa:** Hai khung `07 SPLASH LEFT - OVERSCAN` và `08 SPLASH RIGHT - OVERSCAN`, mỗi khung rộng 68% và cao 115% vùng opening, tràn ra ngoài hai mép. Đứng yên, chỉ fade in một lần tại giây 27 (1,4s).
+- **Ngẫu nhiên khi mở màn hình chờ:** Quét `Assets/StreamingAssets/OpeningSplashArt` (PNG/JPG/JPEG/MP4); mỗi bên chọn một file, tránh trùng nhau nếu có ≥2 file. Không đổi cảnh liên tục. Nếu thư mục mới rỗng thì dùng video cũ `OpeningSplash/splash.mp4` hoặc hai khối màu.
+- **Viền mềm mây/núi:** shader `OpeningSoftEdge.shader` và `OpeningEdgeFeather.cs`, mặc định **48 đơn vị UI**, có thể điều chỉnh `OpeningArtTheme.asset → Edge Feather Pixels`. Chỉ tác động năm layer núi/mây, không đổi hình nguồn.
+- **Đã thêm test cấu trúc:** hai khung riêng, đúng chiều, không tự dịch chuyển, alpha chỉ tăng từ giây 27; chạy trên Unity doubles, **chưa thực thi thực tế trong Editor/Windows**.
+- Đường dẫn và lưu ý nặng GPU khi phát cả 3 video: [Opening_SplashArt_0.0.53.md](Opening_SplashArt_0.0.53.md).
