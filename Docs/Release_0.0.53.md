@@ -48,3 +48,13 @@
 - Không scale gameplay, camera combat, Ground, hero hay đạn trong hiệu ứng này. Không nhập ảnh có watermark/chroma từ bản mockup.
 - Đã cập nhật stub và hồi quy menu 4 nút, thêm kiểm thử cấu trúc opening; **chưa chạy thành công trong Unity Editor/Windows**.
 - Quy trình gán Sprite và checklist: [Docs/Opening_0.0.53.md](Opening_0.0.53.md).
+
+## Bổ sung màn Cài đặt hai cột và quay lại tiêu đề (14/10/2026)
+
+- **Opening → Cài đặt:** bố cục hai hàng căn giữa; cột trái là `Kích thước màn hình` / `Âm thanh`, bên phải có 3 lựa chọn **600 / 800 / 1150** (chọn độc quyền) và **thanh kéo 0–100%**, kèm phần trăm. Hai nút dưới cùng là **Khôi phục mặc định** / **Quay lại**.
+- **Khôi phục mặc định:** đặt cửa sổ về **800×450** và nhạc về **60%** (mốc thử nghiệm), không đặt lại Save/nhân vật. Trang Cài đặt vẫn mở sau khi đổi độ phân giải.
+- **Thanh âm lượng:** dùng một `RectTransform` riêng để nhận kéo; Editor xử lý chuột trong `UIManager`, bản Windows nhận kéo qua `TransparentWindow` mà không kích hoạt kéo cửa sổ. Dùng cùng `MapBgmController.SetVolume` đã lưu bằng `PlayerPrefs`; ảnh thanh, phần đầy và tay kéo hiện đều là khối màu.
+- **System Menu trong gameplay:** thêm nút **Quay lại màn hình chính**, gọi `GameManager.ReturnToMainMenu()`. Nếu còn đang chơi, cố lưu tiến trình về **AutoSave trước khi đóng trận**; nếu không thể ghi file thì không thoát trận. Sau lưu thành công, hủy wave đang chờ, xóa quái và Hero trong map, dọn nhân vật thử, mở lại menu cùng hoạt ảnh mây và `opening.ogg` (không tải lại Scene). **Tiếp tục** dùng AutoSave mới nhất.
+- **Hệ thống cũ:** các nút đổi kích thước trong System Menu vẫn dùng hàm resize chung. Không thay đổi dữ liệu trang bị, võ học hoặc phép tính sát thương.
+- **Kiểm thử bắt buộc trong Unity:** thử kéo slider tại 0/50/100%, kéo ra ngoài thanh rồi thả chuột, thử Windows overlay xem có kéo nhầm cả cửa sổ không; đổi 3 kích thước, kiểm tra hai cột không chồng; nhấn mặc định/Quay lại; ở trận đấu mở System Menu → Quay lại màn hình chính → Tiếp tục, đối chiếu map/EXP/kho đồ/wave, kiểm tra không sinh quái dư và nhạc opening quay lại.
+- **Giới hạn:** chưa chạy được Unity Editor/Windows Build trong môi trường thực thi này; việc commit và rà mã không chứng minh thao tác kéo hoặc ghi Save đã hoạt động đúng ở máy người phát triển.
