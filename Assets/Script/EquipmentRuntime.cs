@@ -221,6 +221,7 @@ public static class EquipmentRuntime
             hasBeenRefined=item.hasBeenRefined,
             forgeSchemaVersion=item.forgeSchemaVersion,
             forgeStageProgress=item.forgeStageProgress,
+            forgeStageBasePercent=item.forgeStageBasePercent,
             forgeStageStartRarity=item.forgeStageStartRarity,
             forgeStageTargetRarity=item.forgeStageTargetRarity,
             specialForgeCount=item.specialForgeCount,
@@ -235,6 +236,7 @@ public static class EquipmentRuntime
                 stageStart=stage.stageStart,
                 stageTarget=stage.stageTarget,
                 stageProgress=stage.stageProgress,
+                stageBasePercent=stage.stageBasePercent,
                 naturalLimit=stage.naturalLimit
             });
         foreach(var line in item.mainStats) output.mainStats.Add(CopyLine(line));
