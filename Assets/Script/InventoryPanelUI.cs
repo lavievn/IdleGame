@@ -321,7 +321,9 @@ public sealed class InventoryPanelUI : MonoBehaviour
                 if(filter==2 && charm!=null)continue;
                 entries.Add(new Entry {
                     key="stack:"+stack.itemId,id=stack.itemId,
-                    name=charm!=null?charm.name:stack.itemId,
+                    name=charm!=null?charm.name:
+                        stack.itemId==EquipmentRefinement.MaterialId ?
+                        EquipmentRefinement.MaterialName : stack.itemId,
                     legacy=charm!=null,quantity=stack.quantity,
                     slot=EquipmentSlot.Artifact
                 });
@@ -521,7 +523,8 @@ public sealed class InventoryPanelUI : MonoBehaviour
                 "<color=#8A9A9D>[Khóa] "+StatLine(item,line)+"</color>" :
                 "<color=#BFE9D4>"+StatLine(item,line)+"</color>");
         }
-        forgeInfo.text="Dòng phụ: "+count+"/"+item.extraStats.Count+details;
+        forgeInfo.text="Chính: "+StatLine(item,item.mainStats[0])+
+            "\nDòng phụ: "+count+"/"+item.extraStats.Count+details;
         forgeProgressLabel.text="Ước lượng: "+EquipmentFoundation.RarityName(item.forgeStageStartRarity)+
             " → "+EquipmentFoundation.RarityName(item.forgeStageTargetRarity)+
             "  ·  "+EquipmentRefinement.ProgressPercent(item)+"%";
@@ -688,7 +691,7 @@ public sealed class InventoryPanelUI : MonoBehaviour
                     if(state==EquipmentAffixState.Hidden)
                         detail.text+="\nPhụ: ??? (Chưa khai mở)";
                     else if(state==EquipmentAffixState.KnownLocked)
-                        detail.text+="\nPhụ [Khóa]: "+StatLine(item,line);
+                        detail.text+="\n<color=#8A9A9D>Phụ [Khóa]: "+StatLine(item,line)+"</color>";
                     else detail.text+="\nPhụ: "+StatLine(item,line);
                 }
                 int totalLines=item.affixSchemaVersion==
@@ -937,7 +940,7 @@ public sealed class InventoryPanelUI : MonoBehaviour
         }
         foreach(string name in new [] {
             "InventoryClose","InventoryPrev","InventoryNext",
-            "InventoryGrantCharms","InventoryGrantSword"
+            "InventoryGrantCharms","InventoryGrantSword","InventoryGrantMaterials","InventoryForge"
         })
         {
             var button=FindButton(name);
