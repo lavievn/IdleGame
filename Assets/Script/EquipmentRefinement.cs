@@ -90,6 +90,7 @@ public static class EquipmentRefinement
         if(item==null || item.forgeSchemaVersion!=0)return false;
         item.forgeSchemaVersion=SchemaVersion;
         item.forgeStageProgress=0;
+        item.forgeStageBasePercent=0;
         item.forgeStageStartRarity=item.rarity;
         item.forgeStageTargetRarity=Next(item.rarity);
         item.specialForgeCount=0;
@@ -124,7 +125,8 @@ public static class EquipmentRefinement
     public static int ProgressPercent(EquipmentInstance item)
     {
         return item==null?0:Math.Max(0,Math.Min(100,
-            100*item.forgeStageProgress/StageSteps));
+            item.forgeStageBasePercent+
+            (100-item.forgeStageBasePercent)*item.forgeStageProgress/StageSteps));
     }
 
     public static bool TryApply(EntityDataSO hero,string instanceId,
@@ -195,6 +197,7 @@ public static class EquipmentRefinement
                     stageStart=item.forgeStageStartRarity,
                     stageTarget=item.forgeStageTargetRarity,
                     stageProgress=item.forgeStageProgress,
+                    stageBasePercent=item.forgeStageBasePercent,
                     naturalLimit=item.naturalRefineLimit
                 });
                 // Complete this stage instantly even if progress is only 60%.
@@ -202,6 +205,8 @@ public static class EquipmentRefinement
                 item.forgeStageStartRarity=item.rarity;
                 item.forgeStageTargetRarity=DrawNextTarget(item.rarity);
                 item.forgeStageProgress=0;
+                item.forgeStageBasePercent=item.rarity==EquipmentRarity.Tien ? 100 :
+                    20+new System.Random(Guid.NewGuid().GetHashCode()).Next(21);
                 item.naturalRefineLimit=Math.Min(EquipmentFoundation.MaximumRefineLevel,
                     item.refineLevel+StageSteps);
                 item.specialForgeCount++;
@@ -214,6 +219,7 @@ public static class EquipmentRefinement
                 item.forgeStageStartRarity=snapshot.stageStart;
                 item.forgeStageTargetRarity=snapshot.stageTarget;
                 item.forgeStageProgress=snapshot.stageProgress;
+                item.forgeStageBasePercent=snapshot.stageBasePercent;
                 item.naturalRefineLimit=snapshot.naturalLimit;
                 item.specialForgeCount=Math.Max(0,item.specialForgeCount-1);
                 break;
