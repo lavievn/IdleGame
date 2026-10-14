@@ -24,6 +24,7 @@ public sealed class OpeningCinematicUI : MonoBehaviour
     private bool entering, finished, orderFixed;
     private OpeningArtTheme theme;
     private OpeningSplashShowcase showcase;
+    private OpeningBackgroundVideo videoBackground;
 
     public static OpeningCinematicUI Install(GameManager gm, StartMenuUI startMenu,
         RectTransform menuRoot, CanvasGroup menuGroup, TextMeshProUGUI font)
@@ -98,6 +99,9 @@ public sealed class OpeningCinematicUI : MonoBehaviour
     {
         Image img; TextMeshProUGUI caption;
         var art = theme;
+        // The first child is always a full-bleed video surface. No file means
+        // zero render/decoder cost and the existing sky remains opaque.
+        videoBackground = OpeningBackgroundVideo.Install(backdrop);
         sky = MakeLayer("01 SKY - full background", new Color(.23f,.48f,.59f,1f),
             art != null ? art.sky : null, font, "BẦU TRỜI / SKY", out baseImage, out caption);
         far = MakeLayer("02 FAR MOUNTAINS", new Color(.42f,.64f,.68f,1f),
@@ -123,7 +127,9 @@ public sealed class OpeningCinematicUI : MonoBehaviour
             art != null ? art.gameTitle : null, font,
             "TÊN GAME (CHƯA CHỐT)", out img, out caption);
         // A placeholder for the future title; hidden until an actual title sprite exists.
-        title.gameObject.SetActive(art != null && art.gameTitle != null);
+        // The logo is now placed in StartMenuUI, above all clouds and buttons.
+        // Keep this legacy slot hidden to prevent a duplicate title.
+        title.gameObject.SetActive(false);
         UpdateShowcase(0f);
     }
 
@@ -138,6 +144,7 @@ public sealed class OpeningCinematicUI : MonoBehaviour
         backdrop.anchoredPosition = Vector2.zero;
         backdrop.sizeDelta = new Vector2(w,h);
         // Rectangles are deliberately named for swapping art later.
+        if(videoBackground!=null)videoBackground.Resize(w,h);
         Place(sky, Vector2.zero, new Vector2(w * 1.1f, h * 1.12f));
         Place(far, new Vector2(0,-h*.13f), new Vector2(w*1.18f,h*.62f));
         Place(near, new Vector2(0,-h*.33f), new Vector2(w*1.24f,h*.34f));
@@ -177,6 +184,14 @@ public sealed class OpeningCinematicUI : MonoBehaviour
         if (entering) { AnimateEntry(dt); return; }
         if (game == null || game.preGameUI == null || !game.preGameUI.activeInHierarchy) return;
         elapsed += dt;
+        // Sky is a translucent haze when a video exists; otherwise its solid
+        // placeholder hides the gameplay underneath exactly as before.
+        if(baseImage!=null)
+        {
+            Color skyColor=baseImage.color;
+            skyColor.a=videoBackground!=null && videoBackground.IsDisplaying ? .18f : 1f;
+            baseImage.color=skyColor;
+        }
         float t = Mathf.Clamp01((elapsed - .65f) / MenuRevealSeconds);
         if (menuFade != null) menuFade.alpha = t * t * (3f - 2f * t);
         float w = backdrop.rect.width;
@@ -236,6 +251,7 @@ public sealed class OpeningCinematicUI : MonoBehaviour
         if (t < 1f) return;
         finished = true;
         if (showcase != null) showcase.Deactivate();
+        if (videoBackground != null) videoBackground.StopPlayback();
         if (game != null && game.preGameUI != null) game.preGameUI.SetActive(false);
         if (UIManager.Instance != null) UIManager.Instance.SetPaused(false);
         backdrop.gameObject.SetActive(false);
@@ -249,6 +265,7 @@ public sealed class OpeningCinematicUI : MonoBehaviour
         elapsed = enterElapsed = 0f;
         if (backdropFade != null) backdropFade.alpha = 1f;
         if (showcase != null) showcase.ResetShowcase();
+        if (videoBackground != null) videoBackground.StartPlayback();
         backdrop.gameObject.SetActive(true);
         backdrop.SetAsLastSibling();
         if (canvasArea != null) canvasArea.SetAsLastSibling();
