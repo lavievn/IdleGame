@@ -311,7 +311,7 @@ namespace UnityEngine {
    else if(f.FieldType.IsEnum)f.SetValue(value,Enum.ToObject(f.FieldType,int.Parse(m.Groups[1].Value))); } }
  }
 }
-namespace UnityEngine.InputSystem { public class Mouse { public static Mouse current;public Control leftButton=new Control(),position=new Control(); public class Control {public bool wasPressedThisFrame;public UnityEngine.Vector2 value;public UnityEngine.Vector2 ReadValue(){return value;}} } }
+namespace UnityEngine.InputSystem { public class Mouse { public static Mouse current;public Control leftButton=new Control(),position=new Control(); public class Control {public bool wasPressedThisFrame,wasReleasedThisFrame,isPressed;public UnityEngine.Vector2 value;public UnityEngine.Vector2 ReadValue(){return value;}} } }
 
 namespace UnityEngine {
  public enum FindObjectsInactive { Include }
