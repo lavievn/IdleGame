@@ -153,6 +153,11 @@ public class UIManager : MonoBehaviour
             if (devUI != null && devUI.IsOpen && !item.transform.IsChildOf(devUI.Root)) continue;
             if (inventoryUI != null && inventoryUI.IsOpen &&
                 !item.transform.IsChildOf(inventoryUI.Root)) continue;
+            // Forge is an exclusive modal. Without this guard the old
+            // Inventory buttons registered first win overlapping hitboxes,
+            // so the visible Forge_Close can never receive its click.
+            if (inventoryUI != null && inventoryUI.IsForgeOpen &&
+                !item.transform.IsChildOf(inventoryUI.ForgeRoot)) continue;
             if (damagePanel != null && damagePanel.activeSelf && (gm == null || !gm.HasPendingConfirmation) && !item.transform.IsChildOf(damagePanel.transform)) continue;
             if (!RectTransformUtility.RectangleContainsScreenPoint(item.GetRect(), mousePos, null)) continue;
             if (hit == null || item.transform.IsChildOf(hit.transform)) hit = item;
