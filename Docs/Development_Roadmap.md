@@ -181,3 +181,10 @@ Người phát triển xác nhận B1 đã xong sau commit mã `2308f25`. Chỉ 
 - **Đã viết và commit:** danh mục kho `Assets/Resources/OpeningSplashArt` tự quét PNG/JPG Sprite và MP4/H.264; hai vị trí splash chọn tài nguyên ngẫu nhiên, tối ưu một VideoPlayer, hiệu ứng zoom có tốc độ thay đổi và crossfade.
 - **Đang chờ:** người phát triển bổ sung ảnh/video thật, kiểm thử codec Windows, GPU/VRAM và độ mượt, điều chỉnh thời gian/khung nhân vật, phân loại splash, shader/particle sau khi nghiệm thu. Thư mục còn trống khi vừa pull, tiếp tục thấy các khối màu trước đó.
 - **Hướng dẫn:** [Opening_SplashArt_0.0.53.md](Opening_SplashArt_0.0.53.md).
+
+### 0.0.53 — Chốt hướng opening mới nhất
+
+- Tên game: **Bách Luyện Tiên Đồ**. Đã có logo nền trong suốt và vị trí logo trên cùng, căn giữa. Không đưa font TTF vào repo.
+- Video nền tràn cửa sổ (một lớp dưới cùng), tùy chọn MP4 `Assets/StreamingAssets/OpeningBackground/opening.mp4`; núi/mây hoạt động phía trên.
+- Hủy hiệu ứng slideshow splash tự động; một khung splash tĩnh duy nhất phát `Assets/StreamingAssets/OpeningSplash/splash.mp4`, **chỉ fade in ban đầu ở giây 27**. Tác giả tự dựng pan/zoom/cut/fade nhân vật bên trong video.
+- Còn thiếu: hai tệp MP4 từ tác giả, đo hiệu suất/tương thích codec, nghiệm thu Unity Play Mode/Windows/resize. Mã đã commit nhưng chưa merge `main`. Tài liệu: [Opening_SplashArt_0.0.53.md](Opening_SplashArt_0.0.53.md).
