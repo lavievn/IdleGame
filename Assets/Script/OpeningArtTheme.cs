@@ -15,4 +15,5 @@ public sealed class OpeningArtTheme : ScriptableObject
     public Sprite splashLeft;
     public Sprite splashRight;
     public Sprite gameTitle;
+    [Range(0f,80f)] public float edgeFeatherPixels = 48f;
 }
