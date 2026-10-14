@@ -632,6 +632,43 @@ public class GameManager : MonoBehaviour
         CallNextWave();
     }
 
+    // Return to the interactive title without reloading the Unity scene.
+    // Save BEFORE clearing combat state, preserving inventory, map and hero.
+    // If persistence fails, leave the active game running rather than silently
+    // destroying progress. Opening music resumes when preGameUI is visible.
+    public bool ReturnToMainMenu()
+    {
+        if (HasPendingConfirmation) return false;
+        if (hasDeployed && runtimeHeroData != null)
+        {
+            CaptureSelectedStance();
+            if (saveManager == null || !saveManager.SaveGame(runtimeHeroData, SaveSlot.AutoSave))
+            {
+                UpdateEventLog("Không thể lưu tiến trình. Vẫn ở lại trò chơi.");
+                Debug.LogWarning("[Opening] Return to title aborted: autosave failed.");
+                return false;
+            }
+        }
+        hasDeployed=false;
+        CancelNextWave();
+        ClearTestCompanions();
+        if (combatManager != null) combatManager.ForceClearAllMonsters();
+        activeMonsters.Clear();
+        if (heroController != null) heroController.HideHero();
+        if (gameOverPanel != null) gameOverPanel.SetActive(false);
+        if (UIManager.Instance != null)
+        {
+            UIManager.Instance.HideMapTitle();
+            UIManager.Instance.CloseDamageInfo();
+            UIManager.Instance.SetPaused(false);
+        }
+        manualSelection=false;
+        continueSlot=SaveSlot.AutoSave;
+        SetupPreGameUI();
+        Debug.Log("[Opening] Returned to main menu after saving current progress.");
+        return true;
+    }
+
     public void OnContinueClicked()
     {
         if (hasDeployed || HasPendingConfirmation) return;
