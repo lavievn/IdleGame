@@ -78,6 +78,54 @@ partial class MotionRegression
                     "refinement never rerolls existing affix values or types");
         });
 
+        Run("0.0.52 forge: rarity downgrade relocks a known affix",()=>{
+            var hero=HeroAt(1);
+            EquipmentInventory.InitializeNewRun(hero);
+            EquipmentRuntime.InitializeNewRun(hero);
+            var sword=EquipmentRefinement.CreateForgeDemoSword();
+            sword.extraStats[0].requiredRarity=EquipmentRarity.Dia;
+            Check(EquipmentRuntime.AddInstance(hero,sword),"create rarity-gated sword");
+            Check(EquipmentInventory.Add(hero,EquipmentRefinement.MaterialId,100),
+                "add materials");
+            var item=EquipmentRuntime.Find(hero,sword.instanceId);
+            var gated=item.extraStats[0];
+            Check(EquipmentFoundation.AffixState(item,gated)==EquipmentAffixState.Hidden,
+                "gated affix starts hidden");
+            string msg;
+            Check(EquipmentRefinement.TryApply(hero,item.instanceId,
+                EquipmentRefinement.Operation.NormalUp,out msg),"normal +1");
+            Check(EquipmentFoundation.AffixState(item,gated)==EquipmentAffixState.Hidden,
+                "normal improvement alone cannot reveal rarity gated item");
+            Check(EquipmentRefinement.TryApply(hero,item.instanceId,
+                EquipmentRefinement.Operation.SpecialUp,out msg),"special leap to Dia");
+            Check(EquipmentFoundation.AffixState(item,gated)==EquipmentAffixState.Active,
+                "special success reveals stat when all prerequisites are met");
+            float rolled=gated.flat;
+            Check(EquipmentRefinement.TryApply(hero,item.instanceId,
+                EquipmentRefinement.Operation.SpecialDown,out msg),"special minus");
+            Check(gated.revealed && gated.flat==rolled &&
+                EquipmentFoundation.AffixState(item,gated)==EquipmentAffixState.KnownLocked,
+                "rarity downgrade dims stat without reroll or hiding it");
+        });
+
+        Run("0.0.52 forge: failed purchase does not consume or upgrade",()=>{
+            var hero=HeroAt(1);
+            EquipmentInventory.InitializeNewRun(hero);
+            EquipmentRuntime.InitializeNewRun(hero);
+            var sword=EquipmentRefinement.CreateForgeDemoSword();
+            Check(EquipmentRuntime.AddInstance(hero,sword),"item admitted");
+            Check(EquipmentInventory.Add(hero,EquipmentRefinement.MaterialId,9),
+                "nine units available");
+            var item=EquipmentRuntime.Find(hero,sword.instanceId);
+            string msg;
+            Check(!EquipmentRefinement.TryApply(hero,item.instanceId,
+                EquipmentRefinement.Operation.SpecialUp,out msg),"missing special resources");
+            Check(EquipmentInventory.Count(hero,EquipmentRefinement.MaterialId)==9 &&
+                item.specialForgeCount==0 && item.forgeHistory.Count==0 &&
+                item.rarity==EquipmentRarity.Common,
+                "denied action leaves inventory and item unchanged");
+        });
+
         Run("0.0.52 forge: old saves retain their prior affix rolls",()=>{
             var hero=HeroAt(1);
             EquipmentInventory.InitializeNewRun(hero);
