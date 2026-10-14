@@ -123,6 +123,7 @@ public static class EquipmentRuntime
                     line.revealed=true;
                     line.requiredItemLevel=1;
                     line.requiredRefineLevel=0;
+                    line.requiredRarity=EquipmentRarity.Common;
                 }
                 item.affixSchemaVersion=EquipmentFoundation.AffixSchemaVersion;
                 changed=true;
@@ -251,6 +252,7 @@ public static class EquipmentRuntime
             revealed=line.revealed,
             requiredItemLevel=line.requiredItemLevel,
             requiredRefineLevel=line.requiredRefineLevel,
+            requiredRarity=line.requiredRarity,
             requiredTags=line.requiredTags==null?new List<string>():
                 new List<string>(line.requiredTags),
             blockedTags=line.blockedTags==null?new List<string>():
