@@ -263,6 +263,7 @@ public class GameManager : MonoBehaviour
         startMenu = StartMenuUI.Install(this);
         ConfigureEventLog();
         SetupPreGameUI();
+        MapBgmController.Install(this);
         StartCoroutine(AutoSaveRoutine());
     }
 
