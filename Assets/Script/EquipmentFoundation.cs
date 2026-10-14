@@ -20,6 +20,10 @@ public enum RefinementFailureEffect
 {
     NoChange, LoseRefineLevel, DestroyItem
 }
+// Only the hazardous method may permanently destroy an item. This is a
+// schema guard, not a probability roll or a refinement button.
+public enum RefinementMethod { Normal, Risky }
+public enum EquipmentAffixState { Hidden, KnownLocked, Active }
 
 [Serializable]
 public sealed class ItemStatLine
@@ -31,6 +35,13 @@ public sealed class ItemStatLine
     public bool anyElement;
     public List<string> requiredTags = new List<string>();
     public List<string> blockedTags = new List<string>();
+
+    // Actual stats are rolled ONCE, even while their content is hidden.
+    // Reveal is persistent: a refinement downgrade locks a known line but
+    // never hides it or rerolls its values.
+    public bool revealed = true; // old 0.0.52 data remains visible on migration
+    public int requiredItemLevel = 1;
+    public int requiredRefineLevel = 0;
 
     public CombatStatModifier AsModifier(string sourceId)
     {
@@ -55,6 +66,19 @@ public sealed class EquipmentInstance
     public int level = 1;
     public EquipmentRarity rarity = EquipmentRarity.Common;
     public int refineLevel = 0;
+    // One snapshot per item; rarity may change independently of latent potential.
+    // Existing 0.0.52 items use version 0 until Normalize upgrades them.
+    public int affixSchemaVersion = 0;
+    public ElementType itemElement = ElementType.Vo;
+    public EquipmentRarity potentialRarity = EquipmentRarity.Common;
+    // Fixed number of actual rolled lines; does NOT grow on rarity change.
+    // 0 is allowed on prototype/test items. New generated items set this once.
+    public int affixSlotCount = 0;
+    // 0 means "not yet determined" for old/prototype items; generation later
+    // assigns a random personal limit. Risky breakthroughs may exceed it.
+    public int naturalRefineLimit = 0;
+    public int highestRefineLevel = 0;
+    public bool hasBeenRefined = false;
     // None of these lines are generated again when an item is loaded.
     public List<ItemStatLine> mainStats = new List<ItemStatLine>();
     public List<ItemStatLine> extraStats = new List<ItemStatLine>();
@@ -108,6 +132,8 @@ public sealed class RefinementRuleData
     // No probability is evaluated until a refinement action is implemented.
     public int successWeightPerMillion = 1000000;
     public RefinementFailureEffect onFailure = RefinementFailureEffect.NoChange;
+    public RefinementMethod method = RefinementMethod.Normal;
+    public bool mayBreakNaturalLimit;
     public List<CraftingMaterialCost> materials = new List<CraftingMaterialCost>();
 }
 
@@ -123,7 +149,9 @@ public sealed class EquipmentTemplate
 
 public static class EquipmentFoundation
 {
-    public const int Version = 2;
+    public const int Version = 3;
+    public const int AffixSchemaVersion = 1;
+    public const int MaximumAffixLines = 6; // storage safety cap, NOT rarity balance
     public const string SourcePrefix = "equipment:instance:";
     public const string DemoSword = "sample:iron_sword";
 
@@ -209,12 +237,75 @@ public static class EquipmentFoundation
             item.refineLevel < 0 || item.refineLevel > MaximumRefineLevel ||
             item.mainStats == null || item.mainStats.Count != 1 ||
             item.mainStats[0] == null || item.mainStats[0].stat != template.mainStat ||
-            item.extraStats == null || item.extraStats.Count > MaximumExtraLines(item.level))
+            item.extraStats == null)
             return false;
+        if(item.affixSchemaVersion == 0)
+        {
+            // Unmigrated legacy instances are validated exactly as before.
+            if(item.extraStats.Count > MaximumExtraLines(item.level))return false;
+        }
+        else if(item.affixSchemaVersion == AffixSchemaVersion)
+        {
+            if(item.affixSlotCount != item.extraStats.Count ||
+                item.affixSlotCount > MaximumAffixLines ||
+                item.naturalRefineLimit < 0 ||
+                item.naturalRefineLimit > MaximumRefineLevel ||
+                item.highestRefineLevel < item.refineLevel ||
+                item.highestRefineLevel > MaximumRefineLevel ||
+                !Enum.IsDefined(typeof(ElementType),item.itemElement) ||
+                !Enum.IsDefined(typeof(EquipmentRarity),item.potentialRarity))
+                return false;
+        }
+        else return false;
         foreach(var line in item.mainStats) if (!ValidLine(line)) return false;
-        foreach(var line in item.extraStats) if (!ValidLine(line)) return false;
+        foreach(var line in item.extraStats)
+        {
+            if (!ValidLine(line)) return false;
+            if(item.affixSchemaVersion == AffixSchemaVersion &&
+                (line.requiredItemLevel < 1 ||
+                 line.requiredItemLevel > MaximumItemLevel ||
+                 line.requiredRefineLevel < 0 ||
+                 line.requiredRefineLevel > MaximumRefineLevel))
+                return false;
+        }
         return true;
     }
+    // Read-only 3-state derivation: identity and rolled stats never change.
+    public static EquipmentAffixState AffixState(EquipmentInstance item,ItemStatLine line)
+    {
+        if(item==null || line==null || !line.revealed)
+            return EquipmentAffixState.Hidden;
+        return item.level >= line.requiredItemLevel &&
+            item.refineLevel >= line.requiredRefineLevel
+            ? EquipmentAffixState.Active : EquipmentAffixState.KnownLocked;
+    }
+
+    // Call on a SUCCESSFUL refinement/milestone only. Load normalization must
+    // never auto-disclose hidden stats, even if an old save looks unusual.
+    public static bool RevealEligibleAffixes(EquipmentInstance item)
+    {
+        if(item==null || item.extraStats==null)return false;
+        bool changed=false;
+        foreach(var line in item.extraStats)
+        {
+            if(line==null || line.revealed ||
+               item.level<line.requiredItemLevel ||
+               item.refineLevel<line.requiredRefineLevel)continue;
+            line.revealed=true;
+            changed=true;
+        }
+        return changed;
+    }
+
+    // Configuration validation for future economy implementation: normal
+    // upgrades cannot destroy equipment or bypass latent potential.
+    public static bool IsSafeRefinementRule(RefinementRuleData rule)
+    {
+        return rule!=null && (rule.method!=RefinementMethod.Normal ||
+            (rule.onFailure!=RefinementFailureEffect.DestroyItem &&
+             !rule.mayBreakNaturalLimit));
+    }
+
     private static bool ValidLine(ItemStatLine line)
     {
         return line != null && Enum.IsDefined(typeof(CombatStatId),line.stat) &&

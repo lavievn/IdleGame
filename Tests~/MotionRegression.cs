@@ -317,6 +317,8 @@ partial class MotionRegression
         InventoryEquipmentRegressionTests();
         SaveRollbackRegressionTests();
         MultiSlotEquipmentRegressionTests();
+        EquipmentStatPreviewRegressionTests();
+        AffixDiscoveryRegressionTests();
         ManagementWindowRegressionTests();
         InventoryArtThemeRegressionTests();
         BalanceTests();

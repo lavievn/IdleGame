@@ -48,10 +48,20 @@ public static class CombatStats
     public static float Get(EntityDataSO entity, CombatStatId stat, float baseValue = 0f,
         ElementType element = ElementType.Vo, IEnumerable<string> context = null)
     {
+        return GetWithModifiers(entity,entity == null ? null : entity.combatStatModifiers,
+            stat,baseValue,element,context);
+    }
+
+    // Read-only hypothetical evaluation for gear comparisons. Same evaluation
+    // as Get(), but does not replace Hero lists, change isDirty, or rebuild gear.
+    public static float GetWithModifiers(EntityDataSO entity,
+        IEnumerable<CombatStatModifier> modifiers,CombatStatId stat,
+        float baseValue=0f, ElementType element=ElementType.Vo,
+        IEnumerable<string> context=null)
+    {
         if (entity == null) return baseValue;
         float flat = 0f, percentage = 0f;
-        var modifiers = entity.combatStatModifiers;
-        if (modifiers == null || modifiers.Count == 0) return baseValue;
+        if (modifiers == null) return baseValue;
         HashSet<string> active = BuildTags(entity, context);
         foreach (var mod in modifiers)
         {
@@ -80,6 +90,15 @@ public static class CombatStats
     {
         return (int)Math.Max(int.MinValue, Math.Min(int.MaxValue,
             Math.Round(Get(entity,stat,baseValue,element,context),MidpointRounding.AwayFromZero)));
+    }
+
+    public static int GetIntWithModifiers(EntityDataSO entity,
+        IEnumerable<CombatStatModifier> modifiers,CombatStatId stat,int baseValue=0,
+        ElementType element=ElementType.Vo,IEnumerable<string> context=null)
+    {
+        return (int)Math.Max(int.MinValue,Math.Min(int.MaxValue,
+            Math.Round(GetWithModifiers(entity,modifiers,stat,baseValue,element,context),
+                MidpointRounding.AwayFromZero)));
     }
 
     public static IEnumerable<string> AttackTags(AttackMode mode, DamageSchool school,
