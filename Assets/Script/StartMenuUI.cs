@@ -153,6 +153,7 @@ public class StartMenuUI : MonoBehaviour
             var r=(RectTransform)page.transform;
             r.anchorMin=Vector2.zero;r.anchorMax=Vector2.one;
             r.offsetMin=Vector2.zero;r.offsetMax=Vector2.zero;
+            r.sizeDelta=Vector2.zero; r.anchoredPosition=Vector2.zero;
         }
         float spacing=Mathf.Clamp(h*.11f,32f,46f);
         float bw=Mathf.Clamp(w*.31f,140f,208f);
@@ -211,6 +212,17 @@ public class StartMenuUI : MonoBehaviour
         message.text=text;
         manager.confirmationPopup.transform.SetAsLastSibling();
         manager.confirmationPopup.SetActive(true);
+    }
+
+    public void RestoreMenu()
+    {
+        entryLocked = false;
+        lastClickFrame = -1;
+        settingsPage.SetActive(false);
+        menuPage.SetActive(true);
+        foreach (var b in menuButtons) if (b != null) b.interactable = true;
+        if (cinematic != null) cinematic.ResetForMenu();
+        Refresh();
     }
 
     public void LockButtonsForEntry()
