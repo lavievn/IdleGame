@@ -630,7 +630,9 @@ public sealed class InventoryPanelUI : MonoBehaviour
     public void ApplyTheme()
     {
         if(ui==null || root==null)return;
-        InventoryArtTheme art=ui.inventoryArtTheme;
+        // Keep all assigned Sprite assets, but intentionally ignore them while
+        // the UI layout is being prototyped with its original dark-teal palette.
+        InventoryArtTheme art=ui.inventoryUseArtTheme ? ui.inventoryArtTheme : null;
         bool sliced=art!=null && art.slicedResizablePanels;
         FrameArt(root,art==null?null:art.inventoryWindowFrame,
             new Color(.046f,.082f,.098f,.99f),sliced);
@@ -649,6 +651,16 @@ public sealed class InventoryPanelUI : MonoBehaviour
         {
             var image=slotButtons[i]==null?null:slotButtons[i].GetComponent<Image>();
             Color fallback=image==null?Color.white:image.color;
+            if(art==null)
+            {
+                var hero=Hero();
+                var gear=EquipmentRuntime.Equipped(hero,Slots[i]);
+                bool legacy=i==4 && hero!=null &&
+                    !string.IsNullOrEmpty(hero.equippedItemId);
+                fallback=gear!=null?RarityColor(gear.rarity):
+                    legacy?new Color(.32f,.34f,.22f,1f):
+                    new Color(.11f,.22f,.24f,1f);
+            }
             FrameArt(slotButtons[i],art==null?null:art.equipmentSlot,fallback,false);
         }
         for(int i=0;i<bagButtons.Length;i++)
@@ -659,6 +671,16 @@ public sealed class InventoryPanelUI : MonoBehaviour
                 (selected && art.selectedBagSlot!=null ? art.selectedBagSlot : art.bagSlot);
             var image=bagButtons[i]==null?null:bagButtons[i].GetComponent<Image>();
             Color fallback=image==null?Color.white:image.color;
+            if(art==null)
+            {
+                var entry=absolute<entries.Count?entries[absolute]:null;
+                fallback=entry!=null && entry.gear!=null?
+                    RarityColor(entry.gear.rarity):
+                    entry!=null?new Color(.20f,.29f,.28f,1f):
+                    new Color(.095f,.17f,.19f,1f);
+                if(entry!=null && entry.key==selectedKey)
+                    fallback=new Color(.58f,.46f,.21f,1f);
+            }
             // Use a selected tint when there is no dedicated selected sprite.
             FrameArt(bagButtons[i],sprite,fallback,false);
             if(sprite!=null && selected && (art==null || art.selectedBagSlot==null))
@@ -706,6 +728,13 @@ public sealed class InventoryPanelUI : MonoBehaviour
             summary.color=art.textColor;
             detail.color=art.textColor;
             bagStatus.color=art.accentTextColor;
+        }
+        else
+        {
+            header.color=new Color(.88f,.75f,.48f,1f);
+            summary.color=new Color(.89f,.91f,.83f,1f);
+            detail.color=new Color(.89f,.91f,.83f,1f);
+            bagStatus.color=new Color(.50f,.83f,.75f,1f);
         }
     }
 
