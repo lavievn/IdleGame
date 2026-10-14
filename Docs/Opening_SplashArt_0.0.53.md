@@ -1,54 +1,56 @@
-# Opening 0.0.53 — Hai video độc lập và logo Bách Luyện Tiên Đồ
+# Opening 0.0.53 — Hai khung splash ngẫu nhiên + viền mềm mây núi
 
-> **Quy tắc mới nhất ngày 14/10/2026 (thay thế tài liệu slideshow cũ).** Không còn random ảnh/video, không zoom/pan splash tự động, không crossfade giữa các splash. Chuyển động nhân vật do người phát triển dựng trực tiếp trong tệp video.
+**Trạng thái:** mã đã commit lên `feature/0.0.53`; chờ kiểm thử Unity Play Mode / Windows. Đây là **thiết kế mới nhất**, thay cho bản một splash video ở giữa và bản slideshow pan/zoom tự động trước đó.
 
-## 1. Cấu trúc Assets
+## 1. Đường dẫn và cách thêm tài nguyên
 
 ```text
 Assets/
 ├── Resources/
-│   ├── OpeningTitleLogo.png        # Đã commit; logo chữ thư pháp nền trong suốt
-│   ├── OpeningTitleLogo.png.meta   # Unity import Sprite / UI
-│   └── OpeningArtTheme.asset       # Các lớp mây/núi cố định
+│   ├── OpeningArtTheme.asset     # Các ô sky/mountain/cloud, edgeFeatherPixels
+│   ├── OpeningSoftEdge.shader    # Shader mép mềm 48 px
+│   └── OpeningTitleLogo.png      # Logo Bách Luyện Tiên Đồ
 └── StreamingAssets/
     ├── OpeningBackground/
-    │   └── opening.mp4              # TỰ THÊM; video nền bao toàn bộ cửa sổ
+    │   └── opening.mp4           # Video nền toàn màn hình (tùy chọn)
+    ├── OpeningSplashArt/
+    │   ├── splash-01.png         # Người phát triển tự thêm
+    │   ├── splash-02.jpg         # Người phát triển tự thêm
+    │   └── hero-03.mp4           # Người phát triển tự thêm
     └── OpeningSplash/
-        └── splash.mp4               # TỰ THÊM; video splash trong khung tĩnh
+        └── splash.mp4            # Đường dẫn CŨ, chỉ dùng nếu kho mới trống
 ```
 
-**Tên file phải đúng `opening.mp4` và `splash.mp4`.** Video chưa có trong repository, game vẫn hiển thị các khối màu dự phòng. `StreamingAssets` đóng gói nguyên file trong build, không cần `Resources.Load` hay gán vào Inspector. Cần chạy lại game sau khi thêm file.
+**Thả ảnh PNG/JPG/JPEG hoặc MP4 vào `Assets/StreamingAssets/OpeningSplashArt/`.** Tên tùy ý, không bắt buộc `Left`/`Right`. Ảnh được đọc trực tiếp bằng byte PNG/JPG; video MP4 được `VideoPlayer` đọc theo đường dẫn. Không cần chỉnh Texture Type, tạo Catalog, kéo Sprite vào Inspector hoặc vào mục Tools → Rebuild.
 
-Không cần kéo font từ tệp TTF đính kèm: logo đã được tách nền thành PNG 480×89 từ hình do người phát triển gửi và commit vào `Resources`. Trong `StartMenuUI`, ảnh logo thay dòng giới thiệu cũ, được căn giữa phía trên bốn nút Chơi mới/Tiếp tục/Cài đặt/Thoát; có fallback chữ thường nếu import Sprite lỗi. Có thể thay logo bằng Sprite khác tên `OpeningTitleLogo.png` hoặc gán `OpeningArtTheme.gameTitle`.
+Nếu thư mục mới trống nhưng vẫn có `Assets/StreamingAssets/OpeningSplash/splash.mp4` của lần trước, game phát video cũ trên cả hai bên (vì chỉ có một lựa chọn). Không có tài nguyên nào thì hai khung màu có nhãn vẫn hiện.
 
-## 2. Quy tắc video
+## 2. Vị trí và hoạt ảnh
 
-| Lớp | Vị trí | Thời điểm | Chuyển động của UI |
-|---|---|---|---|
-| **Background** | Thấp nhất, phủ 100% viewport opening | Ngay khi vào màn hình chờ | Không pan/zoom; bản thân video có thể chuyển động; lặp |
-| Sky / mây / núi | Phía trên video nền | Ngay lúc mở | Các chuyển động bồng bềnh đã có giữ nguyên |
-| **Splash** | Một khung cố định, giữa, 90% chiều rộng × 79% chiều cao viewport | Giây **27** | Duy nhất một lần **fade in 1,4s**; không pan/zoom/đổi cảnh; video lặp |
-| Logo và 4 nút | Trên các lớp video/mây | Theo fade-in menu cũ | Nút tương tác như trước |
+- **Hai khung độc lập:** `07 SPLASH LEFT - OVERSCAN` và `08 SPLASH RIGHT - OVERSCAN`. Mỗi khung có chiều rộng **68%** và chiều cao **115%** của vùng mở đầu. Trung tâm ở khoảng **-41,5%/+41,5% chiều rộng** so với trung tâm cửa sổ: phần ngoài tràn qua mép trái/phải. Để trống phần giữa cho logo và bốn nút.
+- **Từ giây 27:** hai khung đồng thời **fade in 1,4 giây**, sau đó **đứng yên**, không pan/zoom, không đổi ảnh/video, không có hiệu ứng mờ chồng các lượt. Chuyển động thực tế của nhân vật có thể được dựng **bên trong MP4**.
+- **Ngẫu nhiên một lần mỗi lượt mở màn hình chờ:** bên trái chọn trước; bên phải tránh chọn trùng file nếu kho có từ hai file. Vào gameplay, video dừng và texture của ảnh được giải phóng. Khi từ System Menu trở lại màn hình chính, hai bên sẽ chọn lại ở giây 27.
+- **Giữ nguyên:** logo Bách Luyện Tiên Đồ, video nền `opening.mp4` dưới cùng, mây trôi, menu bốn nút, nhạc opening và hiệu ứng dạt mây/zoom tổng thể khi chuyển sang gameplay.
 
-Đường chuyển **vào gameplay** vẫn sử dụng mây dạt/nhạt màu toàn opening trong 2,7s. Phần splash không tự di chuyển, chỉ bị lớp opening tổng làm mờ khi đóng. Video dừng khi gameplay bắt đầu và được chuẩn bị lại khi quay về màn hình chính.
+**Lưu ý video:** MP4/H.264 thông thường **không chứa kênh alpha**; khi đặt video người ở hai bên, nền video có thể tạo mép hình chữ nhật. Nếu muốn nhân vật tách nền đẹp, nên dùng PNG trong suốt hoặc xử lý nền video nhất quán với phông opening. **Có thể phát đồng thời hai video splash cộng video nền**, nên kiểm tra mức tải GPU/CPU.
 
-## 3. Dung lượng & mã hóa
+## 3. Làm mềm viền mây/núi
 
-- Ưu tiên **MP4/H.264**, 24–30 fps, không cần tiếng: bộ phát tắt tiếng cả hai video để không chồng lên `opening.ogg`.
-- Đầu tiên thử 960×540 hoặc 1280×720 cho nền; với splash thử khung hình phù hợp tỷ lệ rộng khoảng 90% × 79% cửa sổ. Nếu video có nền màu không khớp cảnh, lưu ý **MP4/H.264 thường không mang kênh alpha**. Khi đó nên biên tập bố cục splash với nền phù hợp, hoặc sau này dùng codec/đường render hỗ trợ alpha.
-- Mỗi video có một `VideoPlayer` và `RenderTexture` 960×540 khi tệp tồn tại; splash chỉ khởi tạo decoder từ mốc 27 giây. Đây là mức thử nghiệm, chưa có đo GPU/VRAM/giật hình trên CMP 40HX.
-- `StreamingAssets` khiến dung lượng build tăng theo kích thước nguyên gốc của MP4, **RenderTexture không làm nhẹ tệp build**. Tránh video dài có bitrate quá cao.
-- Nếu codec không phát được, Console ghi cảnh báo và vẫn dùng lớp màu dự phòng.
+- Shader: `Assets/Resources/OpeningSoftEdge.shader` và script `OpeningEdgeFeather.cs`.
+- Tự áp dụng cho **Núi xa**, **Núi gần**, **Mây xa**, **Mây trước trái** và **Mây trước phải**.
+- Alpha giảm dần từ **mép của RectTransform đi vào trong**, mặc định **48 px**. Hiệu ứng hoạt động với ảnh có mép cứng cũng như ảnh có alpha; không chỉnh sửa file nguồn.
+- Muốn đổi độ rộng viền: chọn `Assets/Resources/OpeningArtTheme.asset`, chỉnh **Edge Feather Pixels** (ví dụ 40–50) rồi chạy lại Play Mode. Không áp dụng shader này cho logo, video nền hay khung splash.
+- Nếu núi/mây vẫn có đường nối **ở giữa ảnh** chứ không phải mép khung, feather hình chữ nhật không xóa được những đường nối nội bộ; khi đó cần PNG alpha/mask đúng hình hoặc thay cách bố cục.
+- Đây là **48 đơn vị UI gần tương đương pixel ở tỉ lệ Canvas đang dùng**, có thể trông lớn/nhỏ khác nhau ở cửa sổ hoặc CanvasScaler khác. Cần đánh giá bằng Play Mode.
 
-## 4. Checklist Play Mode và Windows
+## 4. Các bước kiểm thử
 
-1. Pull `feature/0.0.53`, mở Unity: kiểm tra không có lỗi biên dịch; `Assets/Resources/OpeningTitleLogo.png` được nhận dưới dạng Sprite.
-2. Chưa có MP4: thấy logo chữ đúng tên phía trên, các khối màu mây/núi; sau 27s xuất hiện khung màu splash cố định.
-3. Thêm `Assets/StreamingAssets/OpeningBackground/opening.mp4`, thử video lặp toàn màn hình, nhưng menu/mây vẫn ở phía trước.
-4. Thêm `Assets/StreamingAssets/OpeningSplash/splash.mp4`, sau giây 27 khung fade in 1,4s, video chạy; đợi lâu xác nhận KHÔNG tự pan/zoom/cắt clip.
-5. Ở màn Cài đặt đổi độ phân giải 600/800/1150: video nền luôn full viewport; splash ở giữa giữ nguyên tỉ lệ khu vực, không lệch nút.
-6. Chơi mới/Tiếp tục: video dừng, hiệu ứng lộ gameplay vẫn đúng, không sai tọa độ chiến đấu.
-7. System Menu → Quay lại màn hình chính: opening trở lại, logo đúng, video nền phát lại; splash lại chờ từ giây 27 rồi mới fade in.
-8. Kiểm tra bộ nhớ/video decoder và kích thước bản Windows trước khi coi tính năng hoàn thiện.
+1. Pull nhánh `feature/0.0.53`. Không cần nhập ảnh hoặc video ngay: chạy Play Mode, sau 27s phải xuất hiện **hai khung màu đứng yên** tràn ra hai bên; không còn khung màu lớn phủ toàn bộ giữa màn hình.
+2. Thả **2 PNG hoặc JPG** vào `Assets/StreamingAssets/OpeningSplashArt`; dừng rồi mở lại Play Mode, đợi 27s: mỗi bên ngẫu nhiên một hình khác nhau, giữ nguyên hình đến khi vào gameplay.
+3. Bổ sung MP4/H.264 vào cùng thư mục. Test ảnh trái / video phải, rồi test cả hai video; chỉ nhạc opening được nghe, không có tiếng MP4.
+4. Chọn `OpeningArtTheme.asset`: thay **Edge Feather Pixels** qua 0 → 40 → 48 → 50 để xem viền núi/mây mềm dần, đặc biệt chỗ bị lộ cạnh cứng. Ảnh được feather theo khung, không phải feather riêng alpha biên dạng nhân vật.
+5. Chuyển kích thước cửa sổ 600 / 800 / 1150: mỗi khung vẫn tràn ra ngoài theo tỷ lệ, vị trí khung không thay đổi theo thời gian, các nút menu vẫn nhận chuột.
+6. Chơi mới/Tiếp tục → vào gameplay: video tắt; System Menu → Quay lại màn hình chính: hai khung lại chờ đúng 27s và chọn ảnh/video ngẫu nhiên mới.
+7. Kiểm tra phiên bản Windows overlay (CMP 40HX): video có giải mã được không, CPU/GPU/VRAM có bị tăng bất thường khi có **tối đa ba luồng MP4** (nền + hai splash) không.
 
-**Giới hạn xác minh:** mã đã commit và rà soát tĩnh; chưa có Unity Editor, Windows Build hoặc tệp MP4 chính thức trong môi trường chạy kiểm thử.
+**Chưa biên dịch/kiểm thử Unity Play Mode tại môi trường trợ lý**; bộ test `Tests~/OpeningCinematicRegression.cs` chỉ kiểm tra cấu trúc và logic thời gian, không xác minh shader/codec/nhận chuột.
