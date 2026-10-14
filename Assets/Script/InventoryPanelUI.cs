@@ -54,6 +54,7 @@ public sealed class InventoryPanelUI : MonoBehaviour
         public Image shade;
         public Image[] edges;
         public TextMeshProUGUI title;
+        public TextMeshProUGUI sizeText;
     }
     private readonly Dictionary<RectTransform,LayoutGuide> layoutGuides =
         new Dictionary<RectTransform,LayoutGuide>();
@@ -787,6 +788,18 @@ public sealed class InventoryPanelUI : MonoBehaviour
         guide.title.alignment=TextAlignmentOptions.TopLeft;
         guide.title.overflowMode=TextOverflowModes.Overflow;
         guide.title.enableWordWrapping=false;
+        var sizeGO=new GameObject("LayoutSizeBottomRight",
+            typeof(RectTransform),typeof(CanvasRenderer),typeof(TextMeshProUGUI));
+        var sizeRect=(RectTransform)sizeGO.transform;
+        sizeRect.SetParent(guide.rect,false);
+        sizeRect.anchorMin=sizeRect.anchorMax=new Vector2(1f,0f);
+        sizeRect.pivot=new Vector2(1f,0f);
+        sizeRect.anchoredPosition=new Vector2(-3f,3f);
+        guide.sizeText=sizeGO.GetComponent<TextMeshProUGUI>();
+        guide.sizeText.raycastTarget=false;
+        guide.sizeText.alignment=TextAlignmentOptions.BottomRight;
+        guide.sizeText.overflowMode=TextOverflowModes.Overflow;
+        guide.sizeText.enableWordWrapping=false;
         layoutGuides.Add(target,guide);
         return guide;
     }
@@ -822,20 +835,34 @@ public sealed class InventoryPanelUI : MonoBehaviour
         string actual=img==null || img.sprite==null?"chưa gán":
             img.type==Image.Type.Sliced?"Sliced":"Simple";
         int height=Mathf.RoundToInt(h),width=Mathf.RoundToInt(w);
-        bool compact=w<120f || h<56f;
-        string nineSlice=nineSliceRecommended?"NÊN":"KHÔNG";
-        item.title.text=compact?
-            name+"  "+height+"x"+width+"  9S:"+(nineSliceRecommended?"Có":"Không"):
-            name+"\nCao x Rộng: "+height+" x "+width+
-            "\n9-slice: "+nineSlice+" · "+actual;
+        bool compact=w<140f || h<64f;
+        float fontSize=compact?Mathf.Min(11f,Mathf.Max(7f,h*.26f)):12f;
+
+        // Region name: top-left, separately from the red measurements.
+        item.title.text=name;
         item.title.color=ui.inventoryDebugText;
-        float size=compact?Mathf.Min(10f,Mathf.Max(7f,h*.32f)):12f;
-        UIManager.ReadableText(item.title,size);
+        UIManager.ReadableText(item.title,fontSize);
+        item.title.alignment=TextAlignmentOptions.TopLeft;
         item.title.enableWordWrapping=false;
         item.title.overflowMode=TextOverflowModes.Overflow;
-        var textRect=(RectTransform)item.title.transform;
-        textRect.sizeDelta=new Vector2(Mathf.Max(1f,w-5f),
-            compact?Mathf.Max(12f,h-3f):Mathf.Min(56f,h-3f));
+        var nameRect=(RectTransform)item.title.transform;
+        nameRect.sizeDelta=new Vector2(Mathf.Max(1f,w-8f),
+            Mathf.Min(Mathf.Max(12f,h*.40f),26f));
+
+        // Size: always bottom-right, HEIGHT x WIDTH, never painted over title.
+        // Keep the 9-slice note on its own second line only when space permits.
+        item.sizeText.text=compact
+            ?height+"x"+width
+            :height+"x"+width+"\n9S:"+
+                (nineSliceRecommended?"Nên":"Không")+" · "+actual;
+        item.sizeText.color=ui.inventoryDebugSizeText;
+        UIManager.ReadableText(item.sizeText,fontSize);
+        item.sizeText.alignment=TextAlignmentOptions.BottomRight;
+        item.sizeText.enableWordWrapping=false;
+        item.sizeText.overflowMode=TextOverflowModes.Overflow;
+        var sizeRect=(RectTransform)item.sizeText.transform;
+        sizeRect.sizeDelta=new Vector2(Mathf.Max(1f,w-7f),
+            compact?Mathf.Min(h-3f,18f):Mathf.Min(43f,h*.43f));
     }
 
     // Safe for both Inspector toggling during Play and the normal Layout path.
