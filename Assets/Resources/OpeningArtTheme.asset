@@ -12,13 +12,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e0cbef1659324ab98811de79052541c3, type: 3}
   m_Name: OpeningArtTheme
   m_EditorClassIdentifier: Assembly-CSharp::OpeningArtTheme
-  sky: {fileID: 0}
-  farMountains: {fileID: 0}
-  nearMountains: {fileID: 0}
-  backClouds: {fileID: 0}
-  leftClouds: {fileID: 0}
-  rightClouds: {fileID: 0}
+  sky: {fileID: -69834721758767799, guid: 8b93ecd481039e648b256f095429f344, type: 3}
+  farMountains: {fileID: 3657893982548748755, guid: e1f1c1163496e7a48b19af401b409c44, type: 3}
+  nearMountains: {fileID: 387906458818300471, guid: 9b503e0b8478bd942a1579fec6e79397, type: 3}
+  backClouds: {fileID: -4810316589086982377, guid: 300e9a20501a0b947966b061923f57d7, type: 3}
+  leftClouds: {fileID: -3160680139893154660, guid: 8a0b4a38159db704aaa90fe18cf18ea7, type: 3}
+  rightClouds: {fileID: -537601724654033169, guid: 17126b5bf32224c47a88a16ea94cbd49, type: 3}
   splashLeft: {fileID: 0}
   splashRight: {fileID: 0}
   gameTitle: {fileID: 0}
-  edgeFeatherPixels: 48
+  edgeFeatherPixels: 65.4
