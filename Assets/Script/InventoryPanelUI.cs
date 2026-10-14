@@ -448,6 +448,157 @@ public sealed class InventoryPanelUI : MonoBehaviour
         Refresh();
     }
 
+    private static Color ForgeBorderColor(EquipmentRarity rarity)
+    {
+        switch(rarity)
+        {
+            case EquipmentRarity.Hoang:return new Color(.48f,.48f,.49f,1f); // iron
+            case EquipmentRarity.Huyen:return new Color(.67f,.75f,.83f,1f); // silver
+            case EquipmentRarity.Dia:return new Color(.87f,.66f,.30f,1f); // gold
+            case EquipmentRarity.Thien:return new Color(.24f,.72f,.52f,1f); // emerald
+            case EquipmentRarity.Tien:return new Color(.74f,.85f,.96f,1f); // platinum
+            default:return new Color(.36f,.25f,.16f,1f); // wood
+        }
+    }
+
+    private void OpenForge()
+    {
+        var selected=FindSelected();
+        if(selected==null || selected.gear==null || forgeOverlay==null)return;
+        forgeItemId=selected.gear.instanceId;
+        lastForgeMessage="";
+        forgeOverlay.gameObject.SetActive(true);
+        forgeOverlay.SetAsLastSibling();
+        LayoutForge(root.rect.width,root.rect.height);
+        RefreshForge();
+    }
+    private void CloseForge()
+    {
+        if(forgeOverlay!=null)forgeOverlay.gameObject.SetActive(false);
+        forgeItemId="";
+        lastForgeMessage="";
+    }
+    private void ChangeForge(int row,bool increase)
+    {
+        var gm=Manager();
+        if(gm==null || string.IsNullOrEmpty(forgeItemId))return;
+        EquipmentRefinement.Operation op;
+        if(row==0) op=increase ? EquipmentRefinement.Operation.ItemLevelUp :
+            EquipmentRefinement.Operation.ItemLevelDown;
+        else if(row==1) op=increase ? EquipmentRefinement.Operation.NormalUp :
+            EquipmentRefinement.Operation.NormalDown;
+        else op=increase ? EquipmentRefinement.Operation.SpecialUp :
+            EquipmentRefinement.Operation.SpecialDown;
+        string message;
+        gm.ApplyForgeTest(forgeItemId,op,out message);
+        lastForgeMessage=message;
+        Refresh();
+    }
+
+    private void RefreshForge()
+    {
+        if(forgeOverlay==null || !forgeOverlay.gameObject.activeSelf)return;
+        var hero=Hero();
+        var item=EquipmentRuntime.Find(hero,forgeItemId);
+        if(item==null){CloseForge();return;}
+        int material=EquipmentInventory.Count(hero,EquipmentRefinement.MaterialId);
+        forgeTitle.text="LÒ LUYỆN KHÍ  ·  "+EquipmentFoundation.RarityName(item.rarity);
+        forgeCellTitle.text=EquipmentRefinement.DisplayName(item);
+        forgeCellLevel.text="Lv."+item.level;
+        forgeCellCount.text="+"+item.refineLevel+"  |  ĐB "+item.specialForgeCount;
+        Color border=ForgeBorderColor(item.rarity);
+        ColorButton(forgeCell,border);
+        ColorButton(forgeProgressFill,border);
+        int count=0;
+        string details="";
+        foreach(var line in item.extraStats)
+        {
+            var state=EquipmentFoundation.AffixState(item,line);
+            if(state==EquipmentAffixState.Active)count++;
+            details+="\n"+(state==EquipmentAffixState.Hidden ?
+                "???  · Chưa khám phá" :
+                state==EquipmentAffixState.KnownLocked ?
+                "<color=#8A9A9D>[Khóa] "+StatLine(item,line)+"</color>" :
+                "<color=#BFE9D4>"+StatLine(item,line)+"</color>");
+        }
+        forgeInfo.text="Dòng phụ: "+count+"/"+item.extraStats.Count+details;
+        forgeProgressLabel.text="Ước lượng: "+EquipmentFoundation.RarityName(item.forgeStageStartRarity)+
+            " → "+EquipmentFoundation.RarityName(item.forgeStageTargetRarity)+
+            "  ·  "+EquipmentRefinement.ProgressPercent(item)+"%";
+        forgeMaterialLabel.text="Nguyên liệu rèn: "+material+
+            "     (+ cấp/rèn: 1  ·  + đặc biệt: 10)";
+        forgeMessage.text=lastForgeMessage;
+        LayoutForge(root.rect.width,root.rect.height);
+    }
+
+    private void LayoutForge(float width,float height)
+    {
+        if(forgeOverlay==null)return;
+        float w=Mathf.Max(240f,width),h=Mathf.Max(240f,height);
+        Place(forgeOverlay,0f,0f,w,h);
+        float fw=Mathf.Min(w-14f,440f),fh=Mathf.Min(h-14f,510f);
+        float fx=(w-fw)*.5f,fy=(h-fh)*.5f;
+        Place(forgeFrame,fx,fy,fw,fh);
+        float scale=Mathf.Min(1f,fh/510f);
+        float left=fx+12f,inner=fw-24f;
+        Place((RectTransform)forgeTitle.transform,left,fy+9f,inner-80f,28f);
+        Place(FindForgeButton("Forge_Close"),fx+fw-81f,fy+7f,73f,27f);
+        float cellWidth=128f*scale,cellHeight=124f*scale;
+        float cx=fx+(fw-cellWidth)*.5f, cy=fy+37f*scale;
+        Place(forgeCell,cx,cy,cellWidth,cellHeight);
+        Place(forgeCellInside,cx+4f,cy+4f,cellWidth-8f,cellHeight-8f);
+        Place((RectTransform)forgeCellLevel.transform,cx+cellWidth-60f,cy+8f,54f,22f);
+        Place((RectTransform)forgeCellCount.transform,cx+5f,cy+cellHeight-28f,cellWidth-10f,23f);
+        Place((RectTransform)forgeCellTitle.transform,left,cy+cellHeight+4f,inner,26f);
+        float detailsY=cy+cellHeight+32f;
+        float detailsH=102f*scale;
+        Place((RectTransform)forgeInfo.transform,left,detailsY,inner,detailsH);
+        forgeInfo.alignment=TextAlignmentOptions.TopLeft;
+        float start=detailsY+detailsH+6f;
+        string[] captions={"Cấp vật phẩm","Rèn thường","Rèn đặc biệt"};
+        string[] values={forgeItemId==""?"":GetForgeValue(0),
+            forgeItemId==""?"":GetForgeValue(1),forgeItemId==""?"":GetForgeValue(2)};
+        float rowStep=39f*scale;
+        for(int i=0;i<3;i++)
+        {
+            Place(forgeMinus[i],fx+fw-102f,start+i*rowStep,29f,29f*scale);
+            Place(forgePlus[i],fx+fw-36f,start+i*rowStep,29f,29f*scale);
+            var label=GetForgeRowLabel(i);
+            Place((RectTransform)label.transform,left,start+i*rowStep,fw-130f,29f*scale);
+            label.text=captions[i]+"  "+values[i];
+            label.alignment=TextAlignmentOptions.MidlineLeft;
+        }
+        float barY=start+rowStep*3+3f;
+        Place((RectTransform)forgeProgressLabel.transform,left,barY,inner,25f*scale);
+        Place(forgeProgressBack,left,barY+27f*scale,inner,12f*scale);
+        var item=EquipmentRuntime.Find(Hero(),forgeItemId);
+        float pct=item==null?0:EquipmentRefinement.ProgressPercent(item)/100f;
+        Place(forgeProgressFill,left,barY+27f*scale,inner*pct,12f*scale);
+        Place((RectTransform)forgeMaterialLabel.transform,left,barY+46f*scale,inner,25f*scale);
+        Place((RectTransform)forgeMessage.transform,left,barY+73f*scale,inner,30f*scale);
+    }
+    private RectTransform FindForgeButton(string name)
+    {
+        foreach(Transform child in forgeOverlay)
+            if(child.gameObject.name==name)return child as RectTransform;
+        return null;
+    }
+    private TextMeshProUGUI GetForgeRowLabel(int row)
+    {
+        string name="Forge_Row"+row;
+        foreach(Transform child in forgeOverlay)
+            if(child.gameObject.name==name)return child.GetComponent<TextMeshProUGUI>();
+        return MakeForgeText(name,"");
+    }
+    private string GetForgeValue(int row)
+    {
+        var item=EquipmentRuntime.Find(Hero(),forgeItemId);
+        if(item==null)return "—";
+        return row==0 ? item.level.ToString() :
+            row==1 ? "+"+item.refineLevel :
+            "+"+item.specialForgeCount;
+    }
+
     private string StatLine(EquipmentInstance item,ItemStatLine stat)
     {
         if(stat==null)return "";
