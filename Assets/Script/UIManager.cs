@@ -118,15 +118,20 @@ public class UIManager : MonoBehaviour
     void Update()
     {
 #if UNITY_STANDALONE_WIN && !UNITY_EDITOR
-        // TransparentWindow owns native clicks, including while Unity has no focus.
+        // TransparentWindow owns native pointer events, including drag gestures.
         if (transparentWindow != null) return;
 #endif
-        if (UnityEngine.InputSystem.Mouse.current != null && UnityEngine.InputSystem.Mouse.current.leftButton.wasPressedThisFrame)
+        var mouse=UnityEngine.InputSystem.Mouse.current;
+        if(mouse==null)return;
+        Vector2 point;
+        if(transparentWindow != null && transparentWindow.TryGetPointerPosition(out point)) { }
+        else point=mouse.position.ReadValue();
+        if(mouse.leftButton.wasPressedThisFrame)
         {
-            Vector2 point;
-            if (transparentWindow != null && transparentWindow.TryGetPointerPosition(out point)) HandleMouseClick(point);
-            else HandleMouseClick(UnityEngine.InputSystem.Mouse.current.position.ReadValue());
+            if(!TryBeginOpeningVolumeDrag(point))HandleMouseClick(point);
         }
+        else if(mouse.leftButton.isPressed)DragOpeningVolume(point);
+        if(mouse.leftButton.wasReleasedThisFrame)EndOpeningVolumeDrag();
     }
 
     public void RegisterInteractable(CustomInteractable item) { if (!interactables.Contains(item)) interactables.Add(item); }
@@ -176,6 +181,34 @@ public class UIManager : MonoBehaviour
         var hit = HitControl(press);
         if (hit != null && hit == HitControl(release)) hit.onClickEvent?.Invoke();
     }
+
+    private StartMenuUI OpeningSettingsMenu()
+    {
+        var gm=Object.FindFirstObjectByType<GameManager>();
+        return gm!=null && gm.preGameUI!=null && gm.preGameUI.activeInHierarchy
+            && (gm.confirmationPopup==null || !gm.confirmationPopup.activeInHierarchy)
+            ? gm.GetComponent<StartMenuUI>() : null;
+    }
+
+    public bool TryBeginOpeningVolumeDrag(Vector2 point)
+    {
+        var menu=OpeningSettingsMenu();
+        openingVolumeDragMenu=null;
+        if(menu==null || !menu.TryBeginVolumeDrag(point))return false;
+        openingVolumeDragMenu=menu;
+        return true;
+    }
+    public bool HasOpeningVolumeDrag => openingVolumeDragMenu!=null;
+    private StartMenuUI openingVolumeDragMenu;
+    public void DragOpeningVolume(Vector2 point)
+    {
+        if(openingVolumeDragMenu!=null)openingVolumeDragMenu.DragVolume(point);
+    }
+    public void EndOpeningVolumeDrag()
+    {
+        if(openingVolumeDragMenu!=null)openingVolumeDragMenu.EndVolumeDrag();
+        openingVolumeDragMenu=null;
+    }
     public bool IsTextInputAt(Vector2 point)
     {
         return devUI != null && devUI.IsOpen && devUI.InputAt(point);
@@ -212,6 +245,7 @@ public class UIManager : MonoBehaviour
             CloseSystemMenu(); var gm = Object.FindFirstObjectByType<GameManager>(); if (gm != null) gm.OnResetClicked();
         });
         MakeMenuButton(mainPage, "WindowSize", "Kích thước cửa sổ", 4, () => ShowPage(sizePage));
+        MakeMenuButton(mainPage, "ReturnTitle", "Quay lại màn hình chính", 5, ReturnToTitle);
         MakeMenuButton(savePage, "Save1", "Lưu vào ô 1", 0, () => SaveToSlot(SaveSlot.ManualSave1));
         MakeMenuButton(savePage, "Save2", "Lưu vào ô 2", 1, () => SaveToSlot(SaveSlot.ManualSave2));
         MakeMenuButton(savePage, "SaveBack", "Quay lại", 2, () => ShowPage(mainPage));
@@ -1037,6 +1071,11 @@ public class UIManager : MonoBehaviour
         ShowPage(savePage);
     }
     public void CloseSystemMenu() { if (systemMenu != null) systemMenu.SetActive(false); ShowPage(mainPage); }
+    private void ReturnToTitle()
+    {
+        var gm=Object.FindFirstObjectByType<GameManager>();
+        if(gm!=null && gm.ReturnToMainMenu())CloseSystemMenu();
+    }
     private void LoadSlot(SaveSlot slot)
     {
         var gm = Object.FindFirstObjectByType<GameManager>();
@@ -1086,7 +1125,14 @@ public class UIManager : MonoBehaviour
         mapMenu.SetActive(false);
     }
 
-    private void ExecuteScale(int width)
+    // Shared resize path: the title settings should remain open after choosing
+    // a radio size, while the in-game legacy size page still closes itself.
+    public void ApplyWindowSizeFromOpening(int width)
+    {
+        if(width!=600 && width!=800 && width!=1150)return;
+        ResizeCompactWindow(width);
+    }
+    private void ResizeCompactWindow(int width)
     {
         if (transparentWindow == null) transparentWindow = FindObjectOfType<TransparentWindow>();
         int height = Mathf.RoundToInt(width * (9f / 16f));
@@ -1095,6 +1141,10 @@ public class UIManager : MonoBehaviour
             transparentWindow.ResizeWindow(width,height);
         else
             Screen.SetResolution(width,height,FullScreenMode.Windowed);
+    }
+    private void ExecuteScale(int width)
+    {
+        ResizeCompactWindow(width);
         CloseSystemMenu();
     }
 
