@@ -2,277 +2,216 @@ using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 
-// 0.0.53 prototype: artwork placeholders and all animation live in Unity,
-// without movie files, modifying the battle world, or advancing the save.
+// Opening: persistent clouds + optional full-window background video,
+// one motionless splash-video frame at 27s, and UI fade/reveal.
+// Camera and gameplay coordinates are never moved or scaled.
 public sealed class OpeningCinematicUI : MonoBehaviour
 {
-    public const float ShowcaseCueSeconds = 27f;
-    public const float EntrySeconds = 2.7f;
-    private const float MenuRevealSeconds = 1.5f;
+    public const float ShowcaseCueSeconds=27f;
+    public const float EntrySeconds=2.7f;
+    private const float MenuRevealSeconds=1.5f;
 
     private GameManager game;
     private StartMenuUI menu;
-    private RectTransform canvasArea;
+    private RectTransform canvasArea, backdrop;
+    private RectTransform sky, far, near, backCloud, cloudLeft, cloudRight;
+    private Image baseImage;
     private CanvasGroup menuFade, backdropFade;
-    private float menuAlphaBeforeEntry;
-    private RectTransform backdrop, sky, far, near, backCloud, cloudLeft, cloudRight;
-    private RectTransform splashLeft, splashRight, title;
-    private Image baseImage, leftCloudImage, rightCloudImage, splashLeftImage, splashRightImage;
-    private CanvasGroup splashLeftFade, splashRightFade;
-    private TextMeshProUGUI splashLeftLabel, splashRightLabel;
-    private float elapsed, enterElapsed;
-    private bool entering, finished, orderFixed;
     private OpeningArtTheme theme;
-    private OpeningSplashShowcase showcase;
     private OpeningBackgroundVideo videoBackground;
+    private OpeningHeroSplashVideo heroVideo;
+    private float elapsed, enterElapsed, menuAlphaBeforeEntry;
+    private bool entering, finished, orderFixed;
 
     public static OpeningCinematicUI Install(GameManager gm, StartMenuUI startMenu,
         RectTransform menuRoot, CanvasGroup menuGroup, TextMeshProUGUI font)
     {
-        if (gm == null || startMenu == null || menuRoot == null) return null;
-        var layer = new GameObject("Opening Cinematic - Placeholder Layers",
-            typeof(RectTransform), typeof(CanvasRenderer));
-        var rect = (RectTransform)layer.transform;
-        rect.SetParent(menuRoot.parent, false);
-        // Draw above the old HUD/ground, but below the active start buttons.
+        if(gm==null||startMenu==null||menuRoot==null)return null;
+        var layer=new GameObject("Opening Cinematic - Placeholder Layers",
+            typeof(RectTransform),typeof(CanvasRenderer),typeof(CanvasGroup));
+        var rect=(RectTransform)layer.transform;
+        rect.SetParent(menuRoot.parent,false);
         rect.SetAsLastSibling();
         menuRoot.SetAsLastSibling();
-        var cinematic = layer.AddComponent<OpeningCinematicUI>();
-        cinematic.game = gm;
-        cinematic.menu = startMenu;
-        cinematic.canvasArea = menuRoot;
-        cinematic.menuFade = menuGroup;
-        cinematic.backdrop = rect;
-        cinematic.backdropFade = layer.AddComponent<CanvasGroup>();
-        cinematic.backdropFade.blocksRaycasts = false;
-        cinematic.theme = Resources.Load<OpeningArtTheme>("OpeningArtTheme");
-        cinematic.Build(font);
-        cinematic.Layout();
-        return cinematic;
+        var opening=layer.AddComponent<OpeningCinematicUI>();
+        opening.game=gm;
+        opening.menu=startMenu;
+        opening.canvasArea=menuRoot;
+        opening.menuFade=menuGroup;
+        opening.backdrop=rect;
+        opening.backdropFade=layer.GetComponent<CanvasGroup>();
+        opening.backdropFade.blocksRaycasts=false;
+        opening.theme=Resources.Load<OpeningArtTheme>("OpeningArtTheme");
+        opening.Build(font);
+        opening.Layout();
+        return opening;
     }
 
-    private RectTransform MakeLayer(string name, Color color, Sprite sprite,
-        TextMeshProUGUI font, string caption, out Image image, out TextMeshProUGUI label)
+    private RectTransform MakeLayer(string name,Color placeholder,Sprite sprite,
+        TextMeshProUGUI template,string caption,out Image image)
     {
-        var go = new GameObject(name, typeof(RectTransform), typeof(CanvasRenderer), typeof(Image));
-        var r = (RectTransform)go.transform;
-        r.SetParent(backdrop, false);
-        image = go.GetComponent<Image>();
-        image.color = sprite == null ? color : Color.white;
-        image.sprite = sprite;
-        image.preserveAspect = false;
-        image.raycastTarget = false;
-        label = null;
-        if (font != null && sprite == null && !string.IsNullOrEmpty(caption))
+        var go=new GameObject(name,typeof(RectTransform),typeof(CanvasRenderer),typeof(Image));
+        var rect=(RectTransform)go.transform;
+        rect.SetParent(backdrop,false);
+        image=go.GetComponent<Image>();
+        image.sprite=sprite;
+        image.color=sprite!=null?Color.white:placeholder;
+        image.raycastTarget=false;
+        image.preserveAspect=false;
+        if(sprite==null&&template!=null&&!string.IsNullOrEmpty(caption))
         {
-            var text = Instantiate(font.gameObject, r);
-            text.name = "PLACEHOLDER - " + caption;
-            text.SetActive(true);
-            label = text.GetComponent<TextMeshProUGUI>();
-            if (label != null)
+            var label=Instantiate(template.gameObject,rect);
+            label.name="PLACEHOLDER - "+caption;
+            label.SetActive(true);
+            var text=label.GetComponent<TextMeshProUGUI>();
+            if(text!=null)
             {
-                label.text = caption;
-                label.fontSize = 14;
-                label.alignment = TextAlignmentOptions.Center;
-                label.color = new Color(1, 1, 1, .76f);
-                label.raycastTarget = false;
-                var tr = (RectTransform)label.transform;
-                tr.anchorMin = tr.anchorMax = new Vector2(.5f,.5f);
-                tr.pivot = new Vector2(.5f,.5f);
-                tr.anchoredPosition = Vector2.zero;
-                tr.sizeDelta = new Vector2(210, 54);
+                text.text=caption;
+                text.fontSize=14f;
+                text.alignment=TextAlignmentOptions.Center;
+                text.color=new Color(1f,1f,1f,.75f);
+                text.raycastTarget=false;
+                var box=(RectTransform)label.transform;
+                box.anchorMin=box.anchorMax=box.pivot=new Vector2(.5f,.5f);
+                box.anchoredPosition=Vector2.zero;
+                box.sizeDelta=new Vector2(210,54);
             }
         }
-        return r;
+        return rect;
     }
 
-    private static void Place(RectTransform r, Vector2 center, Vector2 size)
+    private static void Place(RectTransform rect,Vector2 center,Vector2 size)
     {
-        if (r == null) return;
-        r.anchorMin = r.anchorMax = new Vector2(.5f, .5f);
-        r.pivot = new Vector2(.5f, .5f);
-        r.anchoredPosition = center;
-        r.sizeDelta = size;
+        rect.anchorMin=rect.anchorMax=rect.pivot=new Vector2(.5f,.5f);
+        rect.anchoredPosition=center;
+        rect.sizeDelta=size;
     }
 
     private void Build(TextMeshProUGUI font)
     {
-        Image img; TextMeshProUGUI caption;
-        var art = theme;
-        // The first child is always a full-bleed video surface. No file means
-        // zero render/decoder cost and the existing sky remains opaque.
-        videoBackground = OpeningBackgroundVideo.Install(backdrop);
-        sky = MakeLayer("01 SKY - full background", new Color(.23f,.48f,.59f,1f),
-            art != null ? art.sky : null, font, "BẦU TRỜI / SKY", out baseImage, out caption);
-        far = MakeLayer("02 FAR MOUNTAINS", new Color(.42f,.64f,.68f,1f),
-            art != null ? art.farMountains : null, font, "NÚI XA / FAR MOUNTAINS", out img, out caption);
-        near = MakeLayer("03 NEAR MOUNTAINS", new Color(.24f,.43f,.47f,1f),
-            art != null ? art.nearMountains : null, font, "NÚI GẦN / NEAR MOUNTAINS", out img, out caption);
-        backCloud = MakeLayer("04 BACK CLOUDS", new Color(.83f,.93f,.94f,.42f),
-            art != null ? art.backClouds : null, font, "MÂY XA / BACK CLOUDS", out img, out caption);
-        cloudLeft = MakeLayer("05 FRONT CLOUDS LEFT", new Color(.93f,.96f,1f,.84f),
-            art != null ? art.leftClouds : null, font, "MÂY TRƯỚC / LEFT", out leftCloudImage, out caption);
-        cloudRight = MakeLayer("06 FRONT CLOUDS RIGHT", new Color(.86f,.96f,1f,.84f),
-            art != null ? art.rightClouds : null, font, "MÂY TRƯỚC / RIGHT", out rightCloudImage, out caption);
-        splashLeft = MakeLayer("07 SPLASH LEFT", new Color(.38f,.32f,.56f,.95f),
-            art != null ? art.splashLeft : null, font, "NHÂN VẬT TRÁI", out splashLeftImage, out splashLeftLabel);
-        splashRight = MakeLayer("08 SPLASH RIGHT", new Color(.54f,.28f,.42f,.95f),
-            art != null ? art.splashRight : null, font, "NHÂN VẬT PHẢI", out splashRightImage, out splashRightLabel);
-        splashLeftFade = splashLeft.gameObject.AddComponent<CanvasGroup>();
-        splashRightFade = splashRight.gameObject.AddComponent<CanvasGroup>();
-        showcase = gameObject.AddComponent<OpeningSplashShowcase>();
-        showcase.Configure(splashLeft,splashRight,splashLeftImage,splashRightImage,
-            splashLeftLabel,splashRightLabel);
-        title = MakeLayer("09 GAME TITLE - optional", new Color(.34f,.43f,.48f,.30f),
-            art != null ? art.gameTitle : null, font,
-            "TÊN GAME (CHƯA CHỐT)", out img, out caption);
-        // A placeholder for the future title; hidden until an actual title sprite exists.
-        // The logo is now placed in StartMenuUI, above all clouds and buttons.
-        // Keep this legacy slot hidden to prevent a duplicate title.
-        title.gameObject.SetActive(false);
-        UpdateShowcase(0f);
+        var art=theme;
+        Image ignored;
+        // Explicit draw order: video, sky, hills, clouds, splash, main menu.
+        videoBackground=OpeningBackgroundVideo.Install(backdrop);
+        sky=MakeLayer("01 SKY - full background",new Color(.23f,.48f,.59f,1f),
+            art!=null?art.sky:null,font,"BẦU TRỜI / SKY",out baseImage);
+        far=MakeLayer("02 FAR MOUNTAINS",new Color(.42f,.64f,.68f,1f),
+            art!=null?art.farMountains:null,font,"NÚI XA / FAR MOUNTAINS",out ignored);
+        near=MakeLayer("03 NEAR MOUNTAINS",new Color(.24f,.43f,.47f,1f),
+            art!=null?art.nearMountains:null,font,"NÚI GẦN / NEAR MOUNTAINS",out ignored);
+        backCloud=MakeLayer("04 BACK CLOUDS",new Color(.83f,.93f,.94f,.42f),
+            art!=null?art.backClouds:null,font,"MÂY XA / BACK CLOUDS",out ignored);
+        cloudLeft=MakeLayer("05 FRONT CLOUDS LEFT",new Color(.93f,.96f,1f,.84f),
+            art!=null?art.leftClouds:null,font,"MÂY TRƯỚC / LEFT",out ignored);
+        cloudRight=MakeLayer("06 FRONT CLOUDS RIGHT",new Color(.86f,.96f,1f,.84f),
+            art!=null?art.rightClouds:null,font,"MÂY TRƯỚC / RIGHT",out ignored);
+        heroVideo=OpeningHeroSplashVideo.Install(backdrop,font);
+        // No duplicate game title here: logo is part of StartMenuUI instead.
     }
 
     public void Layout()
     {
-        if (backdrop == null) return;
-        float w = Mathf.Max(320f, ManagementWindowLayout.CombatPixels(Screen.width));
-        float h = Mathf.Max(240f, ManagementWindowLayout.CombatHeight(Screen.height));
-        backdrop.anchorMin = Vector2.zero;
-        backdrop.anchorMax = Vector2.zero;
-        backdrop.pivot = Vector2.zero;
-        backdrop.anchoredPosition = Vector2.zero;
-        backdrop.sizeDelta = new Vector2(w,h);
-        // Rectangles are deliberately named for swapping art later.
+        if(backdrop==null)return;
+        float w=Mathf.Max(320f,ManagementWindowLayout.CombatPixels(Screen.width));
+        float h=Mathf.Max(240f,ManagementWindowLayout.CombatHeight(Screen.height));
+        backdrop.anchorMin=backdrop.anchorMax=backdrop.pivot=Vector2.zero;
+        backdrop.anchoredPosition=Vector2.zero;
+        backdrop.sizeDelta=new Vector2(w,h);
         if(videoBackground!=null)videoBackground.Resize(w,h);
-        Place(sky, Vector2.zero, new Vector2(w * 1.1f, h * 1.12f));
-        Place(far, new Vector2(0,-h*.13f), new Vector2(w*1.18f,h*.62f));
-        Place(near, new Vector2(0,-h*.33f), new Vector2(w*1.24f,h*.34f));
-        Place(backCloud, new Vector2(0,h*.16f), new Vector2(w*1.2f,h*.44f));
-        Place(cloudLeft, new Vector2(-w*.3f,-h*.04f), new Vector2(w*.67f,h*.91f));
-        Place(cloudRight, new Vector2(w*.3f,h*.04f), new Vector2(w*.67f,h*.91f));
-        Place(splashLeft, new Vector2(-w*.37f,-h*.06f), new Vector2(w*.31f,h*.76f));
-        Place(splashRight, new Vector2(w*.37f,-h*.06f), new Vector2(w*.31f,h*.76f));
-        Place(title, new Vector2(0,h*.30f), new Vector2(w*.48f,h*.17f));
-        if(showcase!=null)showcase.Resize();
+        Place(sky,Vector2.zero,new Vector2(w*1.1f,h*1.12f));
+        Place(far,new Vector2(0f,-h*.13f),new Vector2(w*1.18f,h*.62f));
+        Place(near,new Vector2(0f,-h*.33f),new Vector2(w*1.24f,h*.34f));
+        Place(backCloud,new Vector2(0f,h*.16f),new Vector2(w*1.2f,h*.44f));
+        Place(cloudLeft,new Vector2(-w*.3f,-h*.04f),new Vector2(w*.67f,h*.91f));
+        Place(cloudRight,new Vector2(w*.3f,h*.04f),new Vector2(w*.67f,h*.91f));
+        if(heroVideo!=null)heroVideo.Layout(w,h);
     }
 
-    private static void Tint(Image image, float alpha)
-    {
-        if (image == null) return;
-        Color c = image.color;
-        c.a = Mathf.Clamp01(alpha);
-        image.color = c;
-    }
-
-    // All movement remains unscaled even if the game pauses underneath.
     private void Update()
     {
-        if (finished || backdrop == null) return;
-        // UIManager may build the HUD after GameManager created this layer.
-        // Fix draw order once when all Start() methods have completed.
-        if (!orderFixed)
+        if(finished||backdrop==null)return;
+        if(!orderFixed)
         {
             backdrop.SetAsLastSibling();
-            if (canvasArea != null) canvasArea.SetAsLastSibling();
-            if (game != null && game.confirmationPopup != null &&
-                game.confirmationPopup.activeInHierarchy)
+            if(canvasArea!=null)canvasArea.SetAsLastSibling();
+            if(game!=null&&game.confirmationPopup!=null&&game.confirmationPopup.activeInHierarchy)
                 game.confirmationPopup.transform.SetAsLastSibling();
-            orderFixed = true;
+            orderFixed=true;
         }
-        float dt = Mathf.Max(0f, Time.unscaledDeltaTime);
-        if (entering) { AnimateEntry(dt); return; }
-        if (game == null || game.preGameUI == null || !game.preGameUI.activeInHierarchy) return;
-        elapsed += dt;
-        // Sky is a translucent haze when a video exists; otherwise its solid
-        // placeholder hides the gameplay underneath exactly as before.
+        float dt=Mathf.Max(0f,Time.unscaledDeltaTime);
+        if(entering) { AnimateEntry(dt);return; }
+        if(game==null||game.preGameUI==null||!game.preGameUI.activeInHierarchy)return;
+        elapsed+=dt;
         if(baseImage!=null)
         {
-            Color skyColor=baseImage.color;
-            skyColor.a=videoBackground!=null && videoBackground.IsDisplaying ? .18f : 1f;
-            baseImage.color=skyColor;
+            var c=baseImage.color;
+            c.a=videoBackground!=null&&videoBackground.IsDisplaying?.18f:1f;
+            baseImage.color=c;
         }
-        float t = Mathf.Clamp01((elapsed - .65f) / MenuRevealSeconds);
-        if (menuFade != null) menuFade.alpha = t * t * (3f - 2f * t);
-        float w = backdrop.rect.width;
-        float h = backdrop.rect.height;
-        backCloud.anchoredPosition = new Vector2(Mathf.Sin(elapsed*.09f)*w*.035f, h*.16f);
-        cloudLeft.anchoredPosition = new Vector2(-w*.30f+Mathf.Sin(elapsed*.12f)*w*.035f,-h*.04f+Mathf.Sin(elapsed*.19f)*h*.014f);
-        cloudRight.anchoredPosition = new Vector2(w*.30f+Mathf.Sin(elapsed*.11f+1.9f)*w*.032f,h*.04f+Mathf.Sin(elapsed*.16f)*h*.017f);
-        far.localScale = new Vector3(1f+Mathf.Sin(elapsed*.13f)*.008f,1f+Mathf.Sin(elapsed*.13f)*.008f,1f);
-        float reveal=Mathf.Clamp01((elapsed - ShowcaseCueSeconds) / 2.2f);
-        UpdateShowcase(reveal);
-        if(showcase!=null)showcase.Tick(elapsed,dt,reveal);
-    }
-
-    private void UpdateShowcase(float t)
-    {
-        if (splashLeft == null || splashRight == null) return;
-        splashLeftFade.alpha = splashRightFade.alpha = t;
-        float w = Mathf.Max(320f, backdrop.rect.width);
-        float h = Mathf.Max(240f, backdrop.rect.height);
-        splashLeft.anchoredPosition = new Vector2(-w*(.52f-.15f*t),-h*.06f);
-        splashRight.anchoredPosition = new Vector2(w*(.52f-.15f*t),-h*.06f);
+        float m=Mathf.Clamp01((elapsed-.65f)/MenuRevealSeconds);
+        if(menuFade!=null)menuFade.alpha=m*m*(3f-2f*m);
+        float w=backdrop.rect.width,h=backdrop.rect.height;
+        backCloud.anchoredPosition=new Vector2(Mathf.Sin(elapsed*.09f)*w*.035f,h*.16f);
+        cloudLeft.anchoredPosition=new Vector2(-w*.30f+Mathf.Sin(elapsed*.12f)*w*.035f,
+            -h*.04f+Mathf.Sin(elapsed*.19f)*h*.014f);
+        cloudRight.anchoredPosition=new Vector2(w*.30f+Mathf.Sin(elapsed*.11f+1.9f)*w*.032f,
+            h*.04f+Mathf.Sin(elapsed*.16f)*h*.017f);
+        far.localScale=new Vector3(1f+Mathf.Sin(elapsed*.13f)*.008f,
+            1f+Mathf.Sin(elapsed*.13f)*.008f,1f);
+        // Fixed splash. Only one initial alpha fade is done by that component.
+        if(heroVideo!=null)heroVideo.Tick(elapsed);
     }
 
     public bool IsEntering => entering;
     public void BeginEntering()
     {
-        if (entering || finished) return;
-        entering = true;
-        enterElapsed = 0f;
-        menuAlphaBeforeEntry = menuFade != null ? menuFade.alpha : 1f;
-        if (menu != null) menu.LockButtonsForEntry();
-        if (menuFade != null) menuFade.interactable = false;
-        Debug.Log("[Opening] Transition started; gameplay ready beneath cloud layers.");
+        if(entering||finished)return;
+        entering=true;
+        enterElapsed=0f;
+        menuAlphaBeforeEntry=menuFade!=null?menuFade.alpha:1f;
+        if(menu!=null)menu.LockButtonsForEntry();
+        if(menuFade!=null)menuFade.interactable=false;
     }
 
     private void AnimateEntry(float dt)
     {
-        enterElapsed += dt;
-        float t = Mathf.Clamp01(enterElapsed / EntrySeconds);
-        float eased = t * t * (3f - 2f*t);
-        float w = backdrop.rect.width;
-        float h = backdrop.rect.height;
-        if (menuFade != null) menuFade.alpha = menuAlphaBeforeEntry * (1f - Mathf.Clamp01(t*2.2f));
-        if (backdropFade != null) backdropFade.alpha = 1f - eased;
-        splashLeftFade.alpha = splashRightFade.alpha = (1f-t)*(1f-t);
-        splashLeft.anchoredPosition = new Vector2(-w*(.37f+.6f*eased),-h*.06f);
-        splashRight.anchoredPosition = new Vector2(w*(.37f+.6f*eased),-h*.06f);
-        cloudLeft.anchoredPosition = new Vector2(-w*(.3f+1.2f*eased),-h*.04f);
-        cloudRight.anchoredPosition = new Vector2(w*(.3f+1.2f*eased),h*.04f);
-        backCloud.anchoredPosition = new Vector2(0,h*(.16f-.6f*eased));
-        // A 2D parallax/scale illusion; never scale the live combat canvas or
-        // alter camera/attack coordinates (the 0.0.52 resize bug must not recur).
-        float scale = 1f + .7f * eased;
-        far.localScale = near.localScale = new Vector3(scale,scale,1f);
-        sky.localScale = new Vector3(1f + .15f*eased,1f + .15f*eased,1f);
-        var c = baseImage.color; c.a = 1f - eased; baseImage.color = c;
-        if (t < 1f) return;
-        finished = true;
-        if (showcase != null) showcase.Deactivate();
-        if (videoBackground != null) videoBackground.StopPlayback();
-        if (game != null && game.preGameUI != null) game.preGameUI.SetActive(false);
-        if (UIManager.Instance != null) UIManager.Instance.SetPaused(false);
+        enterElapsed+=dt;
+        float t=Mathf.Clamp01(enterElapsed/EntrySeconds);
+        float eased=t*t*(3f-2f*t);
+        float w=backdrop.rect.width,h=backdrop.rect.height;
+        if(menuFade!=null)menuFade.alpha=menuAlphaBeforeEntry*(1f-Mathf.Clamp01(t*2.2f));
+        if(backdropFade!=null)backdropFade.alpha=1f-eased;
+        // The clouds and sky move out to reveal real gameplay underneath.
+        // The splash VIDEO frame remains in exactly the same position;
+        // its visibility follows the overall opening fade only.
+        cloudLeft.anchoredPosition=new Vector2(-w*(.3f+1.2f*eased),-h*.04f);
+        cloudRight.anchoredPosition=new Vector2(w*(.3f+1.2f*eased),h*.04f);
+        backCloud.anchoredPosition=new Vector2(0f,h*(.16f-.6f*eased));
+        float scale=1f+.7f*eased;
+        far.localScale=near.localScale=new Vector3(scale,scale,1f);
+        sky.localScale=new Vector3(1f+.15f*eased,1f+.15f*eased,1f);
+        if(t<1f)return;
+        finished=true;
+        if(heroVideo!=null)heroVideo.StopVideo();
+        if(videoBackground!=null)videoBackground.StopPlayback();
+        if(game!=null&&game.preGameUI!=null)game.preGameUI.SetActive(false);
+        if(UIManager.Instance!=null)UIManager.Instance.SetPaused(false);
         backdrop.gameObject.SetActive(false);
-        Debug.Log("[Opening] Transition ended. Gameplay resumed.");
     }
 
     public void ResetForMenu()
     {
-        if (backdrop == null) return;
-        finished = entering = orderFixed = false;
-        elapsed = enterElapsed = 0f;
-        if (backdropFade != null) backdropFade.alpha = 1f;
-        if (showcase != null) showcase.ResetShowcase();
-        if (videoBackground != null) videoBackground.StartPlayback();
+        if(backdrop==null)return;
+        finished=entering=orderFixed=false;
+        elapsed=enterElapsed=0f;
+        if(backdropFade!=null)backdropFade.alpha=1f;
+        if(heroVideo!=null)heroVideo.ResetToTitle();
+        if(videoBackground!=null)videoBackground.StartPlayback();
         backdrop.gameObject.SetActive(true);
         backdrop.SetAsLastSibling();
-        if (canvasArea != null) canvasArea.SetAsLastSibling();
-        if (menuFade != null) { menuFade.alpha = 0f; menuFade.interactable = true; }
-        baseImage.color = new Color(baseImage.color.r,baseImage.color.g,baseImage.color.b,1f);
-        sky.localScale = far.localScale = near.localScale = Vector3.one;
+        if(canvasArea!=null)canvasArea.SetAsLastSibling();
+        if(menuFade!=null){menuFade.alpha=0f;menuFade.interactable=true;}
+        sky.localScale=far.localScale=near.localScale=Vector3.one;
         Layout();
-        UpdateShowcase(0f);
     }
 }
