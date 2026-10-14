@@ -83,6 +83,7 @@ public sealed class EquipmentInstance
     // Version 0 means a pre-forge item; migration never rerolls its affixes.
     public int forgeSchemaVersion = 0;
     public int forgeStageProgress = 0; // 0..10 regular upgrades per stage
+    public int forgeStageBasePercent = 0; // estimated starting point after special leap
     public EquipmentRarity forgeStageStartRarity = EquipmentRarity.Common;
     public EquipmentRarity forgeStageTargetRarity = EquipmentRarity.Common;
     public int specialForgeCount = 0;
@@ -107,6 +108,7 @@ public sealed class ForgeStageSnapshot
     public EquipmentRarity stageStart;
     public EquipmentRarity stageTarget;
     public int stageProgress;
+    public int stageBasePercent;
     public int naturalLimit;
 }
 
