@@ -248,7 +248,10 @@ namespace UnityEngine {
  public static class Application { public static string persistentDataPath=System.IO.Path.Combine(System.IO.Path.GetTempPath(),"idle-tests-"+Guid.NewGuid());public static void Quit(){} }
  public static class Debug { public static void Log(string s){} public static void LogWarning(string s){} public static void LogError(string s){System.Console.Error.WriteLine(s); } }
  public static class ColorUtility { public static bool TryParseHtmlString(string s,out Color c){c=new Color();return true;} }
- public static class RectTransformUtility { public static bool RectangleContainsScreenPoint(RectTransform r,Vector2 p,object camera=null){ if(r==null)return false;var v=r.InverseTransformPoint(p);return v.x>=r.rect.xMin&&v.x<=r.rect.xMax&&v.y>=r.rect.yMin&&v.y<=r.rect.yMin+r.rect.height; } }
+ public static class RectTransformUtility {
+  public static bool RectangleContainsScreenPoint(RectTransform r,Vector2 p,object camera=null){ if(r==null)return false;var v=r.InverseTransformPoint(p);return v.x>=r.rect.xMin&&v.x<=r.rect.xMax&&v.y>=r.rect.yMin&&v.y<=r.rect.yMin+r.rect.height; }
+  public static bool ScreenPointToLocalPointInRectangle(RectTransform r,Vector2 screen,object camera,out Vector2 local){local=r==null?Vector2.zero:(Vector2)r.InverseTransformPoint(screen);return r!=null;}
+ }
  // Test JSON double for primitive fields and identity lists; not Unity serialization.
  public static class JsonUtility {
   public static string ToJson(object value,bool pretty){var fields=new List<string>();foreach(var f in value.GetType().GetFields()) {
