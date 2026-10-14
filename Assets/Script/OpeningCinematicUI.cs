@@ -62,7 +62,8 @@ public sealed class OpeningCinematicUI : MonoBehaviour
         // Only the artwork layers get a soft edge. The full-video layer,
         // sky and splash frames retain their original opacity.
         if(name.Contains("MOUNTAINS") || name.Contains("CLOUDS"))
-            go.AddComponent<OpeningEdgeFeather>().Configure(image,48f);
+            go.AddComponent<OpeningEdgeFeather>().Configure(image,
+                theme!=null?theme.edgeFeatherPixels:48f);
         if(sprite==null&&template!=null&&!string.IsNullOrEmpty(caption))
         {
             var label=Instantiate(template.gameObject,rect);
