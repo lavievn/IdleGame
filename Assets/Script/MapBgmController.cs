@@ -13,10 +13,25 @@ public sealed class MapBgmController : MonoBehaviour
     private int currentGroup = -2;
     private AudioClip previousTrack;
     private bool fading;
-    private float elapsed, oldVolume;
+    private float elapsed, outgoingWeight;
     private bool missingCatalogWarned;
 
+    private const string VolumePreferenceKey = "IdleGame.BgmVolume";
+    public static MapBgmController Instance { get; private set; }
     [Range(0f, 1f)] public float musicVolume = .6f;
+
+    // The volume is global for opening and all map playlists. Keep it outside
+    // save slots so New Game / Load Game do not silently reset audio settings.
+    public static float CurrentVolume => Instance != null
+        ? Instance.musicVolume : Mathf.Clamp01(PlayerPrefs.GetFloat(VolumePreferenceKey, .6f));
+
+    public static void SetVolume(float value)
+    {
+        value = Mathf.Clamp01(value);
+        PlayerPrefs.SetFloat(VolumePreferenceKey, value);
+        PlayerPrefs.Save();
+        if (Instance != null) Instance.musicVolume = value;
+    }
 
     public static void Install(GameManager host)
     {
@@ -28,6 +43,13 @@ public sealed class MapBgmController : MonoBehaviour
 
     private void Awake()
     {
+        if (Instance != null && Instance != this)
+        {
+            Destroy(gameObject);
+            return;
+        }
+        Instance = this;
+        musicVolume = CurrentVolumeFromPreferences();
         for (int i = 0; i < sources.Length; i++)
         {
             sources[i] = gameObject.AddComponent<AudioSource>();
@@ -36,6 +58,11 @@ public sealed class MapBgmController : MonoBehaviour
             sources[i].spatialBlend = 0f;
             sources[i].volume = 0f;
         }
+    }
+
+    private static float CurrentVolumeFromPreferences()
+    {
+        return Mathf.Clamp01(PlayerPrefs.GetFloat(VolumePreferenceKey, .6f));
     }
 
     // Audio themes are locked to a 5-map region, not each individual terrain
@@ -111,7 +138,9 @@ public sealed class MapBgmController : MonoBehaviour
 
         // When transitioning during a previous fade, retain the currently
         // audible channel and smoothly replace the second channel.
-        oldVolume = outgoing.volume;
+        outgoingWeight = musicVolume > .0001f
+            ? Mathf.Clamp01(outgoing.volume / musicVolume)
+            : (outgoing.isPlaying ? 1f : 0f);
         activeIndex = nextIndex;
         elapsed = 0f;
         fading = incoming.clip != null || outgoing.isPlaying;
@@ -148,12 +177,18 @@ public sealed class MapBgmController : MonoBehaviour
                 CrossfadeToNext();
         }
 
-        if (!fading) return;
+        if (!fading)
+        {
+            // Volume changes must apply immediately even if the track is
+            // halfway through: the original code changed it only on fade.
+            current.volume = current.isPlaying ? musicVolume : 0f;
+            return;
+        }
         elapsed += Time.unscaledDeltaTime;
         float t = Mathf.Clamp01(elapsed / FadeSeconds);
         AudioSource outgoingSource = sources[1 - activeIndex];
         AudioSource incomingSource = sources[activeIndex];
-        outgoingSource.volume = Mathf.Lerp(oldVolume, 0f, t);
+        outgoingSource.volume = outgoingWeight * (1f - t) * musicVolume;
         incomingSource.volume = incomingSource.clip != null ? Mathf.Lerp(0f, musicVolume, t) : 0f;
         if (t < 1f) return;
         outgoingSource.Stop();
@@ -166,5 +201,10 @@ public sealed class MapBgmController : MonoBehaviour
     {
         foreach (AudioSource source in sources)
             if (source != null) source.Stop();
+    }
+
+    private void OnDestroy()
+    {
+        if (Instance == this) Instance = null;
     }
 }
