@@ -59,6 +59,10 @@ public sealed class OpeningCinematicUI : MonoBehaviour
         image.color=sprite!=null?Color.white:placeholder;
         image.raycastTarget=false;
         image.preserveAspect=false;
+        // Only the artwork layers get a soft edge. The full-video layer,
+        // sky and splash frames retain their original opacity.
+        if(name.Contains("MOUNTAINS") || name.Contains("CLOUDS"))
+            go.AddComponent<OpeningEdgeFeather>().Configure(image,48f);
         if(sprite==null&&template!=null&&!string.IsNullOrEmpty(caption))
         {
             var label=Instantiate(template.gameObject,rect);
@@ -129,6 +133,8 @@ public sealed class OpeningCinematicUI : MonoBehaviour
         Place(cloudRight,new Vector2(w*.3f,h*.04f),new Vector2(w*.67f,h*.91f));
         if(splashLeft!=null)splashLeft.Layout(w,h);
         if(splashRight!=null)splashRight.Layout(w,h);
+        foreach(var layer in backdrop.GetComponentsInChildren<OpeningEdgeFeather>(true))
+            layer.Refresh();
     }
 
     private void Update()
