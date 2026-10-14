@@ -183,7 +183,9 @@ public class StartMenuUI : MonoBehaviour
         Place((RectTransform)musicLabel.transform,new Vector2(labelX,row2),new Vector2(labelWidth,30));
         float choiceWidth=Mathf.Clamp(w*.12f,52f,76f);
         float gap=Mathf.Clamp(w*.01f,4f,9f);
-        float firstX=-choiceWidth-gap;
+        // Reserve the left column for the row label; radio boxes start at
+        // the screen center to avoid clipping/overlap at 600px and below.
+        float firstX=0f;
         for(int i=0;i<3;i++)
             Place((RectTransform)sizeButtons[i].transform,
                 new Vector2(firstX+i*(choiceWidth+gap),row1),
