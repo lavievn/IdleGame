@@ -76,3 +76,7 @@ Các số là **prototype** để xem nhịp và sẽ điều chỉnh sau khi th
 - `Assets/Script/GameManager.cs`: chỉ khi bắt đầu từ opening mới chờ transition rồi tiếp tục gameplay.
 - `Assets/Script/UIManager.cs`: menu toàn màn hình, ưu tiên click, giữ bố cục ở các kích thước.
 - `Tests~/OpeningCinematicRegression.cs`: bài thử cấu trúc trên Unity stub (không thay thế Play Mode).
+
+## 8. Splash art thay đổi ngẫu nhiên (bổ sung)
+
+Thay vì chỉ có hai ảnh cố định, opening đã có module `OpeningSplashShowcase.cs`. Người phát triển thêm PNG/JPG hoặc MP4 vào `Assets/Resources/OpeningSplashArt/`, Unity lập danh mục và lựa chọn hai bên sau mốc 27 giây, zoom in/out có nhịp nhanh chậm và crossfade. Hai ô `splashLeft`/`splashRight` trong `OpeningArtTheme.asset` trở thành ảnh dự phòng nếu kho trống. **Xem [Opening_SplashArt_0.0.53.md](Opening_SplashArt_0.0.53.md)** để có quy trình nhập tài nguyên, giới hạn video, checklist Windows. Các mô tả hai ảnh cố định ở các phần lịch sử trên dành cho phiên bản trước khi thêm kho.
