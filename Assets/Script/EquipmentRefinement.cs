@@ -148,6 +148,7 @@ public static class EquipmentRefinement
                 break;
             case Operation.NormalUp:
                 if(item.forgeStageProgress>=StageSteps ||
+                   item.refineLevel>=item.naturalRefineLimit ||
                    item.refineLevel>=EquipmentFoundation.MaximumRefineLevel)
                 {message="Chặng rèn thường đã chạm giới hạn.";return false;}
                 cost=RegularCost;break;
