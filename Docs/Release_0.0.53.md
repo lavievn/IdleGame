@@ -39,3 +39,12 @@
 8. Không làm thay đổi logic trang bị, lưu nhân vật, chiến đấu, BGM1–5 hoặc opening.
 
 **Giới hạn xác minh:** Không có Unity Editor/Windows Play Mode trong môi trường trợ lý; kiểm tra tại đây mới là mã/tài nguyên trên GitHub và rà soát tĩnh.
+
+## Bổ sung cuối bản 0.0.53 — cảnh mở đầu (đang kiểm thử)
+
+- **Không dùng video AE:** `OpeningCinematicUI` dựng runtime 9 lớp hình làm placeholder. Mỗi lớp có vị trí, màu và nhãn; người phát triển gán Sprite qua `Assets/Resources/OpeningArtTheme.asset` mà không cần chỉnh code.
+- Menu có 4 nút **Tiếp tục / Chơi mới / Cài đặt / Thoát**. Trang Cài đặt trước mắt cho đổi âm lượng nhạc và quay lại. Popup Có/Không vẫn được giữ để không phá luồng Save/Continue.
+- Mây bay liên tục; sau **27 giây** thì hai placeholder splash art hiện. Khi xác nhận vào game thành công: menu biến mất, mây/splash dạt ra và lớp núi giãn trong **2,7 giây**, gameplay bên dưới lộ ra rồi mới tiếp tục tick combat. Nhạc opening → BGM vẫn chuyển âm qua bộ quản lý âm thanh hiện tại.
+- Không scale gameplay, camera combat, Ground, hero hay đạn trong hiệu ứng này. Không nhập ảnh có watermark/chroma từ bản mockup.
+- Đã cập nhật stub và hồi quy menu 4 nút, thêm kiểm thử cấu trúc opening; **chưa chạy thành công trong Unity Editor/Windows**.
+- Quy trình gán Sprite và checklist: [Docs/Opening_0.0.53.md](Opening_0.0.53.md).
