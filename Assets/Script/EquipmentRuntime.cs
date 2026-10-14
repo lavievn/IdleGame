@@ -81,7 +81,7 @@ public static class EquipmentRuntime
     {
         if(hero==null || hero.demoSwordGranted) return false;
         if(hero.equipmentItems==null) hero.equipmentItems=new List<EquipmentInstance>();
-        var sword=EquipmentFoundation.CreateDemoSword();
+        var sword=EquipmentRefinement.CreateForgeDemoSword();
         if(!AddInstance(hero,sword)) return false;
         hero.demoSwordGranted=true;
         hero.isDirty=true;
@@ -127,6 +127,8 @@ public static class EquipmentRuntime
                 item.affixSchemaVersion=EquipmentFoundation.AffixSchemaVersion;
                 changed=true;
             }
+            if(EquipmentFoundation.IsValid(item) && EquipmentRefinement.NormalizeMetadata(item))
+                changed=true;
             bool legitimate=EquipmentFoundation.IsValid(item);
             bool unique= !string.IsNullOrEmpty(item.instanceId) &&
                 seenIds.Add(item.instanceId);
@@ -161,12 +163,12 @@ public static class EquipmentRuntime
                 !EquipmentFoundation.IsSlotAllowed(item,item.equippedSlot) ||
                 !occupied.Add(item.equippedSlot)) continue;
             for(int i=0;i<item.mainStats.Count;i++)
-                expected.Add(item.mainStats[i].AsModifier(
+                expected.Add(EquipmentRefinement.EffectiveModifier(item,item.mainStats[i],
                     EquipmentFoundation.SourcePrefix+item.instanceId+":m:"+i));
             for(int i=0;i<item.extraStats.Count;i++)
                 if(EquipmentFoundation.AffixState(item,item.extraStats[i]) ==
                     EquipmentAffixState.Active)
-                    expected.Add(item.extraStats[i].AsModifier(
+                    expected.Add(EquipmentRefinement.EffectiveModifier(item,item.extraStats[i],
                         EquipmentFoundation.SourcePrefix+item.instanceId+":a:"+i));
         }
         var actual=new List<CombatStatModifier>();
@@ -217,8 +219,24 @@ public static class EquipmentRuntime
             naturalRefineLimit=item.naturalRefineLimit,
             highestRefineLevel=item.highestRefineLevel,
             hasBeenRefined=item.hasBeenRefined,
+            forgeSchemaVersion=item.forgeSchemaVersion,
+            forgeStageProgress=item.forgeStageProgress,
+            forgeStageStartRarity=item.forgeStageStartRarity,
+            forgeStageTargetRarity=item.forgeStageTargetRarity,
+            specialForgeCount=item.specialForgeCount,
+            powerBaseLevel=item.powerBaseLevel,
+            powerBaseRefine=item.powerBaseRefine,
+            powerBaseRarity=item.powerBaseRarity,
             isEquipped=false,equippedSlot=item.equippedSlot
         };
+        if(item.forgeHistory!=null) foreach(var stage in item.forgeHistory)
+            if(stage!=null) output.forgeHistory.Add(new ForgeStageSnapshot {
+                previousRarity=stage.previousRarity,
+                stageStart=stage.stageStart,
+                stageTarget=stage.stageTarget,
+                stageProgress=stage.stageProgress,
+                naturalLimit=stage.naturalLimit
+            });
         foreach(var line in item.mainStats) output.mainStats.Add(CopyLine(line));
         foreach(var line in item.extraStats) output.extraStats.Add(CopyLine(line));
         return output;
