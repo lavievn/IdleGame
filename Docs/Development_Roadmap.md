@@ -1,5 +1,15 @@
 # IdleGame — Rà soát kiến trúc và lộ trình theo giai đoạn
 
+### Bổ sung 0.0.53 — Opening tiên cảnh (prototype, chưa nghiệm thu)
+
+- **Đã commit trên `feature/0.0.53`:** scene opening được dựng bằng mã trên Canvas hiện có với 9 ô asset tham chiếu trong `Assets/Resources/OpeningArtTheme.asset`, dùng khối màu khi chưa có hình; bốn nút Tiếp tục/Chơi mới/Cài đặt/Thoát, thiết lập âm lượng trong opening, lưu nguyên luồng xác nhận Save.
+- **Hiệu ứng đã lập trình:** mây trôi, parallax núi, splash hai bên hiện sau 27s, fade + tách lớp + zoom giả lập 2,7s khi vào gameplay. Gameplay thật chuẩn bị phía dưới và pause tới khi kết thúc chuyển cảnh; không scale mặt phẳng logic combat.
+- **Chưa làm:** tên game, artwork cuối sạch watermark, khớp cue theo nhạc thay vì thời gian, shader mây/particle/motion polish và xác minh click-through/hiệu năng Windows.
+- **Lần kiểm thử tiếp theo:** Unity Play Mode không lỗi; menu có đủ 4 nút; splash sau 27s; Continue/NewGame giữ đúng save; chuyển cảnh không phá camera, wave, âm thanh; resize các kích thước 600/800/1150. Sau nghiệm thu mới cân nhắc merge `main`.
+- **Hướng dẫn thay Sprite và bài kiểm thử:** [Opening_0.0.53.md](Opening_0.0.53.md).
+
+
+
 ## Cập nhật hiện hành — 14/10/2026 (0.0.52-refinement → chuẩn bị BGM)
 
 > **Nguồn trạng thái:** mã của nhánh `feature/0.0.52-refinement` và phản hồi Play Mode của người phát triển. Đây là checkpoint công việc, **mã BGM đã được viết nhưng asset nhạc chưa thể tải lên GitHub bằng kết nối hiện tại**. Các mục lịch sử .54g/B1/B2 ở phía dưới vẫn được giữ để tra cứu, nhưng không phải tóm tắt mới nhất.
