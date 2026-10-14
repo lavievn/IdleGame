@@ -44,3 +44,11 @@
 Lớp debug chỉ tạo đối tượng UI con với `raycastTarget=false`; không đụng tới trang bị, số liệu Hero, map, logic combat hay Save/Load. Việc đo không tự sửa RectTransform của thành phần gốc. Mã mới chỉ nằm trên nhánh UI.
 
 **Chưa biên dịch/kiểm thử bằng Unity Editor từ môi trường trợ lý.** Hãy kiểm tra Play Mode và Windows Build trước khi coi nhánh UI là ổn định.
+
+## Chế độ dựng UI màu mặc định trước khi hợp nhất Equipment
+
+- `UIManager.inventoryUseArtTheme = false` trong hai Scene: **không sử dụng Sprite nào từ InventoryArtTheme trong thời gian này**. Màu xanh tối mặc định của cửa sổ, ô trang bị, ô túi, tab và nút được khôi phục. Các file PNG/Sprite và `InventoryArtTheme.asset` **được giữ trong repo**, không xóa; hai ảnh ground/parallax hoạt động độc lập, không bị thay đổi.
+- Để bật lại, chọn `UIManager`, bật `Inventory Use Art Theme` rồi dùng menu `0.0.52 - Ap dung anh Inventory (Play Mode)` trong Play Mode hoặc mở lại cửa sổ Kho đồ.
+- Debug overlay có **tên vùng ở góc trên trái**, màu chữ bình thường. Số đo **Cao x Rộng ở góc dưới phải**, màu đỏ; với khung rộng/cao có thêm gợi ý 9S (Nên/Không) và chế độ Simple/Sliced/chưa gán.
+- Màu đỏ chỉnh được bằng `Inventory Debug Size Text`, mặc định RGB (1, 0.24, 0.25).
+- Nếu vừa chỉnh Sprite rồi tắt Theme ngay trong Play Mode, hãy áp dụng lại từ Context Menu để khôi phục cả màu mặc định của các ô vật phẩm thay vì giữ màu trắng của Sprite cũ.
