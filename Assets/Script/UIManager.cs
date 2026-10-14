@@ -348,6 +348,15 @@ public class UIManager : MonoBehaviour
             new Vector2(1,1),new Vector2(-308,-4),new Vector2(62,24),OpenInventory);
         volumeButton = SmallButton(canvas,"MusicVolumeButton","Âm lượng",new Vector2(1,1),
             new Vector2(1,1),new Vector2(-244,-4),new Vector2(62,24),ToggleMusicVolume);
+        // The label is longer than 'Kho đồ': keep the same button size without
+        // introducing a second text line at the compact 600px window preset.
+        var volumeCaption = volumeButton.GetComponentInChildren<TMPro.TextMeshProUGUI>(true);
+        if (volumeCaption != null)
+        {
+            ReadableText(volumeCaption,11f);
+            volumeCaption.enableWordWrapping = false;
+            volumeCaption.overflowMode = TMPro.TextOverflowModes.Ellipsis;
+        }
         musicVolumePanel = MusicVolumePanelUI.Install(this, canvas);
         inventoryUI = InventoryPanelUI.Install(this,hudCanvas);
         devUI = new DevBalanceUI(this, combatUIRoot);
