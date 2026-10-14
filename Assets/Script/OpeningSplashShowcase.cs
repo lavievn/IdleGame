@@ -27,6 +27,7 @@ public sealed class OpeningSplashShowcase : MonoBehaviour
     {
         public RectTransform holder;
         public Image placeholder;
+        public Color originalColor;
         public TextMeshProUGUI caption;
         public Frame[] frames = new Frame[2];
         public int active;
@@ -60,7 +61,14 @@ public sealed class OpeningSplashShowcase : MonoBehaviour
         }
         if (!HasMedia) return;
         for (int side=0;side<2;side++)
-            for (int i=0;i<2;i++) lanes[side].frames[i] = MakeFrame(lanes[side].holder,side,i);
+        {
+            var slot=lanes[side];
+            slot.originalColor=slot.placeholder!=null?slot.placeholder.color:Color.white;
+            if (slot.holder.GetComponent<RectMask2D>()==null)
+                slot.holder.gameObject.AddComponent<RectMask2D>();
+            for (int i=0;i<2;i++)
+                slot.frames[i] = MakeFrame(slot.holder,side,i);
+        }
         Debug.Log("[OpeningSplash] Available: " + images.Length + " sprites, " +
             videos.Length + " videos (one video decoder max).");
     }
@@ -126,7 +134,17 @@ public sealed class OpeningSplashShowcase : MonoBehaviour
     private void OnVideoError(VideoPlayer source,string error)
     {
         Debug.LogWarning("[OpeningSplash] Video unavailable: " + error);
-        if(videoFrame!=null)videoFrame.video.enabled=false;
+        if(videoFrame!=null)
+        {
+            videoFrame.video.enabled=false;
+            for(int i=0;i<2;i++)
+                if(lanes[i].frames[0]==videoFrame || lanes[i].frames[1]==videoFrame)
+                {
+                    if(lanes[i].placeholder!=null)
+                        lanes[i].placeholder.color=lanes[i].originalColor;
+                    if(lanes[i].caption!=null)lanes[i].caption.gameObject.SetActive(true);
+                }
+        }
         StopVideo();
     }
     private void StopVideo()
@@ -212,7 +230,10 @@ public sealed class OpeningSplashShowcase : MonoBehaviour
         if(PutMedia(lane,slot.frames[0],null))
         {
             slot.frames[0].fade.alpha=1f;
-            slot.placeholder.color=new Color(1f,1f,1f,0f);
+            if(slot.placeholder!=null)
+            {
+                Color c=slot.originalColor;c.a=0f;slot.placeholder.color=c;
+            }
             if(slot.caption!=null)slot.caption.gameObject.SetActive(false);
         }
     }
@@ -327,9 +348,7 @@ public sealed class OpeningSplashShowcase : MonoBehaviour
         foreach(var lane in lanes)
         {
             lane.started=false;lane.transitioning=false;lane.age=0f;
-            if(lane.placeholder!=null)
-                lane.placeholder.color=new Color(lane.placeholder.color.r,
-                    lane.placeholder.color.g,lane.placeholder.color.b,.95f);
+            if(lane.placeholder!=null)lane.placeholder.color=lane.originalColor;
             if(lane.caption!=null)lane.caption.gameObject.SetActive(true);
             foreach(var frame in lane.frames)
                 if(frame!=null)
