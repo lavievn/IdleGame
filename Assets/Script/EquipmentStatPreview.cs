@@ -123,12 +123,12 @@ public static class EquipmentStatPreview
             if(!EquipmentFoundation.IsSlotAllowed(item,destination) ||
                 !seenIds.Add(item.instanceId) || !occupied.Add(destination))continue;
             for(int i=0;i<item.mainStats.Count;i++)
-                future.Add(item.mainStats[i].AsModifier(
+                future.Add(EquipmentRefinement.EffectiveModifier(item,item.mainStats[i],
                     EquipmentFoundation.SourcePrefix+item.instanceId+":m:"+i));
             for(int i=0;i<item.extraStats.Count;i++)
                 if(EquipmentFoundation.AffixState(item,item.extraStats[i]) ==
                     EquipmentAffixState.Active)
-                    future.Add(item.extraStats[i].AsModifier(
+                    future.Add(EquipmentRefinement.EffectiveModifier(item,item.extraStats[i],
                         EquipmentFoundation.SourcePrefix+item.instanceId+":a:"+i));
         }
 
