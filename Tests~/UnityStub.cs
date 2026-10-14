@@ -152,6 +152,33 @@ namespace UnityEngine
     public class CanvasGroup : MonoBehaviour { public float alpha=1f; public bool interactable=true,blocksRaycasts=true; }
     public class Sprite : Object { }
     public class Texture : Object { }
+    public enum TextureFormat { RGBA32 }
+    public class Texture2D : Texture
+    {
+        public int width,height;
+        public Texture2D(int w,int h,TextureFormat format,bool mipmap){width=w;height=h;}
+    }
+    public static class ImageConversion
+    {
+        public static bool LoadImage(Texture2D image,byte[] data,bool markNonReadable=false)
+        {
+            if(image==null||data==null||data.Length==0)return false;
+            image.width=600;image.height=900;return true;
+        }
+    }
+    public class Shader : Object { }
+    public class Material : Object
+    {
+        public string name;
+        public Material(Shader shader){}
+        public void SetFloat(string key,float value){}
+        public void SetVector(string key,Vector4 vector){}
+    }
+    public struct Vector4
+    {
+        public float x,y,z,w;
+        public Vector4(float a,float b,float c,float d){x=a;y=b;z=c;w=d;}
+    }
     public enum RenderTextureFormat { ARGB32 }
     public class RenderTexture : Texture
     {
@@ -209,6 +236,8 @@ namespace UnityEngine.UI
     public class Image : UnityEngine.MonoBehaviour {
       public enum Type { Simple, Sliced }
       public float fillAmount; public UnityEngine.Color color;public UnityEngine.Sprite sprite;public Type type;public bool preserveAspect,raycastTarget;
+      public UnityEngine.Material material;
+      public UnityEngine.RectTransform rectTransform { get { return (UnityEngine.RectTransform)transform; } }
     }
     public class GraphicRaycaster : UnityEngine.Component { }
     public class RectMask2D : UnityEngine.Component { }
@@ -351,6 +380,7 @@ namespace UnityEngine.Video
         public VideoAudioOutputMode audioOutputMode;
         public VideoClip clip;
         public string url;
+        public uint width=640,height=960;
         public UnityEngine.RenderTexture targetTexture;
         public event System.Action<VideoPlayer> prepareCompleted;
         public event System.Action<VideoPlayer,string> errorReceived;
