@@ -61,6 +61,10 @@ public static class EquipmentRefinement
         item.naturalRefineLimit=StageSteps;
         int[] reqRefine={1,2,4,7};
         int[] reqLevel={1,3,5,8};
+        EquipmentRarity[] reqRarity={
+            EquipmentRarity.Common,EquipmentRarity.Hoang,
+            EquipmentRarity.Huyen,EquipmentRarity.Dia
+        };
         var pool=new List<CombatStatId>(SwordAffixPool);
         for(int i=0;i<4;i++)
         {
@@ -71,6 +75,7 @@ public static class EquipmentRefinement
                 stat=stat,revealed=false,
                 requiredItemLevel=reqLevel[i],
                 requiredRefineLevel=reqRefine[i],
+                requiredRarity=reqRarity[i],
                 element=ElementType.Kim,
                 flat=stat==CombatStatId.Attack ? rng.Next(2,7) :
                      stat==CombatStatId.AttackSpeed ? (float)(.01d*rng.Next(2,6)) :
