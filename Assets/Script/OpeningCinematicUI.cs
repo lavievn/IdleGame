@@ -31,7 +31,9 @@ public sealed class OpeningCinematicUI : MonoBehaviour
             typeof(RectTransform), typeof(CanvasRenderer));
         var rect = (RectTransform)layer.transform;
         rect.SetParent(menuRoot.parent, false);
-        rect.SetAsFirstSibling();
+        // Draw above the old HUD/ground, but below the active start buttons.
+        rect.SetAsLastSibling();
+        menuRoot.SetAsLastSibling();
         var cinematic = layer.AddComponent<OpeningCinematicUI>();
         cinematic.game = gm;
         cinematic.menu = startMenu;
@@ -222,7 +224,8 @@ public sealed class OpeningCinematicUI : MonoBehaviour
         finished = entering = false;
         elapsed = enterElapsed = 0f;
         backdrop.gameObject.SetActive(true);
-        backdrop.SetAsFirstSibling();
+        backdrop.SetAsLastSibling();
+        if (canvasArea != null) canvasArea.SetAsLastSibling();
         if (menuFade != null) { menuFade.alpha = 0f; menuFade.interactable = true; }
         baseImage.color = new Color(baseImage.color.r,baseImage.color.g,baseImage.color.b,1f);
         sky.localScale = far.localScale = near.localScale = Vector3.one;
