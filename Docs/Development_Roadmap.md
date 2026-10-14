@@ -188,3 +188,10 @@ Người phát triển xác nhận B1 đã xong sau commit mã `2308f25`. Chỉ 
 - Video nền tràn cửa sổ (một lớp dưới cùng), tùy chọn MP4 `Assets/StreamingAssets/OpeningBackground/opening.mp4`; núi/mây hoạt động phía trên.
 - Hủy hiệu ứng slideshow splash tự động; một khung splash tĩnh duy nhất phát `Assets/StreamingAssets/OpeningSplash/splash.mp4`, **chỉ fade in ban đầu ở giây 27**. Tác giả tự dựng pan/zoom/cut/fade nhân vật bên trong video.
 - Còn thiếu: hai tệp MP4 từ tác giả, đo hiệu suất/tương thích codec, nghiệm thu Unity Play Mode/Windows/resize. Mã đã commit nhưng chưa merge `main`. Tài liệu: [Opening_SplashArt_0.0.53.md](Opening_SplashArt_0.0.53.md).
+
+### 0.0.53 — Chỉnh theo phản hồi kiểm thử opening (mới nhất)
+
+- **Đã hoàn thiện mã trên nhánh:** hai khung splash trái/phải tràn mép, random PNG/JPG/MP4 tại lần mở menu; khung cố định, chỉ fade in từ giây 27, không pan/zoom/crossfade/slideshow; video nền và logo giữ nguyên.
+- **Đã thêm:** shader feather alpha 48 px ở mép 5 khung núi/mây; thông số chỉnh được trực tiếp ở `Assets/Resources/OpeningArtTheme.asset`.
+- **Chưa xác minh:** hình ảnh thực tế tại ba độ phân giải, codec đồng thời hai splash video + một background, hiệu năng 40HX, mức feather theo CanvasScaler; cần người phát triển thử trong Play Mode.
+- **Hướng dẫn:** [Opening_SplashArt_0.0.53.md](Opening_SplashArt_0.0.53.md).
