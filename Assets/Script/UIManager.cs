@@ -149,7 +149,13 @@ public class UIManager : MonoBehaviour
         foreach (var item in interactables)
         {
             if (item == null || !item.isActiveAndEnabled || item.GetRect() == null) continue;
-            if (gm != null && gm.HasPendingConfirmation && !item.transform.IsChildOf(gm.confirmationPopup.transform)) continue;
+            if (gm != null && gm.HasPendingConfirmation &&
+                (gm.confirmationPopup == null || !item.transform.IsChildOf(gm.confirmationPopup.transform))) continue;
+            // The full-screen opening owns input while its menu is visible.
+            // Never allow HUD/MenuArea controls below it to steal a menu click.
+            if (gm != null && gm.preGameUI != null && gm.preGameUI.activeInHierarchy &&
+                !item.transform.IsChildOf(gm.preGameUI.transform) &&
+                (gm.confirmationPopup == null || !item.transform.IsChildOf(gm.confirmationPopup.transform))) continue;
             if (devUI != null && devUI.IsOpen && !item.transform.IsChildOf(devUI.Root)) continue;
             if (inventoryUI != null && inventoryUI.IsOpen &&
                 !item.transform.IsChildOf(inventoryUI.Root)) continue;
