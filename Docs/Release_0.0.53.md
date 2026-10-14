@@ -58,3 +58,11 @@
 - **Hệ thống cũ:** các nút đổi kích thước trong System Menu vẫn dùng hàm resize chung. Không thay đổi dữ liệu trang bị, võ học hoặc phép tính sát thương.
 - **Kiểm thử bắt buộc trong Unity:** thử kéo slider tại 0/50/100%, kéo ra ngoài thanh rồi thả chuột, thử Windows overlay xem có kéo nhầm cả cửa sổ không; đổi 3 kích thước, kiểm tra hai cột không chồng; nhấn mặc định/Quay lại; ở trận đấu mở System Menu → Quay lại màn hình chính → Tiếp tục, đối chiếu map/EXP/kho đồ/wave, kiểm tra không sinh quái dư và nhạc opening quay lại.
 - **Giới hạn:** chưa chạy được Unity Editor/Windows Build trong môi trường thực thi này; việc commit và rà mã không chứng minh thao tác kéo hoặc ghi Save đã hoạt động đúng ở máy người phát triển.
+
+## Bổ sung kho splash art (đang kiểm thử)
+
+- Thêm `Assets/Resources/OpeningSplashArt/` và `OpeningSplashCatalog.asset`, cùng công cụ Editor `Tools → IdleGame → Rebuild Opening Splash Catalog`. Ảnh PNG/JPG và video MP4 hợp lệ sẽ được phát hiện tự động sau khi Unity import.
+- Kể từ mốc 27 giây, hai vị trí splash dùng slideshow ngẫu nhiên (thường khoảng 4,8–7,4 giây/lượt), zoom in/out với gia tốc, kéo nhẹ ngang và chuyển cảnh mờ chồng 0,7s; tránh lặp tức thì khi có nhiều ảnh.
+- Video hiển thị qua một VideoPlayer duy nhất vào RenderTexture 512×896, tắt tiếng, không chạy giải mã trong gameplay. Kho trống giữ hai ô màu cũ. Nếu chỉ có video, hai bên luân phiên để giới hạn tài nguyên; không dùng video tham chiếu trong build.
+- Tài liệu/cảnh báo dung lượng/codec, hướng dẫn gán assets và checklist: [Opening_SplashArt_0.0.53.md](Opening_SplashArt_0.0.53.md).
+- **Chưa xác minh với Unity Play Mode / Windows / CMP 40HX**; chưa gộp vào `main`.
