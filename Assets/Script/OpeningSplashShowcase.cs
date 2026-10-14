@@ -316,7 +316,24 @@ public sealed class OpeningSplashShowcase : MonoBehaviour
                 }
             }
             else if(slot.age>=slot.duration)
+            {
+                if(images.Length==0 && videoLane==lane)
+                {
+                    // Video-only libraries alternate panels without ever running
+                    // two simultaneous decoders or reusing a live texture.
+                    StopVideo();
+                    foreach(var frame in slot.frames)
+                        if(frame!=null){frame.fade.alpha=0f;frame.key=null;}
+                    slot.started=false;
+                    if(slot.placeholder!=null)slot.placeholder.color=slot.originalColor;
+                    if(slot.caption!=null)slot.caption.gameObject.SetActive(true);
+                    int nextLane=1-lane;
+                    lanes[nextLane].started=false;
+                    StartLane(nextLane);
+                    return;
+                }
                 ChangeLane(lane);
+            }
         }
     }
 
