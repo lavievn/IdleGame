@@ -12,7 +12,9 @@ public class StartMenuUI : MonoBehaviour
     private Button continueButton;
     private Button[] menuButtons;
     private GameObject menuPage, settingsPage;
-    private TextMeshProUGUI message, sizeLabel, musicLabel, volumeValueLabel;
+    private TextMeshProUGUI message, sizeLabel, musicLabel, volumeValueLabel, logoFallback;
+    private RectTransform logoRoot;
+    private Image logoImage;
     private Button[] sizeButtons = new Button[3];
     private RectTransform volumeTrack, volumeFill, volumeKnob;
     private bool volumeDragging;
@@ -51,8 +53,10 @@ public class StartMenuUI : MonoBehaviour
         var settingsRoot=(RectTransform)menu.settingsPage.transform;
         menu.menuButtons = new Button[4];
 
-        gm.infoText = menu.Label(textTemplate, menuRoot,
-            "MỘT HÀNH TRÌNH TU TIÊN", new Vector2(0,130), new Vector2(440,38),18);
+        // GameManager still writes menu status to its old disabled infoText.
+        // The actual game logo is independent, so status updates can never
+        // overwrite "Bách Luyện Tiên Đồ" after returning from gameplay.
+        menu.CreateGameLogo(textTemplate,menuRoot);
         menu.menuButtons[0] = menu.MakeButton(template,menuRoot,"Tiếp tục",
             new Vector2(0,46),gm.OnContinueClicked);
         menu.continueButton=menu.menuButtons[0];
@@ -110,6 +114,30 @@ public class StartMenuUI : MonoBehaviour
             ManagementWindowLayout.CombatHeight(Screen.height));
         menu.Refresh();
         return menu;
+    }
+
+    private void CreateGameLogo(TextMeshProUGUI template,Transform parent)
+    {
+        var holder=new GameObject("Game Title - Bách Luyện Tiên Đồ",
+            typeof(RectTransform),typeof(CanvasRenderer),typeof(Image));
+        logoRoot=(RectTransform)holder.transform;
+        logoRoot.SetParent(parent,false);
+        logoImage=holder.GetComponent<Image>();
+        logoImage.raycastTarget=false;
+        logoImage.preserveAspect=true;
+        Sprite sprite=Resources.Load<Sprite>("OpeningTitleLogo");
+        var theme=Resources.Load<OpeningArtTheme>("OpeningArtTheme");
+        if(sprite==null && theme!=null)sprite=theme.gameTitle;
+        logoImage.sprite=sprite;
+        logoImage.enabled=sprite!=null;
+        logoImage.color=Color.white;
+        logoFallback=Label(template,logoRoot,"Bách Luyện Tiên Đồ",
+            Vector2.zero,new Vector2(500,75),31f);
+        if(logoFallback!=null)
+        {
+            logoFallback.gameObject.SetActive(sprite==null);
+            logoFallback.color=new Color(.10f,.13f,.17f,1f);
+        }
     }
 
     private static void Place(RectTransform r,Vector2 p,Vector2 size)
@@ -172,6 +200,16 @@ public class StartMenuUI : MonoBehaviour
         {
             Place((RectTransform)menuButtons[i].transform,
                 new Vector2(0,1.5f*spacing-i*spacing-7f),new Vector2(bw,bh));
+        }
+        if(logoRoot!=null)
+        {
+            // The title sits above the four buttons, inside the safe region.
+            float logoW=Mathf.Min(w*.80f,650f);
+            float logoH=Mathf.Clamp(h*.16f,42f,100f);
+            Place(logoRoot,new Vector2(0,h*.355f),new Vector2(logoW,logoH));
+            if(logoFallback!=null)
+                Place((RectTransform)logoFallback.transform,Vector2.zero,
+                    new Vector2(logoW,logoH));
         }
         // Settings use a centered two-column grid, not the main menu's vertical list.
         // The bar is a custom hit target to work in native Windows overlay mode.
