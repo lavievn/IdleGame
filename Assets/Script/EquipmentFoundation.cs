@@ -79,11 +79,35 @@ public sealed class EquipmentInstance
     public int naturalRefineLimit = 0;
     public int highestRefineLevel = 0;
     public bool hasBeenRefined = false;
+    // Test forge progression is independent of hidden, immutable stat rolls.
+    // Version 0 means a pre-forge item; migration never rerolls its affixes.
+    public int forgeSchemaVersion = 0;
+    public int forgeStageProgress = 0; // 0..10 regular upgrades per stage
+    public EquipmentRarity forgeStageStartRarity = EquipmentRarity.Common;
+    public EquipmentRarity forgeStageTargetRarity = EquipmentRarity.Common;
+    public int specialForgeCount = 0;
+    // Scaling uses the item's original values as immutable baselines.
+    public int powerBaseLevel = 1;
+    public int powerBaseRefine = 0;
+    public EquipmentRarity powerBaseRarity = EquipmentRarity.Common;
+    public List<ForgeStageSnapshot> forgeHistory = new List<ForgeStageSnapshot>();
     // None of these lines are generated again when an item is loaded.
     public List<ItemStatLine> mainStats = new List<ItemStatLine>();
     public List<ItemStatLine> extraStats = new List<ItemStatLine>();
     public bool isEquipped;
     public EquipmentSlot equippedSlot = EquipmentSlot.Weapon;
+}
+
+// Exact checkpoints let the debug minus button undo a special leap without
+// rerolling the next ceiling or refunding resources.
+[Serializable]
+public sealed class ForgeStageSnapshot
+{
+    public EquipmentRarity previousRarity;
+    public EquipmentRarity stageStart;
+    public EquipmentRarity stageTarget;
+    public int stageProgress;
+    public int naturalLimit;
 }
 
 [Serializable]
