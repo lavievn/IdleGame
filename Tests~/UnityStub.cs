@@ -151,6 +151,14 @@ namespace UnityEngine
     public class CanvasRenderer : Component { }
     public class CanvasGroup : MonoBehaviour { public float alpha=1f; public bool interactable=true,blocksRaycasts=true; }
     public class Sprite : Object { }
+    public class Texture : Object { }
+    public enum RenderTextureFormat { ARGB32 }
+    public class RenderTexture : Texture
+    {
+        public int width,height,depth;public RenderTextureFormat format;
+        public RenderTexture(int w,int h,int d,RenderTextureFormat f){width=w;height=h;depth=d;format=f;}
+        public void Create(){} public void Release(){}
+    }
     public enum RenderMode { ScreenSpaceOverlay }
     public class Canvas : Component { public RenderMode renderMode; public int sortingOrder,sortingLayerID,targetDisplay,additionalShaderChannels; public float scaleFactor; public static void ForceUpdateCanvases() { } }
     public static class Time { public static float deltaTime=1f/60f,unscaledDeltaTime=1f/60f,time,timeScale=1f; public static int frameCount; }
@@ -165,7 +173,13 @@ namespace UnityEngine
     }
     public static class Resources
     {
-        public static T Load<T>(string path) where T : Object { return null; }
+        private static readonly Dictionary<string,Object> entries=new Dictionary<string,Object>();
+        public static T Load<T>(string path) where T : Object
+        {
+            Object value; return entries.TryGetValue(path,out value)?value as T:null;
+        }
+        public static void Register(string path,Object value) {entries[path]=value;}
+        public static void Unregister(string path){entries.Remove(path);}
     }
     public static class PlayerPrefs
     {
@@ -188,6 +202,9 @@ namespace UnityEngine.UI
     public class CanvasScaler : UnityEngine.MonoBehaviour {
       public enum ScaleMode { ConstantPixelSize, ScaleWithScreenSize, ConstantPhysicalSize }
       public ScaleMode uiScaleMode; public UnityEngine.Vector2 referenceResolution;
+    }
+    public class RawImage : UnityEngine.MonoBehaviour {
+      public UnityEngine.Texture texture;public bool raycastTarget;
     }
     public class Image : UnityEngine.MonoBehaviour {
       public enum Type { Simple, Sliced }
@@ -318,4 +335,26 @@ namespace UnityEngine {
  public enum FindObjectsSortMode { None }
  public enum FullScreenMode { Windowed }
  public static class Screen { public static int width=1000,height=563;public static void SetResolution(int w,int h,FullScreenMode mode){width=w;height=h;} }
+}
+
+namespace UnityEngine.Video
+{
+    public enum VideoSource { VideoClip }
+    public enum VideoRenderMode { RenderTexture }
+    public enum VideoAudioOutputMode { None }
+    public class VideoClip : UnityEngine.Object { public double length=11.5; }
+    public class VideoPlayer : UnityEngine.MonoBehaviour
+    {
+        public bool playOnAwake,isLooping,skipOnDrop,isPlaying;
+        public VideoSource source;
+        public VideoRenderMode renderMode;
+        public VideoAudioOutputMode audioOutputMode;
+        public VideoClip clip;
+        public UnityEngine.RenderTexture targetTexture;
+        public event System.Action<VideoPlayer> prepareCompleted;
+        public event System.Action<VideoPlayer,string> errorReceived;
+        public void Prepare(){ if(prepareCompleted!=null)prepareCompleted(this); }
+        public void Play(){isPlaying=true;}
+        public void Stop(){isPlaying=false;}
+    }
 }
