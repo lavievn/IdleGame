@@ -21,7 +21,7 @@ public sealed class OpeningCinematicUI : MonoBehaviour
     private CanvasGroup splashLeftFade, splashRightFade;
     private TextMeshProUGUI splashLeftLabel, splashRightLabel;
     private float elapsed, enterElapsed;
-    private bool entering, finished;
+    private bool entering, finished, orderFixed;
     private OpeningArtTheme theme;
 
     public static OpeningCinematicUI Install(GameManager gm, StartMenuUI startMenu,
@@ -157,6 +157,17 @@ public sealed class OpeningCinematicUI : MonoBehaviour
     private void Update()
     {
         if (finished || backdrop == null) return;
+        // UIManager may build the HUD after GameManager created this layer.
+        // Fix draw order once when all Start() methods have completed.
+        if (!orderFixed)
+        {
+            backdrop.SetAsLastSibling();
+            if (canvasArea != null) canvasArea.SetAsLastSibling();
+            if (game != null && game.confirmationPopup != null &&
+                game.confirmationPopup.activeInHierarchy)
+                game.confirmationPopup.transform.SetAsLastSibling();
+            orderFixed = true;
+        }
         float dt = Mathf.Max(0f, Time.unscaledDeltaTime);
         if (entering) { AnimateEntry(dt); return; }
         if (game == null || game.preGameUI == null || !game.preGameUI.activeInHierarchy) return;
@@ -226,7 +237,7 @@ public sealed class OpeningCinematicUI : MonoBehaviour
     public void ResetForMenu()
     {
         if (backdrop == null) return;
-        finished = entering = false;
+        finished = entering = orderFixed = false;
         elapsed = enterElapsed = 0f;
         if (backdropFade != null) backdropFade.alpha = 1f;
         backdrop.gameObject.SetActive(true);
