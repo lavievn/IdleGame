@@ -1,3 +1,6 @@
+
+**Bổ sung .53 gần nhất:** Trang **Cài đặt** trong opening đã chuyển sang hai cột: chọn 600/800/1150, kéo thanh âm lượng 0–100%, **Khôi phục mặc định** (800×450/60%) và **Quay lại**. System Menu khi chơi có nút **Quay lại màn hình chính**, lưu AutoSave trước khi rời trận, phục hồi menu mây và nhạc opening. Có test logic độc lập nhưng **chưa nghiệm thu bằng Unity Play Mode/Windows overlay**.
+
 ## 0.0.53 — Opening tiên cảnh bằng lớp màu (đang kiểm thử)
 
 Trên nhánh `feature/0.0.53` đã thêm opening thời gian thực **không dùng video**: các placeholder cho bầu trời, núi xa/gần, mây nhiều lớp, splash art trái/phải; 4 nút **Tiếp tục / Chơi mới / Cài đặt / Thoát**; hiệu ứng mây trôi, splash xuất hiện ở **27s**, lớp ảnh dạt và zoom giả lập vào gameplay trong **2,7s**. Gameplay không đổi tọa độ/camera combat và tạm dừng khi chuyển cảnh. Artwork được gán bằng `Assets/Resources/OpeningArtTheme.asset`; để trống thì hiện khối màu. `gameTitle` chưa có ảnh/tên nên tạm ẩn.
