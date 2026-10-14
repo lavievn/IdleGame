@@ -1,3 +1,15 @@
+## 0.0.53 — Hai Splash Art trái/phải và mây núi feather (cập nhật mới nhất)
+
+**Đã thay bản một khung splash ở giữa:** Opening hiển thị **hai khung trái/phải** cao **115%** và rộng **68%** vùng cửa sổ, tràn ra ngoài mép. Từ giây **27**, mỗi bên chỉ **fade in một lần trong 1,4s** rồi đứng yên. **Mỗi lượt vào màn hình chính chọn ngẫu nhiên 2 file ảnh/video khác nhau** khi kho có ≥2 lựa chọn; không có pan/zoom/cắt cảnh/slideshow do Unity tạo nữa. Hình/video chuyển động bên trong do người phát triển dựng sẵn.
+
+**Kho tài nguyên:** `Assets/StreamingAssets/OpeningSplashArt/` nhận **PNG/JPG/JPEG/MP4** đặt tên tùy ý, không cần Catalog hay Inspector. Kho trống vẫn tương thích video cũ `Assets/StreamingAssets/OpeningSplash/splash.mp4`; không có tệp thì hiển thị khối màu.
+
+**Feather:** 5 lớp mây/núi được áp dụng Shader `Assets/Resources/OpeningSoftEdge.shader`, mép mềm hướng vào trong **48 px** mặc định. Chỉnh `OpeningArtTheme.asset → Edge Feather Pixels` để thử mức 40–50. Video nền `OpeningBackground/opening.mp4`, logo game, 4 nút và logic vào game vẫn giữ nguyên. **Cần kiểm thử Unity/Windows**, nhất là khi đồng thời phát hai MP4 splash cộng MP4 nền.
+
+Đọc [Docs/Opening_SplashArt_0.0.53.md](Docs/Opening_SplashArt_0.0.53.md). *Các đoạn lịch sử bên dưới nói một video splash duy nhất ở giữa là thiết kế cũ, đã thay thế.*
+
+---
+
 ## 0.0.53 — Logo và video opening (thiết kế mới nhất)
 
 **Đã tích hợp:** logo **Bách Luyện Tiên Đồ** dưới dạng PNG nền trong suốt tại `Assets/Resources/OpeningTitleLogo.png`, hiển thị **trên cùng, căn giữa** thay cho dòng trạng thái/giới thiệu gần giữa màn hình. Thêm **video nền tràn cửa sổ** nằm thấp nhất tại `Assets/StreamingAssets/OpeningBackground/opening.mp4` (do người phát triển tự thêm).
