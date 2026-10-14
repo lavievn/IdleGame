@@ -27,8 +27,8 @@
 
 ### D. Âm thanh — đang chuẩn bị tích hợp nhạc nền
 
-- **Đã nhận và xác minh:** ZIP mới gồm **19 file nhạc map + 1 opening** (20 tệp âm thanh), FFprobe nhận dạng âm thanh hợp lệ. Đã chuyển toàn bộ sang OGG/Vorbis để nhập Unity. **BGM4 thiếu bài thứ tư.** Source nhị phân chưa được commit lên GitHub; xem `Docs/BGM_0.0.52.md`.
-- **Mã tích hợp đã bổ sung:** 2 `AudioSource`, phát ngẫu nhiên không lặp liền, chuyển âm 10 giây, nhạc `opening` ở màn hình Chơi mới/Tiếp tục, playlist cố định trong cụm 5 map. Cần kiểm thử Unity/Windows; nhạc chưa có trong GitHub.
+- **Đã có trên `main` ngày 14/10/2026:** 19 file OGG nhạc map + 1 file opening cùng `.meta` và `Assets/Resources/MapBgmCatalog.asset`. **BGM4 thiếu bài thứ tư**. Nhánh `feature/0.0.53` đang thử nút Âm lượng và lưu âm lượng; chưa nghiệm thu Unity/Windows. Xem `Docs/BGM_0.0.52.md` và `Docs/Release_0.0.53.md`.
+- **Mã tích hợp đã bổ sung:** 2 `AudioSource`, phát ngẫu nhiên không lặp liền, chuyển âm 10 giây, nhạc `opening` ở màn hình Chơi mới/Tiếp tục, playlist cố định trong cụm 5 map. Nhạc có trong GitHub; cần kiểm thử Unity/Windows. 0.0.53 bổ sung giao diện âm lượng tách module.
 - **Ánh xạ đã đối chiếu Suno:** BGM1 Đồng bằng/Bình Nguyên; BGM2 Cao nguyên/Cao Sơn (tạm); BGM3 Đầm lầy/U Trạch; BGM4 Rừng rậm/Sơn Lâm; BGM5 Sa mạc/Hoang Mạc. Hải Vực chưa có nhóm riêng nên im lặng. Game có 6 `RegionTheme` và 8 `TerrainType`; khóa nhạc theo `RegionTheme` để tránh đổi nhóm liên tục trong 5 map nhỏ.
 - **Chưa có:** hiệu ứng âm thanh (SFX), tiếng giao diện/đánh trúng/chiêu thức, thuyết minh/lồng tiếng (voice-over), tinh chỉnh âm lượng và độ trễ trong Windows build.
 
