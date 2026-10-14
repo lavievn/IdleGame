@@ -41,17 +41,18 @@ partial class MotionRegression
                 }
             }
             Check(cont&&fresh&&settings&&exit,"four menu actions");
-            bool hasSky=false,hasCloud=false,hasLeft=false,hasRight=false;
+            bool hasSky=false,hasCloud=false,hasVideoBackground=false,hasFixedSplash=false;
             foreach (var obj in UnityEngine.Object.objects)
             {
                 var go=obj as GameObject;
                 if(go==null)continue;
                 if(go.name=="01 SKY - full background")hasSky=true;
                 if(go.name=="05 FRONT CLOUDS LEFT")hasCloud=true;
-                if(go.name=="07 SPLASH LEFT")hasLeft=true;
-                if(go.name=="08 SPLASH RIGHT")hasRight=true;
+                if(go.name=="00 VIDEO BACKGROUND - full window")hasVideoBackground=true;
+                if(go.name=="07 SPLASH VIDEO - FIXED NO PAN")hasFixedSplash=true;
             }
-            Check(hasSky&&hasCloud&&hasLeft&&hasRight,"replaceable named art layers");
+            Check(hasSky&&hasCloud&&hasVideoBackground&&hasFixedSplash,
+                "fixed splash and bottom background video layers");
 
             // Full-screen menu and art operate independently of combat transforms.
             ui.Layout(600f,338f);
