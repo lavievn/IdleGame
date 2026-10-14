@@ -396,6 +396,40 @@ public class GameManager : MonoBehaviour
         UpdateEventLog("Đã nhận Thiết Kiếm thử nghiệm.");
         return true;
     }
+    // Reusable test sword: preserves older saved swords; new ones have
+    // fixed latent affixes and a demonstrative quality ceiling.
+    public bool GrantForgeTestSword()
+    {
+        if(!IsGameplayHUDVisible || runtimeHeroData==null)return false;
+        if(!EquipmentRuntime.AddInstance(runtimeHeroData,
+            EquipmentRefinement.CreateForgeDemoSword()))return false;
+        UpdateEventLog("Đã thêm kiếm rèn thử nghiệm.");
+        return true;
+    }
+
+    public bool GrantForgeMaterials()
+    {
+        if(!IsGameplayHUDVisible || runtimeHeroData==null)return false;
+        if(!EquipmentInventory.Add(runtimeHeroData,EquipmentRefinement.MaterialId,100))
+            return false;
+        UpdateEventLog("Đã thêm 100 Nguyên liệu rèn.");
+        return true;
+    }
+
+    public bool ApplyForgeTest(string instanceId,
+        EquipmentRefinement.Operation operation,out string message)
+    {
+        message="Chưa thể rèn lúc này.";
+        if(!IsGameplayHUDVisible || runtimeHeroData==null)return false;
+        bool success=EquipmentRefinement.TryApply(runtimeHeroData,instanceId,
+            operation,out message);
+        if(!success)return false;
+        if(combatManager!=null)
+            combatManager.RefreshRegisteredHeroStats(heroController,true);
+        UpdateEventLog(message);
+        return true;
+    }
+
     public bool EquipGear(string instanceId,EquipmentSlot slot)
     {
         if (!IsGameplayHUDVisible || runtimeHeroData == null ||
