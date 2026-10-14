@@ -2,7 +2,7 @@
 
 ## Cập nhật hiện hành — 14/10/2026 (0.0.52-refinement → chuẩn bị BGM)
 
-> **Nguồn trạng thái:** mã của nhánh `feature/0.0.52-refinement` và phản hồi Play Mode của người phát triển. Đây là checkpoint công việc, **chưa đồng nghĩa đã có BGM tích hợp hay đã gộp main**. Các mục lịch sử .54g/B1/B2 ở phía dưới vẫn được giữ để tra cứu, nhưng không phải tóm tắt mới nhất.
+> **Nguồn trạng thái:** mã của nhánh `feature/0.0.52-refinement` và phản hồi Play Mode của người phát triển. Đây là checkpoint công việc, **mã BGM đã được viết trên nhánh thử nhưng asset nhạc chưa thể tải lên GitHub bằng kết nối hiện tại**. Các mục lịch sử .54g/B1/B2 ở phía dưới vẫn được giữ để tra cứu, nhưng không phải tóm tắt mới nhất.
 
 ### A. Giao diện (UI) — đang hoàn thiện
 
@@ -27,9 +27,9 @@
 
 ### D. Âm thanh — đang chuẩn bị tích hợp nhạc nền
 
-- **Nguồn đang chờ:** người phát triển dự kiến đưa **21 file âm thanh** vào `Assets/BGM`, đánh nhóm `BGM1`–`BGM5` theo hội thoại tạo nhạc Suno; hiện tại chỉ sản xuất đến nhóm 5. **Tại lần kiểm tra GitHub 14/10, nhánh refinement chưa có `Assets/BGM`, do đó chưa thể ghi “đã tích hợp”.**
-- **Quy tắc tích hợp đã yêu cầu:** mỗi chủ đề có tối thiểu 4 bản (có thể 5), phát ngẫu nhiên trong cùng chủ đề; một chủ đề kéo dài cụm 5 map nhỏ; chỉ đổi nhóm nhạc khi chuyển chủ đề; **chồng mờ/đổi bài 10 giây** giữa các bản và khi chuyển chủ đề.
-- **Điểm cần đối chiếu từ tệp mới:** thứ tự tên `BGM1`–`BGM5` với hệ thống **6 RegionTheme** (Sơn Lâm, Bình Nguyên, U Trạch, Hoang Mạc, Hải Vực, Cao Sơn) và **8 TerrainType** hiện có; chưa được phép suy diễn tên nhóm BGM theo thứ tự mã nguồn. Nhóm còn thiếu dùng phương án không phát nhạc/chưa có tệp, không gán sai.
+- **Đã nhận và xác minh:** ZIP mới gồm **19 file nhạc map + 1 opening** (20 tệp âm thanh), FFprobe nhận dạng âm thanh hợp lệ. Đã chuyển toàn bộ sang OGG/Vorbis để nhập Unity. **BGM4 thiếu bài thứ tư.** Source nhị phân chưa được commit lên GitHub; xem `Docs/BGM_0.0.52.md`.
+- **Mã tích hợp đã viết trên nhánh thử:** 2 `AudioSource`, phát ngẫu nhiên không lặp liền, chuyển âm 10 giây, nhạc `opening` ở màn hình Chơi mới/Tiếp tục, playlist cố định trong cụm 5 map. Cần kiểm thử Unity/Windows; nhạc chưa có trong GitHub.
+- **Ánh xạ đã đối chiếu Suno:** BGM1 Đồng bằng/Bình Nguyên; BGM2 Cao nguyên/Cao Sơn (tạm); BGM3 Đầm lầy/U Trạch; BGM4 Rừng rậm/Sơn Lâm; BGM5 Sa mạc/Hoang Mạc. Hải Vực chưa có nhóm riêng nên im lặng. Game có 6 `RegionTheme` và 8 `TerrainType`; khóa nhạc theo `RegionTheme` để tránh đổi nhóm liên tục trong 5 map nhỏ.
 - **Chưa có:** hiệu ứng âm thanh (SFX), tiếng giao diện/đánh trúng/chiêu thức, thuyết minh/lồng tiếng (voice-over), tinh chỉnh âm lượng và độ trễ trong Windows build.
 
 ### E. Các bước tiếp theo
