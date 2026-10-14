@@ -362,12 +362,15 @@ public class GameManager : MonoBehaviour
 
     public void OnDeployClicked() { OnContinueClicked(); }
 
-    private void DeployHero()
+    private void DeployHero(bool showOpeningTransition = false)
     {
         if (UIManager.Instance != null) UIManager.Instance.SetPaused(false);
         if (hasDeployed) return;
         CancelNextWave();
-        preGameUI.SetActive(false);
+        // Keep the menu canvas until the animated cloud reveal completes.
+        // Manual LoadAndContinue is immediate; only confirmed title choices animate.
+        bool cinematic = showOpeningTransition && startMenu != null && startMenu.IsCinematic;
+        if (!cinematic && preGameUI != null) preGameUI.SetActive(false);
         hasDeployed = true;
         ClearTestCompanions();
         if (combatManager != null) combatManager.SetupHeroInfo(runtimeHeroData);
@@ -375,6 +378,8 @@ public class GameManager : MonoBehaviour
         RestoreProgress();
         if (UIManager.Instance != null) UIManager.Instance.ShowMapTitle(runtimeHeroData.mapName);
         CallNextWave();
+        if (cinematic && startMenu.BeginGameplayTransition() && UIManager.Instance != null)
+            UIManager.Instance.SetPaused(true);
     }
 
     private void CaptureSelectedStance()
@@ -707,7 +712,7 @@ public class GameManager : MonoBehaviour
         if (gameOverPanel != null) gameOverPanel.SetActive(false);
         if (heroController != null) heroController.SetIdentityVisual(runtimeHeroData);
         if (UIManager.Instance != null) UIManager.Instance.ApplyDifficultyVisual(IsHardMode);
-        DeployHero();
+        DeployHero(true);
         CaptureSelectedStance();
         if (saveManager != null && !saveManager.SaveGame(runtimeHeroData, SaveSlot.AutoSave))
             UpdateEventLog("Đã bắt đầu nhưng chưa ghi được bản lưu. Kiểm tra quyền ghi thư mục Saves.");
