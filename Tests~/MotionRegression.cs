@@ -322,6 +322,7 @@ partial class MotionRegression
         ForgeRegressionTests();
         ManagementWindowRegressionTests();
         InventoryArtThemeRegressionTests();
+        MusicVolumeRegressionTests();
         BalanceTests();
         BalanceSimulations();
         Console.WriteLine("PASS: "+tests+" regression scenarios (Unity test doubles; not Play Mode).");
