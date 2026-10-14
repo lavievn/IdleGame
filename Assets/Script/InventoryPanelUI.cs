@@ -446,9 +446,23 @@ public sealed class InventoryPanelUI : MonoBehaviour
                 detail.text=selected.name+" · "+EquipmentFoundation.RarityName(item.rarity)+
                     " · Cấp "+item.level+" · Rèn +"+item.refineLevel;
                 foreach(var line in item.mainStats)detail.text+="\nChính: "+StatLine(line);
-                foreach(var line in item.extraStats)detail.text+="\nPhụ: "+StatLine(line);
-                detail.text+="\nDòng phụ: "+item.extraStats.Count+"/"+
-                    EquipmentFoundation.MaximumExtraLines(item.level);
+                foreach(var line in item.extraStats)
+                {
+                    var state=EquipmentFoundation.AffixState(item,line);
+                    if(state==EquipmentAffixState.Hidden)
+                        detail.text+="\nPhụ: ??? (Chưa khai mở)";
+                    else if(state==EquipmentAffixState.KnownLocked)
+                        detail.text+="\nPhụ [Khóa]: "+StatLine(line);
+                    else detail.text+="\nPhụ: "+StatLine(line);
+                }
+                int totalLines=item.affixSchemaVersion==
+                    EquipmentFoundation.AffixSchemaVersion
+                    ? item.affixSlotCount : EquipmentFoundation.MaximumExtraLines(item.level);
+                int activeLines=0;
+                foreach(var line in item.extraStats)
+                    if(EquipmentFoundation.AffixState(item,line)==
+                        EquipmentAffixState.Active)activeLines++;
+                detail.text+="\nDòng phụ kích hoạt: "+activeLines+"/"+totalLines;
             }
             else
             {
