@@ -40,6 +40,14 @@
 - **Kim/Mộc/Thủy/Hỏa/Thổ và linh căn bẩm sinh** giữ nguyên khi sinh ra; không mở nhánh phân điểm hệ, không thêm Chaos. Các hiệu ứng/võ học/trang bị có thể tác động chỉ số hiệu lực, không sửa linh căn gốc.
 - Chưa sửa `CombatStats`, `CombatDamage`, `EntityDataSO`, `SaveManager` hoặc sửa gameplay; việc di trú điểm tăng HP/ATK kiểu cũ cần thiết kế trước. **Chi tiết:** [Stat_System_Design_0.0.54.md](Stat_System_Design_0.0.54.md).
 
+## 15/10/2026 — Cảnh giới và Thiên Kiếp: xác nhận phương án B
+
+- **Level và cảnh giới độc lập:** EXP/Level tiếp tục tăng cả khi chưa đột phá. Cảnh giới chỉ lên khi vượt Thiên Kiếp thành công, không còn tự suy ra từ `(Level-1)/10`.
+- **30 cấp nội bộ mỗi đại cảnh giới là mốc thiết kế thử:** 1–9 Sơ kỳ, 10–19 Trung kỳ, 20–29 Hậu kỳ, 30 bình cảnh. Khi thắng Thiên Kiếp, ghi lại Level lúc đó làm mốc bắt đầu tiến trình đại cảnh giới mới; không cho lượng Level farm dư bỏ qua cảnh giới mới.
+- **Thiên Kiếp ý tưởng ban đầu:** hai chặng 10 giây chống chịu và 10 giây phản công; chưa chốt hệ số, phần thưởng và hình phạt khi thất bại.
+- **Trang bị vượt yêu cầu** vẫn có thể mặc nhưng chịu debuff/giảm hiệu suất; **một số võ học** có điều kiện mở khóa cứng (ví dụ Thần thức đòi Hóa Thần).
+- Đây mới là chốt **mô hình tiến trình**, chưa sửa mã hoặc luật Save. Xem [Realm_Progression_Design_0.0.54.md](Realm_Progression_Design_0.0.54.md).
+
 ## Nguyên tắc phát triển .54
 
 - Chỉ chỉnh mã trên `feature/0.0.54`; `main` là checkpoint 0.0.53.
