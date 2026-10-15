@@ -207,3 +207,10 @@ Người phát triển xác nhận B1 đã xong sau commit mã `2308f25`. Chỉ 
 - **Đã triển khai trên `feature/0.0.53`:** thêm 5 cặp kích thước `Vector2` cho hai núi/ba lớp mây vào `OpeningArtTheme.asset`, đơn vị UI tham chiếu ở cửa sổ 800×450; giữ nguyên số đo mặc định và scale theo kích thước cửa sổ. Tên Hierarchy của trời, mây/núi và hai khung splash tự thêm `[rộngxcao UI]`.
 - **Splash phân bên nghiêm ngặt:** chỉ chọn ảnh/video PNG/JPG/JPEG/MP4 có **tên file** mở đầu bằng `L` cho khung trái và `R` cho khung phải, không phân biệt hoa/thường; không fallback sang `splash.mp4` cũ. Chưa có file hợp lệ sẽ hiển thị placeholder và cảnh báo.
 - **Kiểm thử cần làm:** rename những MP4 đã push (hiện không có `L`/`R`), thử chỉnh kích thước từ Inspector, xác nhận click/menu và 3 độ phân giải không bị lệch. Chưa nghiệm thu Unity/Windows, chưa merge `main`.
+
+### 15/10/2026 — Căn chỉnh opening bằng Unity Play Mode (không dùng Prefab)
+
+- **Đã implement trên `feature/0.0.53`:** cửa sổ công cụ Editor ở Tools/Bach Luyen Tien Do/Opening Layout (Play Mode), bật chế độ giữ nguyên Scene thực đang chạy, chọn 13 `RectTransform`, kéo/sửa trong Scene View, lưu vị trí/kích thước vào `OpeningArtTheme.asset` khi đang Play.
+- **Đã sửa:** layout call và animation không ghi đè đối tượng đang sửa; chuyển động mây tính quanh tâm đã lưu; sau khi lưu, preview chơi lại từ đầu; không đổi logic splash L/R hay GameManager. Các giá trị scale từng trục theo cửa sổ mẫu 800×450.
+- **Cần nghiệm thu:** ghi asset thực qua AssetDatabase trong Unity, vị trí Scene/Game View khi Play, đủ 3 độ phân giải, video crop theo khung splash và UI native overlay. Không đưa vào `main` trước khi xác nhận.
+- **Hướng dẫn:** [Opening_PlayMode_Layout_0.0.53.md](Opening_PlayMode_Layout_0.0.53.md).
