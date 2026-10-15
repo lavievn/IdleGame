@@ -70,6 +70,18 @@ public sealed class WorldMapPanelUI
         fog.raycastTarget = false;
         fogTexture = new Texture2D(FogWidth,FogHeight,TextureFormat.RGBA32,false);
         fog.texture = fogTexture;
+        // Render authored country names above the cloud layer, never borders.
+        foreach (WorldMapNation nation in WorldMapCatalog.Nations)
+        {
+            TextMeshProUGUI label = owner.MakeLabel(artRect,nation.Name,Vector2.zero,new Vector2(158f,30f));
+            label.fontSize = 13f;
+            label.color = new Color(1f,.90f,.70f,1f);
+            var labelRect = (RectTransform)label.transform;
+            labelRect.anchorMin = labelRect.anchorMax = nation.LabelPosition;
+            labelRect.pivot = new Vector2(.5f,.5f);
+            labelRect.anchoredPosition = Vector2.zero;
+            label.raycastTarget = false;
+        }
 
         heading = owner.MakeLabel(root,"BẢN ĐỒ THẾ GIỚI",
             new Vector2(185f,-22f), new Vector2(350f,32f));
