@@ -21,4 +21,9 @@ MonoBehaviour:
   splashLeft: {fileID: 0}
   splashRight: {fileID: 0}
   gameTitle: {fileID: 0}
+  farMountainsReferenceSize: {x: 944, y: 279}
+  nearMountainsReferenceSize: {x: 992, y: 153}
+  backCloudsReferenceSize: {x: 960, y: 198}
+  leftCloudsReferenceSize: {x: 536, y: 409.5}
+  rightCloudsReferenceSize: {x: 536, y: 409.5}
   edgeFeatherPixels: 65.4
