@@ -1,6 +1,6 @@
 ## 0.0.53 — Hai Splash Art trái/phải và mây núi feather (cập nhật mới nhất)
 
-**Đã thay bản một khung splash ở giữa:** Opening hiển thị **hai khung trái/phải** cao **115%** và rộng **68%** vùng cửa sổ, tràn ra ngoài mép. Từ giây **27**, mỗi bên chỉ **fade in một lần trong 1,4s** rồi đứng yên. **Mỗi lượt vào màn hình chính chọn ngẫu nhiên 2 file ảnh/video khác nhau** khi kho có ≥2 lựa chọn; không có pan/zoom/cắt cảnh/slideshow do Unity tạo nữa. Hình/video chuyển động bên trong do người phát triển dựng sẵn.
+**Đã thay bản một khung splash ở giữa:** Opening hiển thị **hai khung trái/phải** cao **76%** và rộng **62%** vùng cửa sổ, **căn sát mép dưới**, chỉ tràn ra ngoài **mép trái/phải**, không tràn lên trên hoặc xuống dưới. Từ giây **27**, mỗi bên chỉ **fade in một lần trong 1,4s** rồi đứng yên. **Mỗi lượt vào màn hình chính chọn ngẫu nhiên 2 file ảnh/video khác nhau** khi kho có ≥2 lựa chọn; không có pan/zoom/cắt cảnh/slideshow do Unity tạo nữa. Hình/video chuyển động bên trong do người phát triển dựng sẵn.
 
 **Kho tài nguyên:** `Assets/StreamingAssets/OpeningSplashArt/` nhận **PNG/JPG/JPEG/MP4** đặt tên tùy ý, không cần Catalog hay Inspector. Kho trống vẫn tương thích video cũ `Assets/StreamingAssets/OpeningSplash/splash.mp4`; không có tệp thì hiển thị khối màu.
 
