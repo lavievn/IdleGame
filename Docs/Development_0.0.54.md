@@ -64,7 +64,8 @@
 - Đã lưu **133 map ứng viên** thuộc 5 đại khu, mỗi map có tên, mã ID, một địa hình hiện tại và **4 loài quái đề xuất**. Dữ liệu nguồn được tổng hợp từ ảnh bản đồ/danh mục AI; đây là **bản tạm cho người phát triển rà soát, phân bổ và bổ sung**.
 - **Tệp đọc:** [World_Map_Monster_Draft_0.0.54.md](World_Map_Monster_Draft_0.0.54.md). **Bảng chỉnh sửa:** [World_Map_Monster_Draft_0.0.54.csv](World_Map_Monster_Draft_0.0.54.csv).
 - **15/10/2026 – rà soát lần 1:** đã cập nhật 6 mã `XD-17`, `HT-17`, `HT-25`, `TM-13`, `TM-14`, `TM-21` theo người phát triển; trong đó HT-25 giữ Đồi núi (Cao nguyên cũng được), TM-13 giữ Rừng rậm (Đầm lầy cũng được), TM-14 đặt Thác nước (biến thể địa hình chưa có TerrainType riêng). Các pool quái của 4 map đổi địa hình cũng đã điều chỉnh, chưa là dữ liệu spawn chính thức.
-- CSV hiện còn **8 dòng ghi chú cần kiểm tra**, gồm mã `XD-17` còn tạm do ảnh AI trùng ID và `TM-14` cần xác định địa hình cơ sở khi nhập Unity. Số lượng map thực tế cuối cùng chưa xác nhận.
+- **15/10/2026 – rà soát lần 2:** người phát triển xác nhận thêm 8 mã: TV-05 Đồi núi, TV-23 Rừng rậm, TL-13 Đồng bằng, TL-23 Đồng bằng, TL-25 Thảo nguyên (biến thể của Đồng bằng), TL-28 Rừng rậm, XD-17 Cao nguyên, TM-14 Đồi núi (Thác nước là cảnh quan). Cập nhật danh sách quái ứng viên tại TL-25, TL-28, TM-14.
+- CSV hiện chỉ còn **1 dòng cảnh báo cần xác minh ID** là `XD-17` do ảnh AI trùng `XD-19`. Các node thiếu tên từ bản đồ tổng và bản ảnh trùng `TV-10` còn ghi riêng trong tài liệu; danh mục 133 map chưa là số lượng cuối cùng.
 - **Chưa áp dụng** vào spawn, world graph, gameplay hay Save; chưa gán cấp quái, cảnh giới, mức độ nguy hiểm, wave, tỷ lệ xuất hiện, quái đặc biệt, boss và sự kiện. Chờ người phát triển cập nhật danh sách rồi chốt tiếp.
 
 ## Nguyên tắc phát triển .54
