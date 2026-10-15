@@ -215,6 +215,62 @@ partial class MotionRegression
             }
         });
 
+        Run("0.0.53 Play Mode drag captures and restores persisted positions",()=>{
+            var theme=new OpeningArtTheme();
+            Resources.Register("OpeningArtTheme",theme);
+            try
+            {
+                var gm=new GameObject("Layout Edit GM").AddComponent<GameManager>();
+                gm.preGameUI=new GameObject("Layout Edit Menu",
+                    typeof(RectTransform),typeof(Image));
+                var uiRoot=new GameObject("Layout Edit Canvas",typeof(RectTransform));
+                gm.preGameUI.transform.SetParent(uiRoot.transform,false);
+                var template=new GameObject("Edit Template",
+                    typeof(RectTransform),typeof(Image),typeof(Button));
+                template.transform.SetParent(gm.preGameUI.transform,false);
+                var label=new GameObject("Edit Label",
+                    typeof(RectTransform),typeof(TextMeshProUGUI));
+                label.transform.SetParent(template.transform,false);
+
+                var ui=StartMenuUI.Install(gm);
+                OpeningCinematicUI opening=null;
+                foreach(var obj in UnityEngine.Object.objects)
+                    if(obj is OpeningCinematicUI)opening=(OpeningCinematicUI)obj;
+                Check(ui!=null&&opening!=null,"opening installed for layout editor");
+                Check(opening.SetLayoutEditing(true),"edit mode can start");
+                var rects=opening.GetLayoutRects();
+                Check(rects.Length==OpeningCinematicUI.LayoutKeys.Length,
+                    "all 13 elements are editable");
+                var sky=rects[0];
+                var logo=rects[8];
+                var originalSize=sky.sizeDelta;
+                sky.anchoredPosition=new Vector2(41f,-24f);
+                sky.sizeDelta=new Vector2(543f,234f);
+                logo.anchoredPosition=new Vector2(-18f,122f);
+                var snapshot=opening.CaptureLayout();
+                Check(snapshot!=null&&snapshot.Length==13,
+                    "capture all modified rects");
+                Near(snapshot[0].position.x,41f*800f/Mathf.Max(1f,originalSize.x/1.1f),
+                    "capture normalized sky position",2f);
+                theme.playModeLayouts=snapshot;
+                sky.anchoredPosition=Vector2.zero;
+                sky.sizeDelta=originalSize;
+                opening.ReloadSavedLayoutForEditing();
+                Near(sky.anchoredPosition.x,41f,
+                    "reload saved X on reference viewport",2f);
+                Near(sky.anchoredPosition.y,-24f,
+                    "reload saved Y on reference viewport",2f);
+                Near(sky.sizeDelta.x,543f,
+                    "reload saved manual width",2f);
+                Near(logo.anchoredPosition.x,-18f,
+                    "menu title uses the same layout snapshot",2f);
+                opening.SetLayoutEditing(false);
+                Check(!opening.IsLayoutEditing,
+                    "animation resumes after leaving edit mode");
+            }
+            finally { Resources.Unregister("OpeningArtTheme"); }
+        });
+
         Run("0.0.53 inspector reference sizes retain responsive layout",()=>{
             var far=new Vector2(944f,279f);
             var original=OpeningCinematicUI.ResolveLayerSize(far,800f,450f,
