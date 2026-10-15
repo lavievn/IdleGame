@@ -246,6 +246,12 @@ public sealed class OpeningHeroSplashVideo : MonoBehaviour
         if(video!=null)video.Stop();
     }
 
+    // Resize the content after an inspector-saved splash frame override.
+    public void RefreshMediaFit()
+    {
+        if(display!=null&&display.enabled)FitMedia();
+    }
+
     private void FitMedia()
     {
         if(display==null||rect==null)return;
