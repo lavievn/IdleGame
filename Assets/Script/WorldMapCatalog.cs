@@ -14,6 +14,8 @@ namespace TuTienCore
         public readonly List<string> Links = new List<string>();
         public bool IsBoss, IsStart;
         public int SuggestedLevel;
+        // Approximate atlas pin location, NOT an authored hex polygon coordinate.
+        public Vector2 PreviewPosition;
     }
 
     public static class WorldMapCatalog
@@ -144,6 +146,34 @@ namespace TuTienCore
                     var left = continents[a.Continent];
                     var right = continents[b.Continent];
                     Link(left[left.Count - 1], right[0]);
+                }
+            }
+            // Provisional normalized atlas markers. Final positions must be imported
+            // from the user's hex polygons; no country borders are generated here.
+            foreach (var pair in continents)
+            {
+                var group = new List<WorldMapNode>(pair.Value);
+                foreach (var boss in all) if (boss.IsBoss && boss.Continent == pair.Key) group.Add(boss);
+                group.Sort((a, b) => String.CompareOrdinal(a.Id, b.Id));
+                string prefix = group.Count == 0 ? "" : group[0].Id.Substring(0, 2);
+                Vector2 center;
+                switch (prefix)
+                {
+                    case "TV": center = new Vector2(.20f, .66f); break;
+                    case "TL": center = new Vector2(.49f, .73f); break;
+                    case "XD": center = new Vector2(.80f, .70f); break;
+                    case "HT": center = new Vector2(.46f, .27f); break;
+                    default: center = new Vector2(.81f, .28f); break;
+                }
+                int columns = 6;
+                for (int i = 0; i < group.Count; i++)
+                {
+                    int x = i % columns, y = i / columns;
+                    float width = .235f, height = .28f;
+                    float steps = Mathf.Max(1, (group.Count - 1) / columns);
+                    group[i].PreviewPosition = new Vector2(
+                        center.x + (x - 2.5f) * (width / columns),
+                        center.y + ((steps * .5f) - y) * (height / (steps + 1f)));
                 }
             }
             // Boss is a single-way leaf, never directly adjacent to a birth node.
