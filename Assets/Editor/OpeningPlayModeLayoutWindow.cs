@@ -1,7 +1,6 @@
 #if UNITY_EDITOR
 using UnityEditor;
 using UnityEngine;
-using System;
 using System.IO;
 
 // A non-invasive editing window: interact with REAL runtime RectTransforms
@@ -46,12 +45,12 @@ public sealed class OpeningPlayModeLayoutWindow : EditorWindow
             string destination=Path.Combine(projectRoot,"OpeningLayoutBackups");
             Directory.CreateDirectory(destination);
             backup=Path.Combine(destination,
-                "OpeningArtTheme_before_"+DateTime.Now.ToString("yyyyMMdd_HHmmss_fff")+
+                "OpeningArtTheme_before_"+System.DateTime.Now.ToString("yyyyMMdd_HHmmss_fff")+
                 ".asset");
             File.Copy(original,backup,false);
             return true;
         }
-        catch(Exception ex)
+        catch(System.Exception ex)
         {
             Debug.LogError("[Opening Layout] Backup failed: "+ex.Message);
             return false;
