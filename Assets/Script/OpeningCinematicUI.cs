@@ -9,7 +9,23 @@ public sealed class OpeningCinematicUI : MonoBehaviour
 {
     public const float ShowcaseCueSeconds=27f;
     public const float EntrySeconds=2.7f;
-    private const float MenuRevealSeconds=1.5f;
+    // Opening timeline: full black -> scenery fades in -> 3s pause ->
+    // title and buttons fade in together. Splash keeps its 27s cue.
+    public const float BlackFadeSeconds=1.8f;
+    public const float MenuDelayAfterSceneSeconds=3f;
+    public const float MenuRevealSeconds=1.5f;
+
+    public static float BlackCurtainAlphaAt(float seconds)
+    {
+        float t=Mathf.Clamp01(seconds/BlackFadeSeconds);
+        return 1f-t*t*(3f-2f*t);
+    }
+    public static float MenuAlphaAt(float seconds)
+    {
+        float start=BlackFadeSeconds+MenuDelayAfterSceneSeconds;
+        float t=Mathf.Clamp01((seconds-start)/MenuRevealSeconds);
+        return t*t*(3f-2f*t);
+    }
 
     private GameManager game;
     private StartMenuUI menu;
@@ -18,6 +34,7 @@ public sealed class OpeningCinematicUI : MonoBehaviour
     private Image baseImage;
     private TextMeshProUGUI skyPlaceholderLabel;
     private CanvasGroup menuFade, backdropFade;
+    private Image blackCurtain;
     private OpeningArtTheme theme;
     private OpeningBackgroundVideo videoBackground;
     private OpeningHeroSplashVideo splashLeft, splashRight;
@@ -44,7 +61,9 @@ public sealed class OpeningCinematicUI : MonoBehaviour
         opening.backdropFade.blocksRaycasts=false;
         opening.theme=Resources.Load<OpeningArtTheme>("OpeningArtTheme");
         opening.Build(font);
+        opening.BuildBlackCurtain();
         opening.Layout();
+        opening.menu.SetOpeningMenuReady(false);
         return opening;
     }
 
@@ -117,6 +136,25 @@ public sealed class OpeningCinematicUI : MonoBehaviour
         // No duplicate game title here: logo is part of StartMenuUI instead.
     }
 
+    // Sibling of the opening and menu (not a cloud child): the curtain
+    // covers the ENTIRE window including any old HUD behind the opening.
+    // No raycast interception; menu interactions are gated independently.
+    private void BuildBlackCurtain()
+    {
+        var go=new GameObject("Opening Black Curtain - Full Window",
+            typeof(RectTransform),typeof(CanvasRenderer),typeof(Image));
+        var rect=(RectTransform)go.transform;
+        rect.SetParent(canvasArea.parent,false);
+        rect.anchorMin=Vector2.zero;
+        rect.anchorMax=Vector2.one;
+        rect.offsetMin=Vector2.zero;
+        rect.offsetMax=Vector2.zero;
+        blackCurtain=go.GetComponent<Image>();
+        blackCurtain.color=Color.black;
+        blackCurtain.raycastTarget=false;
+        rect.SetAsLastSibling();
+    }
+
     public void Layout()
     {
         if(backdrop==null)return;
@@ -145,6 +183,7 @@ public sealed class OpeningCinematicUI : MonoBehaviour
         {
             backdrop.SetAsLastSibling();
             if(canvasArea!=null)canvasArea.SetAsLastSibling();
+            if(blackCurtain!=null)blackCurtain.transform.SetAsLastSibling();
             if(game!=null&&game.confirmationPopup!=null&&game.confirmationPopup.activeInHierarchy)
                 game.confirmationPopup.transform.SetAsLastSibling();
             orderFixed=true;
@@ -153,6 +192,23 @@ public sealed class OpeningCinematicUI : MonoBehaviour
         if(entering) { AnimateEntry(dt);return; }
         if(game==null||game.preGameUI==null||!game.preGameUI.activeInHierarchy)return;
         elapsed+=dt;
+        if(blackCurtain!=null)
+        {
+            if(elapsed < BlackFadeSeconds)
+            {
+                // Keep the black curtain above any HUD that the scene may
+                // have built on a later Start() than this opening layer.
+                blackCurtain.transform.SetAsLastSibling();
+                var color=Color.black;
+                color.a=BlackCurtainAlphaAt(elapsed);
+                blackCurtain.color=color;
+            }
+            else if(blackCurtain.gameObject.activeSelf)
+            {
+                blackCurtain.color=new Color(0f,0f,0f,0f);
+                blackCurtain.gameObject.SetActive(false);
+            }
+        }
         bool showingBackgroundVideo=videoBackground!=null&&videoBackground.IsDisplaying;
         if(baseImage!=null)
         {
@@ -162,8 +218,9 @@ public sealed class OpeningCinematicUI : MonoBehaviour
         }
         if(skyPlaceholderLabel!=null && skyPlaceholderLabel.gameObject.activeSelf==showingBackgroundVideo)
             skyPlaceholderLabel.gameObject.SetActive(!showingBackgroundVideo);
-        float m=Mathf.Clamp01((elapsed-.65f)/MenuRevealSeconds);
-        if(menuFade!=null)menuFade.alpha=m*m*(3f-2f*m);
+        float menuAlpha=MenuAlphaAt(elapsed);
+        if(menuFade!=null)menuFade.alpha=menuAlpha;
+        if(menu!=null)menu.SetOpeningMenuReady(menuAlpha>=.999f);
         float w=backdrop.rect.width,h=backdrop.rect.height;
         backCloud.anchoredPosition=new Vector2(Mathf.Sin(elapsed*.09f)*w*.035f,h*.16f);
         cloudLeft.anchoredPosition=new Vector2(-w*.30f+Mathf.Sin(elapsed*.12f)*w*.035f,
@@ -210,6 +267,7 @@ public sealed class OpeningCinematicUI : MonoBehaviour
         if(splashLeft!=null)splashLeft.StopVideo();
         if(splashRight!=null)splashRight.StopVideo();
         if(videoBackground!=null)videoBackground.StopPlayback();
+        if(blackCurtain!=null)blackCurtain.gameObject.SetActive(false);
         if(game!=null&&game.preGameUI!=null)game.preGameUI.SetActive(false);
         if(UIManager.Instance!=null)UIManager.Instance.SetPaused(false);
         backdrop.gameObject.SetActive(false);
@@ -221,6 +279,12 @@ public sealed class OpeningCinematicUI : MonoBehaviour
         finished=entering=orderFixed=false;
         elapsed=enterElapsed=0f;
         if(backdropFade!=null)backdropFade.alpha=1f;
+        if(blackCurtain!=null)
+        {
+            blackCurtain.gameObject.SetActive(true);
+            blackCurtain.color=Color.black;
+        }
+        if(menu!=null)menu.SetOpeningMenuReady(false);
         if(splashLeft!=null)splashLeft.ResetToTitle();
         if(splashRight!=null)splashRight.ResetToTitle();
         // Reactivate the parent before calling VideoPlayer.Play().
@@ -229,7 +293,8 @@ public sealed class OpeningCinematicUI : MonoBehaviour
         if(videoBackground!=null)videoBackground.StartPlayback();
         backdrop.SetAsLastSibling();
         if(canvasArea!=null)canvasArea.SetAsLastSibling();
-        if(menuFade!=null){menuFade.alpha=0f;menuFade.interactable=true;}
+        if(blackCurtain!=null)blackCurtain.transform.SetAsLastSibling();
+        if(menuFade!=null)menuFade.alpha=0f;
         sky.localScale=far.localScale=near.localScale=Vector3.one;
         Layout();
     }
