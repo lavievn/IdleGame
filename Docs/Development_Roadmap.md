@@ -191,7 +191,7 @@ Người phát triển xác nhận B1 đã xong sau commit mã `2308f25`. Chỉ 
 
 ### 0.0.53 — Chỉnh theo phản hồi kiểm thử opening (mới nhất)
 
-- **Đã hoàn thiện mã trên nhánh:** hai khung splash trái/phải tràn mép, random PNG/JPG/MP4 tại lần mở menu; khung cố định, chỉ fade in từ giây 27, không pan/zoom/crossfade/slideshow; video nền và logo giữ nguyên.
+- **Đã hoàn thiện mã trên nhánh:** hai khung splash trái/phải chỉ tràn mép ngang, giới hạn chiều cao 76% phía dưới cửa sổ, random PNG/JPG/MP4 tại lần mở menu; khung cố định, chỉ fade in từ giây 27, không pan/zoom/crossfade/slideshow; video nền và logo giữ nguyên.
 - **Đã thêm:** shader feather alpha 48 px ở mép 5 khung núi/mây; thông số chỉnh được trực tiếp ở `Assets/Resources/OpeningArtTheme.asset`.
 - **Chưa xác minh:** hình ảnh thực tế tại ba độ phân giải, codec đồng thời hai splash video + một background, hiệu năng 40HX, mức feather theo CanvasScaler; cần người phát triển thử trong Play Mode.
 - **Hướng dẫn:** [Opening_SplashArt_0.0.53.md](Opening_SplashArt_0.0.53.md).
