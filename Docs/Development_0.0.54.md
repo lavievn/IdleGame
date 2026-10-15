@@ -10,12 +10,26 @@
 - **Forge thử nghiệm (bộ luật ngày 14/10):** rèn thường +1 lượt mất 1 vật liệu; rèn đặc biệt +1 phẩm mất 10 vật liệu; mỗi lần đủ ngưỡng chỉ tăng một bậc phẩm; ngưỡng thử nghiệm 3/6/12/24/48; dòng phụ chỉ khám phá sau khi tăng phẩm thành công, tụt phẩm chuyển dòng từng biết thành `KnownLocked`. Người phát triển đã kiểm thử một phần và chưa báo lỗi ở các trường hợp được thử.
 - **Opening UI 0.0.53:** công cụ Editor căn chỉnh runtime `Tools > Bach Luyen Tien Do > Opening Layout (Play Mode)` cho 13 RectTransform, lưu vào `OpeningArtTheme.asset`, chống reset bố cục và tạo backup trước khi ghi. Người phát triển xác nhận hoạt động tốt và muốn cân nhắc áp dụng phương pháp cho toàn bộ UI.
 
+## Trạng thái UI — đang triển khai, tạm chưa phải đầu việc chính (.54)
+
+- **Inventory / Information / các giao diện cùng nhóm:** bộ asset thiết kế **chưa hoàn thiện**, hiện đang được chuẩn bị. Giữ nguyên layout code, giao diện placeholder và các công cụ đo hiện có; không xem UI art là đã nghiệm thu.
+- **Căn chỉnh Play Mode:** phương pháp đã nghiệm thu với Opening ở 0.0.53 và dự kiến mở rộng cho các UI khác, nhưng **hoãn việc chuyển Inventory sang công cụ chỉnh/lưu mới** cho tới khi có bố cục/asset hoàn chỉnh để tránh chỉnh lặp lại.
+- **Trạng thái công việc:** ĐANG TRIỂN KHAI / CHỜ ASSET. Không khóa luồng phát triển gameplay, Equipment hay dữ liệu.
+- **Mốc quay lại:** khi có khung ảnh, nút và asset thực tế cho Inventory, Information; lúc đó thử trực tiếp trong Play Mode ở ba kích thước cửa sổ trước khi chốt.
+
 ## Phần chưa chốt / chưa xây dựng
 
-1. **Inventory UI:** hoàn thiện mỹ thuật và bố cục trong cửa sổ 600/800/1150; xem xét tái sử dụng công cụ Play Mode drag+save theo từng vùng, bảo vệ nút bấm và các bố cục responsive. Kho thực tế chưa phải lưới cuộn ScrollRect 50+ ô.
+1. **Inventory UI [đang triển khai / chờ asset]:** hoàn thiện mỹ thuật và bố cục trong cửa sổ 600/800/1150; sau đó xem xét tái sử dụng công cụ Play Mode drag+save theo từng vùng, bảo vệ nút bấm và bố cục responsive. Kho thực tế chưa phải lưới cuộn ScrollRect 50+ ô.
 2. **Rèn mạo hiểm:** cơ chế cược có nguy cơ mất vật phẩm vĩnh viễn đã được định hướng, nhưng xác suất thành công, mức mất, nguồn nguyên liệu, cân bằng và giới hạn vượt trần chưa chốt; không được tự thêm RNG hủy đồ vào mã.
 3. **Sinh đồ/rơi đồ thực:** bảng loại vật phẩm, ngũ hành, số lượng dòng phụ khi sinh, sức mạnh, tỷ lệ rơi và cách phân rã/chế tác chưa hoàn chỉnh.
 4. **Khả năng tương thích:** không được phá schema Save cũ, Modifier/CombatStat, kiểm tra quyền modal của bảng rèn và điều khiển UI của Windows overlay.
+
+
+## Đầu việc tiếp theo sau khi tạm hoãn UI asset
+
+**Ưu tiên tiếp theo: Equipment và cách cộng chỉ số theo loại sát thương.** Rà soát phân biệt nguồn sát thương vật lý/pháp thuật, giá trị chỉ số gốc và cộng từ trang bị, preview mặc/tháo và Save/Load, rồi thảo luận quy tắc trước khi sửa gameplay. Đây là nền tảng cần ổn định trước khi mở rộng sinh đồ, rơi đồ và võ học.
+
+**Chưa tự triển khai** xác suất thất bại, mất vật phẩm, bảng drop hay random chỉ số mới. Các phần đó còn thiếu quy tắc đã thống nhất; Forge thử nghiệm hiện tại được giữ nguyên.
 
 ## Nguyên tắc phát triển .54
 
