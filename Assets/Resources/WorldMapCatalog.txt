@@ -1,0 +1,134 @@
+# Prototype world catalog 0.0.54. Columns: id,continent,name,terrain,animals(7),humanRole,bossFlag,startFlag
+TV-01	Tử Vân Cổ Vực	Phong Ẩn Sơn Đỉnh	Đồi núi	Lang, Hồ, Ngô Công, Thố, Xà, Ưng, Báo	Kiếm tu lưu vong	-	-
+TV-02	Tử Vân Cổ Vực	Huyền Trúc Lâm	Đồi núi	Ngô Công, Mãng, Dương, Xà, Điêu, Lang, Hùng	Tà tu sơn môn	-	-
+TV-03	Tử Vân Cổ Vực	U Minh Sơn Cốc	Đồi núi	Ưng, Hùng, Dương, Báo, Mãng, Hạt, Thố	Thợ săn linh thú	-	-
+TV-04	Tử Vân Cổ Vực	Tịch Vân Đài	Đồng bằng	Ưng, Hồ, Xà, Trư, Nghĩ, Mã, Kê	Thảo khấu	-	-
+TV-05	Tử Vân Cổ Vực	Vân Mộng Trạch	Đồi núi	Ưng, Xà, Hùng, Thố, Ngô Công, Dương, Hồ	Tán tu đoạt bảo	-	-
+TV-06	Tử Vân Cổ Vực	Hắc Tùng Lĩnh	Cao nguyên	Hùng, Hạc, Ngưu, Ưng, Xà, Hạt, Mã	Tu sĩ săn khoáng	-	-
+TV-09	Tử Vân Cổ Vực	Tử Điện Sơn	Đồi núi	Ngô Công, Bức, Mãng, Hùng, Ưng, Lộc, Xà	Kiếm tu lưu vong	-	-
+TV-10	Tử Vân Cổ Vực	Vọng Nguyệt Cốc	Đồng bằng	Ưng, Hồ, Xà, Thố, Phong, Lang, Trư	Tán tu đoạt bảo	-	-
+TV-11	Tử Vân Cổ Vực	Ma Tùng Sâm	Rừng rậm	Mãng, Ưng, Tê, Thố, Chu, Ô, Ly	Trộm linh dược	-	-
+TV-12	Tử Vân Cổ Vực	Tử Vân Quan	Đồi núi	Ưng, Hùng, Mãng, Hạt, Bức, Báo, Lang	Tà tu sơn môn	-	-
+TV-14	Tử Vân Cổ Vực	Thiên Mịch Đài	Đồng bằng	Lang, Xà, Thử, Nghĩ, Ưng, Khuyển, Ngưu	Đạo tặc thương lộ	-	-
+TV-16	Tử Vân Cổ Vực	Cô Hồn Lâm	Rừng rậm	Lang, Ưng, Hùng, Viên, Xà, Nghĩ, Tê	Tán tu tranh bảo	-	-
+TV-18	Tử Vân Cổ Vực	Tử Ngọc Nhai	Đồi núi	Hùng, Ngô Công, Xà, Mãng, Điêu, Thố, Dương	Kiếm tu lưu vong	-	-
+TV-20	Tử Vân Cổ Vực	Lạc Vân Trạch	Đầm lầy	Hạc, Ngô Công, Mãng, Thiềm, Hà, Oa, Áp	Kẻ trộm cổ mộ	-	S
+TV-21	Tử Vân Cổ Vực	Huyền Ảnh Cốc	Đồi núi	Bức, Ưng, Lộc, Hạt, Mãng, Ngô Công, Hùng	Sơn tặc	-	-
+TV-22	Tử Vân Cổ Vực	Tịch Diệt Sơn	Rừng rậm	Ngô Công, Hùng, Tước, Nghĩ, Mãng, Báo, Ưng	Lâm tặc	-	-
+TV-23	Tử Vân Cổ Vực	U Linh Trạch	Rừng rậm	Bức, Chu, Phong, Hùng, Điêu, Xà, Lang	Thợ săn linh thú	-	-
+TV-24	Tử Vân Cổ Vực	Bát Quỷ Lâm	Đồi núi	Điêu, Lang, Bức, Ngô Công, Xà, Hồ, Hạt	Sơn tặc	-	-
+TV-27	Tử Vân Cổ Vực	Đoạn Hồn Nhai	Đồi núi	Bức, Hồ, Báo, Ngô Công, Ưng, Mãng, Lộc	Tu sĩ đào khoáng	-	-
+TV-28	Tử Vân Cổ Vực	Tử Thác Uyên	Đồi núi	Hùng, Xà, Điêu, Lang, Hạt, Bức, Báo	Kiếm tu lưu vong	-	-
+TV-29	Tử Vân Cổ Vực	Minh Diệt Cốc	Rừng rậm	Hùng, Mãng, Lang, Lộc, Phong, Khổng Tước, Trư	Tu sĩ săn thú	-	-
+TV-30	Tử Vân Cổ Vực	Cửu U Sơn	Đồi núi	Ưng, Hồ, Thố, Ngô Công, Xà, Lang, Hùng	Tán tu đoạt bảo	-	-
+TV-33	Tử Vân Cổ Vực	Hồn Vân Lâm	Rừng rậm	Hùng, Mãng, Trư, Điêu, Ngô Công, Viên, Thố	Lâm tặc	-	-
+TV-34	Tử Vân Cổ Vực	Tịch Mộ Cốc	Đồi núi	Lang, Ưng, Hạt, Thố, Mãng, Điêu, Dương	Tán tu đoạt bảo	-	-
+TV-35	Tử Vân Cổ Vực	Lưu Vân Hải	Đồi núi	Bức, Xà, Điêu, Hùng, Ngô Công, Thố, Hồ	Kiếm tu lưu vong	-	-
+TV-36	Tử Vân Cổ Vực	Hắc Vân Trại	Rừng rậm	Chu, Điêu, Phong, Ô, Hùng, Mãng, Hồ	Thợ săn linh thú	-	-
+TV-37	Tử Vân Cổ Vực	Tử Sương Nguyên	Đồng bằng	Hồ, Xà, Kê, Lộc, Nghĩ, Thố, Dương	Thợ săn linh thú	-	-
+TV-38	Tử Vân Cổ Vực	Âm Ảnh Lâm	Đồi núi	Lang, Ngô Công, Hồ, Điêu, Xà, Lộc, Bức	Thợ săn linh thú	-	-
+TV-39	Tử Vân Cổ Vực	Trầm Thủy Uyên	Đồi núi	Lang, Ngô Công, Bức, Mãng, Ưng, Báo, Hùng	Tu sĩ đào khoáng	B	-
+TV-40	Tử Vân Cổ Vực	U Minh Sơn	Đồi núi	Xà, Điêu, Ưng, Hồ, Hạt, Lang, Thố	Tu sĩ đào khoáng	-	-
+TV-41	Tử Vân Cổ Vực	Vân Tẫn Cốc	Biển	Ưng, Ngư, Nhạn, Kình, Hải Âu, Sa, Hà	Thủy tu lưu vong	-	-
+TL-01	Thương Lam Trung Vực	Bạch Phong Tuyết Lĩnh	Đồi núi	Hùng, Thố, Bức, Dương, Điêu, Ngô Công, Mãng	Sơn tặc	-	-
+TL-02	Thương Lam Trung Vực	Ngân Hà Sơn Mạch	Đồi núi	Hùng, Lang, Hồ, Mãng, Ưng, Hạt, Dương	Tán tu đoạt bảo	B	-
+TL-03	Thương Lam Trung Vực	Thiên Sơn Tuyết Cảnh	Đồi núi	Lộc, Hùng, Mãng, Ngô Công, Điêu, Hồ, Bức	Tà tu sơn môn	-	-
+TL-04	Thương Lam Trung Vực	Băng Ngọc Tiên Sơn	Đồi núi	Lộc, Hùng, Mãng, Bức, Ngô Công, Ưng, Báo	Kiếm tu lưu vong	-	-
+TL-05	Thương Lam Trung Vực	Thanh Lương Cao Nguyên	Cao nguyên	Ưng, Hùng, Xà, Lang, Hạt, Báo, Điêu	Sơn tặc	-	-
+TL-06	Thương Lam Trung Vực	Phong Khởi Nguyên Dã	Đồng bằng	Ngưu, Thố, Nghĩ, Mã, Xà, Tước, Thử	Tu sĩ lưu vong	-	-
+TL-07	Thương Lam Trung Vực	Trung Nguyên Bình Lộ	Đồng bằng	Thố, Ngưu, Hồ, Xà, Kê, Phong, Lộc	Tán tu đoạt bảo	-	-
+TL-08	Thương Lam Trung Vực	Minh Hà Bình Nguyên	Đồng bằng	Lộc, Lang, Xà, Kê, Nghĩ, Hồ, Mã	Đạo tặc thương lộ	-	-
+TL-09	Thương Lam Trung Vực	Lục Thủy Doanh Địa	Rừng rậm	Ly, Ưng, Yến, Bức, Chu, Xà, Hổ	Tà tu ẩn lâm	-	-
+TL-10	Thương Lam Trung Vực	Thương Lam Lâm Hải	Rừng rậm	Hùng, Lang, Xà, Hổ, Tước, Nghĩ, Hầu	Trộm linh dược	-	-
+TL-11	Thương Lam Trung Vực	Thanh Dương Điền Viên	Đồng bằng	Lang, Ưng, Hồ, Dương, Xà, Phong, Trư	Đạo tặc thương lộ	-	-
+TL-12	Thương Lam Trung Vực	Lam Tâm Hồ	Hồ nước	Quy, Hạc, Áp, Oa, Hà, Lý, Ngư	Thủy phỉ	-	-
+TL-13	Thương Lam Trung Vực	Vân Ảnh Quần Đảo	Đồng bằng	Ngưu, Thố, Khuyển, Mã, Ưng, Xà, Nghĩ	Tán tu đoạt bảo	-	-
+TL-14	Thương Lam Trung Vực	Bách Mộc Thâm Lâm	Rừng rậm	Hổ, Ly, Chu, Lộc, Yến, Mãng, Bức	Lâm tặc	-	-
+TL-15	Thương Lam Trung Vực	Tú Thủy Hà Cốc	Rừng rậm	Ưng, Hùng, Điêu, Chu, Xà, Lộc, Tượng	Tà tu ẩn lâm	-	-
+TL-16	Thương Lam Trung Vực	Vọng Hồ Bình Xuyên	Đồng bằng	Thố, Lang, Ngưu, Khuyển, Tước, Xà, Phong	Tu sĩ lưu vong	-	S
+TL-17	Thương Lam Trung Vực	Trung Tâm Thành	Đồng bằng	Lang, Lộc, Thử, Thố, Kê, Xà, Nghĩ	Tán tu đoạt bảo	-	-
+TL-18	Thương Lam Trung Vực	Thanh Giang Lưu Vực	Hồ nước	Ngư, Hạc, Ngạc, Oa, Áp, Quy, Thiềm	Thủy phỉ	-	-
+TL-19	Thương Lam Trung Vực	Thạch Lâm Sơn Cốc	Rừng rậm	Thố, Hùng, Bức, Nghĩ, Ô, Mãng, Ly	Thợ săn linh thú	-	-
+TL-20	Thương Lam Trung Vực	Ngự Phong Thủy Điện	Rừng rậm	Lộc, Ưng, Điêu, Phong, Xà, Tê, Báo	Tán tu tranh bảo	-	-
+TL-21	Thương Lam Trung Vực	Phong Nguyệt Cư	Đồng bằng	Thố, Lộc, Ngưu, Xà, Ưng, Phong, Lang	Tu sĩ lưu vong	-	-
+TL-22	Thương Lam Trung Vực	Thiên Quang Hồ	Hồ nước	Hạc, Ngư, Ngạc, Nhạn, Oa, Giải, Áp	Tán tu đoạt bảo	-	-
+TL-23	Thương Lam Trung Vực	Long Ngư Châu	Đồng bằng	Ưng, Thố, Thử, Trư, Xà, Nghĩ, Khuyển	Tu sĩ lưu vong	-	-
+TL-24	Thương Lam Trung Vực	Thanh Phong Sơn Lâm	Rừng rậm	Ưng, Hổ, Yến, Lang, Phong, Mãng, Trư	Tán tu tranh bảo	-	-
+TL-25	Thương Lam Trung Vực	Lưu Vân Thảo Nguyên	Thảo nguyên	Ngưu, Mã, Lộc, Thố, Xà, Kê, Nghĩ	Thợ săn linh thú	-	-
+TL-26	Thương Lam Trung Vực	Thiệu Dương Điền Dã	Đồng bằng	Ưng, Ngưu, Khuyển, Kê, Phong, Xà, Thố	Tu sĩ lưu vong	-	-
+TL-27	Thương Lam Trung Vực	Nam Hồ Bình Nguyên	Đồng bằng	Ưng, Thố, Xà, Tước, Nghĩ, Ngưu, Dương	Thảo khấu	-	-
+TL-28	Thương Lam Trung Vực	Trạch Thủy Nguyên	Rừng rậm	Mãng, Hồ, Ngô Công, Lộc, Ưng, Lang, Hùng	Tà tu ẩn lâm	-	-
+TL-29	Thương Lam Trung Vực	Vân Thủy Biên Lâm	Đồi núi	Ưng, Lộc, Mãng, Lang, Hạt, Hùng, Thố	Thợ săn linh thú	-	-
+XD-01	Xích Diễm Chi Địa	Phong Diễm Tiền Đồn	Đồi núi	Điêu, Hạt, Dương, Báo, Xà, Lộc, Lang	Kiếm tu lưu vong	-	-
+XD-02	Xích Diễm Chi Địa	Hỏa Vân Lĩnh	Đồi núi	Điêu, Ngô Công, Mãng, Lang, Dương, Hồ, Lộc	Tu sĩ đào khoáng	-	-
+XD-03	Xích Diễm Chi Địa	Lôi Nham Tâm Sơn	Sa mạc	Ngô Công, Hạt, Điêu, Nghĩ, Xà, Báo, Chu	Tà tu cát đỏ	B	-
+XD-04	Xích Diễm Chi Địa	Tẫn Diệm Quan	Đồi núi	Ngô Công, Xà, Ưng, Điêu, Bức, Báo, Lang	Thợ săn linh thú	-	-
+XD-05	Xích Diễm Chi Địa	Diễm Cốc Tây	Sa mạc	Hạt, Ngô Công, Xà, Điêu, Thử, Ưng, Mãng	Đạo tặc thương đoàn	-	-
+XD-06	Xích Diễm Chi Địa	Xích Sa Trường	Đồi núi	Ưng, Hạt, Mãng, Bức, Hùng, Điêu, Thố	Thợ săn linh thú	-	-
+XD-07	Xích Diễm Chi Địa	Nham Hỏa Nguyên	Đồi núi	Ngô Công, Điêu, Thố, Mãng, Dương, Hồ, Lộc	Thợ săn linh thú	-	-
+XD-08	Xích Diễm Chi Địa	Ma Diễm Sơn	Đồi núi	Mãng, Ngô Công, Báo, Hạt, Ưng, Bức, Xà	Thợ săn linh thú	-	-
+XD-09	Xích Diễm Chi Địa	Tẫn Vân Hải Ngạn	Sa mạc	Ưng, Hạt, Ngô Công, Mãng, Hổ, Điêu, Nghĩ	Độc sư sa mạc	-	-
+XD-10	Xích Diễm Chi Địa	Liệt Hỏa Bàn	Đồi núi	Mãng, Hạt, Lộc, Dương, Điêu, Ngô Công, Báo	Kiếm tu lưu vong	-	-
+XD-11	Xích Diễm Chi Địa	Xích Diễm Cồn	Sa mạc	Ưng, Hạt, Mãng, Điêu, Báo, Ngô Công, Xà	Độc sư sa mạc	-	-
+XD-12	Xích Diễm Chi Địa	Tro Hỏa Bình Nguyên	Đồi núi	Mãng, Điêu, Dương, Báo, Hạt, Lang, Hùng	Tán tu đoạt bảo	-	-
+XD-13	Xích Diễm Chi Địa	Diễm Phong Hải Lộ	Sa mạc	Xà, Điêu, Mãng, Nghĩ, Thử, Hạt, Ngô Công	Sa tặc	-	-
+XD-14	Xích Diễm Chi Địa	Hỏa Thực Sơn Cốc	Đồi núi	Mãng, Ngô Công, Hạt, Lang, Ưng, Thố, Dương	Tán tu đoạt bảo	-	-
+XD-15	Xích Diễm Chi Địa	Xích Nham Hoang Nguyên	Sa mạc	Hạt, Mãng, Ngô Công, Thử, Ưng, Chu, Điêu	Tu sĩ lưu vong	-	-
+XD-16	Xích Diễm Chi Địa	Hung Diễm Lĩnh	Đồi núi	Hạt, Mãng, Ưng, Hùng, Hồ, Lộc, Bức	Kiếm tu lưu vong	-	-
+XD-17	Xích Diễm Chi Địa	Lưu Diễm Tràng	Đồi núi / Cao nguyên	Xà, Ưng, Hùng, Hạt, Báo, Lang, Điêu	Tán tu đoạt bảo	-	-
+XD-18	Xích Diễm Chi Địa	Tẫn Thế Nhai	Đồi núi	Điêu, Hạt, Báo, Ngô Công, Mãng, Xà, Lang	Kiếm tu lưu vong	-	-
+XD-19	Xích Diễm Chi Địa	Diễm Ảnh Quần Đảo	Biển	Ưng, Sa, Giải, Nhạn, Ngư, Kình, Chương	Tà tu hải ngoại	-	-
+XD-20	Xích Diễm Chi Địa	Hồng Liên Hải Tràng	Biển	Sa, Hải Âu, Hà, Nhạn, Ưng, Giải, Ngư	Tán tu đoạt bảo	-	-
+XD-21	Xích Diễm Chi Địa	Tàng Hỏa Hải Uyên	Biển	Kình, Sa, Giải, Chương, Nhạn, Hải Âu, Hà	Hải tặc	-	-
+XD-22	Xích Diễm Chi Địa	Xích Diễm Ngoại Hải	Biển	Ưng, Sa, Giải, Nhạn, Kình, Chương, Hải Âu	Thủy tu lưu vong	-	-
+HT-01	Hoàng Thổ Nguyên Dã	Tiền Đồn Phong Nham	Đồi núi	Hạt, Mãng, Bức, Ưng, Ngô Công, Báo, Hùng	Tu sĩ đào khoáng	B	-
+HT-02	Hoàng Thổ Nguyên Dã	Bình Nguyên Lạc Dương	Đồi núi	Hùng, Lang, Hồ, Bức, Mãng, Điêu, Hạt	Tu sĩ đào khoáng	-	-
+HT-03	Hoàng Thổ Nguyên Dã	Ốc Đảo Minh Tuyền	Cao nguyên	Hạt, Ưng, Thố, Hồ, Xà, Lang, Hùng	Đạo sĩ lưu vong	-	-
+HT-04	Hoàng Thổ Nguyên Dã	Hắc Nham Đoạn Lĩnh	Đồi núi	Dương, Điêu, Hùng, Bức, Mãng, Ngô Công, Thố	Sơn tặc	-	-
+HT-05	Hoàng Thổ Nguyên Dã	Hẻm Viêm Khẩu	Đồi núi	Ưng, Xà, Hồ, Lộc, Hạt, Dương, Bức	Thợ săn linh thú	-	-
+HT-06	Hoàng Thổ Nguyên Dã	Sơn Cốc Hoang Vu	Đồi núi	Hùng, Hạt, Ngô Công, Lộc, Xà, Ưng, Hồ	Tà tu sơn môn	-	-
+HT-07	Hoàng Thổ Nguyên Dã	Hồ Lưu Sa	Đồi núi	Xà, Hùng, Điêu, Dương, Ngô Công, Lộc, Báo	Tà tu sơn môn	-	-
+HT-08	Hoàng Thổ Nguyên Dã	Cát Vọng Đài	Sa mạc	Ưng, Xà, Ngô Công, Điêu, Hổ, Mãng, Nghĩ	Sa tặc	-	-
+HT-09	Hoàng Thổ Nguyên Dã	Trường Phong Quan	Đồi núi	Mãng, Điêu, Hạt, Thố, Lang, Hùng, Dương	Tà tu sơn môn	-	-
+HT-10	Hoàng Thổ Nguyên Dã	Nham Môn Cổ Thành	Đồi núi	Dương, Điêu, Ưng, Ngô Công, Mãng, Thố, Hồ	Tán tu đoạt bảo	-	-
+HT-11	Hoàng Thổ Nguyên Dã	Thạch Lâm Vô Ảnh	Đồi núi	Hùng, Dương, Ưng, Hạt, Xà, Điêu, Lộc	Thợ săn linh thú	-	-
+HT-13	Hoàng Thổ Nguyên Dã	Cự Đà Thiên Trụ	Đồi núi	Hùng, Dương, Thố, Bức, Ưng, Mãng, Hạt	Thợ săn linh thú	-	-
+HT-14	Hoàng Thổ Nguyên Dã	Đại Mạc Cổ Trại	Sa mạc	Mãng, Xà, Chu, Hạt, Báo, Ưng, Điêu	Kẻ săn cổ vật	-	-
+HT-15	Hoàng Thổ Nguyên Dã	Đạo Cát Lý Phong	Cao nguyên	Hạt, Dương, Báo, Hồ, Ưng, Xà, Ngưu	Tà tu cao nguyên	-	-
+HT-16	Hoàng Thổ Nguyên Dã	Bích Nhai Hoang Trại	Sa mạc	Xà, Ưng, Mãng, Thử, Hạt, Chu, Nghĩ	Độc sư sa mạc	-	-
+HT-17	Hoàng Thổ Nguyên Dã	Hồ Ảo Ảnh	Đồng bằng	Hồ, Xà, Lộc, Thố, Tước, Phong, Thử	Thợ săn linh thú	-	S
+HT-18	Hoàng Thổ Nguyên Dã	Phong Cốc Liên Châu	Sa mạc	Xà, Ưng, Thử, Mãng, Hạt, Hổ, Ngô Công	Kẻ săn cổ vật	-	-
+HT-20	Hoàng Thổ Nguyên Dã	Vực Thạch Quy	Đồi núi	Hùng, Ưng, Hạt, Lộc, Xà, Bức, Báo	Kiếm tu lưu vong	-	-
+HT-21	Hoàng Thổ Nguyên Dã	Hoàng Sa Cổ Đạo	Sa mạc	Xà, Mãng, Ngô Công, Chu, Thử, Ưng, Báo	Độc sư sa mạc	-	-
+HT-23	Hoàng Thổ Nguyên Dã	Liệt Diệm Hào Cốc	Cao nguyên	Hạt, Điêu, Báo, Mã, Xà, Thố, Dương	Đạo sĩ lưu vong	-	-
+HT-24	Hoàng Thổ Nguyên Dã	Nhai Thành Thiết Bích	Đồi núi	Ưng, Điêu, Xà, Hạt, Lang, Hùng, Thố	Tán tu đoạt bảo	-	-
+HT-25	Hoàng Thổ Nguyên Dã	Kim Sa Bình Nguyên	Đồi núi	Dương, Mãng, Ưng, Hạt, Điêu, Hồ, Lộc	Tà tu sơn môn	-	-
+HT-26	Hoàng Thổ Nguyên Dã	Mê Ảnh Sa Khâu	Sa mạc	Xà, Mãng, Nghĩ, Ưng, Thử, Chu, Điêu	Đạo tặc thương đoàn	-	-
+HT-27	Hoàng Thổ Nguyên Dã	Lưu Hoang Cốc	Đồi núi	Dương, Ưng, Bức, Hạt, Mãng, Ngô Công, Báo	Kiếm tu lưu vong	B	-
+HT-28	Hoàng Thổ Nguyên Dã	Kình Phong Nhai	Đồi núi	Xà, Hùng, Ngô Công, Thố, Ưng, Dương, Bức	Sơn tặc	-	-
+TM-01	Thanh Mộc U Cảnh	Rừng Ngọc Thanh	Rừng rậm	Hầu, Chu, Khổng Tước, Hổ, Xà, Viên, Điêu	Tán tu tranh bảo	-	-
+TM-02	Thanh Mộc U Cảnh	Trạch Ẩn Vân	Rừng rậm	Hồ, Ly, Lộc, Thố, Khổng Tước, Ngô Công, Mãng	Tu sĩ săn thú	-	-
+TM-03	Thanh Mộc U Cảnh	Đảo Phong Linh	Biển	Nhạn, Ngư, Hải Âu, Giải, Sa, Ưng, Hà	Đảo tặc	-	-
+TM-04	Thanh Mộc U Cảnh	Bờ Dương Mộc	Biển	Ngư, Nhạn, Chương, Hải Âu, Giải, Sa, Ưng	Tu sĩ buôn lậu	-	-
+TM-05	Thanh Mộc U Cảnh	Trạch Lục Hà	Rừng rậm	Ly, Hồ, Tượng, Ô, Chu, Xà, Thố	Tà tu ẩn lâm	-	-
+TM-06	Thanh Mộc U Cảnh	Đầm Vọng Nguyệt	Đầm lầy	Quy, Hạc, Ngô Công, Áp, Lý, Thiềm, Xà	Thủy phỉ	-	-
+TM-07	Thanh Mộc U Cảnh	Rừng Thủy Ẩn	Rừng rậm	Hầu, Xà, Chu, Hổ, Tước, Hồ, Yến	Tán tu tranh bảo	-	-
+TM-08	Thanh Mộc U Cảnh	Trạch U Minh	Rừng rậm	Xà, Hầu, Trư, Ly, Ô, Nghĩ, Hổ	Tán tu tranh bảo	-	-
+TM-09	Thanh Mộc U Cảnh	Đông Hải Thùy	Biển	Ngư, Nhạn, Sa, Kình, Giải, Chương, Hải Âu	Tán tu đoạt bảo	-	-
+TM-10	Thanh Mộc U Cảnh	Thác Thanh Uyên	Rừng rậm	Phong, Hầu, Ô, Bức, Mãng, Lộc, Tượng	Lâm tặc	-	-
+TM-11	Thanh Mộc U Cảnh	Cổ Mộc Thiền Viện	Rừng rậm	Viên, Chu, Ly, Yến, Xà, Hầu, Bức	Lâm tặc	-	-
+TM-12	Thanh Mộc U Cảnh	Đồng Lục Sa	Đồi núi	Hồ, Xà, Thố, Mãng, Điêu, Hạt, Lang	Tà tu sơn môn	-	S
+TM-13	Thanh Mộc U Cảnh	Linh Thủy Trạch	Rừng rậm	Hầu, Hồ, Trư, Bức, Ưng, Phong, Mãng	Lâm tặc	-	-
+TM-14	Thanh Mộc U Cảnh	Thác Bạch Ngọc	Đồi núi	Ưng, Hùng, Xà, Điêu, Ngô Công, Thố, Dương	Tán tu đoạt bảo	-	-
+TM-15	Thanh Mộc U Cảnh	Rừng Huyền Âm	Rừng rậm	Chu, Hồ, Trư, Ưng, Xà, Ly, Tê	Tu sĩ săn thú	-	-
+TM-16	Thanh Mộc U Cảnh	Đầm Tụ Thủy	Đầm lầy	Chu, Quy, Hạc, Oa, Ngư, Mãng, Phong	Tà tu luyện độc	-	-
+TM-17	Thanh Mộc U Cảnh	Rừng Phong Ẩn	Rừng rậm	Viên, Hầu, Hùng, Tượng, Điêu, Ngô Công, Mãng	Lâm tặc	-	-
+TM-18	Thanh Mộc U Cảnh	Trạch Vân Lộ	Đầm lầy	Chu, Phong, Quy, Ngư, Hạc, Oa, Ngạc	Dược sư hắc đạo	-	-
+TM-19	Thanh Mộc U Cảnh	Đảo Thanh Diệp	Biển	Ngư, Nhạn, Chương, Ưng, Kình, Sa, Hà	Đảo tặc	-	-
+TM-20	Thanh Mộc U Cảnh	Cốc Lưu Tuyền	Rừng rậm	Chu, Hồ, Bức, Lang, Khổng Tước, Xà, Báo	Tà tu ẩn lâm	-	-
+TM-21	Thanh Mộc U Cảnh	Đồng Trúc Thanh	Đồng bằng	Xà, Hồ, Lộc, Ưng, Nghĩ, Mã, Lang	Mã tặc	-	-
+TM-22	Thanh Mộc U Cảnh	Vịnh U Cảnh	Biển	Ngư, Nhạn, Giải, Ưng, Kình, Chương, Hải Âu	Tu sĩ buôn lậu	-	-
+TM-23	Thanh Mộc U Cảnh	Quần Đảo Linh Mộc	Biển	Ngư, Nhạn, Ưng, Giải, Sa, Hà, Kình	Hải tặc	-	-
+TM-24	Thanh Mộc U Cảnh	Thác Thiên Âm	Rừng rậm	Chu, Ly, Mãng, Lộc, Tước, Lang, Trư	Trộm linh dược	-	-
+TM-25	Thanh Mộc U Cảnh	Hải Trúc Đàm	Biển	Ngư, Nhạn, Kình, Ưng, Giải, Chương, Hải Âu	Thủy tu lưu vong	B	-
+TM-26	Thanh Mộc U Cảnh	Đảo Vọng Lôi	Biển	Nhạn, Ngư, Giải, Ưng, Sa, Hà, Kình	Tu sĩ buôn lậu	-	-
