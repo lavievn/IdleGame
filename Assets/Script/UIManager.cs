@@ -93,6 +93,7 @@ public class UIManager : MonoBehaviour
         InstallReadableCanvas();
         ConfigureSystemMenu();
         ConfigureGameplayPanels();
+        worldMapUI = WorldMapPanelUI.Install(this,hudCanvas);
         ConfigureMapTitle();
         LayoutReadableUI();
         if (mapMenu != null) mapMenu.SetActive(false);
@@ -388,6 +389,8 @@ public class UIManager : MonoBehaviour
             new Vector2(1,1),new Vector2(-308,-4),new Vector2(62,24),OpenInventory);
         volumeButton = SmallButton(canvas,"MusicVolumeButton","Âm lượng",new Vector2(1,1),
             new Vector2(1,1),new Vector2(-244,-4),new Vector2(62,24),ToggleMusicVolume);
+        worldMapButton = SmallButton(canvas,"WorldMapButton","Bản đồ",new Vector2(1,1),
+            new Vector2(1,1),new Vector2(-376,-4),new Vector2(62,24),ToggleWorldMapMenu);
         // The label is longer than 'Kho đồ': keep the same button size without
         // introducing a second text line at the compact 600px window preset.
         var volumeCaption = volumeButton.GetComponentInChildren<TMPro.TextMeshProUGUI>(true);
@@ -473,11 +476,14 @@ public class UIManager : MonoBehaviour
             gm != null && gm.confirmationPopup != null && gm.confirmationPopup.activeInHierarchy,
             (damagePanel != null && damagePanel.activeSelf) || (devUI != null && devUI.IsOpen) ||
             (systemMenu != null && systemMenu.activeInHierarchy) ||
-            (inventoryUI != null && inventoryUI.IsOpen));
+            (inventoryUI != null && inventoryUI.IsOpen) ||
+            (worldMapUI != null && worldMapUI.IsOpen));
         if (inventoryUI != null && inventoryUI.IsOpen &&
             (gm == null || !gm.IsGameplayHUDVisible)) inventoryUI.Close();
         if (inventoryButton != null) inventoryButton.gameObject.SetActive(shown);
         if (volumeButton != null) volumeButton.gameObject.SetActive(shown);
+        if (worldMapButton != null) worldMapButton.gameObject.SetActive(shown &&
+            gm != null && TuTienCore.WorldMapCatalog.Enabled(gm.HeroData));
         if (musicVolumePanel != null) musicVolumePanel.SetVisibleInGameplay(shown);
         if (statsPanel != null) statsPanel.gameObject.SetActive(shown && Screen.height >= 290);
         for (int i=0;i<attackButtons.Length;i++)
@@ -659,7 +665,8 @@ public class UIManager : MonoBehaviour
         }
     }
 
-    private RectTransform hudCanvas, combatUIRoot, pauseRect, devButton, statsButton, inventoryButton, volumeButton, statsPanel;
+    private RectTransform hudCanvas, combatUIRoot, pauseRect, devButton, statsButton, inventoryButton, volumeButton, worldMapButton, statsPanel;
+    private WorldMapPanelUI worldMapUI;
     private MusicVolumePanelUI musicVolumePanel;
     private InventoryPanelUI inventoryUI;
     private RectTransform mapTitleRect;
@@ -705,8 +712,13 @@ public class UIManager : MonoBehaviour
         if (mapTitleRect == null) ConfigureMapTitle();
         if (mapDebugText == null) return;
         int wave = Mathf.Clamp(data.completedWavesInMap + 1,1,5);
-        mapDebugText.text = "Bản đồ " + data.mapNumber + " · Wave " + wave + "/5" +
-            "\nĐịa hình: " + TuTienCore.WorldNames.Terrain(data.mapTerrain);
+        mapDebugText.text = TuTienCore.WorldMapCatalog.Enabled(data)
+            ? "Map " + data.worldMapId + " · Wave " + data.worldMapLoopWave + "/5" +
+                "\nĐịa hình: " + (TuTienCore.WorldMapCatalog.TryGet(data.worldMapId,
+                    out TuTienCore.WorldMapNode debugNode) ? debugNode.TerrainLabel :
+                    TuTienCore.WorldNames.Terrain(data.mapTerrain))
+            : "Bản đồ " + data.mapNumber + " · Wave " + wave + "/5" +
+                "\nĐịa hình: " + TuTienCore.WorldNames.Terrain(data.mapTerrain);
     }
     public void ShowMapTitle(string name)
     {
@@ -873,6 +885,9 @@ public class UIManager : MonoBehaviour
             new Vector2(-268,-4),new Vector2(62,24));
         PlaceUI(volumeButton,new Vector2(1,1),new Vector2(1,1),
             new Vector2(-204,-4),new Vector2(62,24));
+        PlaceUI(worldMapButton,new Vector2(1,1),new Vector2(1,1),
+            new Vector2(-336,-4),new Vector2(62,24));
+        if (worldMapUI != null) worldMapUI.Resize();
         if (musicVolumePanel != null) musicVolumePanel.Layout();
         if (inventoryUI != null) inventoryUI.Layout(w,h,Screen.width,Screen.height);
         // Full stats sit below the 3 top-right tools. Combat log takes the left column.
@@ -1088,9 +1103,12 @@ public class UIManager : MonoBehaviour
         systemMenu.SetActive(!systemMenu.activeSelf);
         if (systemMenu.activeSelf) { ShowPage(mainPage); systemMenu.transform.SetAsLastSibling(); }
         if (mapMenu != null) mapMenu.SetActive(false);
+        CloseWorldMapMenu();
     }
 
-    public void ToggleMapMenu() { if (mapMenu != null) mapMenu.SetActive(false); }
+    public void ToggleWorldMapMenu() { if (worldMapUI != null) worldMapUI.Toggle(); }
+    public void CloseWorldMapMenu() { if (worldMapUI != null) worldMapUI.Close(); }
+    public void ToggleMapMenu() { ToggleWorldMapMenu(); }
 
     // --- LOGIC THOÁT GAME ---
     public void ClickExitButton()
