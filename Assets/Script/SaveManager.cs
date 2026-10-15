@@ -106,6 +106,13 @@ public class SaveManager : MonoBehaviour
                 entityData.mapVisits = 0;
                 entityData.completedWavesInMap = 0;
                 entityData.mapProgressVersion = 0;
+                // Clear the current ScriptableObject template values first. Legacy
+                // JSON has none of these fields and must remain on legacy maps.
+                entityData.worldMapVersion = 0;
+                entityData.worldMapId = "";
+                entityData.worldMapWaveProgress = 0;
+                entityData.worldMapVisited = new System.Collections.Generic.List<string>();
+                entityData.worldMapCleared = new System.Collections.Generic.List<string>();
                 entityData.regionIndex = -1;
                 entityData.regionTheme = TuTienCore.RegionTheme.SonLam;
                 entityData.monsterAnimal = "";
@@ -125,6 +132,15 @@ public class SaveManager : MonoBehaviour
                     return false;
                 }
                 entityData.NormalizeRoots();
+                if (entityData.worldMapVersion > 0)
+                {
+                    TuTienCore.WorldMapNode savedNode;
+                    if (!TuTienCore.WorldMapCatalog.TryGet(entityData.worldMapId, out savedNode))
+                    {
+                        Debug.LogError("[SaveManager] Unknown world-map node in save: " + entityData.worldMapId);
+                        return false; // No silent reroll/migration for corrupted world saves.
+                    }
+                }
                 entityData.NormalizeMapProgress();
                 entityData.NormalizeCombatStats();
                 EquipmentInventory.Normalize(entityData);
