@@ -78,7 +78,7 @@
 
 ## Cập nhật mới nhất — Splash hai bên, ngẫu nhiên, không tự pan/zoom
 
-- **Thay cho một khung cố định ở giữa:** Hai khung `07 SPLASH LEFT - OVERSCAN` và `08 SPLASH RIGHT - OVERSCAN`, mỗi khung rộng 68% và cao 115% vùng opening, tràn ra ngoài hai mép. Đứng yên, chỉ fade in một lần tại giây 27 (1,4s).
+- **Thay cho một khung cố định ở giữa:** Hai khung `07 SPLASH LEFT - OVERSCAN` và `08 SPLASH RIGHT - OVERSCAN`, mỗi khung rộng 62% và cao 76% vùng opening, căn sát đáy, tâm lệch ±56% bề ngang. Chỉ tràn ra ngoài mép trái/phải, không vượt đỉnh hoặc đáy cửa sổ. Đứng yên, chỉ fade in một lần tại giây 27 (1,4s).
 - **Ngẫu nhiên khi mở màn hình chờ:** Quét `Assets/StreamingAssets/OpeningSplashArt` (PNG/JPG/JPEG/MP4); mỗi bên chọn một file, tránh trùng nhau nếu có ≥2 file. Không đổi cảnh liên tục. Nếu thư mục mới rỗng thì dùng video cũ `OpeningSplash/splash.mp4` hoặc hai khối màu.
 - **Viền mềm mây/núi:** shader `OpeningSoftEdge.shader` và `OpeningEdgeFeather.cs`, mặc định **48 đơn vị UI**, có thể điều chỉnh `OpeningArtTheme.asset → Edge Feather Pixels`. Chỉ tác động năm layer núi/mây, không đổi hình nguồn.
 - **Đã thêm test cấu trúc:** hai khung riêng, đúng chiều, không tự dịch chuyển, alpha chỉ tăng từ giây 27; chạy trên Unity doubles, **chưa thực thi thực tế trong Editor/Windows**.
