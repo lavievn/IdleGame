@@ -25,6 +25,7 @@ public class StartMenuUI : MonoBehaviour
     private int lastClickFrame = -1;
     private bool entryLocked;
     private bool openingMenuReady;
+    private bool editorForceLayout;
     private static readonly Color TitleInkColor = new Color(74f/255f,18f/255f,20f/255f,1f);
 
     public bool IsCinematic => cinematic != null;
@@ -213,12 +214,23 @@ public class StartMenuUI : MonoBehaviour
         SetOpeningMenuReady(false);
     }
 
+    public void ForceLayoutForEditor()
+    {
+        editorForceLayout=true;
+        try
+        {
+            Layout(ManagementWindowLayout.CombatPixels(Screen.width),
+                ManagementWindowLayout.CombatHeight(Screen.height));
+        }
+        finally { editorForceLayout=false; }
+    }
+
     public void Layout(float w,float h)
     {
         if(root==null)return;
         // While dragging in Scene View, UIManager resize/layout passes must
         // not snap the live controls back to their authored positions.
-        if(cinematic!=null&&cinematic.IsLayoutEditing)return;
+        if(cinematic!=null&&cinematic.IsLayoutEditing&&!editorForceLayout)return;
         w=Mathf.Max(320f,w);h=Mathf.Max(240f,h);
         root.anchorMin=Vector2.zero;root.anchorMax=Vector2.zero;
         root.pivot=Vector2.zero;root.anchoredPosition=Vector2.zero;
