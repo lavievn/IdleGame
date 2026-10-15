@@ -100,3 +100,11 @@
 - Bấm **XEM LẠI ANIMATION TỪ ĐẦU** để quay lại opening và kiểm tra bố cục mới; hiệu ứng mây trôi giờ cộng offset từ tọa độ đã lưu, không khởi động lại từ tọa độ hardcode.
 - Phần editor-only nằm trong `Assets/Editor/OpeningPlayModeLayoutWindow.cs`; không biên dịch vào build game. Không chuyển opening sang Prefab, vẫn dùng runtime UI hiện tại.
 - Chưa chạy Unity Play Mode trong môi trường trợ lý. Hướng dẫn: `Docs/Opening_PlayMode_Layout_0.0.53.md`.
+
+## 15/10/2026 — Hotfix Play Mode Layout: không reset vị trí khi bật chỉnh
+
+- Sửa `OpeningCinematicUI.SetLayoutEditing`: không gọi `Layout(true)` khi chuyển sang chế độ chỉnh, giữ nguyên tất cả vị trí và kích thước đang hiển thị.
+- Đồng bộ lớp cảnh / đen / menu về cùng HUD parent nếu `UIManager` thay đổi hierarchy ở runtime.
+- Thêm `ValidateLayoutForSave`: khóa lưu nếu root bị lệch, Canvas khác parent, kích thước không khớp hoặc RectTransform lỗi.
+- Editor tự sao lưu asset hiện tại vào `OpeningLayoutBackups` nằm ngoài `Assets` trước khi sửa và yêu cầu xác nhận; hủy lưu nếu sao lưu lỗi.
+- Kiểm thử hồi quy được bổ sung cho không-teleport, phát hiện root lệch và quá trình reparent HUD. Chưa chạy Play Mode trực tiếp trong môi trường trợ lý.
