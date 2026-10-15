@@ -1,0 +1,5 @@
+# World map country labels — DRAFT DATA WAITING FOR DESIGNER.
+# Each non-comment row: nationId<TAB>Vietnamese nation name<TAB>normalizedX<TAB>normalizedY
+# Example format (NOT a real country; do not uncomment): COUNTRY_ID<TAB>Tên quốc gia<TAB>0.45<TAB>0.60
+# Position origin is bottom-left of WorldMapArtwork.png. No country borders are drawn.
+# Leave this empty until the user supplies actual nation names and positions.
