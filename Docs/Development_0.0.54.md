@@ -48,6 +48,17 @@
 - **Trang bị vượt yêu cầu** vẫn có thể mặc nhưng chịu debuff/giảm hiệu suất; **một số võ học** có điều kiện mở khóa cứng (ví dụ Thần thức đòi Hóa Thần).
 - Đây mới là chốt **mô hình tiến trình**, chưa sửa mã hoặc luật Save. Xem [Realm_Progression_Design_0.0.54.md](Realm_Progression_Design_0.0.54.md).
 
+## 15/10/2026 — World Map, vũ khí, võ học và điều kiện tiếp cận: khung đã chốt
+
+- **Vũ khí:** mở rộng thành nhiều loại/biến thể; gom theo nhóm cận chiến vật lý, tầm xa vật lý, pháp khí/pháp bảo, hỗn hợp/dị khí. Mỗi item có chỉ số/biến thể/ngũ hành, yêu cầu cảnh giới/chỉ số và debuff thích hợp khi sử dụng vượt khả năng; khoảng roll, cân bằng và drop **chưa chốt**.
+- **Võ học/tâm pháp:** dùng chung bộ kiểm tra điều kiện, cho phép phản phệ HP, tốn thêm % MP, kéo dài hồi chiêu khi thi triển vượt yêu cầu; một số thuật đặc biệt có yêu cầu cứng theo cảnh giới.
+- **World Map:** theo ảnh phác thảo **5 đại khu màu**, mỗi đại khu thiên về một theme nhưng không loại trừ các địa hình khác; một đại khu có thể chứa nhiều quốc gia. Mỗi quốc gia có nhiều địa hình (ít nhất 8 dạng hệ hiện tại), **không gán độ khó theo địa hình**.
+- **Ngẫu nhiên xuất thân:** bất kỳ điểm khởi đầu hợp lệ nào trong nhiều đại khu (thành lớn, thôn, sơn trang, biên giới chiến tranh); **không mặc định bắt đầu ở vùng vàng**. Map Endgame **không nằm cạnh trực tiếp** map khởi đầu, nhưng map nguy hiểm/chiến sự thông thường có thể kề.
+- **Đồ thị khám phá:** sương mù; map kề chưa mở chỉ thấy tên/cảnh giới, không thấy ranh giới/số wave; chỉ đi một bước sang node liền kề sau khi đã clear **wave tối thiểu** của node hiện tại ít nhất một lần. Đa số node trung gian có ≥2 đường tới vùng khó hơn và ≥2 đường tới vùng ngang/thấp, **ngoại lệ** hợp lý ở start/biên/endgame. Lưu lịch sử khám phá, đường mở và clear tối thiểu.
+- **Quái cố định theo map**, không scale theo Level Hero; nhân vật mạnh có thể quay lại vùng thấp farm/cơ duyên/event.
+- **Endgame hoặc chướng ngại đặc biệt:** cần điều kiện cứng (pháp bảo chống chướng khí, công pháp/pháp thuật ngự không, phi kiếm đủ tầng, MP...), **không thể chỉ chịu debuff để lách qua**. Phân biệt rõ map mạnh nhưng vẫn vào được với map có khóa tiếp cận.
+- **Trạng thái:** đã chốt định hướng khung, **chưa chốt** tên quốc gia, số node, vị trí, tỷ lệ theme, điều kiện chi tiết, xác suất, hệ số phạt và cân bằng. Chưa sửa gameplay/Save hoặc xây graph. Xem [World_Map_Equipment_Requirements_0.0.54.md](World_Map_Equipment_Requirements_0.0.54.md).
+
 ## Nguyên tắc phát triển .54
 
 - Chỉ chỉnh mã trên `feature/0.0.54`; `main` là checkpoint 0.0.53.
