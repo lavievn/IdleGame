@@ -39,7 +39,104 @@ public sealed class OpeningCinematicUI : MonoBehaviour
     private OpeningBackgroundVideo videoBackground;
     private OpeningHeroSplashVideo splashLeft, splashRight;
     private float elapsed, enterElapsed, menuAlphaBeforeEntry;
-    private bool entering, finished, orderFixed;
+    private bool entering, finished, orderFixed, layoutEditing;
+    private Vector2 backCloudBase, cloudLeftBase, cloudRightBase;
+
+    // Stable identifiers for snapshot/restore. Must match GetLayoutRects().
+    public static readonly string[] LayoutKeys={
+        "sky","farMountains","nearMountains","backClouds",
+        "leftClouds","rightClouds","splashLeft","splashRight",
+        "gameTitle","continueButton","newGameButton","settingsButton","quitButton"
+    };
+    public bool IsLayoutEditing => layoutEditing;
+    public OpeningArtTheme LayoutTheme => theme;
+
+    // Reference units make snapshots responsive across 600/800/1150 widths.
+    public static void ApplySavedRect(OpeningArtTheme art,string key,
+        RectTransform rect,float width,float height)
+    {
+        if(art==null||rect==null)return;
+        var saved=art.FindLayout(key);
+        if(saved==null||saved.size.x<=0f||saved.size.y<=0f)return;
+        rect.anchoredPosition=new Vector2(saved.position.x*(width/800f),
+            saved.position.y*(height/450f));
+        rect.sizeDelta=new Vector2(saved.size.x*(width/800f),
+            saved.size.y*(height/450f));
+    }
+
+    public RectTransform[] GetLayoutRects()
+    {
+        var title=menu!=null?menu.GetOpeningLayoutRects():
+            new RectTransform[5];
+        return new RectTransform[]{
+            sky,far,near,backCloud,cloudLeft,cloudRight,
+            splashLeft!=null?(RectTransform)splashLeft.transform:null,
+            splashRight!=null?(RectTransform)splashRight.transform:null,
+            title[0],title[1],title[2],title[3],title[4]
+        };
+    }
+
+    // Captures the transforms the artist sees, not formulas or drifting
+    // animation coordinates. Only call while layoutEditing is true.
+    public OpeningLayoutEntry[] CaptureLayout()
+    {
+        if(!layoutEditing||backdrop==null)return null;
+        float w=Mathf.Max(1f,backdrop.rect.width);
+        float h=Mathf.Max(1f,backdrop.rect.height);
+        var rects=GetLayoutRects();
+        var snapshot=new OpeningLayoutEntry[LayoutKeys.Length];
+        for(int i=0;i<snapshot.Length;i++)
+        {
+            var r=rects[i];
+            if(r==null)return null;
+            snapshot[i]=new OpeningLayoutEntry{
+                key=LayoutKeys[i],
+                position=new Vector2(r.anchoredPosition.x*800f/w,
+                    r.anchoredPosition.y*450f/h),
+                size=new Vector2(r.sizeDelta.x*800f/w,
+                    r.sizeDelta.y*450f/h)
+            };
+        }
+        return snapshot;
+    }
+
+    // Enters a frozen preview where manual RectTransform edits are not
+    // overwritten by frame animation or UIManager.LayoutReadableUI().
+    public bool SetLayoutEditing(bool edit)
+    {
+        if(backdrop==null)return false;
+        if(edit)
+        {
+            if(game==null||game.preGameUI==null||
+                !game.preGameUI.activeInHierarchy||finished||entering)
+                return false;
+            layoutEditing=true;
+            sky.localScale=far.localScale=near.localScale=Vector3.one;
+            Layout();
+            if(blackCurtain!=null)blackCurtain.gameObject.SetActive(false);
+            if(backdropFade!=null)backdropFade.alpha=1f;
+            if(menu!=null)menu.PrepareLayoutEditing();
+            if(menuFade!=null)menuFade.alpha=1f;
+            float showAt=ShowcaseCueSeconds+OpeningHeroSplashVideo.RevealSeconds;
+            if(splashLeft!=null)splashLeft.Tick(showAt,null);
+            if(splashRight!=null)splashRight.Tick(showAt,
+                splashLeft!=null?splashLeft.CurrentPath:null);
+        }
+        else if(layoutEditing)
+        {
+            layoutEditing=false;
+            ResetForMenu(); // Replay the opening with newly saved layout.
+        }
+        return true;
+    }
+
+    public void ReloadSavedLayoutForEditing()
+    {
+        if(!layoutEditing)return;
+        // Reset live transforms to the saved layout without restarting Play.
+        if(menu!=null)menu.ForceLayoutForEditor();
+        Layout();
+    }
 
     public static OpeningCinematicUI Install(GameManager gm, StartMenuUI startMenu,
         RectTransform menuRoot, CanvasGroup menuGroup, TextMeshProUGUI font)
@@ -176,7 +273,7 @@ public sealed class OpeningCinematicUI : MonoBehaviour
 
     public void Layout()
     {
-        if(backdrop==null)return;
+        if(backdrop==null||layoutEditing)return;
         float w=Mathf.Max(320f,ManagementWindowLayout.CombatPixels(Screen.width));
         float h=Mathf.Max(240f,ManagementWindowLayout.CombatHeight(Screen.height));
         backdrop.anchorMin=backdrop.anchorMax=backdrop.pivot=Vector2.zero;
@@ -207,6 +304,16 @@ public sealed class OpeningCinematicUI : MonoBehaviour
         LabelLayerSize(cloudRight,"06 FRONT CLOUDS RIGHT");
         if(splashLeft!=null)splashLeft.Layout(w,h);
         if(splashRight!=null)splashRight.Layout(w,h);
+        var rects=GetLayoutRects();
+        // Only scenery and splash are owned here; StartMenuUI handles
+        // its logo/buttons after its own normal layout.
+        for(int i=0;i<8;i++)
+            ApplySavedRect(theme,LayoutKeys[i],rects[i],w,h);
+        backCloudBase=backCloud.anchoredPosition;
+        cloudLeftBase=cloudLeft.anchoredPosition;
+        cloudRightBase=cloudRight.anchoredPosition;
+        if(splashLeft!=null)splashLeft.RefreshMediaFit();
+        if(splashRight!=null)splashRight.RefreshMediaFit();
         foreach(var layer in backdrop.GetComponentsInChildren<OpeningEdgeFeather>(true))
             layer.Refresh();
     }
@@ -224,6 +331,7 @@ public sealed class OpeningCinematicUI : MonoBehaviour
             orderFixed=true;
         }
         float dt=Mathf.Max(0f,Time.unscaledDeltaTime);
+        if(layoutEditing)return; // Freeze preview, preserve hand-edited rects.
         if(entering) { AnimateEntry(dt);return; }
         if(game==null||game.preGameUI==null||!game.preGameUI.activeInHierarchy)return;
         elapsed+=dt;
@@ -257,11 +365,15 @@ public sealed class OpeningCinematicUI : MonoBehaviour
         if(menuFade!=null)menuFade.alpha=menuAlpha;
         if(menu!=null)menu.SetOpeningMenuReady(menuAlpha>=.999f);
         float w=backdrop.rect.width,h=backdrop.rect.height;
-        backCloud.anchoredPosition=new Vector2(Mathf.Sin(elapsed*.09f)*w*.035f,h*.16f);
-        cloudLeft.anchoredPosition=new Vector2(-w*.30f+Mathf.Sin(elapsed*.12f)*w*.035f,
-            -h*.04f+Mathf.Sin(elapsed*.19f)*h*.014f);
-        cloudRight.anchoredPosition=new Vector2(w*.30f+Mathf.Sin(elapsed*.11f+1.9f)*w*.032f,
-            h*.04f+Mathf.Sin(elapsed*.16f)*h*.017f);
+        // Drift AROUND saved centers instead of hard-coded positions.
+        backCloud.anchoredPosition=backCloudBase+
+            new Vector2(Mathf.Sin(elapsed*.09f)*w*.035f,0f);
+        cloudLeft.anchoredPosition=cloudLeftBase+
+            new Vector2(Mathf.Sin(elapsed*.12f)*w*.035f,
+                Mathf.Sin(elapsed*.19f)*h*.014f);
+        cloudRight.anchoredPosition=cloudRightBase+
+            new Vector2(Mathf.Sin(elapsed*.11f+1.9f)*w*.032f,
+                Mathf.Sin(elapsed*.16f)*h*.017f);
         far.localScale=new Vector3(1f+Mathf.Sin(elapsed*.13f)*.008f,
             1f+Mathf.Sin(elapsed*.13f)*.008f,1f);
         // Independent left/right media selections, with only one initial fade each.
@@ -291,9 +403,12 @@ public sealed class OpeningCinematicUI : MonoBehaviour
         // The clouds and sky move out to reveal real gameplay underneath.
         // Both oversized splash frames remain absolutely stationary;
         // its visibility follows the overall opening fade only.
-        cloudLeft.anchoredPosition=new Vector2(-w*(.3f+1.2f*eased),-h*.04f);
-        cloudRight.anchoredPosition=new Vector2(w*(.3f+1.2f*eased),h*.04f);
-        backCloud.anchoredPosition=new Vector2(0f,h*(.16f-.6f*eased));
+        cloudLeft.anchoredPosition=cloudLeftBase+
+            new Vector2(-w*1.2f*eased,0f);
+        cloudRight.anchoredPosition=cloudRightBase+
+            new Vector2(w*1.2f*eased,0f);
+        backCloud.anchoredPosition=backCloudBase+
+            new Vector2(0f,-h*.6f*eased);
         float scale=1f+.7f*eased;
         far.localScale=near.localScale=new Vector3(scale,scale,1f);
         sky.localScale=new Vector3(1f+.15f*eased,1f+.15f*eased,1f);
@@ -311,6 +426,7 @@ public sealed class OpeningCinematicUI : MonoBehaviour
     public void ResetForMenu()
     {
         if(backdrop==null)return;
+        layoutEditing=false;
         finished=entering=orderFixed=false;
         elapsed=enterElapsed=0f;
         if(backdropFade!=null)backdropFade.alpha=1f;
