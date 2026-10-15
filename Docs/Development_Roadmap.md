@@ -5,7 +5,7 @@
 - **5 đại khu màu** là 5 theme chiếm ưu thế, không gán cố định 5 quốc gia, không loại trừ 8 địa hình hiện có; điểm xuất thân phân bố ngẫu nhiên tại các vị trí hợp lệ của mọi khu, kể cả vùng biên chiến sự. **Map Endgame không nối trực tiếp với map khởi đầu**.
 - **World Map theo graph:** di chuyển node kề sau khi clear tối thiểu wave của node hiện tại; fog of war giấu ranh giới, số wave của node chưa khám phá; đa số node trung gian hướng tới ≥2 node khó hơn và ≥2 ngang/thấp, có ngoại lệ start/biên/endgame. Quái theo dải Level cố định **của map**, không theo Hero; cho phép quay lại farm.
 - **Yêu cầu và debuff dùng chung:** trang bị nhiều nhóm và biến thể chịu phạt khi thiếu cảnh giới/chỉ số; võ học/tâm pháp có thể phản phệ/hao MP/tăng hồi chiêu; **map Endgame có điều kiện vào cứng** như pháp bảo chống độc/ngự kiếm vượt biển.
-- **Chưa thực thi:** chưa xây graph/map dữ liệu/Save, chưa chốt cân bằng, node list và hệ số. Xem [World_Map_Equipment_Requirements_0.0.54.md](World_Map_Equipment_Requirements_0.0.54.md).
+- **Trạng thái cập nhật:** đã viết **prototype tích hợp 133 map** trên `feature/0.0.54` với 5 điểm sinh (gồm XD-11), 6 Boss endgame, hệ wave lặp ở nguyên map, đi thủ công qua nút Bản đồ, fog of war, quái map-specific và lưu map đã qua. Đồ thị/các tọa độ hiện là **tạm**, chưa nhập biên/nhãn quốc gia hoặc mask đa giác thật; boss khóa cho đến khi chốt điều kiện. Chưa kiểm thử Unity Play Mode, chưa chốt cấp quái/tỉ lệ. Xem [World_Map_Integration_0.0.54.md](World_Map_Integration_0.0.54.md) và [World_Map_Equipment_Requirements_0.0.54.md](World_Map_Equipment_Requirements_0.0.54.md).
 
 ### 15/10/2026 — 0.0.54: Cảnh giới tiến triển độc lập với Level (phương án B)
 
