@@ -91,13 +91,13 @@ public sealed class WorldMapPanelUI
         navigation.anchorMax = new Vector2(1f,0f);
         navigation.pivot = new Vector2(1f,0f);
         navigation.anchoredPosition = new Vector2(-12f,12f);
-        navigation.sizeDelta = new Vector2(280f,150f);
+        navigation.sizeDelta = new Vector2(410f,150f);
         for(int i=0;i<8;i++)
         {
             int index = i;
             choices[i] = owner.SmallButton(navigation,"MapNeighbor"+i,"",
                 new Vector2(0f,1f),new Vector2(0f,1f),
-                new Vector2((i%2)*136f, -(i/2)*30f),new Vector2(132f,28f),
+                new Vector2((i%2)*205f, -(i/2)*30f),new Vector2(201f,28f),
                 ()=>Choose(index));
             choiceLabels[i] = choices[i].GetComponentInChildren<TextMeshProUGUI>(true);
             if(choiceLabels[i]!=null)
@@ -147,7 +147,7 @@ public sealed class WorldMapPanelUI
         float width = Mathf.Max(340f,Mathf.Min(Screen.width-12f,1070f));
         float height = Mathf.Max(260f,Mathf.Min(Screen.height-12f,650f));
         root.sizeDelta = new Vector2(width,height);
-        summary.rectTransform.anchoredPosition=new Vector2(-width*.5f+286f,-height+85f);
+        ((RectTransform)summary.transform).anchoredPosition=new Vector2(Mathf.Min(280f,width*.46f),-height+88f);
     }
 
     private static int Hash(string text)
@@ -225,7 +225,7 @@ public sealed class WorldMapPanelUI
             WorldMapNode destination;
             if(!WorldMapCatalog.TryGet(choiceIds[i],out destination))continue;
             string marker=destination.IsBoss?" [BOSS]":"";
-            if(choiceLabels[i]!=null)choiceLabels[i].text=choiceIds[i]+" Lv."+destination.SuggestedLevel+marker;
+            if(choiceLabels[i]!=null)choiceLabels[i].text=destination.Id+" "+destination.Name+" Lv."+destination.SuggestedLevel+marker;
         }
     }
 
