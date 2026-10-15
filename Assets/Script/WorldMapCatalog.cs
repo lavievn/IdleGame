@@ -21,7 +21,7 @@ namespace TuTienCore
         private static readonly Dictionary<string, WorldMapNode> nodes =
             new Dictionary<string, WorldMapNode>(StringComparer.Ordinal);
         private static readonly List<WorldMapNode> all = new List<WorldMapNode>();
-        private static readonly string[] startIds = { "TV-20", "TL-16", "TM-12", "HT-17" };
+        private static readonly string[] startIds = { "TV-20", "TL-16", "XD-11", "TM-12", "HT-17" };
         private static bool initialized;
 
         public static IList<WorldMapNode> All { get { EnsureLoaded(); return all.AsReadOnly(); } }
@@ -200,6 +200,7 @@ namespace TuTienCore
             hero.difficulty = 0;
             hero.completedWavesInMap = 0;
             hero.worldMapWaveProgress = 0;
+            hero.worldMapLoopWave = 1;
             hero.isDirty = true;
         }
 
@@ -208,7 +209,7 @@ namespace TuTienCore
             if (hero == null) return false;
             EnsureLoaded();
             if (all.Count == 0) return false;
-            // SM-11 is unresolved: never silently translate it to XD-11.
+            // Five confirmed starting nodes, one within each major region.
             var valid = new List<WorldMapNode>();
             foreach (var id in startIds) { WorldMapNode n; if (nodes.TryGetValue(id, out n)) valid.Add(n); }
             if (valid.Count == 0) return false;
@@ -236,6 +237,10 @@ namespace TuTienCore
             int progress = Mathf.Clamp(hero.worldMapWaveProgress, 0, 5);
             if (hero.worldMapWaveProgress != progress) hero.isDirty = true;
             hero.worldMapWaveProgress = progress;
+            int wave = Mathf.Clamp(hero.worldMapLoopWave, 1, 5);
+            if (hero.worldMapLoopWave != wave) hero.isDirty = true;
+            hero.worldMapLoopWave = wave;
+            hero.completedWavesInMap = wave - 1;
             if (progress >= 5 && !hero.worldMapCleared.Contains(node.Id))
             {
                 hero.worldMapCleared.Add(node.Id);
@@ -251,13 +256,16 @@ namespace TuTienCore
         {
             if (!Enabled(hero)) return false;
             Normalize(hero);
-            if (hero.worldMapWaveProgress >= 5) return false;
-            hero.worldMapWaveProgress++;
-            hero.completedWavesInMap = Mathf.Min(4, hero.worldMapWaveProgress);
+            // Repeat waves 1..5 indefinitely at this node. No automatic
+            // transition to a neighboring map, even after the first clear.
+            hero.worldMapLoopWave = hero.worldMapLoopWave >= 5
+                ? 1 : hero.worldMapLoopWave + 1;
+            hero.completedWavesInMap = hero.worldMapLoopWave - 1;
+            if (hero.worldMapWaveProgress < 5) hero.worldMapWaveProgress++;
             hero.isDirty = true;
             if (hero.worldMapWaveProgress < 5) return false;
-            if (!hero.worldMapCleared.Contains(hero.worldMapId))
-                hero.worldMapCleared.Add(hero.worldMapId);
+            if (hero.worldMapCleared.Contains(hero.worldMapId)) return false;
+            hero.worldMapCleared.Add(hero.worldMapId);
             return true;
         }
 
@@ -265,7 +273,8 @@ namespace TuTienCore
         {
             if (!Enabled(hero)) return;
             // During phase 1 stay on the current node; never lose past clear history.
-            hero.worldMapWaveProgress = 0;
+            hero.worldMapWaveProgress = IsCleared(hero, hero.worldMapId) ? 5 : 0;
+            hero.worldMapLoopWave = 1;
             hero.completedWavesInMap = 0;
             hero.mapVisits++;
             hero.isDirty = true;
