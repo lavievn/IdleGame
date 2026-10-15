@@ -59,6 +59,13 @@
 - **Endgame hoặc chướng ngại đặc biệt:** cần điều kiện cứng (pháp bảo chống chướng khí, công pháp/pháp thuật ngự không, phi kiếm đủ tầng, MP...), **không thể chỉ chịu debuff để lách qua**. Phân biệt rõ map mạnh nhưng vẫn vào được với map có khóa tiếp cận.
 - **Trạng thái:** đã chốt định hướng khung, **chưa chốt** tên quốc gia, số node, vị trí, tỷ lệ theme, điều kiện chi tiết, xác suất, hệ số phạt và cân bằng. Chưa sửa gameplay/Save hoặc xây graph. Xem [World_Map_Equipment_Requirements_0.0.54.md](World_Map_Equipment_Requirements_0.0.54.md).
 
+## 15/10/2026 — Danh mục map, địa hình và quái vật (đã lưu bản nháp)
+
+- Đã lưu **133 map ứng viên** thuộc 5 đại khu, mỗi map có tên, mã ID, một địa hình hiện tại và **4 loài quái đề xuất**. Dữ liệu nguồn được tổng hợp từ ảnh bản đồ/danh mục AI; đây là **bản tạm cho người phát triển rà soát, phân bổ và bổ sung**.
+- **Tệp đọc:** [World_Map_Monster_Draft_0.0.54.md](World_Map_Monster_Draft_0.0.54.md). **Bảng chỉnh sửa:** [World_Map_Monster_Draft_0.0.54.csv](World_Map_Monster_Draft_0.0.54.csv).
+- Có **12 ghi chú cần kiểm tra** ở cột `Cần kiểm tra` của CSV: một số địa hình không khớp tên, khác giữa ảnh tổng/danh mục, mã AI trùng hoặc thiếu. Chưa xác nhận số lượng map thực tế cuối cùng.
+- **Chưa áp dụng** vào spawn, world graph, gameplay hay Save; chưa gán cấp quái, cảnh giới, mức độ nguy hiểm, wave, tỷ lệ xuất hiện, quái đặc biệt, boss và sự kiện. Chờ người phát triển cập nhật danh sách rồi chốt tiếp.
+
 ## Nguyên tắc phát triển .54
 
 - Chỉ chỉnh mã trên `feature/0.0.54`; `main` là checkpoint 0.0.53.
