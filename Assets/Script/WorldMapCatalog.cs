@@ -18,15 +18,24 @@ namespace TuTienCore
         public Vector2 PreviewPosition;
     }
 
+    public sealed class WorldMapNation
+    {
+        public string Id, Name;
+        // Normalized label anchor on the approved world-map illustration.
+        public Vector2 LabelPosition;
+    }
+
     public static class WorldMapCatalog
     {
         private static readonly Dictionary<string, WorldMapNode> nodes =
             new Dictionary<string, WorldMapNode>(StringComparer.Ordinal);
         private static readonly List<WorldMapNode> all = new List<WorldMapNode>();
+        private static readonly List<WorldMapNation> nations = new List<WorldMapNation>();
         private static readonly string[] startIds = { "TV-20", "TL-16", "XD-11", "TM-12", "HT-17" };
         private static bool initialized;
 
         public static IList<WorldMapNode> All { get { EnsureLoaded(); return all.AsReadOnly(); } }
+        public static IList<WorldMapNation> Nations { get { EnsureLoaded(); return nations.AsReadOnly(); } }
         public static bool Enabled(EntityDataSO hero) => hero != null && hero.worldMapVersion >= 1;
         public static bool TryGet(string id, out WorldMapNode node)
         {
@@ -99,6 +108,31 @@ namespace TuTienCore
                 all.Add(n);
             }
             if (all.Count != 133) Debug.LogError("[WorldMap] Expected 133 nodes, got " + all.Count);
+            // Optional authored national labels. Without nation boundaries and
+            // coordinates the overlay intentionally displays NO invented countries.
+            TextAsset countryFile = Resources.Load<TextAsset>("WorldMapCountries");
+            if (countryFile != null)
+            {
+                foreach (string raw in countryFile.text.Split('\n'))
+                {
+                    string line = raw.TrimEnd('\r').Trim();
+                    if (line.Length == 0 || line.StartsWith("#")) continue;
+                    string[] c = line.Split('\t');
+                    float x, y;
+                    if (c.Length != 4 || !float.TryParse(c[2],
+                            System.Globalization.NumberStyles.Float,
+                            System.Globalization.CultureInfo.InvariantCulture, out x) ||
+                        !float.TryParse(c[3],
+                            System.Globalization.NumberStyles.Float,
+                            System.Globalization.CultureInfo.InvariantCulture, out y))
+                    {
+                        Debug.LogWarning("[WorldMap] Invalid country label: " + line); continue;
+                    }
+                    if (x < 0 || x > 1 || y < 0 || y > 1) continue;
+                    nations.Add(new WorldMapNation { Id=c[0], Name=c[1],
+                        LabelPosition=new Vector2(x,y) });
+                }
+            }
             BuildTemporaryLinks();
         }
 
