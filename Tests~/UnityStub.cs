@@ -127,6 +127,8 @@ namespace UnityEngine
         public static float Sin(float a) { return (float)Math.Sin(a); }
         public static float Max(float a,float b) { return Math.Max(a,b); }
         public static float Min(float a,float b) { return Math.Min(a,b); }
+        public static int Min(int a,int b) { return Math.Min(a,b); }
+        public static float Sqrt(float x) { return (float)Math.Sqrt(x); }
         public static float Clamp01(float a) { return Math.Max(0f,Math.Min(1f,a)); }
         public static int Max(int a,int b) { return Math.Max(a,b); }
         public static float Clamp(float value,float min,float max) { return Math.Max(min,Math.Min(max,value)); }
