@@ -81,3 +81,12 @@
 6. Hoàn thiện UI/World Map khi asset xong. **Giai đoạn này chỉ là chốt khung**, chưa sinh tự động 90–200 node hay thiết kế tĩnh toàn bộ thế giới.
 
 **Liên quan:** [Realm_Progression_Design_0.0.54.md](Realm_Progression_Design_0.0.54.md), [Stat_System_Design_0.0.54.md](Stat_System_Design_0.0.54.md), [Development_0.0.54.md](Development_0.0.54.md).
+
+
+## UI bản đồ thế giới — quy tắc chốt 16/10/2026
+
+- Dùng ảnh bản đồ thế giới đã chốt làm nền; lớp mây mù che **toàn bộ map chưa khám phá**. Map hiện tại và map đã từng khám phá hiển thị địa hình; map hiện tại có dấu Hero.
+- **Tên quốc gia luôn nổi phía trên mây mù** tại vị trí quốc gia, kể cả chưa khám phá; **không vẽ ranh giới quốc gia** trong UI.
+- Map kề chỉ được gợi mở trong giao diện khi đã hoàn thành số wave tối thiểu ở map đang đứng; gợi mở/mở quyền đi **không đồng nghĩa** xóa mây mù. Chỉ khám phá khi Hero thực sự đến.
+- Không tự chuyển map. Hoàn thành wave tối thiểu chỉ ghi nhận clear; Hero tiếp tục đánh lặp wave tại map đang đứng cho tới khi người chơi chọn map khác.
+- **Phụ thuộc dữ liệu:** ảnh nền cần được đưa vào Assets; để che mù theo từng lục giác và đặt nhãn quốc gia chính xác, cần tọa độ/đa giác map và vị trí nhãn quốc gia. Đồ thị kề tạm không phải biên giới chính thức; chưa được suy ra tọa độ từ mã map.
