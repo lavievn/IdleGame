@@ -1,5 +1,12 @@
 # IdleGame — Rà soát kiến trúc và lộ trình theo giai đoạn
 
+### 15/10/2026 — 0.0.54: Cảnh giới tiến triển độc lập với Level (phương án B)
+
+- **Đã thống nhất:** nhân vật tiếp tục lên Level/nhận điểm khi farm qua bình cảnh, nhưng cảnh giới chỉ đổi sau Thiên Kiếp thành công. Tiến trình nội bộ cảnh giới mới **tính lại từ Level lúc đột phá**, không kế thừa Level dư của cảnh giới trước.
+- **Khung 30 Level nội bộ/cảnh giới (dự kiến):** 1–9 Sơ kỳ, 10–19 Trung kỳ, 20–29 Hậu kỳ, 30 là bình cảnh; cần tách dữ liệu cảnh giới khỏi `RankDatabase.GetRankName(level)`.
+- **Ý tưởng Thiên Kiếp:** 10 giây chống chịu thiên lôi + 10 giây phản công đủ sát thương. Vượt yêu cầu item/giới hạn công pháp và thưởng đột phá sẽ thiết kế tiếp. Chưa sửa code và chưa chốt điều kiện/tham số Save.
+- **Chi tiết:** [Realm_Progression_Design_0.0.54.md](Realm_Progression_Design_0.0.54.md).
+
 ### 15/10/2026 — 0.0.54: Chốt định hướng chỉ số nhân vật (chưa sửa code)
 
 - Đã chọn **4 hướng tu luyện:** Công phạt, Hộ thể, Thân pháp, Linh tu. Phần tăng trưởng tự nhiên theo cấp/cảnh giới độc lập điểm tu luyện. UI chính chỉ hiện tổng hướng, chi tiết qua hover/click.
