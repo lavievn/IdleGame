@@ -189,9 +189,36 @@ public class StartMenuUI : MonoBehaviour
         return button;
     }
 
+    // Stable order shared with OpeningCinematicUI.LayoutKeys.
+    // These are real runtime RectTransforms: editable in Unity Play Mode.
+    public RectTransform[] GetOpeningLayoutRects()
+    {
+        return new RectTransform[]{
+            logoRoot,
+            menuButtons!=null&&menuButtons.Length>0&&menuButtons[0]!=null
+                ? (RectTransform)menuButtons[0].transform:null,
+            menuButtons!=null&&menuButtons.Length>1&&menuButtons[1]!=null
+                ? (RectTransform)menuButtons[1].transform:null,
+            menuButtons!=null&&menuButtons.Length>2&&menuButtons[2]!=null
+                ? (RectTransform)menuButtons[2].transform:null,
+            menuButtons!=null&&menuButtons.Length>3&&menuButtons[3]!=null
+                ? (RectTransform)menuButtons[3].transform:null
+        };
+    }
+
+    public void PrepareLayoutEditing()
+    {
+        if(settingsPage!=null)settingsPage.SetActive(false);
+        if(menuPage!=null)menuPage.SetActive(true);
+        SetOpeningMenuReady(false);
+    }
+
     public void Layout(float w,float h)
     {
         if(root==null)return;
+        // While dragging in Scene View, UIManager resize/layout passes must
+        // not snap the live controls back to their authored positions.
+        if(cinematic!=null&&cinematic.IsLayoutEditing)return;
         w=Mathf.Max(320f,w);h=Mathf.Max(240f,h);
         root.anchorMin=Vector2.zero;root.anchorMax=Vector2.zero;
         root.pivot=Vector2.zero;root.anchoredPosition=Vector2.zero;
@@ -226,6 +253,14 @@ public class StartMenuUI : MonoBehaviour
                 Place((RectTransform)logoFallback.transform,Vector2.zero,
                     new Vector2(logoW,logoH));
         }
+        // The saved Play Mode positions override code defaults only when
+        // the theme contains a snapshot. Existing scenes need no migration.
+        var titleTheme=Resources.Load<OpeningArtTheme>("OpeningArtTheme");
+        var editable=GetOpeningLayoutRects();
+        for(int i=0;i<editable.Length;i++)
+            OpeningCinematicUI.ApplySavedRect(titleTheme,
+                OpeningCinematicUI.LayoutKeys[i+8],editable[i],w,h);
+
         // Settings use a centered two-column grid, not the main menu's vertical list.
         // The bar is a custom hit target to work in native Windows overlay mode.
         float row1=Mathf.Clamp(h*.155f,35f,56f);
