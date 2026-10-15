@@ -1,6 +1,8 @@
 #if UNITY_EDITOR
 using UnityEditor;
 using UnityEngine;
+using System;
+using System.IO;
 
 // A non-invasive editing window: interact with REAL runtime RectTransforms
 // in Scene View, then serialize their reference-space positions/sizes into
@@ -25,6 +27,35 @@ public sealed class OpeningPlayModeLayoutWindow : EditorWindow
         foreach(var x in all)
             if(x!=null&&x.gameObject.activeInHierarchy)return x;
         return null;
+    }
+
+    private static bool TryBackupLayoutAsset(
+        OpeningArtTheme theme,out string backup)
+    {
+        backup="";
+        if(theme==null)return false;
+        string assetPath=AssetDatabase.GetAssetPath(theme);
+        if(string.IsNullOrEmpty(assetPath)||!assetPath.StartsWith("Assets/"))
+            return false;
+        try
+        {
+            var projectRoot=Directory.GetParent(Application.dataPath).FullName;
+            string original=Path.Combine(projectRoot,
+                assetPath.Replace('/',Path.DirectorySeparatorChar));
+            if(!File.Exists(original))return false;
+            string destination=Path.Combine(projectRoot,"OpeningLayoutBackups");
+            Directory.CreateDirectory(destination);
+            backup=Path.Combine(destination,
+                "OpeningArtTheme_before_"+DateTime.Now.ToString("yyyyMMdd_HHmmss_fff")+
+                ".asset");
+            File.Copy(original,backup,false);
+            return true;
+        }
+        catch(Exception ex)
+        {
+            Debug.LogError("[Opening Layout] Backup failed: "+ex.Message);
+            return false;
+        }
     }
 
     private void OnGUI()
@@ -76,30 +107,57 @@ public sealed class OpeningPlayModeLayoutWindow : EditorWindow
         }
         else
         {
-            using(new EditorGUI.DisabledScope(theme==null))
+            string saveProblem;
+            bool geometryValid=opening.ValidateLayoutForSave(out saveProblem);
+            if(!geometryValid)
+                EditorGUILayout.HelpBox(
+                    "ĐÃ KHÓA LƯU ĐỂ TRÁNH GHI ĐÈ BỐ CỤC: "+saveProblem,
+                    MessageType.Error);
+            using(new EditorGUI.DisabledScope(theme==null||!geometryValid))
             {
                 if(GUILayout.Button("LƯU BỐ CỤC VÀO ASSET",GUILayout.Height(40)))
                 {
-                    var snapshot=opening.CaptureLayout();
-                    if(snapshot==null||snapshot.Length!=OpeningCinematicUI.LayoutKeys.Length)
-                        status="Không lấy được đầy đủ các khung để lưu.";
+                    if(!opening.ValidateLayoutForSave(out saveProblem))
+                        status="Không thể lưu: "+saveProblem;
                     else
                     {
-                        Undo.RecordObject(theme,"Save Opening Play Mode Layout");
-                        theme.playModeLayouts=snapshot;
-                        // Keep the five previously exposed inspector size
-                        // fields consistent with the newly captured layout.
-                        theme.farMountainsReferenceSize=snapshot[1].size;
-                        theme.nearMountainsReferenceSize=snapshot[2].size;
-                        theme.backCloudsReferenceSize=snapshot[3].size;
-                        theme.leftCloudsReferenceSize=snapshot[4].size;
-                        theme.rightCloudsReferenceSize=snapshot[5].size;
-                        EditorUtility.SetDirty(theme);
-                        AssetDatabase.SaveAssets();
-                        status="Đã lưu "+snapshot.Length+" phần tử vào "+
-                            AssetDatabase.GetAssetPath(theme)+
-                            ". Có thể thoát Play Mode mà không mất bố cục.";
-                        Debug.Log("[Opening Layout] "+status);
+                        var snapshot=opening.CaptureLayout();
+                        if(snapshot==null||snapshot.Length!=OpeningCinematicUI.LayoutKeys.Length)
+                            status="Không lấy được đầy đủ các khung để lưu.";
+                        else if(!EditorUtility.DisplayDialog(
+                            "Lưu bố cục opening?",
+                            "Sẽ lưu 13 RectTransform hiện tại. "+
+                            "Một bản sao an toàn của asset cũ được tạo "+
+                            "trước khi ghi. Bạn đã kiểm tra Game View chưa?",
+                            "Lưu và sao lưu","Hủy"))
+                            status="Đã hủy lưu. Dữ liệu cũ được giữ nguyên.";
+                        else
+                        {
+                            string backupPath;
+                            if(!TryBackupLayoutAsset(theme,out backupPath))
+                            {
+                                status="Không thể tạo bản sao dự phòng. "+
+                                    "Asset cũ không bị sửa.";
+                                Debug.LogError("[Opening Layout] "+status);
+                            }
+                            else
+                            {
+                                Undo.RecordObject(theme,"Save Opening Play Mode Layout");
+                                theme.playModeLayouts=snapshot;
+                                // Keep the earlier inspector size fields coherent.
+                                theme.farMountainsReferenceSize=snapshot[1].size;
+                                theme.nearMountainsReferenceSize=snapshot[2].size;
+                                theme.backCloudsReferenceSize=snapshot[3].size;
+                                theme.leftCloudsReferenceSize=snapshot[4].size;
+                                theme.rightCloudsReferenceSize=snapshot[5].size;
+                                EditorUtility.SetDirty(theme);
+                                AssetDatabase.SaveAssets();
+                                status="Đã lưu "+snapshot.Length+" phần tử vào "+
+                                    AssetDatabase.GetAssetPath(theme)+
+                                    ". Sao lưu bản trước: "+backupPath;
+                                Debug.Log("[Opening Layout] "+status);
+                            }
+                        }
                     }
                     Repaint();
                 }
