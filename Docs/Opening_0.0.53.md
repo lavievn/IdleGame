@@ -1,3 +1,25 @@
+## Chỉnh sửa opening ngày 15/10/2026 — ưu tiên cao nhất
+
+**Thứ tự hiển thị hiện tại đã thay thế thời gian 0,65s trong các mô tả cũ:**
+
+| Thời gian từ lúc mở menu | Trạng thái |
+|---|---|
+| 0,0s | Màn hình đen hoàn toàn, kể cả vùng menu/HUD |
+| 0,0–1,8s | Lớp đen mờ dần, lộ nền video, trời, núi, các lớp mây |
+| 1,8–4,8s | Giữ toàn bộ tiên cảnh, **chưa có nút hay logo** |
+| 4,8–6,3s | **Logo + bốn nút** fade in trong 1,5s |
+| Sau 6,3s | Menu tương tác bình thường |
+| 27s | Hai khung splash bên trái/phải bắt đầu fade in, giữ quy tắc cũ |
+
+- `OpeningCinematicUI.cs`: lớp `Opening Black Curtain - Full Window` là sibling của lớp cảnh/menu, phủ tràn Canvas, không nhận raycast. `BlackCurtainAlphaAt()` và `MenuAlphaAt()` dùng nội suy mượt, tính bằng `Time.unscaledDeltaTime`; quay về màn hình chính bằng System Menu sẽ phát lại từ đầu.
+- `StartMenuUI.cs`: khóa input native/custom click trong cả giai đoạn chưa có nút; dùng font **màu trắng** cho các nút.
+- **Logo `Bách Luyện Tiên Đồ`:** file gốc tại `Assets/Resources/OpeningTitleLogo.png` được **thay bằng nét trắng, giữ nguyên alpha**, để Unity `Image.color` tint đỏ sẫm `#4A1214` (RGB 74/18/20). Kích thước hiển thị tăng khoảng 2 lần nhưng không tràn cửa sổ, menu dịch xuống một chút tránh đè logo. `.meta` và GUID Sprite giữ nguyên.
+- **Không sửa:** splash xuất hiện từ giây 27, random PNG/JPG/MP4 hai bên, feather, video nền và các luồng Save/chiến đấu.
+
+**Nghiệm thu cần kiểm tra:** khởi động màn đen thật sự; 1,8s sáng cảnh; nút không hiện và không bấm được trước 4,8s; 6,3s nút hiển thị đủ, chữ trắng; logo đỏ sẫm lớn hơn; mở Cài đặt/Chơi mới/Tiếp tục; quay về title diễn lại trình tự; kiểm tra ở 600/800/1150. Chưa có chạy Play Mode/Windows trong môi trường trợ lý.
+
+---
+
 # Opening cinematic 0.0.53 — prototype bằng khối màu / asset thay thế
 
 **Trạng thái:** đã bổ sung mã và tài nguyên mẫu trên `feature/0.0.53`; **chưa biên dịch hoặc nghiệm thu Play Mode / bản Windows trong môi trường trợ lý**. Chưa gộp `main`. Không dùng ảnh ghép có watermark hoặc phông xanh do người phát triển gửi làm asset chính thức.
