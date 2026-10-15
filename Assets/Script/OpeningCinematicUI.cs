@@ -112,6 +112,25 @@ public sealed class OpeningCinematicUI : MonoBehaviour
         rect.sizeDelta=size;
     }
 
+    // A reference canvas preserves the existing aspect-responsive sizing.
+    // Overrides are editable from OpeningArtTheme.asset in the Inspector.
+    public static Vector2 ResolveLayerSize(Vector2 referenceSize,float width,
+        float height,Vector2 fallback)
+    {
+        if(referenceSize.x<=0f || referenceSize.y<=0f)return fallback;
+        return new Vector2(referenceSize.x*(width/800f),
+            referenceSize.y*(height/450f));
+    }
+
+    private static void LabelLayerSize(RectTransform rect,string baseName)
+    {
+        if(rect==null)return;
+        var size=rect.sizeDelta;
+        string name=baseName+" ["+Mathf.RoundToInt(size.x)+"x"+
+            Mathf.RoundToInt(size.y)+" UI]";
+        if(rect.gameObject.name!=name)rect.gameObject.name=name;
+    }
+
     private void Build(TextMeshProUGUI font)
     {
         var art=theme;
@@ -165,11 +184,27 @@ public sealed class OpeningCinematicUI : MonoBehaviour
         backdrop.sizeDelta=new Vector2(w,h);
         if(videoBackground!=null)videoBackground.Resize(w,h);
         Place(sky,Vector2.zero,new Vector2(w*1.1f,h*1.12f));
-        Place(far,new Vector2(0f,-h*.13f),new Vector2(w*1.18f,h*.62f));
-        Place(near,new Vector2(0f,-h*.33f),new Vector2(w*1.24f,h*.34f));
-        Place(backCloud,new Vector2(0f,h*.16f),new Vector2(w*1.2f,h*.44f));
-        Place(cloudLeft,new Vector2(-w*.3f,-h*.04f),new Vector2(w*.67f,h*.91f));
-        Place(cloudRight,new Vector2(w*.3f,h*.04f),new Vector2(w*.67f,h*.91f));
+        Place(far,new Vector2(0f,-h*.13f),
+            ResolveLayerSize(theme!=null?theme.farMountainsReferenceSize:Vector2.zero,
+                w,h,new Vector2(w*1.18f,h*.62f)));
+        Place(near,new Vector2(0f,-h*.33f),
+            ResolveLayerSize(theme!=null?theme.nearMountainsReferenceSize:Vector2.zero,
+                w,h,new Vector2(w*1.24f,h*.34f)));
+        Place(backCloud,new Vector2(0f,h*.16f),
+            ResolveLayerSize(theme!=null?theme.backCloudsReferenceSize:Vector2.zero,
+                w,h,new Vector2(w*1.2f,h*.44f)));
+        Place(cloudLeft,new Vector2(-w*.3f,-h*.04f),
+            ResolveLayerSize(theme!=null?theme.leftCloudsReferenceSize:Vector2.zero,
+                w,h,new Vector2(w*.67f,h*.91f)));
+        Place(cloudRight,new Vector2(w*.3f,h*.04f),
+            ResolveLayerSize(theme!=null?theme.rightCloudsReferenceSize:Vector2.zero,
+                w,h,new Vector2(w*.67f,h*.91f)));
+        LabelLayerSize(sky,"01 SKY - full background");
+        LabelLayerSize(far,"02 FAR MOUNTAINS");
+        LabelLayerSize(near,"03 NEAR MOUNTAINS");
+        LabelLayerSize(backCloud,"04 BACK CLOUDS");
+        LabelLayerSize(cloudLeft,"05 FRONT CLOUDS LEFT");
+        LabelLayerSize(cloudRight,"06 FRONT CLOUDS RIGHT");
         if(splashLeft!=null)splashLeft.Layout(w,h);
         if(splashRight!=null)splashRight.Layout(w,h);
         foreach(var layer in backdrop.GetComponentsInChildren<OpeningEdgeFeather>(true))
