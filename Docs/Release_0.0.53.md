@@ -92,3 +92,11 @@
 - Text nút màu **trắng** và nút chưa hiện **bị khóa tương tác** với cả native Windows overlay lẫn uGUI. Quay lại title sẽ reset mốc thời gian.
 - Hai khung splash vẫn bắt đầu fade ở giây **27**, chỉ tràn ngang hai mép và không thay nội dung trong một lượt opening.
 - Đã thêm test pure logic cho mốc fade và kiểm tra trạng thái curtain/input. **Chưa chạy Unity Play Mode/Windows Build**.
+
+## 15/10/2026 — Trực quan hóa bố cục trong Play Mode
+
+- Mở **Tools → Bach Luyen Tien Do → Opening Layout (Play Mode)** khi đang Play. Bật chế độ chỉnh để xem cảnh + splash + menu; tạm ngừng cloud drift, fade, và không ghi đè các RectTransform.
+- Có thể chọn trực tiếp **13** đối tượng (sky, 5 mây/núi, 2 splash, logo, 4 nút). Dùng Rect Tool ở Scene View/Inspector để kéo và đổi kích thước. Bấm **LƯU BỐ CỤC VÀO ASSET**; tool ghi tỉ lệ tọa độ và kích thước theo mẫu 800×450 vào `Resources/OpeningArtTheme.asset` bằng `AssetDatabase.SaveAssets`.
+- Bấm **XEM LẠI ANIMATION TỪ ĐẦU** để quay lại opening và kiểm tra bố cục mới; hiệu ứng mây trôi giờ cộng offset từ tọa độ đã lưu, không khởi động lại từ tọa độ hardcode.
+- Phần editor-only nằm trong `Assets/Editor/OpeningPlayModeLayoutWindow.cs`; không biên dịch vào build game. Không chuyển opening sang Prefab, vẫn dùng runtime UI hiện tại.
+- Chưa chạy Unity Play Mode trong môi trường trợ lý. Hướng dẫn: `Docs/Opening_PlayMode_Layout_0.0.53.md`.
