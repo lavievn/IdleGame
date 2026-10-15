@@ -1,5 +1,24 @@
 # 0.0.53 — Căn chỉnh bố cục opening ngay trong Play Mode
 
+## Sửa lỗi nhảy về góc / bảo vệ dữ liệu (15/10/2026)
+
+Bản công cụ ban đầu có lỗi: nút **BẬT CHẾ ĐỘ CĂN CHỈNH** gọi `Layout(true)` ngay khi chuyển chế độ, gây reset các khung cảnh về tọa độ tính bằng code; đồng thời khi `UIManager` chuyển menu sang HUD Canvas, lớp cảnh có thể bị tách khỏi hệ tọa độ menu. Các RectTransform vì vậy có thể nhảy về một góc thay vì giữ đúng vị trí hiện tại.
+
+**Đã sửa trên nhánh `feature/0.0.53`:**
+
+- Bật chế độ căn chỉnh chỉ khóa animation và cho hiện đủ thành phần, **không gọi `Layout(true)`**, không sửa `anchoredPosition`, `sizeDelta`, `pivot` hoặc `anchors` của từng lớp.
+- Kiểm tra/dồng bộ để opening backdrop và black curtain dùng cùng `RectTransform.parent` với menu, kể cả khi `UIManager` tạo HUD runtime sau khi menu xuất hiện.
+- **Khóa thao tác LƯU BỐ CỤC** nếu hệ tọa độ của hai khung root bị lệch, kích thước không khớp hoặc RectTransform có giá trị không hợp lệ. Không tự lưu hoặc làm mất dữ liệu cũ.
+- Mỗi lần lưu thành công, công cụ **sao lưu file asset trước** vào thư mục `<thư mục dự án Unity>/OpeningLayoutBackups/OpeningArtTheme_before_YYYYMMDD_HHMMSS_fff.asset` (ngoài `Assets` để không tự import và không làm rối Resources).
+- Hộp thoại xác nhận hiện trước khi ghi. Khi không thể sao lưu, thao tác ghi **bị hủy**.
+- **Quan trọng:** asset `Assets/Resources/OpeningArtTheme.asset` trên GitHub chưa có mảng `playModeLayouts` ghi đè trong thời điểm sửa lỗi, nên mã mới không tự thay thế các thiết lập/ảnh/feather hiện tại.
+
+**Kiểm thử sau khi Pull:** bật Play → mở menu công cụ → ghi nhận vị trí mây/núi/splash/logo ở Scene/Game View → bật căn chỉnh → **không có khung nào được nhảy**. Kéo thử một khung, bấm lưu, xem thông báo đường dẫn backup rồi bấm xem lại animation. Thoát Play và vào lại để chắc chắn khung vẫn đúng. Với bố cục mới từ Play Mode, sau khi lưu, kiểm tra `git diff -- Assets/Resources/OpeningArtTheme.asset` trước khi push.
+
+**Nếu bạn đã bấm Lưu bố cục bị lỗi ở máy:** đừng ghi thêm. Mở `OpeningArtTheme.asset` và kiểm tra mục `playModeLayouts` trong YAML/Inspector. Đối chiếu với `git diff` hoặc bản sao lưu trước đó; tránh hoàn tác nguyên asset một cách mù quáng vì có thể mất các Sprite và `edgeFeatherPixels` bạn đã tùy chỉnh.
+
+---
+
 ## Vì sao có công cụ này?
 
 Các lớp UI opening sinh ra lúc chạy game (không nằm sẵn trong Scene khi dừng Play). Các lệnh `Layout()` và `Update()` trước đây liên tục trả tọa độ mây/núi/menu về vị trí tính sẵn trong code; sửa `RectTransform` trong Play Mode sẽ bị mất hoặc bị giật. Bản này cho phép dựng cảnh thật rồi chỉnh trực tiếp trong Scene View.
