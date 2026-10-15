@@ -1,5 +1,12 @@
 # IdleGame — Rà soát kiến trúc và lộ trình theo giai đoạn
 
+### 15/10/2026 — 0.0.54: UI asset đang triển khai, chuyển sang Equipment
+
+- **Inventory / Information / UI liên quan:** asset thiết kế chưa hoàn thiện, tiếp tục chuẩn bị. Giao diện hiện tại vẫn hoạt động nhưng chưa chốt mỹ thuật; tạm hoãn việc tinh chỉnh và mở rộng công cụ layout Play Mode cho các UI này. Phương pháp chỉnh trong Play Mode đã được nghiệm thu tại Opening 0.0.53, sẽ tái dùng khi đủ asset.
+- **Đầu việc đang chuyển sang:** rà soát và hoàn thiện hệ thống chỉ số trang bị theo loại sát thương vật lý/pháp thuật, kiểm tra phần cộng chỉ số và preview mặc/tháo, đảm bảo tương thích Save cũ. Sau đó mới thảo luận bộ sinh item, nguồn drop và rèn mạo hiểm; chưa tự bổ sung tỷ lệ ngẫu nhiên hoặc rủi ro mất item.
+- **Nhánh:** `main` đã chốt ở 0.0.53; tiếp tục chỉ trên `feature/0.0.54`. Xem [Development_0.0.54.md](Development_0.0.54.md).
+
+
 ### Bổ sung 0.0.53 — Opening tiên cảnh (prototype, chưa nghiệm thu)
 
 - **Đã commit trên `feature/0.0.53`:** scene opening được dựng bằng mã trên Canvas hiện có với 9 ô asset tham chiếu trong `Assets/Resources/OpeningArtTheme.asset`, dùng khối màu khi chưa có hình; bốn nút Tiếp tục/Chơi mới/Cài đặt/Thoát, thiết lập âm lượng trong opening, lưu nguyên luồng xác nhận Save.
