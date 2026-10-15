@@ -64,10 +64,10 @@ Nguồn tên và địa hình: các **ảnh danh mục AI** ở cuộc trò chuy
 - **TL-22 · Thiên Quang Hồ — Hồ nước:** Hạc, Ngư, Ngạc, Nhạn.
 - **TL-23 · Long Ngư Châu — Đồng bằng:** Ưng, Thố, Thử, Trư.
 - **TL-24 · Thanh Phong Sơn Lâm — Rừng rậm:** Ưng, Hổ, Yến, Lang.
-- **TL-25 · Lưu Vân Thảo Nguyên — Rừng rậm:** Ưng, Hổ, Lộc, Tượng.
+- **TL-25 · Lưu Vân Thảo Nguyên — Thảo nguyên:** Ngưu, Mã, Lộc, Thố.
 - **TL-26 · Thiệu Dương Điền Dã — Đồng bằng:** Ưng, Ngưu, Khuyển, Kê.
 - **TL-27 · Nam Hồ Bình Nguyên — Đồng bằng:** Ưng, Thố, Xà, Tước.
-- **TL-28 · Trạch Thủy Nguyên — Đồng bằng:** Ưng, Lang, Phong, Khuyển.
+- **TL-28 · Trạch Thủy Nguyên — Rừng rậm:** Mãng, Hồ, Ngô Công, Lộc.
 - **TL-29 · Vân Thủy Biên Lâm — Đồi núi:** Ưng, Lộc, Mãng, Lang.
 
 ## Xích Diễm Chi Địa (XD) — 22 map
@@ -88,7 +88,7 @@ Nguồn tên và địa hình: các **ảnh danh mục AI** ở cuộc trò chuy
 - **XD-14 · Hỏa Thực Sơn Cốc — Đồi núi:** Mãng, Ngô Công, Hạt, Lang.
 - **XD-15 · Xích Nham Hoang Nguyên — Sa mạc:** Hạt, Mãng, Ngô Công, Thử.
 - **XD-16 · Hung Diễm Lĩnh — Đồi núi:** Hạt, Mãng, Ưng, Hùng.
-- **XD-17 · Lưu Diễm Tràng — Đồi núi / Cao nguyên:** Xà, Ưng, Hùng, Hạt.
+- **XD-17 · Lưu Diễm Tràng — Cao nguyên:** Xà, Ưng, Hùng, Hạt.
 - **XD-18 · Tẫn Thế Nhai — Đồi núi:** Điêu, Hạt, Báo, Ngô Công.
 - **XD-19 · Diễm Ảnh Quần Đảo — Biển:** Ưng, Sa, Giải, Nhạn.
 - **XD-20 · Hồng Liên Hải Tràng — Biển:** Sa, Hải Âu, Hà, Nhạn.
@@ -138,7 +138,7 @@ Nguồn tên và địa hình: các **ảnh danh mục AI** ở cuộc trò chuy
 - **TM-11 · Cổ Mộc Thiền Viện — Rừng rậm:** Viên, Chu, Ly, Yến.
 - **TM-12 · Đồng Lục Sa — Đồi núi:** Hồ, Xà, Thố, Mãng.
 - **TM-13 · Linh Thủy Trạch — Rừng rậm:** Hầu, Hồ, Trư, Bức.
-- **TM-14 · Thác Bạch Ngọc — Thác nước:** Hạc, Ngư, Giải, Quy.
+- **TM-14 · Thác Bạch Ngọc — Đồi núi:** Ưng, Hùng, Xà, Điêu.
 - **TM-15 · Rừng Huyền Âm — Rừng rậm:** Chu, Hồ, Trư, Ưng.
 - **TM-16 · Đầm Tụ Thủy — Đầm lầy:** Chu, Quy, Hạc, Oa.
 - **TM-17 · Rừng Phong Ẩn — Rừng rậm:** Viên, Hầu, Hùng, Tượng.
@@ -157,14 +157,14 @@ Nguồn tên và địa hình: các **ảnh danh mục AI** ở cuộc trò chuy
 - Ảnh danh mục **Xích Diễm** xuất hiện mã `XD-19` hai lần và thiếu `XD-17`; bản nháp **tạm đặt Lưu Diễm Tràng = XD-17**, còn Diễm Ảnh Quần Đảo = XD-19. Chưa được xác nhận.
 - Ảnh danh mục **Tử Vân** xuất hiện mã `TV-10` hai lần (Vọng Nguyệt Cốc, Âm Hà Vực); bản nháp chỉ giữ **Vọng Nguyệt Cốc** với `TV-10`, còn **Âm Hà Vực chờ cấp mã** để không tạo ID trùng.
 - Mã có trên bản đồ tổng nhưng **chưa thấy tên rõ trong bảng danh mục**: `TV-07, TV-08, TV-13, TV-15, TV-17, TV-19, TV-25, TV-26, TV-31, TV-32`; `HT-12, HT-19, HT-22`. Không tự đặt tên các ô thiếu.
-- Các tên và địa hình có vẻ không nhất quán (như `TL-13` Quần Đảo ghi Đồng bằng) được ghi ở cột **Cần kiểm tra** của CSV để duyệt sau. `HT-25` đã được người phát triển chấp thuận giữ Đồi núi (hoặc Cao nguyên).
-- `Độc`, `Băng`, `Núi lửa`, `Hang động`, `Hải đảo` chưa được định nghĩa thành địa hình riêng trong `TerrainType`; nên xem là **biến thể môi trường** của 8 địa hình cơ sở, không tự thêm enum trong lượt này.
+- Địa hình của `TV-05`, `TV-23`, `TL-13`, `TL-23`, `TL-25`, `TL-28`, `XD-17` và `TM-14` đã được người phát triển xác nhận. Tên map không nhất thiết phải trùng từ ngữ của địa hình. `HT-25` giữ Đồi núi (Cao nguyên cũng hợp lệ), `TM-13` giữ Rừng rậm (Đầm lầy cũng hợp lệ).
+- `Thảo nguyên`, `Độc`, `Băng`, `Núi lửa`, `Hang động`, `Hải đảo` chưa được định nghĩa thành địa hình riêng trong `TerrainType`; nên xem là **biến thể môi trường** của 8 địa hình cơ sở, không tự thêm enum trong lượt này. **TL-25 (Thảo nguyên) dùng Đồng bằng làm địa hình cơ sở** khi triển khai, trừ khi sau này chốt mở rộng enum.
 - Danh sách quái chỉ là **pool ứng viên** và tạm không cho **Long** vào pool quái thường (nên xét riêng cho tinh anh/Boss). Kẻ địch thực tế sau này có thể lăn chủng tộc/linh căn/ngũ hành theo hệ sinh quái, với tỉ lệ map-specific và boss/event riêng.
 
 ## Hướng dẫn rà soát / cập nhật
 
 - Danh sách hiện là **bản phác thảo**, không phải dữ liệu đã được đưa vào Unity; có thể thêm/sửa/xóa map, chỉnh địa hình và phân bố quái trước khi nghiệm thu.
-- Ghi chú các mã cần đối chiếu với ảnh danh mục: một số map có tên không hợp địa hình, mã trên ảnh có thể thiếu/trùng; bản CSV kèm theo có cột `Cần kiểm tra`.
+- Cột `Cần kiểm tra` trong CSV chỉ còn lưu **1 mã chưa xác minh là `XD-17`**, vì ảnh danh mục nguồn bị trùng `XD-19`. Các mã thiếu tên trên ảnh tổng và trường hợp `TV-10` trùng trong ảnh vẫn được lưu trong phần ghi chú riêng, chưa tự bổ sung node.
 - Để nhập dữ liệu vào World Map trong tương lai, cần chốt riêng: ID không trùng, tọa độ node và đường nối, nước/đại khu, Level/cảnh giới cố định theo map, wave tối thiểu, tỷ lệ spawn, event, Boss, điều kiện Endgame và trạng thái mở khóa.
 - **Không tự chỉnh dữ liệu này trong runtime hoặc Save/Load** khi người phát triển chưa duyệt.
 
@@ -173,11 +173,26 @@ Nguồn tên và địa hình: các **ảnh danh mục AI** ở cuộc trò chuy
 
 | Mã map | Địa hình sau chỉnh sửa | Tình trạng |
 | --- | --- | --- |
-| XD-17 | Đồi núi / Cao nguyên | Đã duyệt dạng địa hình hỗn hợp; ID XD-17 còn là mã tạm từ ảnh AI trùng XD-19, cần xác nhận danh tính node |
+| XD-17 | Cao nguyên | Đã duyệt địa hình; ID XD-17 còn là mã tạm từ ảnh AI trùng XD-19 |
 | HT-17 | Đồng bằng | Đã duyệt |
 | HT-25 | Giữ Đồi núi; Cao nguyên cũng được | Đã duyệt, không cần báo lỗi vì chữ Bình Nguyên trong tên |
 | TM-13 | Giữ Rừng rậm; Đầm lầy cũng được | Đã duyệt, không cần báo lỗi do chữ Trạch trong tên |
-| TM-14 | Thác nước | Đã duyệt tên dạng địa hình; đây là biến thể cảnh quan, chưa phải enum thứ 9; cần chọn địa hình cơ sở khi tích hợp Unity |
+| TM-14 | Đồi núi | Đã duyệt; thác nước là đặc điểm cảnh quan, không phải địa hình nền |
 | TM-21 | Đồng bằng | Đã duyệt |
 
 Các pool quái cho XD-17, HT-17, TM-14 và TM-21 được điều chỉnh để phù hợp địa hình mới, **chưa phải spawn đã duyệt**. Giữ nguyên số lượng và mã map.
+
+## Rà soát địa hình đợt 2 — 15/10/2026
+
+| Mã map | Địa hình xác nhận | Nhận xét |
+| --- | --- | --- |
+| TV-05 | Đồi núi | Giữ nguyên, bỏ cảnh báo về tên Trạch |
+| TV-23 | Rừng rậm | Giữ nguyên, bỏ cảnh báo về tên Trạch |
+| TL-13 | Đồng bằng | Giữ nguyên, bỏ cảnh báo về tên Quần Đảo |
+| TL-23 | Đồng bằng | Giữ nguyên, bỏ cảnh báo về tên Châu |
+| TL-25 | Thảo nguyên | Biến thể địa hình của Đồng bằng, chọn lại pool quái vùng đồng cỏ |
+| TL-28 | Rừng rậm | Chọn lại pool quái rừng |
+| XD-17 | Cao nguyên | Đã chốt địa hình; chỉ ID còn cần kiểm tra từ ảnh trùng mã |
+| TM-14 | Đồi núi | Thác nước là cảnh quan; chọn lại quái đồi núi |
+
+**Lưu ý:** danh mục còn 133 map đã đặt tên; chỉ thay đổi dữ liệu nháp, không áp dụng Unity hoặc spawn. Những ô còn thiếu tên trên bản đồ tổng và dị bản TV-10 vẫn đang chờ bổ sung theo phần rà soát phía trên.
