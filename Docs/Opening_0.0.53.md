@@ -1,3 +1,15 @@
+
+## Chế độ căn chỉnh trong Play Mode — 15/10/2026
+
+**Khác với bản chỉnh Inspector chỉ có kích thước:** giờ có cửa sổ công cụ `Tools > Bach Luyen Tien Do > Opening Layout (Play Mode)`. Bấm Play → bật chế độ chỉnh → chọn đối tượng → kéo `RectTransform` trong Scene View → bấm **LƯU BỐ CỤC VÀO ASSET** trước khi Stop. Dữ liệu bền vững trong `Assets/Resources/OpeningArtTheme.asset`, dùng tọa độ reference 800×450; preview bình thường dùng lại vị trí đó và mây trôi quanh nó.
+
+- Công cụ dành riêng cho Unity Editor/Play Mode, không thêm nút debug vào game Windows.
+- Bao gồm sky, 5 núi/mây, 2 splash L/R, logo và 4 nút chính; chưa bao gồm phần Settings và xác nhận.
+- Lúc chỉnh, cảnh/menu/splash được hiển thị đầy đủ; tạm dừng các vị trí animation. Không dùng để đổi camera/gameplay.
+- Xem chi tiết [Opening_PlayMode_Layout_0.0.53.md](Opening_PlayMode_Layout_0.0.53.md).
+
+---
+
 ## Chỉnh sửa opening ngày 15/10/2026 — ưu tiên cao nhất
 
 **Thứ tự hiển thị hiện tại đã thay thế thời gian 0,65s trong các mô tả cũ:**
