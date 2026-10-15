@@ -195,3 +195,9 @@ Người phát triển xác nhận B1 đã xong sau commit mã `2308f25`. Chỉ 
 - **Đã thêm:** shader feather alpha 48 px ở mép 5 khung núi/mây; thông số chỉnh được trực tiếp ở `Assets/Resources/OpeningArtTheme.asset`.
 - **Chưa xác minh:** hình ảnh thực tế tại ba độ phân giải, codec đồng thời hai splash video + một background, hiệu năng 40HX, mức feather theo CanvasScaler; cần người phát triển thử trong Play Mode.
 - **Hướng dẫn:** [Opening_SplashArt_0.0.53.md](Opening_SplashArt_0.0.53.md).
+
+### 15/10/2026 — Opening black reveal và nhận diện tên game
+
+- **Đã commit trên `feature/0.0.53`:** mở từ màn đen hoàn toàn, sáng toàn bộ nền và mây/núi trong 1,8s, đợi 3s rồi logo/nút fade in 1,5s; khóa click cho đến lúc menu hiện đầy đủ.
+- **Đã sửa file PNG logo trong repo:** pixel nét chữ **trắng trên alpha gốc**, tô đỏ sẫm `#4A1214` tại Unity, lớn gần gấp đôi. Nút dùng chữ trắng, bố cục tránh chồng.
+- **Chưa kiểm thử trực quan:** Play Mode/Windows, mở/thoát và về lại title, fade trên cả viewport khi resize, tương phản logo trước nền sáng. Giữ `main` nguyên trạng đến khi nghiệm thu.
