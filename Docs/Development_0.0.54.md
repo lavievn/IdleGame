@@ -31,6 +31,15 @@
 
 **Chưa tự triển khai** xác suất thất bại, mất vật phẩm, bảng drop hay random chỉ số mới. Các phần đó còn thiếu quy tắc đã thống nhất; Forge thử nghiệm hiện tại được giữ nguyên.
 
+## 15/10/2026 — Chốt khung chỉ số chung và bốn hướng tu luyện
+
+- Đã thống nhất **phương án B**: đầu tư điểm theo bốn hướng **Công phạt, Hộ thể, Thân pháp, Linh tu**; mỗi điểm cộng nhiều chỉ số trong cùng hướng. Tăng trưởng tự nhiên theo cấp/cảnh giới và điểm tu luyện là hai nguồn riêng.
+- UI chính chỉ thể hiện bốn tổng hướng; **hover/chọn vào đúng hướng/chỉ số** mới hiển thị các chỉ số đóng góp và giải thích chi tiết. Thiết kế art của Inventory/Information vẫn đang chờ, **chưa triển khai giao diện mới**.
+- **Chính xác tối đa 100%**, **Né tránh tối đa 45%** (mốc tạm); xác suất trúng = chính xác - né tránh, kẹp 0–100%, xét trong một lần; chênh lệch cấp độ bổ sung sau.
+- Chỉ số hồi phục có giới hạn nhưng **chưa chốt con số**. Tạo một chỉ số chung giảm thời gian **debuff** cho xuất huyết/choáng/làm chậm, chưa chốt mức trần.
+- **Kim/Mộc/Thủy/Hỏa/Thổ và linh căn bẩm sinh** giữ nguyên khi sinh ra; không mở nhánh phân điểm hệ, không thêm Chaos. Các hiệu ứng/võ học/trang bị có thể tác động chỉ số hiệu lực, không sửa linh căn gốc.
+- Chưa sửa `CombatStats`, `CombatDamage`, `EntityDataSO`, `SaveManager` hoặc sửa gameplay; việc di trú điểm tăng HP/ATK kiểu cũ cần thiết kế trước. **Chi tiết:** [Stat_System_Design_0.0.54.md](Stat_System_Design_0.0.54.md).
+
 ## Nguyên tắc phát triển .54
 
 - Chỉ chỉnh mã trên `feature/0.0.54`; `main` là checkpoint 0.0.53.
