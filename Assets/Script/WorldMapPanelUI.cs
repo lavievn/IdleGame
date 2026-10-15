@@ -48,14 +48,13 @@ public sealed class WorldMapPanelUI
         artwork = artGO.GetComponent<Image>();
         var artRect = (RectTransform)artGO.transform;
         artRect.SetParent(root, false);
-        artRect.anchorMin = new Vector2(0f, .26f);
-        artRect.anchorMax = new Vector2(1f, 1f);
-        artRect.pivot = new Vector2(.5f,.5f);
-        artRect.offsetMin = new Vector2(12f, -50f);
-        artRect.offsetMax = new Vector2(-12f,-47f);
+        artRect.anchorMin = artRect.anchorMax = new Vector2(.5f,1f);
+        artRect.pivot = new Vector2(.5f,1f);
+        artRect.anchoredPosition = new Vector2(0f,-48f);
+        artRect.sizeDelta = new Vector2(605f,400f);
         artwork.color = new Color(.76f, .68f, .52f, 1f);
         artwork.raycastTarget = false;
-        artwork.preserveAspect = false;
+        artwork.preserveAspect = true;
         // Import the approved map as Assets/Resources/WorldMapArtwork.png.
         artwork.sprite = Resources.Load<Sprite>("WorldMapArtwork");
 
@@ -147,7 +146,12 @@ public sealed class WorldMapPanelUI
         float width = Mathf.Max(340f,Mathf.Min(Screen.width-12f,1070f));
         float height = Mathf.Max(260f,Mathf.Min(Screen.height-12f,650f));
         root.sizeDelta = new Vector2(width,height);
-        ((RectTransform)summary.transform).anchoredPosition=new Vector2(Mathf.Min(280f,width*.46f),-height+88f);
+        var imageRect=(RectTransform)artwork.transform;
+        float imageHeight=Mathf.Max(100f,height-175f);
+        float imageWidth=Mathf.Min(width-24f,imageHeight*1.5f);
+        imageHeight=Mathf.Min(imageHeight,imageWidth/1.5f);
+        imageRect.sizeDelta=new Vector2(imageWidth,imageHeight);
+        ((RectTransform)summary.transform).anchoredPosition=new Vector2(Mathf.Min(270f,width*.36f),-height+73f);
     }
 
     private static int Hash(string text)
