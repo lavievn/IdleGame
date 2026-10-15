@@ -1,5 +1,12 @@
 # IdleGame — Rà soát kiến trúc và lộ trình theo giai đoạn
 
+### 15/10/2026 — 0.0.54: Chốt khung World Map và yêu cầu cảnh giới
+
+- **5 đại khu màu** là 5 theme chiếm ưu thế, không gán cố định 5 quốc gia, không loại trừ 8 địa hình hiện có; điểm xuất thân phân bố ngẫu nhiên tại các vị trí hợp lệ của mọi khu, kể cả vùng biên chiến sự. **Map Endgame không nối trực tiếp với map khởi đầu**.
+- **World Map theo graph:** di chuyển node kề sau khi clear tối thiểu wave của node hiện tại; fog of war giấu ranh giới, số wave của node chưa khám phá; đa số node trung gian hướng tới ≥2 node khó hơn và ≥2 ngang/thấp, có ngoại lệ start/biên/endgame. Quái theo dải Level cố định **của map**, không theo Hero; cho phép quay lại farm.
+- **Yêu cầu và debuff dùng chung:** trang bị nhiều nhóm và biến thể chịu phạt khi thiếu cảnh giới/chỉ số; võ học/tâm pháp có thể phản phệ/hao MP/tăng hồi chiêu; **map Endgame có điều kiện vào cứng** như pháp bảo chống độc/ngự kiếm vượt biển.
+- **Chưa thực thi:** chưa xây graph/map dữ liệu/Save, chưa chốt cân bằng, node list và hệ số. Xem [World_Map_Equipment_Requirements_0.0.54.md](World_Map_Equipment_Requirements_0.0.54.md).
+
 ### 15/10/2026 — 0.0.54: Cảnh giới tiến triển độc lập với Level (phương án B)
 
 - **Đã thống nhất:** nhân vật tiếp tục lên Level/nhận điểm khi farm qua bình cảnh, nhưng cảnh giới chỉ đổi sau Thiên Kiếp thành công. Tiến trình nội bộ cảnh giới mới **tính lại từ Level lúc đột phá**, không kế thừa Level dư của cảnh giới trước.
