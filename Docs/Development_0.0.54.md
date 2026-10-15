@@ -35,7 +35,7 @@
 
 - Đã thống nhất **phương án B**: đầu tư điểm theo bốn hướng **Công phạt, Hộ thể, Thân pháp, Linh tu**; mỗi điểm cộng nhiều chỉ số trong cùng hướng. Tăng trưởng tự nhiên theo cấp/cảnh giới và điểm tu luyện là hai nguồn riêng.
 - UI chính chỉ thể hiện bốn tổng hướng; **hover/chọn vào đúng hướng/chỉ số** mới hiển thị các chỉ số đóng góp và giải thích chi tiết. Thiết kế art của Inventory/Information vẫn đang chờ, **chưa triển khai giao diện mới**.
-- **Chính xác tối đa 100%**, **Né tránh tối đa 45%** (mốc tạm); xác suất trúng = chính xác - né tránh, kẹp 0–100%, xét trong một lần; chênh lệch cấp độ bổ sung sau.
+- **Chính xác thuộc Công phạt**, cơ bản **80%**; khi đánh kẻ cao/thấp cấp hơn thì điều chỉnh **-2/+2 điểm phần trăm mỗi cấp**, giới hạn chênh lệch trong ±5 cấp (tối đa ±10 điểm phần trăm). Tổng Chính xác tối đa **100%**, Né tránh tối đa **45%** (mốc tạm); xác suất trúng = clamp(chính xác hiệu lực − né tránh hiệu lực, 0–100%), chỉ xét một lần. Hệ số Chính xác tăng theo mỗi điểm Công phạt **chưa chốt**.
 - Chỉ số hồi phục có giới hạn nhưng **chưa chốt con số**. Tạo một chỉ số chung giảm thời gian **debuff** cho xuất huyết/choáng/làm chậm, chưa chốt mức trần.
 - **Kim/Mộc/Thủy/Hỏa/Thổ và linh căn bẩm sinh** giữ nguyên khi sinh ra; không mở nhánh phân điểm hệ, không thêm Chaos. Các hiệu ứng/võ học/trang bị có thể tác động chỉ số hiệu lực, không sửa linh căn gốc.
 - Chưa sửa `CombatStats`, `CombatDamage`, `EntityDataSO`, `SaveManager` hoặc sửa gameplay; việc di trú điểm tăng HP/ATK kiểu cũ cần thiết kế trước. **Chi tiết:** [Stat_System_Design_0.0.54.md](Stat_System_Design_0.0.54.md).
