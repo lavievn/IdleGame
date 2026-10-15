@@ -151,12 +151,26 @@ namespace UnityEngine
     public class CanvasRenderer : Component { }
     public class CanvasGroup : MonoBehaviour { public float alpha=1f; public bool interactable=true,blocksRaycasts=true; }
     public class Sprite : Object { }
+    public class TextAsset : Object
+    {
+        public string text;
+        public TextAsset(string text) { this.text = text; }
+    }
+    public struct Color32
+    {
+        public byte r, g, b, a;
+        public Color32(byte r, byte g, byte b, byte a)
+        { this.r = r; this.g = g; this.b = b; this.a = a; }
+    }
     public class Texture : Object { }
     public enum TextureFormat { RGBA32 }
     public class Texture2D : Texture
     {
         public int width,height;
         public Texture2D(int w,int h,TextureFormat format,bool mipmap){width=w;height=h;}
+        public Color32[] pixels;
+        public void SetPixels32(Color32[] colors) { pixels=colors; }
+        public void Apply(bool updateMipmaps=true) {}
     }
     public static class ImageConversion
     {
