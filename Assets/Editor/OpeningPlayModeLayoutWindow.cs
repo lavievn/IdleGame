@@ -87,6 +87,13 @@ public sealed class OpeningPlayModeLayoutWindow : EditorWindow
                     {
                         Undo.RecordObject(theme,"Save Opening Play Mode Layout");
                         theme.playModeLayouts=snapshot;
+                        // Keep the five previously exposed inspector size
+                        // fields consistent with the newly captured layout.
+                        theme.farMountainsReferenceSize=snapshot[1].size;
+                        theme.nearMountainsReferenceSize=snapshot[2].size;
+                        theme.backCloudsReferenceSize=snapshot[3].size;
+                        theme.leftCloudsReferenceSize=snapshot[4].size;
+                        theme.rightCloudsReferenceSize=snapshot[5].size;
                         EditorUtility.SetDirty(theme);
                         AssetDatabase.SaveAssets();
                         status="Đã lưu "+snapshot.Length+" phần tử vào "+
