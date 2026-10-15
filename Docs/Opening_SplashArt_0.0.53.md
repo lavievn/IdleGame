@@ -14,11 +14,12 @@ Assets/
     ├── OpeningBackground/
     │   └── opening.mp4           # Video nền toàn màn hình (tùy chọn)
     ├── OpeningSplashArt/
-    │   ├── splash-01.png         # Người phát triển tự thêm
-    │   ├── splash-02.jpg         # Người phát triển tự thêm
-    │   └── hero-03.mp4           # Người phát triển tự thêm
+    │   ├── L_kiemkhach.png       # Chỉ chọn cho khung trái
+    │   ├── L_chuongmon.mp4       # Chỉ chọn cho khung trái
+    │   ├── R_nu_hiep.jpg        # Chỉ chọn cho khung phải
+    │   └── R_phapsu.mp4         # Chỉ chọn cho khung phải
     └── OpeningSplash/
-        └── splash.mp4            # Đường dẫn CŨ, chỉ dùng nếu kho mới trống
+        └── splash.mp4            # Đường dẫn cũ, KHÔNG còn tự tải
 ```
 
 **Thả ảnh PNG/JPG/JPEG hoặc MP4 vào `Assets/StreamingAssets/OpeningSplashArt/`. Bắt buộc tên file bắt đầu bằng `L` (khung trái) hoặc `R` (khung phải), không phân biệt chữ hoa/thường.** Ví dụ `L_hero.png`, `R_hero.mp4`. Các file không có tiền tố tương ứng sẽ bị bỏ qua. Ảnh được đọc trực tiếp bằng byte PNG/JPG; video MP4 dùng `VideoPlayer` theo đường dẫn; không cần Catalog, Inspector hay Tools → Rebuild.
