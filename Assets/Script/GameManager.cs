@@ -290,6 +290,10 @@ public class GameManager : MonoBehaviour
         runtimeHeroData.mapNumber = 1; runtimeHeroData.completedWavesInMap = 0; runtimeHeroData.mapProgressVersion = 1;
         runtimeHeroData.mapVisits = 1;
         runtimeHeroData.regionIndex = -1; runtimeHeroData.mapName = ""; WorldNames.AssignMap(runtimeHeroData);
+        // A NEW run starts in one of the five confirmed world-map births.
+        // Old saves retain their unmodified legacy sequential maps.
+        if (!WorldMapCatalog.StartNew(runtimeHeroData))
+            Debug.LogWarning("[WorldMap] World catalog unavailable; new run remains in legacy mode.");
 
         {
             runtimeHeroData.gender = Random.Range(0, 2) == 0 ? GenderType.Nam : GenderType.Nu;
@@ -610,7 +614,11 @@ public class GameManager : MonoBehaviour
         {
             runtimeHeroData.RestartRegionAfterDefeat();
             RestoreProgress();
-            UpdateEventLog("Thất bại: quay về map đầu của " + WorldNames.Region(runtimeHeroData.regionTheme) + ", đợt 1/5. Giữ cấp và chỉ số nhân vật.");
+            UpdateEventLog(WorldMapCatalog.Enabled(runtimeHeroData)
+                ? "Thất bại: đánh lại wave 1 tại " + runtimeHeroData.mapName +
+                    ". Giữ cấp, trang bị và lịch sử map đã mở."
+                : "Thất bại: quay về map đầu của " + WorldNames.Region(runtimeHeroData.regionTheme) +
+                    ", đợt 1/5. Giữ cấp và chỉ số nhân vật.");
             CaptureSelectedStance();
             if (saveManager != null) saveManager.SaveGame(runtimeHeroData, SaveSlot.AutoSave);
         }
@@ -776,6 +784,35 @@ public class GameManager : MonoBehaviour
         UpdateEventLog($"Đổi thế: {(AttackMode)modeIndex}");
     }
 
+    // Explicit/manual world navigation. The wave loop never changes map.
+    public bool TryTravelToWorldMap(string targetId)
+    {
+        if (!hasDeployed || runtimeHeroData == null || !WorldMapCatalog.Enabled(runtimeHeroData))
+            return false;
+        string reason = WorldMapCatalog.TravelBlockReason(runtimeHeroData, targetId);
+        if (reason != null) { UpdateEventLog(reason); return false; }
+
+        // Change only after validation; cancel old wave and all stale projectiles
+        // and monsters so they cannot score kills in the destination node.
+        CancelNextWave();
+        if (combatManager != null) combatManager.ForceClearAllMonsters();
+        activeMonsters.Clear();
+        ClearTestCompanions();
+        if (!WorldMapCatalog.TryTravel(runtimeHeroData, targetId)) return false;
+
+        // Prototype: travel starts a fresh battle from full HP. Reevaluate this
+        // explicitly when designing travel costs and injuries.
+        if (combatManager != null) combatManager.SetupHeroInfo(runtimeHeroData);
+        if (heroController != null) heroController.SpawnHero();
+        RestoreProgress();
+        if (UIManager.Instance != null) UIManager.Instance.ShowMapTitle(runtimeHeroData.mapName);
+        UpdateEventLog("Đã đến " + runtimeHeroData.mapName + " (" + targetId + ").");
+        if (saveManager != null && !saveManager.SaveGame(runtimeHeroData, SaveSlot.AutoSave))
+            UpdateEventLog("Chưa lưu được bản đồ vừa chọn. Kiểm tra quyền ghi Saves.");
+        CallNextWave();
+        return true;
+    }
+
     private void CallNextWave()
     {
         if (!hasDeployed || monsterSpawner == null) return;
@@ -839,8 +876,15 @@ public class GameManager : MonoBehaviour
                 RestoreProgress();
                 if (changed)
                 {
-                    UpdateEventLog("Đã tới " + runtimeHeroData.mapName + (IsHardMode ? ": quái gây sát thương ×2, EXP ×3." : ": bình thường."));
-                    if (UIManager.Instance != null) UIManager.Instance.ShowMapTitle(runtimeHeroData.mapName);
+                    if (WorldMapCatalog.Enabled(runtimeHeroData))
+                        UpdateEventLog("Đã vượt qua " + runtimeHeroData.mapName +
+                            ". Mở Bản đồ để xem các map kề; vẫn tiếp tục farm tại đây.");
+                    else
+                    {
+                        UpdateEventLog("Đã tới " + runtimeHeroData.mapName +
+                            (IsHardMode ? ": quái gây sát thương ×2, EXP ×3." : ": bình thường."));
+                        if (UIManager.Instance != null) UIManager.Instance.ShowMapTitle(runtimeHeroData.mapName);
+                    }
                 }
             }
             nextWaveCoroutine = StartCoroutine(WaitAndCallNextWave());
