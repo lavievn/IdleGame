@@ -93,6 +93,7 @@ partial class MotionRegression
 
     static void Main()
     {
+        WorldMapRegressionTests();
         Run("clamp approach in both directions, including long frame",()=>{
             Near(BattleMotion.Approach(0,100,30,1000,1),70,"right");Near(BattleMotion.Approach(0,-100,30,1000,1),-70,"left");Near(BattleMotion.Approach(0,10,30,1000,1),0,"already in range");
         });
