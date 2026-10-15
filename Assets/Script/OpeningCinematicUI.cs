@@ -51,6 +51,74 @@ public sealed class OpeningCinematicUI : MonoBehaviour
     public bool IsLayoutEditing => layoutEditing;
     public OpeningArtTheme LayoutTheme => theme;
 
+    // UIManager may reparent preGameUI into its runtime HUD after GameManager
+    // created the opening siblings. Keep sky/splash/menu in ONE coordinate
+    // space, rather than leaving the scenery under the old canvas.
+    public void EnsureOpeningSiblingsParent()
+    {
+        if(canvasArea==null||backdrop==null||canvasArea.parent==null)return;
+        var parent=canvasArea.parent;
+        if(backdrop.parent!=parent)
+        {
+            backdrop.SetParent(parent,false);
+            backdrop.SetAsLastSibling();
+            canvasArea.SetAsLastSibling();
+        }
+        if(blackCurtain!=null&&blackCurtain.transform.parent!=parent)
+        {
+            blackCurtain.transform.SetParent(parent,false);
+            blackCurtain.transform.SetAsLastSibling();
+        }
+    }
+
+    // Refuse to serialize positions from a split/misaligned canvas.
+    // A bad snapshot otherwise persists for every future Play session.
+    public bool ValidateLayoutForSave(out string problem)
+    {
+        problem="";
+        if(!layoutEditing||backdrop==null||canvasArea==null)
+        {
+            problem="Chưa bật chế độ căn chỉnh hoặc thiếu Canvas opening.";
+            return false;
+        }
+        if(backdrop.parent!=canvasArea.parent)
+        {
+            problem="Các lớp opening và menu đang nằm dưới hai Canvas khác nhau.";
+            return false;
+        }
+        float w=backdrop.rect.width,h=backdrop.rect.height;
+        if(w<320f||h<240f||Mathf.Abs(w-canvasArea.rect.width)>1f||
+           Mathf.Abs(h-canvasArea.rect.height)>1f||
+           Mathf.Abs(backdrop.anchoredPosition.x-canvasArea.anchoredPosition.x)>1f||
+           Mathf.Abs(backdrop.anchoredPosition.y-canvasArea.anchoredPosition.y)>1f)
+        {
+            problem="Root UI đang lệch hoặc kích thước hai Canvas không khớp. "+
+                "Dừng Play, kiểm tra lại rồi mới lưu.";
+            return false;
+        }
+        var rects=GetLayoutRects();
+        if(rects.Length!=LayoutKeys.Length)
+        {
+            problem="Số đối tượng trong opening không khớp.";
+            return false;
+        }
+        for(int i=0;i<rects.Length;i++)
+        {
+            var r=rects[i];
+            if(r==null||r.rect.width<=1f||r.rect.height<=1f||
+               float.IsNaN(r.anchoredPosition.x)||float.IsNaN(r.anchoredPosition.y)||
+               float.IsNaN(r.sizeDelta.x)||float.IsNaN(r.sizeDelta.y)||
+               float.IsInfinity(r.anchoredPosition.x)||
+               float.IsInfinity(r.anchoredPosition.y)||
+               float.IsInfinity(r.sizeDelta.x)||float.IsInfinity(r.sizeDelta.y))
+            {
+                problem="Khung "+LayoutKeys[i]+" có vị trí hoặc kích thước không hợp lệ.";
+                return false;
+            }
+        }
+        return true;
+    }
+
     // Reference units make snapshots responsive across 600/800/1150 widths.
     public static void ApplySavedRect(OpeningArtTheme art,string key,
         RectTransform rect,float width,float height)
@@ -80,7 +148,12 @@ public sealed class OpeningCinematicUI : MonoBehaviour
     // animation coordinates. Only call while layoutEditing is true.
     public OpeningLayoutEntry[] CaptureLayout()
     {
-        if(!layoutEditing||backdrop==null)return null;
+        string problem;
+        if(!ValidateLayoutForSave(out problem))
+        {
+            Debug.LogWarning("[Opening Layout] Không thể lưu: "+problem);
+            return null;
+        }
         float w=Mathf.Max(1f,backdrop.rect.width);
         float h=Mathf.Max(1f,backdrop.rect.height);
         var rects=GetLayoutRects();
@@ -110,9 +183,11 @@ public sealed class OpeningCinematicUI : MonoBehaviour
             if(game==null||game.preGameUI==null||
                 !game.preGameUI.activeInHierarchy||finished||entering)
                 return false;
+            // Do NOT call Layout(true) here: it resets the hand-adjusted
+            // rectangles to hardcoded formulas, causing the entire opening
+            // to jump to the corner before it can be saved.
+            EnsureOpeningSiblingsParent();
             layoutEditing=true;
-            sky.localScale=far.localScale=near.localScale=Vector3.one;
-            Layout(true);
             if(blackCurtain!=null)blackCurtain.gameObject.SetActive(false);
             if(backdropFade!=null)backdropFade.alpha=1f;
             if(menu!=null)menu.PrepareLayoutEditing();
@@ -159,6 +234,7 @@ public sealed class OpeningCinematicUI : MonoBehaviour
         opening.theme=Resources.Load<OpeningArtTheme>("OpeningArtTheme");
         opening.Build(font);
         opening.BuildBlackCurtain();
+        opening.EnsureOpeningSiblingsParent();
         opening.Layout();
         opening.menu.SetOpeningMenuReady(false);
         return opening;
@@ -321,6 +397,7 @@ public sealed class OpeningCinematicUI : MonoBehaviour
     private void Update()
     {
         if(finished||backdrop==null)return;
+        EnsureOpeningSiblingsParent();
         if(!orderFixed)
         {
             backdrop.SetAsLastSibling();
