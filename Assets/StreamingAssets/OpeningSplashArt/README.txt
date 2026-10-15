@@ -1,27 +1,26 @@
-SPLASH ART TRAI / PHAI -- BACH LUYEN TIEN DO (0.0.53)
+SPLASH ART TRAI / PHAI — QUY TAC MOI 0.0.53
 
-Them anh / video vao thu muc:
-Assets/StreamingAssets/OpeningSplashArt/
+Thu muc: Assets/StreamingAssets/OpeningSplashArt/
 
-Dinh dang duoc nhan: .png, .jpg, .jpeg, .mp4 (H.264).
-KHONG can doi ten. Moi lan mo man hinh cho se random 2 tep
-(khac nhau neu co tu 2 tep tro len).
-2 khung trai/phai nam CO DINH, tran khoi mep cua so.
-Bat dau hien tu giay 27, fade in DUY NHAT 1 LAN khoang 1.4s.
-KHONG pan/zoom/crossfade/chuyen anh lien tuc do Unity thuc hien.
-Neu video can animation, hay dung su dung pan/zoom truc tiep
-trong video cua ban. Nhac rieng cua MP4 bi tat.
+BAT BUOC DAT TEN:
+  L_*.png / L_*.jpg / L_*.mp4  -> splash TRAI
+  R_*.png / R_*.jpg / R_*.mp4  -> splash PHAI
+Khong phan biet chu hoa/thuong (l_, r_ cung duoc).
+Chu dau ten file phai la L hoac R; .png .jpg .jpeg .mp4 duoc ho tro.
 
-Neu kho moi chua co gi, ban cu van co the dung video cu:
-Assets/StreamingAssets/OpeningSplash/splash.mp4
-nhung ca hai ben se hien cung video vi chi co mot lua chon.
-Neu khong co ca hai, hai khung mau placeholder van duoc hien thi.
+Moi lan vao opening, moi ben chon NGAU NHIEN trong danh sach
+file dung tien to ben do. Khong tu doi sang file khac giua chung.
+Khung bat dau fade in o giay 27 va khong pan/zoom.
+Neu thieu L hoac R, ben tuong ung hien placeholder.
 
-Goi y:
-- Anh: PNG trong suot / JPG, de dung luong vua phai.
-- Video: MP4/H.264, 24-30fps, dung luong/bitrate vua phai.
-- Game co the decode 2 video dong thoi khi random ra 2 MP4.
-- Nen co anh JPG/PNG trong kho neu may yeu/driver GPU bat on.
-- Khong them video qua nang vao git chi de test.
-- Assets trong StreamingAssets duoc sao nguyen vao Windows build.
-- Xem Docs/Opening_SplashArt_0.0.53.md de biet them.
+KHONG con fallback sang Assets/StreamingAssets/OpeningSplash/splash.mp4.
+Hai MP4 da push truoc co the chua co L/R, can doi ten
+TRONG UNITY (de giu file .meta) truoc khi thay doi co hieu luc.
+Khong can Catalog hay gan vao Inspector.
+
+Kich thuoc khung: ngang = 62% cua so, cao = 76% cua so;
+khung cham day va chi tran ra hai mep trai/phai.
+Ten doi tuong trong Hierarchy co duoi [WIDTHxHEIGHT UI].
+
+Cloud / mountain width/height co the sua trong
+Assets/Resources/OpeningArtTheme.asset (moc tham chieu 800x450).
