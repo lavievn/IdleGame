@@ -3,7 +3,7 @@ TV-01,Tử Vân Cổ Vực,Phong Ẩn Sơn Đỉnh,Đồi núi,"Lang, Hồ, Ngô
 TV-02,Tử Vân Cổ Vực,Huyền Trúc Lâm,Đồi núi,"Ngô Công, Mãng, Dương, Xà",
 TV-03,Tử Vân Cổ Vực,U Minh Sơn Cốc,Đồi núi,"Ưng, Hùng, Dương, Báo",
 TV-04,Tử Vân Cổ Vực,Tịch Vân Đài,Đồng bằng,"Ưng, Hồ, Xà, Trư",
-TV-05,Tử Vân Cổ Vực,Vân Mộng Trạch,Đồi núi,"Ưng, Xà, Hùng, Lộc",Tên Trạch nhưng ảnh danh mục ghi Đồi núi; cần xác nhận.
+TV-05,Tử Vân Cổ Vực,Vân Mộng Trạch,Đồi núi,"Ưng, Xà, Hùng, Lộc",
 TV-06,Tử Vân Cổ Vực,Hắc Tùng Lĩnh,Cao nguyên,"Hùng, Hạc, Ngưu, Ưng",
 TV-09,Tử Vân Cổ Vực,Tử Điện Sơn,Đồi núi,"Ngô Công, Bức, Mãng, Hùng",
 TV-10,Tử Vân Cổ Vực,Vọng Nguyệt Cốc,Đồng bằng,"Ưng, Hồ, Xà, Thố",
@@ -15,7 +15,7 @@ TV-18,Tử Vân Cổ Vực,Tử Ngọc Nhai,Đồi núi,"Hùng, Ngô Công, Xà,
 TV-20,Tử Vân Cổ Vực,Lạc Vân Trạch,Đầm lầy,"Hạc, Ngô Công, Mãng, Thiềm",
 TV-21,Tử Vân Cổ Vực,Huyền Ảnh Cốc,Đồi núi,"Bức, Ưng, Lộc, Hạt",
 TV-22,Tử Vân Cổ Vực,Tịch Diệt Sơn,Rừng rậm,"Ngô Công, Hùng, Tước, Nghĩ",
-TV-23,Tử Vân Cổ Vực,U Linh Trạch,Rừng rậm,"Bức, Chu, Phong, Hùng",Tên Trạch nhưng ảnh danh mục ghi Rừng rậm; cần xác nhận.
+TV-23,Tử Vân Cổ Vực,U Linh Trạch,Rừng rậm,"Bức, Chu, Phong, Hùng",
 TV-24,Tử Vân Cổ Vực,Bát Quỷ Lâm,Đồi núi,"Điêu, Lang, Bức, Ngô Công",
 TV-27,Tử Vân Cổ Vực,Đoạn Hồn Nhai,Đồi núi,"Bức, Hồ, Báo, Ngô Công",
 TV-28,Tử Vân Cổ Vực,Tử Thác Uyên,Đồi núi,"Hùng, Xà, Điêu, Lang",
@@ -42,7 +42,7 @@ TL-09,Thương Lam Trung Vực,Lục Thủy Doanh Địa,Rừng rậm,"Ly, Ưng,
 TL-10,Thương Lam Trung Vực,Thương Lam Lâm Hải,Rừng rậm,"Hùng, Lang, Xà, Hổ",
 TL-11,Thương Lam Trung Vực,Thanh Dương Điền Viên,Đồng bằng,"Lang, Ưng, Hồ, Dương",
 TL-12,Thương Lam Trung Vực,Lam Tâm Hồ,Hồ nước,"Quy, Hạc, Áp, Oa",
-TL-13,Thương Lam Trung Vực,Vân Ảnh Quần Đảo,Đồng bằng,"Ngưu, Thố, Khuyển, Mã","Tên quần đảo nhưng ảnh danh mục ghi Đồng bằng; giữ nguyên ảnh, cần xác nhận địa hình."
+TL-13,Thương Lam Trung Vực,Vân Ảnh Quần Đảo,Đồng bằng,"Ngưu, Thố, Khuyển, Mã",
 TL-14,Thương Lam Trung Vực,Bách Mộc Thâm Lâm,Rừng rậm,"Hổ, Ly, Chu, Lộc",
 TL-15,Thương Lam Trung Vực,Tú Thủy Hà Cốc,Rừng rậm,"Ưng, Hùng, Điêu, Chu",
 TL-16,Thương Lam Trung Vực,Vọng Hồ Bình Xuyên,Đồng bằng,"Thố, Lang, Ngưu, Khuyển",
@@ -52,12 +52,12 @@ TL-19,Thương Lam Trung Vực,Thạch Lâm Sơn Cốc,Rừng rậm,"Thố, Hùn
 TL-20,Thương Lam Trung Vực,Ngự Phong Thủy Điện,Rừng rậm,"Lộc, Ưng, Điêu, Phong",
 TL-21,Thương Lam Trung Vực,Phong Nguyệt Cư,Đồng bằng,"Thố, Lộc, Ngưu, Xà",
 TL-22,Thương Lam Trung Vực,Thiên Quang Hồ,Hồ nước,"Hạc, Ngư, Ngạc, Nhạn",
-TL-23,Thương Lam Trung Vực,Long Ngư Châu,Đồng bằng,"Ưng, Thố, Thử, Trư","Tên Châu/hồ nhưng ảnh danh mục ghi Đồng bằng; giữ nguyên ảnh, cần xác nhận địa hình."
+TL-23,Thương Lam Trung Vực,Long Ngư Châu,Đồng bằng,"Ưng, Thố, Thử, Trư",
 TL-24,Thương Lam Trung Vực,Thanh Phong Sơn Lâm,Rừng rậm,"Ưng, Hổ, Yến, Lang",
-TL-25,Thương Lam Trung Vực,Lưu Vân Thảo Nguyên,Rừng rậm,"Ưng, Hổ, Lộc, Tượng","Tên thảo nguyên nhưng ảnh danh mục ghi Rừng rậm; giữ nguyên ảnh, cần xác nhận địa hình."
+TL-25,Thương Lam Trung Vực,Lưu Vân Thảo Nguyên,Thảo nguyên,"Ngưu, Mã, Lộc, Thố",
 TL-26,Thương Lam Trung Vực,Thiệu Dương Điền Dã,Đồng bằng,"Ưng, Ngưu, Khuyển, Kê",
 TL-27,Thương Lam Trung Vực,Nam Hồ Bình Nguyên,Đồng bằng,"Ưng, Thố, Xà, Tước",
-TL-28,Thương Lam Trung Vực,Trạch Thủy Nguyên,Đồng bằng,"Ưng, Lang, Phong, Khuyển","Tên Trạch Thủy nhưng ảnh danh mục ghi Đồng bằng; giữ nguyên ảnh, cần xác nhận địa hình."
+TL-28,Thương Lam Trung Vực,Trạch Thủy Nguyên,Rừng rậm,"Mãng, Hồ, Ngô Công, Lộc",
 TL-29,Thương Lam Trung Vực,Vân Thủy Biên Lâm,Đồi núi,"Ưng, Lộc, Mãng, Lang",
 XD-01,Xích Diễm Chi Địa,Phong Diễm Tiền Đồn,Đồi núi,"Điêu, Hạt, Dương, Báo",
 XD-02,Xích Diễm Chi Địa,Hỏa Vân Lĩnh,Đồi núi,"Điêu, Ngô Công, Mãng, Lang",
@@ -75,7 +75,7 @@ XD-13,Xích Diễm Chi Địa,Diễm Phong Hải Lộ,Sa mạc,"Xà, Điêu, Mã
 XD-14,Xích Diễm Chi Địa,Hỏa Thực Sơn Cốc,Đồi núi,"Mãng, Ngô Công, Hạt, Lang",
 XD-15,Xích Diễm Chi Địa,Xích Nham Hoang Nguyên,Sa mạc,"Hạt, Mãng, Ngô Công, Thử",
 XD-16,Xích Diễm Chi Địa,Hung Diễm Lĩnh,Đồi núi,"Hạt, Mãng, Ưng, Hùng",
-XD-17,Xích Diễm Chi Địa,Lưu Diễm Tràng,Đồi núi / Cao nguyên,"Xà, Ưng, Hùng, Hạt",Mã XD-17 vẫn tạm do ảnh AI trùng XD-19; địa hình hỗn hợp Đồi núi/Cao nguyên đã xác nhận. Cần chọn một TerrainType chính khi triển khai.
+XD-17,Xích Diễm Chi Địa,Lưu Diễm Tràng,Cao nguyên,"Xà, Ưng, Hùng, Hạt","Ảnh AI trùng mã XD-19; mã XD-17 vẫn là tạm, cần xác nhận ID. Địa hình Cao nguyên đã chốt."
 XD-18,Xích Diễm Chi Địa,Tẫn Thế Nhai,Đồi núi,"Điêu, Hạt, Báo, Ngô Công",
 XD-19,Xích Diễm Chi Địa,Diễm Ảnh Quần Đảo,Biển,"Ưng, Sa, Giải, Nhạn",
 XD-20,Xích Diễm Chi Địa,Hồng Liên Hải Tràng,Biển,"Sa, Hải Âu, Hà, Nhạn",
@@ -119,7 +119,7 @@ TM-10,Thanh Mộc U Cảnh,Thác Thanh Uyên,Rừng rậm,"Phong, Hầu, Ô, B�
 TM-11,Thanh Mộc U Cảnh,Cổ Mộc Thiền Viện,Rừng rậm,"Viên, Chu, Ly, Yến",
 TM-12,Thanh Mộc U Cảnh,Đồng Lục Sa,Đồi núi,"Hồ, Xà, Thố, Mãng",
 TM-13,Thanh Mộc U Cảnh,Linh Thủy Trạch,Rừng rậm,"Hầu, Hồ, Trư, Bức",
-TM-14,Thanh Mộc U Cảnh,Thác Bạch Ngọc,Thác nước,"Hạc, Ngư, Giải, Quy","Thác nước là đặc điểm địa hình phụ, chưa nằm trong 8 TerrainType; cần chọn địa hình nền khi triển khai (Hồ nước hoặc Đồi núi)."
+TM-14,Thanh Mộc U Cảnh,Thác Bạch Ngọc,Đồi núi,"Ưng, Hùng, Xà, Điêu",
 TM-15,Thanh Mộc U Cảnh,Rừng Huyền Âm,Rừng rậm,"Chu, Hồ, Trư, Ưng",
 TM-16,Thanh Mộc U Cảnh,Đầm Tụ Thủy,Đầm lầy,"Chu, Quy, Hạc, Oa",
 TM-17,Thanh Mộc U Cảnh,Rừng Phong Ẩn,Rừng rậm,"Viên, Hầu, Hùng, Tượng",
