@@ -321,6 +321,11 @@ namespace UnityEngine {
     if(items!=null)foreach(var item in items)nums.Add(Convert.ToString(item,System.Globalization.CultureInfo.InvariantCulture));
     fields.Add("\""+f.Name+"\":["+string.Join(",",nums.ToArray())+"]");
    }
+   else if(f.FieldType==typeof(List<string>)) {
+    var strings=(List<string>)f.GetValue(value);var arr=new List<string>();
+    if(strings!=null)foreach(string item in strings)arr.Add("\""+item.Replace("\\","\\\\").Replace("\"","\\\"")+"\"");
+    fields.Add("\""+f.Name+"\":["+string.Join(",",arr.ToArray())+"]");
+   }
    else if(f.FieldType==typeof(string)) fields.Add("\""+f.Name+"\":\""+f.GetValue(value)+"\"");
    else if(f.FieldType==typeof(bool))
     fields.Add("\""+f.Name+"\":"+((bool)f.GetValue(value)?"true":"false"));
@@ -342,6 +347,17 @@ namespace UnityEngine {
     var arr=System.Text.RegularExpressions.Regex.Match(json,"\""+f.Name+"\"\\s*:\\s*\\[([^]]*)\\]");
     if(arr.Success){var list=(System.Collections.IList)Activator.CreateInstance(f.FieldType);foreach(var item in arr.Groups[1].Value.Split(','))
      if(item.Trim().Length>0)list.Add(Convert.ChangeType(item.Trim(),f.FieldType.GetGenericArguments()[0],System.Globalization.CultureInfo.InvariantCulture));f.SetValue(value,list);}continue;
+   }
+   if(f.FieldType==typeof(List<string>)) {
+    var match=System.Text.RegularExpressions.Regex.Match(json,"\""+f.Name+"\"\\s*:\\s*\\[([^]]*)\\]");
+    if(match.Success) {
+     var values=new List<string>();
+     foreach(System.Text.RegularExpressions.Match item in
+       System.Text.RegularExpressions.Regex.Matches(match.Groups[1].Value,"\"([^\"]*)\""))
+       values.Add(item.Groups[1].Value);
+     f.SetValue(value,values);
+    }
+    continue;
    }
    if(f.FieldType==typeof(string)) {var str=System.Text.RegularExpressions.Regex.Match(json,"\""+f.Name+"\"\\s*:\\s*\"([^\"]*)\"");if(str.Success)f.SetValue(value,str.Groups[1].Value);continue;}
    if(f.FieldType==typeof(bool)) {
