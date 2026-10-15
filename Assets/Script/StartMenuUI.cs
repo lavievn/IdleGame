@@ -24,6 +24,8 @@ public class StartMenuUI : MonoBehaviour
     private RectTransform root;
     private int lastClickFrame = -1;
     private bool entryLocked;
+    private bool openingMenuReady;
+    private static readonly Color32 TitleInkColor = new Color32(74,18,20,255);
 
     public bool IsCinematic => cinematic != null;
 
@@ -130,13 +132,15 @@ public class StartMenuUI : MonoBehaviour
         if(sprite==null && theme!=null)sprite=theme.gameTitle;
         logoImage.sprite=sprite;
         logoImage.enabled=sprite!=null;
-        logoImage.color=Color.white;
+        // OpeningTitleLogo.png now contains WHITE RGB + original brush alpha.
+        // Tinting white preserves the brush texture and produces deep red ink.
+        logoImage.color=TitleInkColor;
         logoFallback=Label(template,logoRoot,"Bách Luyện Tiên Đồ",
-            Vector2.zero,new Vector2(500,75),31f);
+            Vector2.zero,new Vector2(500,75),62f);
         if(logoFallback!=null)
         {
             logoFallback.gameObject.SetActive(sprite==null);
-            logoFallback.color=new Color(.10f,.13f,.17f,1f);
+            logoFallback.color=TitleInkColor;
         }
     }
 
@@ -163,11 +167,18 @@ public class StartMenuUI : MonoBehaviour
         Place(go.GetComponent<RectTransform>(),p,new Vector2(184,36));
         var button=go.GetComponent<Button>();
         var text=go.GetComponentInChildren<TextMeshProUGUI>(true);
-        if(text!=null){text.text=title;UIManager.ReadableText(text,16);text.alignment=TextAlignmentOptions.Center; }
+        if(text!=null)
+        {
+            text.text=title;
+            UIManager.ReadableText(text,16);
+            text.alignment=TextAlignmentOptions.Center;
+            text.color=Color.white;
+        }
         var background=go.GetComponent<Image>();
         if(background != null) { background.color=new Color(.06f,.18f,.24f,.94f);background.raycastTarget=false; }
         UnityAction clicked=()=>{
-            if(!button.interactable || entryLocked || lastClickFrame==Time.frameCount)return;
+            if(!openingMenuReady || !button.interactable || entryLocked ||
+               lastClickFrame==Time.frameCount)return;
             lastClickFrame=Time.frameCount;
             action();
         };
@@ -198,15 +209,19 @@ public class StartMenuUI : MonoBehaviour
         float bh=Mathf.Clamp(h*.092f,26f,38f);
         for(int i=0;i<4;i++)
         {
+            // Move the buttons down slightly to make room for a 2x title.
             Place((RectTransform)menuButtons[i].transform,
-                new Vector2(0,1.5f*spacing-i*spacing-7f),new Vector2(bw,bh));
+                new Vector2(0,1.5f*spacing-i*spacing-29f),new Vector2(bw,bh));
         }
         if(logoRoot!=null)
         {
-            // The title sits above the four buttons, inside the safe region.
-            float logoW=Mathf.Min(w*.80f,650f);
-            float logoH=Mathf.Clamp(h*.16f,42f,100f);
-            Place(logoRoot,new Vector2(0,h*.355f),new Vector2(logoW,logoH));
+            // Preserve sprite aspect. The new 2x height provides almost twice
+            // the painted width without spilling past the viewport sides.
+            float logoW=Mathf.Min(w*.96f,1120f);
+            float logoH=Mathf.Clamp(h*.34f,80f,230f);
+            float topMargin=Mathf.Max(4f,h*.01f);
+            Place(logoRoot,new Vector2(0,h*.5f-logoH*.5f-topMargin),
+                new Vector2(logoW,logoH));
             if(logoFallback!=null)
                 Place((RectTransform)logoFallback.transform,Vector2.zero,
                     new Vector2(logoW,logoH));
@@ -374,9 +389,23 @@ public class StartMenuUI : MonoBehaviour
         }
     }
     private void ExitGame(){Application.Quit();}
+    public void SetOpeningMenuReady(bool ready)
+    {
+        if(openingMenuReady==ready && rootFade!=null &&
+            rootFade.interactable==ready && rootFade.blocksRaycasts==ready)return;
+        openingMenuReady=ready;
+        if(rootFade!=null)
+        {
+            rootFade.interactable=ready;
+            rootFade.blocksRaycasts=ready;
+        }
+        Refresh();
+    }
+
     public void Refresh()
     {
-        if(continueButton!=null)continueButton.interactable=!entryLocked&&manager.CanContinue;
+        if(continueButton!=null)
+            continueButton.interactable=!entryLocked&&openingMenuReady&&manager.CanContinue;
     }
     public void ShowConfirmation(string text)
     {
@@ -394,12 +423,14 @@ public class StartMenuUI : MonoBehaviour
         EndVolumeDrag();
         foreach (var b in menuButtons) if (b != null) b.interactable = true;
         if (cinematic != null) cinematic.ResetForMenu();
+        SetOpeningMenuReady(false);
         Refresh();
     }
 
     public void LockButtonsForEntry()
     {
         entryLocked=true;
+        SetOpeningMenuReady(false);
         foreach(var b in menuButtons)if(b!=null)b.interactable=false;
         settingsPage.SetActive(false);
     }
