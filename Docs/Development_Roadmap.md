@@ -201,3 +201,9 @@ Người phát triển xác nhận B1 đã xong sau commit mã `2308f25`. Chỉ 
 - **Đã commit trên `feature/0.0.53`:** mở từ màn đen hoàn toàn, sáng toàn bộ nền và mây/núi trong 1,8s, đợi 3s rồi logo/nút fade in 1,5s; khóa click cho đến lúc menu hiện đầy đủ.
 - **Đã sửa file PNG logo trong repo:** pixel nét chữ **trắng trên alpha gốc**, tô đỏ sẫm `#4A1214` tại Unity, lớn gần gấp đôi. Nút dùng chữ trắng, bố cục tránh chồng.
 - **Chưa kiểm thử trực quan:** Play Mode/Windows, mở/thoát và về lại title, fade trên cả viewport khi resize, tương phản logo trước nền sáng. Giữ `main` nguyên trạng đến khi nghiệm thu.
+
+### 15/10/2026 — Kích thước Inspector và phân loại splash trái/phải
+
+- **Đã triển khai trên `feature/0.0.53`:** thêm 5 cặp kích thước `Vector2` cho hai núi/ba lớp mây vào `OpeningArtTheme.asset`, đơn vị UI tham chiếu ở cửa sổ 800×450; giữ nguyên số đo mặc định và scale theo kích thước cửa sổ. Tên Hierarchy của trời, mây/núi và hai khung splash tự thêm `[rộngxcao UI]`.
+- **Splash phân bên nghiêm ngặt:** chỉ chọn ảnh/video PNG/JPG/JPEG/MP4 có **tên file** mở đầu bằng `L` cho khung trái và `R` cho khung phải, không phân biệt hoa/thường; không fallback sang `splash.mp4` cũ. Chưa có file hợp lệ sẽ hiển thị placeholder và cảnh báo.
+- **Kiểm thử cần làm:** rename những MP4 đã push (hiện không có `L`/`R`), thử chỉnh kích thước từ Inspector, xác nhận click/menu và 3 độ phân giải không bị lệch. Chưa nghiệm thu Unity/Windows, chưa merge `main`.
