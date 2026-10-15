@@ -83,3 +83,12 @@
 - **Viền mềm mây/núi:** shader `OpeningSoftEdge.shader` và `OpeningEdgeFeather.cs`, mặc định **48 đơn vị UI**, có thể điều chỉnh `OpeningArtTheme.asset → Edge Feather Pixels`. Chỉ tác động năm layer núi/mây, không đổi hình nguồn.
 - **Đã thêm test cấu trúc:** hai khung riêng, đúng chiều, không tự dịch chuyển, alpha chỉ tăng từ giây 27; chạy trên Unity doubles, **chưa thực thi thực tế trong Editor/Windows**.
 - Đường dẫn và lưu ý nặng GPU khi phát cả 3 video: [Opening_SplashArt_0.0.53.md](Opening_SplashArt_0.0.53.md).
+
+## 15/10/2026 — Màn đen mở đầu, menu xuất hiện trễ, logo đỏ sẫm
+
+- Lớp curtain `Opening Black Curtain - Full Window` phủ đen toàn bộ Canvas khi vào title. Fade đen → cảnh nền mây núi/video hoàn chỉnh trong **1,8s**.
+- Giữ cảnh không có menu thêm **3,0s**, từ mốc **4,8s** logo và các nút mới bắt đầu fade in **1,5s**, đầy đủ và click được sau **6,3s**.
+- Logo ảnh gốc đã được thay thực sự bằng PNG **nét trắng/alpha nguyên bản** (không dùng lại chữ đen), Unity tô `#4A1214`. Điều chỉnh logo lớn gần **2×** và hạ hàng nút để không chồng chữ.
+- Text nút màu **trắng** và nút chưa hiện **bị khóa tương tác** với cả native Windows overlay lẫn uGUI. Quay lại title sẽ reset mốc thời gian.
+- Hai khung splash vẫn bắt đầu fade ở giây **27**, chỉ tràn ngang hai mép và không thay nội dung trong một lượt opening.
+- Đã thêm test pure logic cho mốc fade và kiểm tra trạng thái curtain/input. **Chưa chạy Unity Play Mode/Windows Build**.
