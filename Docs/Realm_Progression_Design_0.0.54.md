@@ -9,7 +9,7 @@
 - Sau khi thành công, nhân vật bước vào cảnh giới mới với **cấp nội bộ thứ nhất** tính tại **Level hiện có tại thời điểm thành công**, bất kể đã farm vượt bình cảnh cũ bao nhiêu Level.
 - Thời gian ở một cảnh giới không tự rút ngắn do Level tích lũy dư từ cảnh giới trước. Nếu chưa qua bình cảnh, cấp nội bộ của cảnh giới dừng tại mốc bình cảnh nhưng **Level toàn cục và EXP vẫn tăng**.
 - Giữ bộ tên cảnh giới hiện có trong `TuTienEnums.cs`: Luyện Khí, Trúc Cơ, Kết Đan, Nguyên Anh, Hóa Thần, Luyện Hư, Hợp Thể, Đại Thừa, Độ Kiếp, Chân Tiên và nhánh sau đó Tiên Đế; mở rộng sau nếu cần. Không xóa danh sách này.
-- **Mốc đề xuất:** khoảng **30 Level nội bộ / đại cảnh giới** nhằm kéo dài cảm giác tu luyện; đây là mục tiêu cấu trúc ban đầu, chưa chốt EXP, thời gian chơi và độ khó.
+- **Khung tiến trình đã chọn cho thiết kế .54:** **30 cấp nội bộ / đại cảnh giới**: 1–9 Sơ kỳ, 10–19 Trung kỳ, 20–29 Hậu kỳ, cấp 30 là bình cảnh. Mốc 30 có thể tinh chỉnh khi cân bằng EXP, thời gian chơi và độ khó.
 
 ## 2. Quy tắc 30 cấp nội bộ — tránh lệch mốc 1 cấp
 
@@ -23,9 +23,11 @@ bottleneckReady = realmLocalLevel >= 30
 
 Ở cảnh giới mở màn, `realmEntryLevel=1`: nội bộ 1..9 = Sơ kỳ, 10..19 = Trung kỳ, 20..29 = Hậu kỳ, nội bộ 30 = bình cảnh và mở Thiên Kiếp.
 
+**ĐÃ CHỐT:** chuyển **Sơ kỳ → Trung kỳ** khi nội bộ đạt 10 và **Trung kỳ → Hậu kỳ** khi đạt 20 là **tự động**, không cần thử thách, màn chơi riêng hay nút Đột phá nhỏ. **Chỉ có một lần Thiên Kiếp khi vượt đại cảnh giới** sau khi đạt bình cảnh cấp nội bộ 30. Việc tự đổi *kỳ* không làm đổi *đại cảnh giới*.
+
 **Ví dụ:** Luyện Khí đạt bình cảnh ở Level 30; tiếp tục farm tới 45 nhưng vẫn Luyện Khí; thắng Thiên Kiếp tại Level 45 → Trúc Cơ nội bộ 1, `realmEntryLevel=45`; Trúc Cơ nội bộ 30 tại **Level 74**. Nếu muốn mốc **Level 75**, phải chọn quy ước khác (30 lần lên Level thay vì 30 vị trí cấp); **không tự thay quy ước** khi viết mã.
 
-**Tầng tu luyện 1–9 trong mỗi đại cảnh giới:** người phát triển muốn chia 3 kỳ (Sơ/Trung/Hậu), với 9 tầng tổng; hiện chỉ chốt *ý định cấu trúc*. Cách quy đổi chính xác 30 cấp nội bộ thành 9 tầng (ví dụ tầng 1–3 trong Sơ kỳ) và cách hiển thị nội bộ 30 khi ở bình cảnh **chưa chốt**, không tự mặc định 1 tầng = 1 Level.
+**Không thêm hệ 9 tầng độc lập ở bản triển khai này.** Sơ/Trung/Hậu được tính trực tiếp từ cấp nội bộ như trên. Ý tưởng 9 tầng trước đó là một cách hiển thị có thể nghiên cứu về sau, **không phải dữ liệu bắt buộc, không cần chia tiếp 30 cấp thành 9 tầng**, tránh tạo một hệ cấp độ thứ ba không có chức năng. Khi ở cấp nội bộ 30 hoặc farm vượt quá, hiển thị **Hậu kỳ viên mãn / Bình cảnh** cho đến khi Thiên Kiếp thành công.
 
 **Trạng thái bình cảnh** độc lập với việc đã mở Thiên Kiếp, đang thử hoặc đã thất bại. Nếu tiếp tục farm sau mốc 30, vẫn hiển thị bình cảnh hiện tại; tuyệt đối không chuyển cảnh giới do `currentLevel` vượt mốc.
 
@@ -53,7 +55,7 @@ bottleneckReady = realmLocalLevel >= 30
 ## 6. Chưa quyết định
 
 - 30 Level/cảnh giới là mốc cân bằng cuối hay cần thay; thuật toán EXP/tốc độ đạt cảnh giới.
-- Phân bổ 9 tầng tu luyện vào 30 cấp, việc có bình cảnh nhỏ giữa các kỳ hay chỉ cuối đại cảnh giới.
+- **Đã giải quyết:** không có bình cảnh nhỏ giữa Sơ/Trung/Hậu; chỉ cuối đại cảnh giới mới có Thiên Kiếp. Không bắt buộc hệ 9 tầng riêng. Nếu sau này muốn thêm 9 tầng thì đó là đề xuất tính năng mới, không phải phần còn thiếu của bộ khung này.
 - Mức và dạng thưởng khi chuyển Sơ/Trung/Hậu kỳ, khi lên đại cảnh giới; hiệu ứng buff lâu dài.
 - AI tự chống Thiên Kiếp trong game idle, hình phạt thất bại, quy tắc thời gian, độ khó.
 - Cách di trú Save cũ và bổ sung dữ liệu Level/cảnh giới, trường hợp nhân vật Level rất cao ở cảnh giới thấp.
