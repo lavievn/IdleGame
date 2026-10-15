@@ -111,6 +111,7 @@ public class SaveManager : MonoBehaviour
                 entityData.worldMapVersion = 0;
                 entityData.worldMapId = "";
                 entityData.worldMapWaveProgress = 0;
+                entityData.worldMapLoopWave = 1;
                 entityData.worldMapVisited = new System.Collections.Generic.List<string>();
                 entityData.worldMapCleared = new System.Collections.Generic.List<string>();
                 entityData.regionIndex = -1;
