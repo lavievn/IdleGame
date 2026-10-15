@@ -11,6 +11,31 @@ partial class MotionRegression
 {
     static void OpeningCinematicRegressionTests()
     {
+        Run("0.0.53 black scene reveal and delayed main menu timing", () =>
+        {
+            Near(OpeningCinematicUI.BlackCurtainAlphaAt(0f),1f,
+                "starts entirely black");
+            Check(OpeningCinematicUI.BlackCurtainAlphaAt(.9f) > 0f &&
+                  OpeningCinematicUI.BlackCurtainAlphaAt(.9f) < 1f,
+                "black fade interpolates smoothly");
+            Near(OpeningCinematicUI.BlackCurtainAlphaAt(
+                OpeningCinematicUI.BlackFadeSeconds),0f,
+                "entire scene revealed after 1.8 seconds");
+            float menuStart=OpeningCinematicUI.BlackFadeSeconds+
+                OpeningCinematicUI.MenuDelayAfterSceneSeconds;
+            Near(OpeningCinematicUI.MenuAlphaAt(menuStart-.01f),0f,
+                "menu hidden throughout the 3-second hold");
+            Near(OpeningCinematicUI.MenuAlphaAt(menuStart),0f,
+                "menu begins only after 3s hold");
+            Check(OpeningCinematicUI.MenuAlphaAt(menuStart+.75f) > 0f,
+                "menu is gradually becoming visible");
+            Near(OpeningCinematicUI.MenuAlphaAt(menuStart+
+                OpeningCinematicUI.MenuRevealSeconds),1f,
+                "menu fully visible after fade");
+            Check(OpeningCinematicUI.ShowcaseCueSeconds==27f,
+                "splash timing remains unchanged");
+        });
+
         Run("0.0.53 opening creates four controls and art placeholders", () =>
         {
             var gm=new GameObject("Opening Test Game").AddComponent<GameManager>();
@@ -41,6 +66,28 @@ partial class MotionRegression
                 }
             }
             Check(cont&&fresh&&settings&&exit,"four menu actions");
+            var menuGroup=gm.preGameUI.GetComponent<CanvasGroup>();
+            Check(!menuGroup.interactable && !menuGroup.blocksRaycasts,
+                "menu is not clickable before fade in completes");
+            bool foundCurtain=false;
+            foreach(var obj in UnityEngine.Object.objects)
+            {
+                var go=obj as GameObject;
+                if(go!=null && go.name=="Opening Black Curtain - Full Window")
+                {
+                    foundCurtain=true;
+                    Near(go.GetComponent<Image>().color.a,1f,
+                        "opening curtain starts opaque black");
+                }
+            }
+            Check(foundCurtain,"full-window black curtain exists");
+            foreach(var button in startButtons)
+            {
+                if(!button.gameObject.name.StartsWith("Opening - "))continue;
+                var text=button.GetComponentInChildren<TextMeshProUGUI>(true);
+                Check(text!=null && text.color.r>.99f && text.color.g>.99f &&
+                      text.color.b>.99f,"all opening buttons use white text");
+            }
             bool hasSky=false,hasCloud=false,hasBackground=false;
             OpeningHeroSplashVideo left=null,right=null;
             foreach (var obj in UnityEngine.Object.objects)
