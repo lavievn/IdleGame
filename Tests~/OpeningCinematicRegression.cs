@@ -247,6 +247,11 @@ partial class MotionRegression
                 sky.anchoredPosition=new Vector2(41f,-24f);
                 sky.sizeDelta=new Vector2(543f,234f);
                 logo.anchoredPosition=new Vector2(-18f,122f);
+                opening.Layout(); // UIManager may call Layout repeatedly.
+                Near(sky.anchoredPosition.x,41f,
+                    "regular layout calls do not undo manual Play Mode drag");
+                Near(sky.sizeDelta.x,543f,
+                    "regular layout calls do not undo Play Mode sizing");
                 var snapshot=opening.CaptureLayout();
                 Check(snapshot!=null&&snapshot.Length==13,
                     "capture all modified rects");
