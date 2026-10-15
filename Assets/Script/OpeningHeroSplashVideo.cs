@@ -18,8 +18,7 @@ public sealed class OpeningHeroSplashVideo : MonoBehaviour
     public const float FrameWidthFraction = .62f;
     public const float FrameCenterOffsetX = .56f;
     public const string MediaFolder = "OpeningSplashArt";
-    private const string LegacyFolder = "OpeningSplash";
-    private const string LegacyVideo = "splash.mp4";
+    // No unprefixed or legacy fallback: left and right must stay exclusive.
     private const int TargetWidth = 640;
     private const int TargetHeight = 960;
 
@@ -108,6 +107,11 @@ public sealed class OpeningHeroSplashVideo : MonoBehaviour
             (leftSide?-FrameCenterOffsetX:FrameCenterOffsetX)*width,
             -height*(1f-FrameHeightFraction)*.5f);
         rect.localScale=Vector3.one;
+        string baseName=leftSide?"07 SPLASH LEFT - OVERSCAN":
+            "08 SPLASH RIGHT - OVERSCAN";
+        string labeled=baseName+" ["+Mathf.RoundToInt(rect.sizeDelta.x)+
+            "x"+Mathf.RoundToInt(rect.sizeDelta.y)+" UI]";
+        if(rect.gameObject.name!=labeled)rect.gameObject.name=labeled;
         if(display!=null && display.enabled)FitMedia();
     }
 
@@ -120,19 +124,25 @@ public sealed class OpeningHeroSplashVideo : MonoBehaviour
         }
     }
 
-    private static string[] GetAvailableFiles()
+    // Strict first-character filter on the basename, case-insensitive.
+    // L_* is only eligible on the left; R_* only on the right.
+    private static string[] GetAvailableFiles(bool left)
     {
         var dir=Path.Combine(Application.streamingAssetsPath,MediaFolder);
-        if(Directory.Exists(dir))
+        if(!Directory.Exists(dir))return new string[0];
+        var files=Directory.GetFiles(dir,"*",SearchOption.TopDirectoryOnly);
+        var found=new System.Collections.Generic.List<string>();
+        string requiredPrefix=left?"L":"R";
+        foreach(var file in files)
         {
-            var files=Directory.GetFiles(dir,"*",SearchOption.TopDirectoryOnly);
-            var found=new System.Collections.Generic.List<string>();
-            foreach(var file in files)if(IsSupported(file))found.Add(file);
-            if(found.Count>0){found.Sort(StringComparer.OrdinalIgnoreCase);return found.ToArray();}
+            if(!IsSupported(file))continue;
+            var name=Path.GetFileName(file);
+            if(!name.StartsWith(requiredPrefix,StringComparison.OrdinalIgnoreCase))
+                continue;
+            found.Add(file);
         }
-        // Compatibility with an existing splash.mp4 from the previous build.
-        var old=Path.Combine(Application.streamingAssetsPath,LegacyFolder,LegacyVideo);
-        return File.Exists(old)?new[]{old}:new string[0];
+        found.Sort(StringComparer.OrdinalIgnoreCase);
+        return found.ToArray();
     }
 
     private static string Choose(string[] candidates,string exclude)
@@ -157,8 +167,12 @@ public sealed class OpeningHeroSplashVideo : MonoBehaviour
         {
             picked=true;
             active=true;
-            chosenPath=Choose(GetAvailableFiles(),otherSidePath);
-            LoadChosen();
+            chosenPath=Choose(GetAvailableFiles(leftSide),otherSidePath);
+            if(chosenPath==null)
+                Debug.LogWarning("[Opening] No "+(leftSide?"L":"R")+
+                    "-prefixed PNG/JPG/MP4 found in StreamingAssets/"+MediaFolder+
+                    ". This splash frame will keep its placeholder.");
+            else LoadChosen();
         }
         float t=Mathf.Clamp01((seconds-OpeningCinematicUI.ShowcaseCueSeconds) / RevealSeconds);
         fade.alpha=t*t*(3f-2f*t);
