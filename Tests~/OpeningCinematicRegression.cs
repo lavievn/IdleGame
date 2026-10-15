@@ -237,10 +237,37 @@ partial class MotionRegression
                 foreach(var obj in UnityEngine.Object.objects)
                     if(obj is OpeningCinematicUI)opening=(OpeningCinematicUI)obj;
                 Check(ui!=null&&opening!=null,"opening installed for layout editor");
+                var before=opening.GetLayoutRects();
+                // Simulate previously hand-adjusted positions before opening
+                // the edit tool; opening editing must never snap them back.
+                before[1].anchoredPosition=new Vector2(23f,-31f);
+                before[6].anchoredPosition=new Vector2(-333f,-28f);
+                before[8].anchoredPosition=new Vector2(-12f,143f);
                 Check(opening.SetLayoutEditing(true),"edit mode can start");
+                Near(before[1].anchoredPosition.x,23f,
+                    "edit toggle preserves the previously adjusted mountain X");
+                Near(before[1].anchoredPosition.y,-31f,
+                    "edit toggle preserves the previously adjusted mountain Y");
+                Near(before[6].anchoredPosition.x,-333f,
+                    "edit toggle preserves previously adjusted splash position");
+                Near(before[8].anchoredPosition.y,143f,
+                    "edit toggle preserves existing logo position");
                 var rects=opening.GetLayoutRects();
                 Check(rects.Length==OpeningCinematicUI.LayoutKeys.Length,
                     "all 13 elements are editable");
+                string problem;
+                Check(opening.ValidateLayoutForSave(out problem),
+                    "aligned opening canvases are safe for saving");
+                var outer=(RectTransform)gm.preGameUI.transform;
+                var savedParentPosition=outer.anchoredPosition;
+                outer.anchoredPosition=new Vector2(400f,0f);
+                Check(!opening.ValidateLayoutForSave(out problem),
+                    "an accidentally shifted menu root blocks unsafe saving");
+                Check(opening.CaptureLayout()==null,
+                    "invalid coordinate spaces cannot be snapshotted");
+                outer.anchoredPosition=savedParentPosition;
+                Check(opening.ValidateLayoutForSave(out problem),
+                    "restored root permits saving again");
                 var sky=rects[0];
                 var logo=rects[8];
                 var originalSize=sky.sizeDelta;
