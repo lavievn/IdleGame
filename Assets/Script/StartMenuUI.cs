@@ -25,7 +25,7 @@ public class StartMenuUI : MonoBehaviour
     private int lastClickFrame = -1;
     private bool entryLocked;
     private bool openingMenuReady;
-    private static readonly Color32 TitleInkColor = new Color32(74,18,20,255);
+    private static readonly Color TitleInkColor = new Color(74f/255f,18f/255f,20f/255f,1f);
 
     public bool IsCinematic => cinematic != null;
 
