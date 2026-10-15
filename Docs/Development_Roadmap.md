@@ -3,7 +3,7 @@
 ### 15/10/2026 — 0.0.54: Chốt định hướng chỉ số nhân vật (chưa sửa code)
 
 - Đã chọn **4 hướng tu luyện:** Công phạt, Hộ thể, Thân pháp, Linh tu. Phần tăng trưởng tự nhiên theo cấp/cảnh giới độc lập điểm tu luyện. UI chính chỉ hiện tổng hướng, chi tiết qua hover/click.
-- Trúng đòn xét một lần: **chính xác tối đa 100% - né tránh tối đa 45%**, giới hạn cấp độ sẽ nghiên cứu sau. Chỉ số hồi phục cần trần; debuff có chỉ số **giảm thời gian chịu trạng thái bất lợi**, không thêm chỉ số tránh khống chế riêng.
+- Trúng đòn xét một lần: **Chính xác cơ bản 80%**, thuộc hướng **Công phạt**; ±2 điểm phần trăm/cấp chênh lệch giữa người tấn công và mục tiêu, giới hạn **±5 cấp** (±10 điểm phần trăm). Chính xác tối đa 100%, né tránh tối đa 45%; trúng = clamp(chính xác − né tránh, 0–100%). Chỉ số hồi phục cần trần; debuff có chỉ số **giảm thời gian chịu trạng thái bất lợi**, không thêm chỉ số tránh khống chế riêng.
 - Ngũ hành bẩm sinh và luật khắc hệ hiện tại được giữ nguyên, không phân điểm linh căn. Chưa chốt hệ số cộng điểm/cap hồi phục/giảm debuff; chưa sửa gameplay/Save.
 - Thiết kế: [Stat_System_Design_0.0.54.md](Stat_System_Design_0.0.54.md).
 
