@@ -10,7 +10,7 @@ Nguồn tên và địa hình: các **ảnh danh mục AI** ở cuộc trò chuy
 - **TV-02 · Huyền Trúc Lâm — Đồi núi:** Ngô Công, Mãng, Dương, Xà.
 - **TV-03 · U Minh Sơn Cốc — Đồi núi:** Ưng, Hùng, Dương, Báo.
 - **TV-04 · Tịch Vân Đài — Đồng bằng:** Ưng, Hồ, Xà, Trư.
-- **TV-05 · Vân Mộng Trạch — Đồi núi:** Ưng, Xà, Hùng, Lộc.
+- **TV-05 · Vân Mộng Trạch — Đồi núi:** Ưng, Xà, Hùng, Thố.
 - **TV-06 · Hắc Tùng Lĩnh — Cao nguyên:** Hùng, Hạc, Ngưu, Ưng.
 - **TV-09 · Tử Điện Sơn — Đồi núi:** Ngô Công, Bức, Mãng, Hùng.
 - **TV-10 · Vọng Nguyệt Cốc — Đồng bằng:** Ưng, Hồ, Xà, Thố.
