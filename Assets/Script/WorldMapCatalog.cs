@@ -1,0 +1,301 @@
+using System;
+using System.Collections.Generic;
+using UnityEngine;
+
+namespace TuTienCore
+{
+    // .54 phase-1: authored data, temporary topology. NOT the final illustrated hex polygons.
+    // This class owns ONLY the new-world path; worldMapVersion=0 retains legacy maps.
+    public sealed class WorldMapNode
+    {
+        public string Id, Continent, Name, TerrainLabel, HumanEnemy;
+        public TerrainType Terrain;
+        public readonly List<string> Animals = new List<string>(7);
+        public readonly List<string> Links = new List<string>();
+        public bool IsBoss, IsStart;
+        public int SuggestedLevel;
+    }
+
+    public static class WorldMapCatalog
+    {
+        private static readonly Dictionary<string, WorldMapNode> nodes =
+            new Dictionary<string, WorldMapNode>(StringComparer.Ordinal);
+        private static readonly List<WorldMapNode> all = new List<WorldMapNode>();
+        private static readonly string[] startIds = { "TV-20", "TL-16", "TM-12", "HT-17" };
+        private static bool initialized;
+
+        public static IList<WorldMapNode> All { get { EnsureLoaded(); return all.AsReadOnly(); } }
+        public static bool Enabled(EntityDataSO hero) => hero != null && hero.worldMapVersion >= 1;
+        public static bool TryGet(string id, out WorldMapNode node)
+        {
+            EnsureLoaded();
+            return nodes.TryGetValue(id ?? "", out node);
+        }
+
+        private static TerrainType BaseTerrain(string label)
+        {
+            switch (label)
+            {
+                case "Cao nguyên": return TerrainType.CaoNguyen;
+                case "Đồi núi": return TerrainType.DoiNui;
+                case "Đồi núi / Cao nguyên": return TerrainType.DoiNui;
+                case "Đầm lầy": return TerrainType.DamLay;
+                case "Rừng rậm": return TerrainType.RungRam;
+                case "Sa mạc": return TerrainType.SaMac;
+                case "Hồ nước": return TerrainType.HoNuoc;
+                case "Biển": return TerrainType.Bien;
+                // Thảo nguyên is a biotope variant of the current Đồng bằng enum.
+                default: return TerrainType.DongBang;
+            }
+        }
+
+        private static RegionTheme MusicTheme(TerrainType terrain)
+        {
+            switch (terrain)
+            {
+                case TerrainType.CaoNguyen: return RegionTheme.CaoSon;
+                case TerrainType.DoiNui: return RegionTheme.CaoSon;
+                case TerrainType.DamLay: return RegionTheme.UTrach;
+                case TerrainType.RungRam: return RegionTheme.SonLam;
+                case TerrainType.SaMac: return RegionTheme.HoangMac;
+                case TerrainType.Bien: return RegionTheme.HaiVuc;
+                default: return RegionTheme.BinhNguyen;
+            }
+        }
+
+        private static void EnsureLoaded()
+        {
+            if (initialized) return;
+            initialized = true;
+            TextAsset asset = Resources.Load<TextAsset>("WorldMapCatalog");
+            if (asset == null)
+            {
+                Debug.LogError("[WorldMap] Missing Resources/WorldMapCatalog.txt; new-world mode unavailable.");
+                return;
+            }
+            string[] lines = asset.text.Split('\n');
+            foreach (string raw in lines)
+            {
+                string line = raw.TrimEnd('\r');
+                if (string.IsNullOrEmpty(line) || line[0] == '#') continue;
+                string[] f = line.Split('\t');
+                if (f.Length != 8) { Debug.LogError("[WorldMap] Bad catalog row: " + line); continue; }
+                if (nodes.ContainsKey(f[0])) { Debug.LogError("[WorldMap] Duplicate " + f[0]); continue; }
+                WorldMapNode n = new WorldMapNode
+                {
+                    Id = f[0], Continent = f[1], Name = f[2], TerrainLabel = f[3],
+                    Terrain = BaseTerrain(f[3]), HumanEnemy = f[5],
+                    IsBoss = f[6] == "B", IsStart = f[7] == "S"
+                };
+                foreach (string animal in f[4].Split(','))
+                {
+                    string a = animal.Trim();
+                    if (!string.IsNullOrEmpty(a) && !n.Animals.Contains(a)) n.Animals.Add(a);
+                }
+                if (n.Animals.Count != 7) { Debug.LogError("[WorldMap] Requires 7 species: " + n.Id); continue; }
+                nodes.Add(n.Id, n);
+                all.Add(n);
+            }
+            if (all.Count != 133) Debug.LogError("[WorldMap] Expected 133 nodes, got " + all.Count);
+            BuildTemporaryLinks();
+        }
+
+        private static void Link(WorldMapNode a, WorldMapNode b)
+        {
+            if (a == null || b == null || a == b) return;
+            if (!a.Links.Contains(b.Id)) a.Links.Add(b.Id);
+            if (!b.Links.Contains(a.Id)) b.Links.Add(a.Id);
+        }
+
+        // Not cartographic adjacency: a connected testing scaffold until the
+        // user's hex borders and node coordinates are exported as structured data.
+        // Boss nodes have exactly one connection, far from all declared starts.
+        private static void BuildTemporaryLinks()
+        {
+            var continents = new Dictionary<string, List<WorldMapNode>>();
+            foreach (var n in all)
+            {
+                if (!continents.ContainsKey(n.Continent)) continents[n.Continent] = new List<WorldMapNode>();
+                if (!n.IsBoss) continents[n.Continent].Add(n);
+            }
+            foreach (var group in continents.Values)
+            {
+                group.Sort((a, b) => String.CompareOrdinal(a.Id, b.Id));
+                for (int i = 0; i < group.Count; ++i)
+                {
+                    if (i > 0) Link(group[i], group[i - 1]);
+                    if (i > 1) Link(group[i], group[i - 2]);
+                }
+            }
+            // Provisional land/sea passageways, NOT nation borders.
+            string[] order = { "TV", "TL", "XD", "TM", "HT" };
+            for (int i = 0; i < order.Length - 1; i++)
+            {
+                WorldMapNode a = null, b = null;
+                foreach (var n in all)
+                {
+                    if (n.IsBoss) continue;
+                    if (a == null && n.Id.StartsWith(order[i] + "-")) a = n;
+                    if (b == null && n.Id.StartsWith(order[i + 1] + "-")) b = n;
+                }
+                // Connect edge nodes at the end/beginning, avoiding starting nodes.
+                if (a != null && b != null)
+                {
+                    var left = continents[a.Continent];
+                    var right = continents[b.Continent];
+                    Link(left[left.Count - 1], right[0]);
+                }
+            }
+            // Boss is a single-way leaf, never directly adjacent to a birth node.
+            foreach (var boss in all)
+            {
+                if (!boss.IsBoss) continue;
+                var group = continents[boss.Continent];
+                WorldMapNode start = null;
+                foreach (var n in group) if (n.IsStart) { start = n; break; }
+                // Farthest in the temporary sorted chain from its region's birth node.
+                int startIndex = start == null ? group.Count / 2 : group.IndexOf(start);
+                WorldMapNode attach = startIndex < group.Count / 2 ? group[group.Count - 1] : group[0];
+                if (attach.IsStart && group.Count > 1) attach = group[1];
+                Link(boss, attach);
+            }
+            // Fixed, repeatable test levels from nearest birth point, never from Hero level.
+            var distance = new Dictionary<string, int>();
+            var queue = new Queue<WorldMapNode>();
+            foreach (var id in startIds)
+            {
+                WorldMapNode start;
+                if (nodes.TryGetValue(id, out start))
+                {
+                    distance[id] = 0;
+                    queue.Enqueue(start);
+                }
+            }
+            while (queue.Count > 0)
+            {
+                WorldMapNode current = queue.Dequeue();
+                foreach (var id in current.Links)
+                {
+                    if (distance.ContainsKey(id)) continue;
+                    distance[id] = distance[current.Id] + 1;
+                    queue.Enqueue(nodes[id]);
+                }
+            }
+            foreach (var n in all)
+            {
+                int depth;
+                n.SuggestedLevel = n.IsBoss ? 120 :
+                    1 + 3 * (distance.TryGetValue(n.Id, out depth) ? depth : 20);
+            }
+        }
+
+        private static void ApplyMap(EntityDataSO hero, WorldMapNode node)
+        {
+            hero.worldMapId = node.Id;
+            hero.mapName = node.Name;
+            hero.mapTerrain = node.Terrain;
+            hero.regionTheme = MusicTheme(node.Terrain);
+            hero.regionIndex = -1;
+            hero.mapNumber = 1; // Legacy counter is NOT a world-map position.
+            hero.difficulty = 0;
+            hero.completedWavesInMap = 0;
+            hero.worldMapWaveProgress = 0;
+            hero.isDirty = true;
+        }
+
+        public static bool StartNew(EntityDataSO hero)
+        {
+            if (hero == null) return false;
+            EnsureLoaded();
+            if (all.Count == 0) return false;
+            // SM-11 is unresolved: never silently translate it to XD-11.
+            var valid = new List<WorldMapNode>();
+            foreach (var id in startIds) { WorldMapNode n; if (nodes.TryGetValue(id, out n)) valid.Add(n); }
+            if (valid.Count == 0) return false;
+            WorldMapNode selected = valid[UnityEngine.Random.Range(0, valid.Count)];
+            hero.worldMapVersion = 1;
+            hero.worldMapVisited = new List<string> { selected.Id };
+            hero.worldMapCleared = new List<string>();
+            ApplyMap(hero, selected);
+            return true;
+        }
+
+        public static void Normalize(EntityDataSO hero)
+        {
+            if (!Enabled(hero)) return;
+            WorldMapNode node;
+            if (!TryGet(hero.worldMapId, out node))
+            {
+                // Do not reroll a nonexistent saved location or corrupt old saves.
+                Debug.LogWarning("[WorldMap] Unknown saved node: " + hero.worldMapId);
+                return;
+            }
+            if (hero.worldMapVisited == null) hero.worldMapVisited = new List<string>();
+            if (hero.worldMapCleared == null) hero.worldMapCleared = new List<string>();
+            if (!hero.worldMapVisited.Contains(node.Id)) { hero.worldMapVisited.Add(node.Id); hero.isDirty = true; }
+            int progress = Mathf.Clamp(hero.worldMapWaveProgress, 0, 5);
+            if (hero.worldMapWaveProgress != progress) hero.isDirty = true;
+            hero.worldMapWaveProgress = progress;
+            if (progress >= 5 && !hero.worldMapCleared.Contains(node.Id))
+            {
+                hero.worldMapCleared.Add(node.Id);
+                hero.isDirty = true;
+            }
+            hero.mapName = node.Name;
+            hero.mapTerrain = node.Terrain;
+            hero.regionTheme = MusicTheme(node.Terrain);
+            hero.regionIndex = -1;
+        }
+
+        public static bool CompleteWave(EntityDataSO hero)
+        {
+            if (!Enabled(hero)) return false;
+            Normalize(hero);
+            if (hero.worldMapWaveProgress >= 5) return false;
+            hero.worldMapWaveProgress++;
+            hero.completedWavesInMap = Mathf.Min(4, hero.worldMapWaveProgress);
+            hero.isDirty = true;
+            if (hero.worldMapWaveProgress < 5) return false;
+            if (!hero.worldMapCleared.Contains(hero.worldMapId))
+                hero.worldMapCleared.Add(hero.worldMapId);
+            return true;
+        }
+
+        public static void RestartAfterDefeat(EntityDataSO hero)
+        {
+            if (!Enabled(hero)) return;
+            // During phase 1 stay on the current node; never lose past clear history.
+            hero.worldMapWaveProgress = 0;
+            hero.completedWavesInMap = 0;
+            hero.mapVisits++;
+            hero.isDirty = true;
+            Normalize(hero);
+        }
+
+        public static bool IsCleared(EntityDataSO hero, string id)
+            => Enabled(hero) && hero.worldMapCleared != null && hero.worldMapCleared.Contains(id);
+
+        public static string TravelBlockReason(EntityDataSO hero, string id)
+        {
+            if (!Enabled(hero)) return "Nhân vật đang ở chế độ bản đồ cũ.";
+            WorldMapNode current, target;
+            if (!TryGet(hero.worldMapId, out current) || !TryGet(id, out target))
+                return "Không tìm thấy map hợp lệ.";
+            if (id == hero.worldMapId) return "Bạn đang ở map này.";
+            if (!current.Links.Contains(id)) return "Chỉ được đi tới map kề trực tiếp.";
+            if (!IsCleared(hero, current.Id)) return "Cần hoàn thành 5 wave của map hiện tại ít nhất một lần.";
+            if (target.IsBoss) return "Map Boss endgame: chưa chốt vật phẩm / cảnh giới mở khóa.";
+            return null;
+        }
+
+        public static bool TryTravel(EntityDataSO hero, string targetId)
+        {
+            if (TravelBlockReason(hero, targetId) != null) return false;
+            WorldMapNode target;
+            if (!TryGet(targetId, out target)) return false;
+            ApplyMap(hero, target);
+            if (!hero.worldMapVisited.Contains(targetId)) hero.worldMapVisited.Add(targetId);
+            return true;
+        }
+    }
+}
