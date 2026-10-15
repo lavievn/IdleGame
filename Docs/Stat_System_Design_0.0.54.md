@@ -6,13 +6,13 @@
 
 Hero, nhân vật đồng hành, quái và Boss cùng một hệ định nghĩa chỉ số; không bắt buộc mọi giá trị khác 0 hoặc cùng hiển thị UI.
 
-**Nhóm công kích:** công vật lý, công pháp thuật, tốc độ đánh, xác suất chí mạng, sát thương chí mạng, tăng sát thương vật lý (%), tăng sát thương pháp thuật (%).
+**Nhóm công kích:** công vật lý, công pháp thuật, tốc độ đánh, **chính xác (%)**, xác suất chí mạng, sát thương chí mạng, tăng sát thương vật lý (%), tăng sát thương pháp thuật (%).
 
 **Nhóm sinh tồn:** HP tối đa, hồi HP, Giáp, Kháng phép, hút sinh lực (%).
 
 **Nhóm linh lực & vận chiêu:** MP tối đa, hồi MP, tốc độ vận chiêu, giảm thời gian hồi chiêu (%).
 
-**Nhóm cơ động & trúng đòn:** tốc độ di chuyển, chính xác (%), né tránh (%).
+**Nhóm cơ động:** tốc độ di chuyển, né tránh (%). Chính xác thuộc **Công phạt**, không phải Thân pháp.
 
 **Nhóm trạng thái:** giảm thời gian chịu trạng thái bất lợi (debuff duration reduction).
 
@@ -26,7 +26,7 @@ Một điểm vào **hướng** làm tăng **nhiều chỉ số liên quan**, kh
 
 | Hướng | Các chỉ số có thể nhận từ điểm hướng |
 | --- | --- |
-| Công phạt | Công vật lý, công pháp thuật, tốc độ đánh, sát thương chí mạng |
+| Công phạt | Công vật lý, công pháp thuật, tốc độ đánh, sát thương chí mạng, **chính xác** |
 | Hộ thể | HP tối đa, Giáp, Kháng phép, hồi HP, hút sinh lực |
 | Thân pháp | Tốc độ di chuyển, né tránh, tỷ lệ chí mạng |
 | Linh tu | MP tối đa, hồi MP, tốc độ vận chiêu, giảm hồi chiêu |
@@ -46,17 +46,41 @@ Một điểm vào **hướng** làm tăng **nhiều chỉ số liên quan**, kh
 
 ## 4. Giới hạn và phép tính trúng đòn
 
-**Đã chốt tạm:** chính xác không quá **100%**, né tránh không quá **45%** trong hệ thống cơ bản (chưa áp dụng hệ số cấp).
+**Đã chốt tạm (15/10/2026):**
+
+- **Chính xác cơ bản của mọi nhân vật:** **80%** (khi chưa có nguồn cộng khác).
+- **Chính xác thuộc hướng Công phạt**: khi người chơi đầu tư điểm Công phạt, Chính xác là một chỉ số được tăng cùng các chỉ số khác. **Mỗi điểm Công phạt tăng Chính xác bao nhiêu vẫn chưa chốt.**
+- **Chênh lệch cấp độ** được xét khi A tấn công B: A cao hơn B một cấp thì Chính xác tăng **2 điểm phần trăm**; thấp hơn một cấp thì giảm **2 điểm phần trăm**. Chỉ tính tối đa **5 cấp chênh lệch mỗi chiều**, nên phần điều chỉnh cấp nằm trong **[-10, +10] điểm phần trăm**.
+- **Trần Chính xác hiệu lực:** **100%**; **trần Né tránh hiệu lực:** **45%**. Hai giới hạn xét độc lập, sau đó chỉ tung **một lần** để xác định có trúng hay không.
 
 ```text
-accuracy = clamp(accuracy, 0%, 100%)
-dodge    = clamp(dodge, 0%, 45%)
-hitRate  = clamp(accuracy - dodge, 0%, 100%)
+levelDifference = clamp(attacker.level - defender.level, -5, +5)
+levelAccuracy   = levelDifference * 2 điểm phần trăm
+accuracy        = clamp(80% + levelAccuracy
+                        + accuracyFromCultivation
+                        + accuracyFromEquipment
+                        + accuracyFromOtherModifiers, 0%, 100%)
+dodge           = clamp(defenderDodge, 0%, 45%)
+hitRate         = clamp(accuracy - dodge, 0%, 100%)
 ```
 
-- Đây là **một lần xét trúng**, không dùng thêm lần tung né riêng sau khi đã xét chính xác.
-- Chưa chốt giá trị chính xác bẩm sinh, nguồn cộng chính xác, tác dụng buff/debuff và trường hợp đòn không thể né.
-- **Chênh lệch cấp độ hai bên:** dự định có hiệu ứng điều chỉnh khả năng né/trúng sau này. **Chưa chốt công thức hoặc dấu hiệu ứng**, không áp dụng tạm hệ số vô căn cứ.
+Ví dụ **chưa cộng Công phạt, trang bị hoặc né tránh**:
+
+| Cấp độ người tấn công so với mục tiêu | Chính xác | Xác suất trúng nếu mục tiêu né 0% |
+| --- | ---: | ---: |
+| Kém từ 5 cấp trở lên | 70% | 70% |
+| Kém 2 cấp | 76% | 76% |
+| Bằng cấp | 80% | 80% |
+| Hơn 2 cấp | 84% | 84% |
+| Hơn từ 5 cấp trở lên | 90% | 90% |
+
+Nếu đối thủ né **25%**, cùng cấp và chưa cộng Chính xác thì tỉ lệ trúng = **80% - 25% = 55%**. Nếu né tối đa 45%, cùng cấp và chưa cộng Chính xác thì còn **35%**.
+
+**Lưu ý cân bằng:** 80% cơ bản nghĩa là ngay cả khi mục tiêu không có né tránh, hai bên ngang cấp vẫn hụt 20% số đòn trung bình. Đây là giá trị người phát triển đã chọn, cần nghiệm thu cảm giác đòn đánh và hiệu ứng `Miss` trong Play Mode, không tự nâng lên 100%. Chênh lệch cấp độ thay đổi Chính xác, **không tự cộng hoặc trừ trực tiếp vào Né tránh** trong luật hiện tại.
+
+- Công thức xử lý là **một lần xét trúng**, không tung thêm lượt né riêng sau khi đã xét Chính xác.
+- Nguồn cộng khác và ngoại lệ kỹ năng (đòn chắc chắn trúng, phép diện rộng...) chưa chốt; các trường `accuracyFrom...` là ví dụ nguồn cộng, không phải công thức phân điểm đã khóa.
+- Chênh lệch cấp **không** được cộng vô hạn và cũng không ảnh hưởng nguyên tắc ngũ hành/khắc hệ.
 - **Hồi phục và né tránh cần giới hạn:** với HP/MP hồi phục, người phát triển cũng muốn giới hạn để tránh vượt cân bằng. Chưa chốt giới hạn hồi HP/s, hồi MP/s hoặc hút sinh lực; không dùng 45% né để suy ra các mức trần này.
 - **Cần làm rõ sau:** ý tưởng xét chênh lệch cấp độ cho hồi phục không thể diễn giải giống né tránh (hồi phục có thể hoạt động khi không có đối thủ). Không gắn phụ thuộc `target.level` cho hồi phục nếu chưa có luật rõ ràng.
 
