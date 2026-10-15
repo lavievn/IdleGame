@@ -195,8 +195,21 @@ public class CombatManager : MonoBehaviour
             info.go = m;
             info.controller = m.GetComponent<MonsterController>();
             info.data = Instantiate(baseMonsterData);
-            int spread = CombatBalance.LevelSpread(runtimeHeroData.currentLevel);
-            info.data.currentLevel = Mathf.Clamp(runtimeHeroData.currentLevel + Random.Range(-spread, spread + 1), 1, 999);
+            WorldMapNode worldNode = null;
+            bool onWorldMap = WorldMapCatalog.Enabled(runtimeHeroData) &&
+                WorldMapCatalog.TryGet(runtimeHeroData.worldMapId, out worldNode);
+            if (onWorldMap)
+            {
+                // Per-map test band does not scale with the Hero's level.
+                info.data.currentLevel = Mathf.Clamp(worldNode.SuggestedLevel +
+                    Random.Range(-1, 2), 1, 999);
+            }
+            else
+            {
+                int spread = CombatBalance.LevelSpread(runtimeHeroData.currentLevel);
+                info.data.currentLevel = Mathf.Clamp(runtimeHeroData.currentLevel +
+                    Random.Range(-spread, spread + 1), 1, 999);
+            }
             info.data.baseHealth = CombatBalance.MonsterHealth(info.data.currentLevel);
             info.data.baseDamage = CombatBalance.MonsterAttack(info.data.currentLevel);
             info.data.baseAttackSpeed = CombatBalance.MonsterSpeed(info.data.currentLevel);
@@ -206,7 +219,27 @@ public class CombatManager : MonoBehaviour
             info.data.entityName = NameDatabase.GetRandomName(info.data.gender);
             info.data.race = SynergyMath.GenerateMonsterRace(runtimeHeroData.mapTerrain);
             SynergyMath.GenerateRootProfile(info.data);
-            info.data.entityName = WorldNames.RandomMonsterName(info.data, runtimeHeroData.mapTerrain);
+            if (onWorldMap)
+            {
+                // Draw one candidate from the current node's seven species or
+                // one hostile human role. Bosses require separate future logic.
+                int index = Random.Range(0, 8);
+                if (index == 7)
+                {
+                    info.data.race = RaceType.NhanToc;
+                    info.data.monsterAnimal = "";
+                    info.data.monsterClass = MonsterClass.Nhan;
+                    info.data.entityName = worldNode.HumanEnemy + " " + info.data.entityName;
+                }
+                else
+                {
+                    if (info.data.race == RaceType.NhanToc) info.data.race = RaceType.YeuThu;
+                    info.data.monsterAnimal = worldNode.Animals[index];
+                    info.data.monsterClass = WorldNames.ClassifyAnimal(info.data.monsterAnimal);
+                    info.data.entityName = WorldNames.MonsterName(info.data, info.data.monsterAnimal);
+                }
+            }
+            else info.data.entityName = WorldNames.RandomMonsterName(info.data, runtimeHeroData.mapTerrain);
             info.maxHP = info.data.GetCalculatedHealth();
             info.currentHP = info.maxHP;
             if (info.controller != null) { info.controller.UpdateHealthBar(info.currentHP, info.maxHP); info.controller.SetIdentityVisual(info.data); }
