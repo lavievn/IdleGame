@@ -112,7 +112,7 @@ public sealed class OpeningCinematicUI : MonoBehaviour
                 return false;
             layoutEditing=true;
             sky.localScale=far.localScale=near.localScale=Vector3.one;
-            Layout();
+            Layout(true);
             if(blackCurtain!=null)blackCurtain.gameObject.SetActive(false);
             if(backdropFade!=null)backdropFade.alpha=1f;
             if(menu!=null)menu.PrepareLayoutEditing();
@@ -135,7 +135,7 @@ public sealed class OpeningCinematicUI : MonoBehaviour
         if(!layoutEditing)return;
         // Reset live transforms to the saved layout without restarting Play.
         if(menu!=null)menu.ForceLayoutForEditor();
-        Layout();
+        Layout(true);
     }
 
     public static OpeningCinematicUI Install(GameManager gm, StartMenuUI startMenu,
@@ -271,9 +271,9 @@ public sealed class OpeningCinematicUI : MonoBehaviour
         rect.SetAsLastSibling();
     }
 
-    public void Layout()
+    public void Layout(bool force=false)
     {
-        if(backdrop==null||layoutEditing)return;
+        if(backdrop==null||(layoutEditing&&!force))return;
         float w=Mathf.Max(320f,ManagementWindowLayout.CombatPixels(Screen.width));
         float h=Mathf.Max(240f,ManagementWindowLayout.CombatHeight(Screen.height));
         backdrop.anchorMin=backdrop.anchorMax=backdrop.pivot=Vector2.zero;
