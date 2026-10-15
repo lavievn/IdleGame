@@ -94,12 +94,12 @@ partial class MotionRegression
             {
                 var go=obj as GameObject;
                 if(go==null)continue;
-                if(go.name=="01 SKY - full background")hasSky=true;
-                if(go.name=="05 FRONT CLOUDS LEFT")hasCloud=true;
+                if(go.name.StartsWith("01 SKY - full background ["))hasSky=true;
+                if(go.name.StartsWith("05 FRONT CLOUDS LEFT ["))hasCloud=true;
                 if(go.name=="00 VIDEO BACKGROUND - full window")hasBackground=true;
-                if(go.name=="07 SPLASH LEFT - OVERSCAN")
+                if(go.name.StartsWith("07 SPLASH LEFT - OVERSCAN ["))
                     left=go.GetComponent<OpeningHeroSplashVideo>();
-                if(go.name=="08 SPLASH RIGHT - OVERSCAN")
+                if(go.name.StartsWith("08 SPLASH RIGHT - OVERSCAN ["))
                     right=go.GetComponent<OpeningHeroSplashVideo>();
             }
             Check(hasSky&&hasCloud&&hasBackground&&left!=null&&right!=null,
@@ -177,8 +177,10 @@ partial class MotionRegression
             System.IO.Directory.CreateDirectory(dir);
             try
             {
-                System.IO.File.WriteAllBytes(System.IO.Path.Combine(dir,"a.png"),new byte[]{1,2,3});
-                System.IO.File.WriteAllBytes(System.IO.Path.Combine(dir,"b.jpg"),new byte[]{4,5,6});
+                System.IO.File.WriteAllBytes(System.IO.Path.Combine(dir,"L_a.png"),new byte[]{1,2,3});
+                System.IO.File.WriteAllBytes(System.IO.Path.Combine(dir,"R_b.jpg"),new byte[]{4,5,6});
+                System.IO.File.WriteAllBytes(System.IO.Path.Combine(dir,"ignore.png"),new byte[]{7,8,9});
+                System.IO.File.WriteAllBytes(System.IO.Path.Combine(dir,"L_extra.mp4"),new byte[]{10,11,12});
                 Application.streamingAssetsPath=temp;
                 var parent=new GameObject("Two Splash Layers",typeof(RectTransform));
                 ((RectTransform)parent.transform).sizeDelta=new Vector2(800f,450f);
@@ -189,18 +191,44 @@ partial class MotionRegression
                 Check(!string.IsNullOrEmpty(left.CurrentPath) &&
                       !string.IsNullOrEmpty(right.CurrentPath),"both panels select media");
                 Check(left.CurrentPath!=right.CurrentPath,"avoid duplicate choices");
+                Check(System.IO.Path.GetFileName(left.CurrentPath).StartsWith("L",
+                    StringComparison.OrdinalIgnoreCase),"left side only loads L prefix");
+                Check(System.IO.Path.GetFileName(right.CurrentPath).StartsWith("R",
+                    StringComparison.OrdinalIgnoreCase),"right side only loads R prefix");
                 string previousLeft=left.CurrentPath;
                 left.Tick(100f,null);
                 Check(left.CurrentPath==previousLeft,"no automatic slideshow or scene cuts");
                 left.ResetToTitle();right.ResetToTitle();
                 Check(left.CurrentPath==null && right.CurrentPath==null,
                     "return to menu permits new choices");
+                // Strict sides do not fall back to unprefixed legacy files.
+                System.IO.File.Delete(System.IO.Path.Combine(dir,"R_b.jpg"));
+                right.Tick(27f,null);
+                Check(right.CurrentPath==null,
+                    "missing R file keeps placeholder, never loads L or unprefixed");
+                right.ResetToTitle();
             }
             finally
             {
                 Application.streamingAssetsPath=previous;
                 if(System.IO.Directory.Exists(temp))System.IO.Directory.Delete(temp,true);
             }
+        });
+
+        Run("0.0.53 inspector reference sizes retain responsive layout",()=>{
+            var far=new Vector2(944f,279f);
+            var original=OpeningCinematicUI.ResolveLayerSize(far,800f,450f,
+                Vector2.zero);
+            Near(original.x,944f,"reference width");
+            Near(original.y,279f,"reference height");
+            var scaled=OpeningCinematicUI.ResolveLayerSize(far,600f,337.5f,
+                Vector2.zero);
+            Near(scaled.x,708f,"width scales with window");
+            Near(scaled.y,209.25f,"height scales with window");
+            var fallback=OpeningCinematicUI.ResolveLayerSize(Vector2.zero,600f,
+                337.5f,new Vector2(720f,210f));
+            Near(fallback.x,720f,"zero width uses old layout fallback");
+            Near(fallback.y,210f,"zero height uses old layout fallback");
         });
 
         Run("0.0.53 cloud feather can be configured without changing source assets",()=>{
