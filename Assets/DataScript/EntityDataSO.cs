@@ -171,8 +171,21 @@ public class EntityDataSO : ScriptableObject
     public int mapProgressVersion = 0;
     public int difficulty = 0; // 0: Bình thường, 1: Khó
 
+    // World Map .54: 0 = pre-.54 legacy sequential run (keeps old saves untouched).
+    // Do not infer a world node from the legacy mapNumber.
+    public int worldMapVersion = 0;
+    public string worldMapId = "";
+    public int worldMapWaveProgress = 0; // 0..5, 5 = permanently clearable
+    public List<string> worldMapVisited = new List<string>();
+    public List<string> worldMapCleared = new List<string>();
+
     public void NormalizeMapProgress()
     {
+        if (WorldMapCatalog.Enabled(this))
+        {
+            WorldMapCatalog.Normalize(this);
+            return;
+        }
         if (mapProgressVersion == 0) { mapNumber = 1; completedWavesInMap = 0; mapProgressVersion = 1; isDirty = true; }
         mapNumber = System.Math.Max(1, mapNumber);
         mapVisits = MapVisits;
@@ -184,6 +197,7 @@ public class EntityDataSO : ScriptableObject
     }
     public bool CompleteWave()
     {
+        if (WorldMapCatalog.Enabled(this)) return WorldMapCatalog.CompleteWave(this);
         NormalizeMapProgress();
         completedWavesInMap++;
         bool changed = completedWavesInMap == 5;
@@ -195,6 +209,7 @@ public class EntityDataSO : ScriptableObject
 
     public void RestartRegionAfterDefeat()
     {
+        if (WorldMapCatalog.Enabled(this)) { WorldMapCatalog.RestartAfterDefeat(this); return; }
         NormalizeMapProgress();
         mapNumber = ((mapNumber - 1) / 5) * 5 + 1;
         completedWavesInMap = 0;
