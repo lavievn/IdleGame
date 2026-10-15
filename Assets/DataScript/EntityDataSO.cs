@@ -175,7 +175,8 @@ public class EntityDataSO : ScriptableObject
     // Do not infer a world node from the legacy mapNumber.
     public int worldMapVersion = 0;
     public string worldMapId = "";
-    public int worldMapWaveProgress = 0; // 0..5, 5 = permanently clearable
+    public int worldMapWaveProgress = 0; // 0..5 waves credited for first clear
+    public int worldMapLoopWave = 1; // current round 1..5 (repeats indefinitely)
     public List<string> worldMapVisited = new List<string>();
     public List<string> worldMapCleared = new List<string>();
 
