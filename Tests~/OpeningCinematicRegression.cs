@@ -259,6 +259,16 @@ partial class MotionRegression
                 Check(opening.ValidateLayoutForSave(out problem),
                     "aligned opening canvases are safe for saving");
                 var outer=(RectTransform)gm.preGameUI.transform;
+                // Simulate UIManager.Start moving the title to another HUD
+                // AFTER the scenery was built. All layers must follow it.
+                var movedCanvas=new GameObject("Runtime HUD Reparent",
+                    typeof(RectTransform));
+                outer.SetParent(movedCanvas.transform,false);
+                opening.EnsureOpeningSiblingsParent();
+                Check(opening.transform.parent==outer.parent,
+                    "opening backdrop is sibling of menu after HUD reparent");
+                Check(opening.ValidateLayoutForSave(out problem),
+                    "HUD reparent keeps save coordinate space valid");
                 var savedParentPosition=outer.anchoredPosition;
                 outer.anchoredPosition=new Vector2(400f,0f);
                 Check(!opening.ValidateLayoutForSave(out problem),
