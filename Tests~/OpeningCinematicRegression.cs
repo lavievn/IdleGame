@@ -62,8 +62,31 @@ partial class MotionRegression
             var rightBox=(RectTransform)right.transform;
             Check(leftBox.anchoredPosition.x<0f && rightBox.anchoredPosition.x>0f,
                 "splash frames remain on opposite sides");
-            Check(leftBox.sizeDelta.y>338f && rightBox.sizeDelta.y>338f,
-                "overscan panels are larger than the viewport height");
+            // The red-marked target is the LOWER portion of the window:
+            // no overflow above its top line or below the game bottom.
+            foreach(float w in new[]{600f,800f,1150f})
+            {
+                float h=Mathf.RoundToInt(w*9f/16f);
+                left.Layout(w,h);
+                right.Layout(w,h);
+                foreach(var panel in new[]{leftBox,rightBox})
+                {
+                    float bottom=panel.anchoredPosition.y-panel.sizeDelta.y*.5f;
+                    float top=panel.anchoredPosition.y+panel.sizeDelta.y*.5f;
+                    Near(bottom,-h*.5f,"splash bottom aligned to viewport",.02f);
+                    Near(top,h*(OpeningHeroSplashVideo.FrameHeightFraction-.5f),
+                        "splash top remains below upper quarter",.02f);
+                    Near(panel.sizeDelta.y,h*OpeningHeroSplashVideo.FrameHeightFraction,
+                        "splash uses only 76% of viewport height",.02f);
+                }
+                float leftInner=leftBox.anchoredPosition.x+leftBox.sizeDelta.x*.5f;
+                float rightInner=rightBox.anchoredPosition.x-rightBox.sizeDelta.x*.5f;
+                Check(leftInner<-w*.2f && rightInner>w*.2f,
+                    "inner edges stay clear of central menu");
+                Check(leftBox.anchoredPosition.x-leftBox.sizeDelta.x*.5f<-w*.5f &&
+                      rightBox.anchoredPosition.x+rightBox.sizeDelta.x*.5f>w*.5f,
+                    "overscan is horizontal only");
+            }
             Check(leftBox.sizeDelta.x==rightBox.sizeDelta.x,
                 "the two panels have equal width");
             var leftPos=leftBox.anchoredPosition;
