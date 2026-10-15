@@ -447,6 +447,9 @@ public sealed class OpeningCinematicUI : MonoBehaviour
         if(blackCurtain!=null)blackCurtain.transform.SetAsLastSibling();
         if(menuFade!=null)menuFade.alpha=0f;
         sky.localScale=far.localScale=near.localScale=Vector3.one;
-        Layout();
+        // Restore BOTH opening layers and title/buttons. Without this,
+        // unsaved manual edits to the buttons remain until Play Mode ends.
+        if(menu!=null)menu.ForceLayoutForEditor();
+        else Layout();
     }
 }
