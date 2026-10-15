@@ -12,6 +12,11 @@ using TMPro;
 public sealed class OpeningHeroSplashVideo : MonoBehaviour
 {
     public const float RevealSeconds = 1.4f;
+    // Each side fills only the lower ~76% of the opening; the top quarter
+    // stays clear for the sky and logo. Overscan is horizontal only.
+    public const float FrameHeightFraction = .76f;
+    public const float FrameWidthFraction = .62f;
+    public const float FrameCenterOffsetX = .56f;
     public const string MediaFolder = "OpeningSplashArt";
     private const string LegacyFolder = "OpeningSplash";
     private const string LegacyVideo = "splash.mp4";
@@ -94,11 +99,14 @@ public sealed class OpeningHeroSplashVideo : MonoBehaviour
         if(rect==null)return;
         width=Mathf.Max(320f,width);
         height=Mathf.Max(240f,height);
-        // Both frames extend 20-25% outside the left/right viewport edges,
-        // leaving the center clear for the title and four menu buttons.
+        // Keep the ENTIRE frame between the lower window edge and the
+        // 76%-height line. The frame may overflow left/right only; no top
+        // or bottom overscan. RectMask2D clips images/video to this region.
         rect.anchorMin=rect.anchorMax=rect.pivot=new Vector2(.5f,.5f);
-        rect.sizeDelta=new Vector2(width*.68f,height*1.15f);
-        rect.anchoredPosition=new Vector2((leftSide?-.415f:.415f)*width,-height*.02f);
+        rect.sizeDelta=new Vector2(width*FrameWidthFraction,height*FrameHeightFraction);
+        rect.anchoredPosition=new Vector2(
+            (leftSide?-FrameCenterOffsetX:FrameCenterOffsetX)*width,
+            -height*(1f-FrameHeightFraction)*.5f);
         rect.localScale=Vector3.one;
         if(display!=null && display.enabled)FitMedia();
     }
