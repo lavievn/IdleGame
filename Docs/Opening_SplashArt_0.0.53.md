@@ -27,7 +27,7 @@ Nếu thư mục mới trống nhưng vẫn có `Assets/StreamingAssets/OpeningS
 
 ## 2. Vị trí và hoạt ảnh
 
-- **Hai khung độc lập:** `07 SPLASH LEFT - OVERSCAN` và `08 SPLASH RIGHT - OVERSCAN`. Mỗi khung có chiều rộng **68%** và chiều cao **115%** của vùng mở đầu. Trung tâm ở khoảng **-41,5%/+41,5% chiều rộng** so với trung tâm cửa sổ: phần ngoài tràn qua mép trái/phải. Để trống phần giữa cho logo và bốn nút.
+- **Hai khung độc lập:** `07 SPLASH LEFT - OVERSCAN` và `08 SPLASH RIGHT - OVERSCAN`. Mỗi khung rộng **62%**, cao **76% chiều cao** vùng mở đầu và **căn sát đáy**. Tâm nằm tại **−56%/+56% chiều ngang** tính từ tâm cửa sổ. Khung chỉ tràn ra ngoài **mép trái/phải**, tuyệt đối không tràn lên trên hay xuống dưới: phần trên khoảng **24% chiều cao** vẫn để trống cho trời, núi và logo. Mép trong của mỗi khung nằm ở khoảng 25%/75% bề ngang để chừa phần giữa cho bốn nút.
 - **Từ giây 27:** hai khung đồng thời **fade in 1,4 giây**, sau đó **đứng yên**, không pan/zoom, không đổi ảnh/video, không có hiệu ứng mờ chồng các lượt. Chuyển động thực tế của nhân vật có thể được dựng **bên trong MP4**.
 - **Ngẫu nhiên một lần mỗi lượt mở màn hình chờ:** bên trái chọn trước; bên phải tránh chọn trùng file nếu kho có từ hai file. Vào gameplay, video dừng và texture của ảnh được giải phóng. Khi từ System Menu trở lại màn hình chính, hai bên sẽ chọn lại ở giây 27.
 - **Giữ nguyên:** logo Bách Luyện Tiên Đồ, video nền `opening.mp4` dưới cùng, mây trôi, menu bốn nút, nhạc opening và hiệu ứng dạt mây/zoom tổng thể khi chuyển sang gameplay.
@@ -49,7 +49,7 @@ Nếu thư mục mới trống nhưng vẫn có `Assets/StreamingAssets/OpeningS
 2. Thả **2 PNG hoặc JPG** vào `Assets/StreamingAssets/OpeningSplashArt`; dừng rồi mở lại Play Mode, đợi 27s: mỗi bên ngẫu nhiên một hình khác nhau, giữ nguyên hình đến khi vào gameplay.
 3. Bổ sung MP4/H.264 vào cùng thư mục. Test ảnh trái / video phải, rồi test cả hai video; chỉ nhạc opening được nghe, không có tiếng MP4.
 4. Chọn `OpeningArtTheme.asset`: thay **Edge Feather Pixels** qua 0 → 40 → 48 → 50 để xem viền núi/mây mềm dần, đặc biệt chỗ bị lộ cạnh cứng. Ảnh được feather theo khung, không phải feather riêng alpha biên dạng nhân vật.
-5. Chuyển kích thước cửa sổ 600 / 800 / 1150: mỗi khung vẫn tràn ra ngoài theo tỷ lệ, vị trí khung không thay đổi theo thời gian, các nút menu vẫn nhận chuột.
+5. Chuyển kích thước cửa sổ 600 / 800 / 1150: mỗi khung chỉ tràn ngang ra ngoài mép trái/phải; đáy bám sát đáy cửa sổ, đỉnh nằm tại khoảng 76% chiều cao tính từ dưới lên. Không được tràn qua mép trên/dưới; các nút menu vẫn nhận chuột.
 6. Chơi mới/Tiếp tục → vào gameplay: video tắt; System Menu → Quay lại màn hình chính: hai khung lại chờ đúng 27s và chọn ảnh/video ngẫu nhiên mới.
 7. Kiểm tra phiên bản Windows overlay (CMP 40HX): video có giải mã được không, CPU/GPU/VRAM có bị tăng bất thường khi có **tối đa ba luồng MP4** (nền + hai splash) không.
 
