@@ -30,6 +30,36 @@ partial class MotionRegression
             Check(geometry.Contains("\"reviewed\": false"),
                 "generated polygons are not claimed reviewed");
         });
+        Run("0.0.54 soft fog uses union of visited shapes without internal seams",()=>{
+            const int w = 384, h = 288;
+            var pixels = new Color32[w*h];
+            for(int i=0;i<pixels.Length;i++)
+                pixels[i] = new Color32(179,191,197,240);
+            var adjacentA = new List<Vector2> {
+                new Vector2(.30f,.35f),new Vector2(.50f,.35f),
+                new Vector2(.50f,.65f),new Vector2(.30f,.65f)
+            };
+            var adjacentB = new List<Vector2> {
+                new Vector2(.50f,.35f),new Vector2(.70f,.35f),
+                new Vector2(.70f,.65f),new Vector2(.50f,.65f)
+            };
+            var open = typeof(WorldMapPanelUI).GetMethod("OpenFogAround",
+                System.Reflection.BindingFlags.NonPublic|
+                System.Reflection.BindingFlags.Static);
+            Check(open != null,"fog feather utility exists");
+            open.Invoke(null,new object[] {pixels,adjacentA,1448f,1086f});
+            open.Invoke(null,new object[] {pixels,adjacentB,1448f,1086f});
+            int seamY=h/2;
+            foreach(int x in new[] {w*40/100,w*49/100,w*50/100,w*51/100,w*60/100})
+                Check(pixels[seamY*w+x].a==0,
+                    "no fog line between explored adjacent maps, x="+x);
+            Check(pixels[seamY*w+(w*72/100)].a>0 &&
+                  pixels[seamY*w+(w*72/100)].a<240,
+                "fog feather fades gradually just outside the visited region");
+            Check(pixels[seamY*w+(w*90/100)].a==240,
+                "unexplored distant territory stays obscured");
+        });
+
         Run("world catalog has 133 unique maps, seven animals and five approved starts",()=>{
             Check(WorldMapCatalog.All.Count==133,"133 maps loaded");
             var ids=new HashSet<string>();
