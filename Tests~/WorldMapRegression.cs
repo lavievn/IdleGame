@@ -10,7 +10,26 @@ partial class MotionRegression
     {
         // run.sh starts from repo root, with a pure Unity test double.
         var data=File.ReadAllText("Assets/Resources/WorldMapCatalog.txt");
+        var seeds=File.ReadAllText("Assets/Resources/WorldMapPolygonSeeds.txt");
         Resources.Register("WorldMapCatalog",new TextAsset(data));
+        Resources.Register("WorldMapPolygonSeeds",new TextAsset(seeds));
+        Run("indexed map positions import all 133 seeds without fabricated source artwork",()=>{
+            int count=0,uncertain=0;
+            foreach (string line in seeds.Split('\n'))
+            {
+                if (line.Length==0 || line[0]=='#') continue;
+                count++;
+                if(line.Contains("INFERRED"))uncertain++;
+            }
+            Check(count==133,"133 prototype seed positions");
+            Check(uncertain==6,"six ambiguous names remain explicitly flagged");
+            string geometry=File.ReadAllText("Assets/Resources/WorldMapPolygons.json");
+            Check(geometry.Contains("\"artworkWidth\": 1448") &&
+                geometry.Contains("\"artworkHeight\": 1086"),
+                "indexed source dimension metadata");
+            Check(geometry.Contains("\"reviewed\": false"),
+                "generated polygons are not claimed reviewed");
+        });
         Run("world catalog has 133 unique maps, seven animals and five approved starts",()=>{
             Check(WorldMapCatalog.All.Count==133,"133 maps loaded");
             var ids=new HashSet<string>();
@@ -32,6 +51,12 @@ partial class MotionRegression
                 }
             }
             Check(starts.SetEquals(new[]{"TV-20","TL-16","XD-11","TM-12","HT-17"}),"5 start map IDs");
+            WorldMapNode indexedStart;
+            Check(WorldMapCatalog.TryGet("TV-20",out indexedStart),
+                "TV-20 exists in original image");
+            Check(Math.Abs(indexedStart.PreviewPosition.x - 219f/1448f)<.0002f &&
+                Math.Abs(indexedStart.PreviewPosition.y - (1f-330f/1086f))<.0002f,
+                "world map uses actual indexed pixel center, not fake coordinate grid");
             Check(bosses.SetEquals(new[]{"HT-27","TV-39","TM-25","XD-03","TL-02","HT-01"}),"6 endgame boss IDs");
             foreach(var boss in bosses)
             {
