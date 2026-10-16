@@ -18,6 +18,8 @@ public sealed class OpeningBackgroundVideo : MonoBehaviour
     private VideoPlayer player;
     private RenderTexture target;
     private bool prepared;
+    private bool preparing;
+    private bool wantPlayback;
     private bool available;
     private bool reportedError;
 
@@ -53,10 +55,13 @@ public sealed class OpeningBackgroundVideo : MonoBehaviour
 
     public void StartPlayback()
     {
+        wantPlayback=true;
         if(player!=null)
         {
             if(prepared) {picture.enabled=true;player.Play();}
-            else if(available)player.Prepare();
+            // Repeated return-to-title must not call Prepare twice while a
+            // previous VideoPlayer.Prepare() is still pending.
+            else if(available && !preparing) {preparing=true;player.Prepare();}
             return;
         }
         string path=Path.Combine(Application.streamingAssetsPath,
@@ -77,13 +82,19 @@ public sealed class OpeningBackgroundVideo : MonoBehaviour
         player.prepareCompleted+=OnVideoReady;
         player.errorReceived+=OnVideoError;
         picture.texture=target;
+        preparing=true;
         player.Prepare();
     }
 
     private void OnVideoReady(VideoPlayer ready)
     {
         if(ready!=player)return;
+        preparing=false;
         prepared=true;
+        reportedError=false;
+        // A late decoder callback is not allowed to restart video after the
+        // menu has closed or a new game has begun.
+        if(!wantPlayback || !gameObject.activeInHierarchy)return;
         if(picture!=null)picture.enabled=true;
         ready.Play();
         Debug.Log("[Opening] Background video ready: "+RelativeVideoPath);
@@ -91,24 +102,39 @@ public sealed class OpeningBackgroundVideo : MonoBehaviour
 
     private void OnVideoError(VideoPlayer source,string error)
     {
-        if(!reportedError)
+        if(!reportedError && wantPlayback)
         {
-            Debug.LogWarning("[Opening] Video background unavailable; using sky placeholder. "+error);
+            Debug.LogWarning("[Opening] Video background unavailable ("+
+                RelativeVideoPath+"); using sky placeholder. Decoder: "+error);
             reportedError=true;
         }
         prepared=false;
+        preparing=false;
         if(picture!=null)picture.enabled=false;
         if(player!=null)player.Stop();
     }
 
     public void StopPlayback()
     {
-        if(player!=null)player.Pause();
+        wantPlayback=false;
+        if(player!=null)
+        {
+            if(preparing)
+            {
+                // Cancel an in-flight Prepare before the next title visit.
+                player.Stop();
+                preparing=false;
+                prepared=false;
+            }
+            else if(prepared)player.Pause();
+        }
         if(picture!=null)picture.enabled=false;
     }
 
     private void OnDestroy()
     {
+        wantPlayback=false;
+        preparing=false;
         if(player!=null)
         {
             player.prepareCompleted-=OnVideoReady;
