@@ -148,7 +148,10 @@ public class TransparentWindow : MonoBehaviour
             else
             {
                 if (openingUI != null)
-                    openingUI.EndWorldMapPan(hasPoint ? mapPoint : Vector2.zero);
+                {
+                    if (hasPoint) openingUI.EndWorldMapPan(mapPoint);
+                    else openingUI.CancelWorldMapPan();
+                }
                 nativeWorldMapPan = false;
             }
             if (!isCurrentlyClickable) ToggleClickThrough(false);
