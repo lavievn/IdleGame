@@ -241,6 +241,14 @@ public sealed class WorldMapPanelUI
         if (!hasPanned && HitMapSurface(screen)) HandleMapClick(screen);
     }
 
+    public void CancelPan()
+    {
+        // Native Windows may lose the final pointer coordinate while the
+        // window loses focus. Never treat (0,0) as a genuine drag position.
+        mapPointerHeld = false;
+        hasPanned = false;
+    }
+
     public void ZoomAt(Vector2 screen, float scrollY)
     {
         if (!HitMapSurface(screen) || Mathf.Abs(scrollY) < .001f) return;
