@@ -16,6 +16,12 @@ public sealed class WorldMapPanelUI
     private readonly RectTransform viewport;
     private readonly TextMeshProUGUI zoomLabel;
     private readonly RawImage fog;
+    private readonly RawImage selectionGlow;
+    private Texture2D selectionGlowTexture;
+    // Only an EXPLICIT polygon click creates a glow: opening the map focuses
+    // the current node but does not make it look like a selected destination.
+    private string selectedGlowId = "";
+    private string drawnGlowId = "";
     private readonly WorldMapRevealedGraphic reveal;
     private readonly WorldMapOutlineGraphic outlines;
     private string selectedMapId = "";
@@ -126,6 +132,27 @@ public sealed class WorldMapPanelUI
         // Hide stroke/borders in gameplay; keep polygon hit tests, fog and routes.
         // The graphic remains available for future editor/debug visualization.
         outlines.enabled = false;
+
+        // Dedicated highlight ABOVE fog, BELOW country names. It follows the
+        // artwork RectTransform through pan/zoom, never blocks map clicks and
+        // never changes discovery/fog alpha or authored polygon coordinates.
+        var selectionGO = new GameObject("WorldMapSelectedCellGlow",
+            typeof(RectTransform), typeof(CanvasRenderer), typeof(RawImage));
+        var selectionRect = (RectTransform)selectionGO.transform;
+        selectionRect.SetParent(artRect, false);
+        selectionRect.anchorMin = Vector2.zero;
+        selectionRect.anchorMax = Vector2.one;
+        selectionRect.pivot = new Vector2(.5f, .5f);
+        selectionRect.offsetMin = selectionRect.offsetMax = Vector2.zero;
+        selectionGlow = selectionGO.GetComponent<RawImage>();
+        selectionGlow.raycastTarget = false;
+        selectionGlowTexture = new Texture2D(FogWidth, FogHeight,
+            TextureFormat.RGBA32, false);
+        selectionGlowTexture.filterMode = FilterMode.Bilinear;
+        selectionGlowTexture.wrapMode = TextureWrapMode.Clamp;
+        selectionGlow.texture = selectionGlowTexture;
+        selectionGlow.enabled = false;
+
         // Render authored country names above the cloud layer, never borders.
         foreach (WorldMapNation nation in WorldMapCatalog.Nations)
         {
@@ -372,6 +399,7 @@ public sealed class WorldMapPanelUI
         if (!string.IsNullOrEmpty(id))
         {
             selectedMapId = id;
+            selectedGlowId = id;
             Refresh();
         }
         else summary.text = WorldMapPolygons.Load().polygons.Count == 0
@@ -397,6 +425,7 @@ public sealed class WorldMapPanelUI
         owner.SetPaused(true);
         page=0;
         selectedMapId = host.HeroData.worldMapId;
+        selectedGlowId = ""; // zoom/centering on open is not an explicit click
         Resize();
         root.gameObject.SetActive(true);
         FocusCurrentMap();
@@ -409,6 +438,8 @@ public sealed class WorldMapPanelUI
         if(!IsOpen) return;
         root.gameObject.SetActive(false);
         mapPointerHeld = false;
+        selectedGlowId = "";
+        selectionGlow.enabled = false;
         owner.SetPaused(previousPause);
     }
 
@@ -494,6 +525,100 @@ public sealed class WorldMapPanelUI
         }
     }
 
+    // Build a small, anti-aliased selection halo using the ORIGINAL source
+    // image pixels, not the zoomed window size. This gives the selected polygon
+    // a warm translucent core, a brighter INNER rim and a soft OUTER halo.
+    // No sharp stroke is drawn; alpha blending is independent of fog reveals.
+    // Tint is a parameter so future realm checks can choose red without
+    // rewriting polygon geometry or the click system.
+    internal static Color32[] BuildSelectionGlowPixels(
+        IList<Vector2> polygon, int texWidth, int texHeight,
+        float imageWidth, float imageHeight, Color32 tint)
+    {
+        var pixels = new Color32[Mathf.Max(0, texWidth * texHeight)];
+        if (texWidth <= 0 || texHeight <= 0 || imageWidth <= 0f ||
+            imageHeight <= 0f || !WorldMapPolygons.ValidPolygon(polygon))
+            return pixels;
+
+        const float outerRadius = 14f; // source image pixels
+        const float innerRadius = 18f;
+        var edges = new Vector2[polygon.Count];
+        float minX = imageWidth, maxX = 0f, minY = imageHeight, maxY = 0f;
+        for (int i = 0; i < polygon.Count; i++)
+        {
+            Vector2 p = Vector2.Scale(polygon[i],
+                new Vector2(imageWidth, imageHeight));
+            edges[i] = p;
+            minX = Mathf.Min(minX, p.x); maxX = Mathf.Max(maxX, p.x);
+            minY = Mathf.Min(minY, p.y); maxY = Mathf.Max(maxY, p.y);
+        }
+        int x0 = Mathf.Max(0, Mathf.FloorToInt((minX - outerRadius) *
+            texWidth / imageWidth));
+        int x1 = Mathf.Min(texWidth - 1, Mathf.CeilToInt((maxX + outerRadius) *
+            texWidth / imageWidth));
+        int y0 = Mathf.Max(0, Mathf.FloorToInt((minY - outerRadius) *
+            texHeight / imageHeight));
+        int y1 = Mathf.Min(texHeight - 1, Mathf.CeilToInt((maxY + outerRadius) *
+            texHeight / imageHeight));
+        for (int y = y0; y <= y1; y++)
+        for (int x = x0; x <= x1; x++)
+        {
+            Vector2 px = new Vector2((x + .5f) * imageWidth / texWidth,
+                (y + .5f) * imageHeight / texHeight);
+            float edgeDist = float.MaxValue;
+            for (int i = 0; i < edges.Length; ++i)
+                edgeDist = Mathf.Min(edgeDist,
+                    SegmentDistancePixels(px, edges[i], edges[(i + 1) % edges.Length]));
+            bool inside = WorldMapPolygons.Contains(polygon,
+                new Vector2(px.x / imageWidth, px.y / imageHeight));
+            float alpha;
+            if (inside)
+            {
+                float t = Mathf.Clamp01(edgeDist / innerRadius);
+                t = t * t * (3f - 2f * t);
+                alpha = .16f + .40f * (1f - t);
+            }
+            else
+            {
+                float t = Mathf.Clamp01(edgeDist / outerRadius);
+                t = t * t * (3f - 2f * t);
+                alpha = .34f * (1f - t);
+            }
+            if (alpha <= 0f) continue;
+            pixels[y * texWidth + x] = new Color32(
+                tint.r, tint.g, tint.b, (byte)Mathf.RoundToInt(alpha * 255f));
+        }
+        return pixels;
+    }
+
+    private void RefreshSelectionGlow(bool artworkMatches)
+    {
+        if (!artworkMatches || string.IsNullOrEmpty(selectedGlowId))
+        {
+            selectionGlow.enabled = false;
+            return;
+        }
+        WorldMapPolygon target = WorldMapPolygons.Find(selectedGlowId);
+        if (target == null || !WorldMapPolygons.ValidPolygon(target.vertices))
+        {
+            selectionGlow.enabled = false; // no fabricated region for missing maps
+            return;
+        }
+        if (drawnGlowId != selectedGlowId)
+        {
+            var doc = WorldMapPolygons.Load();
+            // Gold = selection only. Red remains available as the tint argument
+            // once realm/level risk rules have been approved.
+            var pixels = BuildSelectionGlowPixels(target.vertices,
+                FogWidth, FogHeight, doc.artworkWidth, doc.artworkHeight,
+                new Color32(255, 190, 50, 255));
+            selectionGlowTexture.SetPixels32(pixels);
+            selectionGlowTexture.Apply(false);
+            drawnGlowId = selectedGlowId;
+        }
+        selectionGlow.enabled = true;
+    }
+
     private void RebuildFog(EntityDataSO hero)
     {
         bool compatible = WorldMapPolygons.MatchesArtwork(artwork.sprite);
@@ -531,6 +656,7 @@ public sealed class WorldMapPanelUI
         WorldMapNode current;
         if(!WorldMapCatalog.TryGet(hero.worldMapId,out current)) { Close(); return; }
         RebuildFog(hero);
+        RefreshSelectionGlow(WorldMapPolygons.MatchesArtwork(artwork.sprite));
         WorldMapNode selected;
         bool selectedExists = WorldMapCatalog.TryGet(selectedMapId, out selected);
         bool selectedAccessible = selectedExists &&
