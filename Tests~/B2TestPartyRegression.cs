@@ -187,6 +187,33 @@ partial class MotionRegression
             finally {Directory.Delete(dir,true);}
         });
 
+        Run("0.0.54 title Continue recreates both saved B2 companions",()=>{
+            var f=new Field();SaveManager saves;string dir;
+            var gm=MenuManager(f,out saves,out dir);
+            try
+            {
+                Set(gm,"environmentManager",f.space);
+                var snapshot=HeroAt(9);
+                snapshot.b2PartyVersion=1;
+                snapshot.b2CompanionModes=new List<int>{
+                    (int)AttackMode.RangedPhysical,
+                    (int)AttackMode.RangedMagic
+                };
+                Check(saves.SaveGame(snapshot,SaveSlot.AutoSave),
+                    "autosave contains 2 companions");
+                gm.OnContinueClicked();
+                Check(gm.HasPendingConfirmation,"title Continue asks confirmation");
+                gm.OnConfirmResetClicked();
+                Check(gm.TestCompanionCount==2 &&
+                    f.combat.RegisteredHeroCount==3 &&
+                    gm.HeroData.b2CompanionModes.Count==2,
+                    "title Continue restores 3 registered heroes from autosave");
+                Check(Get<HeroController>(f.space,"cameraTarget")==f.hero,
+                    "title Continue keeps the main camera target");
+            }
+            finally {Directory.Delete(dir,true);}
+        });
+
         Run("B2 prototype: party limit is two additional Heroes",()=>{
             Check(GameManager.TestCompanionLimit==2,"only two extra actors may be summoned");
         });
