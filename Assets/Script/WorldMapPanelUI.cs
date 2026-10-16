@@ -197,6 +197,7 @@ public sealed class WorldMapPanelUI
     }
 
     public bool IsOpen => root != null && root.gameObject.activeSelf;
+    public bool PanIsCaptured => mapPointerHeld;
     public RectTransform Root => root;
     public bool HitMapSurface(Vector2 screenPoint) =>
         IsOpen && viewport != null &&
