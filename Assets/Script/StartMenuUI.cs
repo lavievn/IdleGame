@@ -468,6 +468,8 @@ public class StartMenuUI : MonoBehaviour
     public void ShowConfirmation(string text)
     {
         if(manager==null || manager.confirmationPopup==null)return;
+        // Parent may have changed when UIManager created the HUD canvas.
+        if(cinematic!=null)cinematic.EnsureOpeningSiblingsParent();
         message.text=text;
         // Place above both the cinematic curtain and menu HUD, including after
         // the return-to-title reparenting. Input does NOT depend on menu fade.
