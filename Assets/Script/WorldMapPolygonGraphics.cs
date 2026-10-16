@@ -46,8 +46,10 @@ public sealed class WorldMapRevealedGraphic : MaskableGraphic
                     (atlas.yMin + p.y * atlas.height) / tex.height);
                 vh.AddVert(vertex);
             }
-            for (int i = 1; i < polygon.vertices.Count - 1; ++i)
-                vh.AddTriangle(start, start + i, start + i + 1);
+            var indices = WorldMapPolygons.Triangulate(polygon.vertices);
+            for (int i = 0; i + 2 < indices.Count; i += 3)
+                vh.AddTriangle(start + indices[i], start + indices[i + 1],
+                    start + indices[i + 2]);
         }
     }
 }
