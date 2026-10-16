@@ -143,9 +143,85 @@ namespace TuTienCore
             if (!b.Links.Contains(a.Id)) b.Links.Add(a.Id);
         }
 
-        // Not cartographic adjacency: a connected testing scaffold until the
-        // user's hex borders and node coordinates are exported as structured data.
-        // Boss nodes have exactly one connection, far from all declared starts.
+        // The indexed map provides 133 manually located candidate centers.
+        // They improve the interim route graph, but are NOT surveyed polygon
+        // boundaries. Final adjacency will be read from reviewed shared edges.
+        private static bool LoadIndexedSeedPositions()
+        {
+            TextAsset source = Resources.Load<TextAsset>("WorldMapPolygonSeeds");
+            if (source == null) return false;
+            int loaded = 0;
+            foreach (string raw in source.text.Split('\n'))
+            {
+                string line = raw.Trim();
+                if (line.Length == 0 || line[0] == '#') continue;
+                string[] row = line.Split('\t');
+                int x, y;
+                WorldMapNode n;
+                if (row.Length < 3 || !nodes.TryGetValue(row[0],out n) ||
+                    !int.TryParse(row[1], out x) || !int.TryParse(row[2], out y))
+                    continue;
+                n.PreviewPosition = new Vector2(x / 1448f, 1f - y / 1086f);
+                loaded++;
+            }
+            return loaded == all.Count && loaded == 133;
+        }
+
+        private static WorldMapNode NearestLink(WorldMapNode origin,
+            List<WorldMapNode> candidates)
+        {
+            WorldMapNode result = null;
+            float minimum = float.MaxValue;
+            foreach (WorldMapNode n in candidates)
+            {
+                if (n == origin || n.IsBoss) continue;
+                float dist = (n.PreviewPosition-origin.PreviewPosition).sqrMagnitude;
+                if (dist < minimum) { result = n; minimum = dist; }
+            }
+            return result;
+        }
+
+        private static void ConnectSpatialNeighbors(
+            Dictionary<string, List<WorldMapNode>> continents)
+        {
+            // Connect four nearest candidates within each region (no boss),
+            // then link naturally adjacent large areas through closest pairs.
+            foreach (var group in continents.Values)
+            foreach (var n in group)
+            {
+                var near = new List<WorldMapNode>(group);
+                near.Remove(n);
+                near.Sort((a,b) =>
+                    (n.PreviewPosition-a.PreviewPosition).sqrMagnitude.CompareTo(
+                     (n.PreviewPosition-b.PreviewPosition).sqrMagnitude));
+                for (int i = 0; i < near.Count && i < 4; i++) Link(n,near[i]);
+            }
+
+            string[] passages = {
+                "TV|TL", "TV|HT", "TL|HT", "TL|XD",
+                "TL|TM", "XD|TM", "HT|TM"
+            };
+            foreach (string passage in passages)
+            {
+                string[] prefixes = passage.Split('|');
+                WorldMapNode bestA=null,bestB=null;
+                float minDist=float.MaxValue;
+                foreach (var a in all)
+                {
+                    if (a.IsBoss || !a.Id.StartsWith(prefixes[0]+"-")) continue;
+                    foreach (var b in all)
+                    {
+                        if (b.IsBoss || !b.Id.StartsWith(prefixes[1]+"-")) continue;
+                        float dist=(a.PreviewPosition-b.PreviewPosition).sqrMagnitude;
+                        if (dist<minDist) {minDist=dist;bestA=a;bestB=b;}
+                    }
+                }
+                Link(bestA,bestB);
+            }
+        }
+
+        // Not final cartographic adjacency: routes use nearest label-center
+        // prototypes until exact traced/shared edges are approved.
         private static void BuildTemporaryLinks()
         {
             var continents = new Dictionary<string, List<WorldMapNode>>();
@@ -154,7 +230,9 @@ namespace TuTienCore
                 if (!continents.ContainsKey(n.Continent)) continents[n.Continent] = new List<WorldMapNode>();
                 if (!n.IsBoss) continents[n.Continent].Add(n);
             }
-            foreach (var group in continents.Values)
+            bool indexedPositions = LoadIndexedSeedPositions();
+            if (indexedPositions) ConnectSpatialNeighbors(continents);
+            else foreach (var group in continents.Values)
             {
                 group.Sort((a, b) => String.CompareOrdinal(a.Id, b.Id));
                 for (int i = 0; i < group.Count; ++i)
@@ -163,6 +241,9 @@ namespace TuTienCore
                     if (i > 1) Link(group[i], group[i - 2]);
                 }
             }
+            // Legacy fallback passages if no approved indexed seed file.
+            if (!indexedPositions)
+            {
             // Provisional land/sea passageways, NOT nation borders.
             string[] order = { "TV", "TL", "XD", "TM", "HT" };
             for (int i = 0; i < order.Length - 1; i++)
@@ -210,6 +291,7 @@ namespace TuTienCore
                         center.y + ((steps * .5f) - y) * (height / (steps + 1f)));
                 }
             }
+            }
             // Boss is a single-way leaf, never directly adjacent to a birth node.
             foreach (var boss in all)
             {
@@ -217,10 +299,26 @@ namespace TuTienCore
                 var group = continents[boss.Continent];
                 WorldMapNode start = null;
                 foreach (var n in group) if (n.IsStart) { start = n; break; }
-                // Farthest in the temporary sorted chain from its region's birth node.
-                int startIndex = start == null ? group.Count / 2 : group.IndexOf(start);
-                WorldMapNode attach = startIndex < group.Count / 2 ? group[group.Count - 1] : group[0];
-                if (attach.IsStart && group.Count > 1) attach = group[1];
+                WorldMapNode attach=null;
+                if (indexedPositions)
+                {
+                    // Boss should be near its artwork location, but never
+                    // directly attached to an eligible birth map.
+                    float score=float.MaxValue;
+                    foreach (var candidate in group)
+                    {
+                        if (candidate.IsStart) continue;
+                        float candidateScore=
+                            (candidate.PreviewPosition-boss.PreviewPosition).sqrMagnitude;
+                        if (candidateScore < score) {score=candidateScore;attach=candidate;}
+                    }
+                }
+                else
+                {
+                    int startIndex = start == null ? group.Count / 2 : group.IndexOf(start);
+                    attach = startIndex < group.Count / 2 ? group[group.Count - 1] : group[0];
+                    if (attach.IsStart && group.Count > 1) attach = group[1];
+                }
                 Link(boss, attach);
             }
             // Fixed, repeatable test levels from nearest birth point, never from Hero level.
