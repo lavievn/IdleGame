@@ -60,6 +60,40 @@ partial class MotionRegression
                 "unexplored distant territory stays obscured");
         });
 
+        Run("0.0.54 selected map glow follows clicked polygon with soft edges",()=>{
+            var polygon=new List<Vector2> {
+                new Vector2(.30f,.30f),new Vector2(.55f,.30f),
+                new Vector2(.55f,.65f),new Vector2(.30f,.65f)
+            };
+            int w=384,h=288;
+            var gold=WorldMapPanelUI.BuildSelectionGlowPixels(
+                polygon,w,h,1448f,1086f,new Color32(255,190,50,255));
+            Check(gold.Length==w*h,"glow texture matches fog raster size");
+            // Left-half interior, near boundary, halo outside, and distant cell.
+            int inside=(h*48/100)*w+w*42/100;
+            int edge=(h*48/100)*w+w*30/100;
+            int halo=(h*48/100)*w+w*299/1000;
+            int far=(h*48/100)*w+w*80/100;
+            Check(gold[inside].a>0,"clicked cell receives a visible gold fill");
+            Check(gold[edge].a>gold[inside].a,
+                "feathering brightens near the selected cell boundary");
+            Check(gold[halo].a>0 && gold[halo].a<gold[edge].a,
+                "halo fades outside the polygon without a hard stroke");
+            Check(gold[far].a==0,
+                "unrelated map area has no selection glow");
+            Check(gold[inside].r==255 && gold[inside].g==190,
+                "selected overlay uses configured gold tint");
+            var red=WorldMapPanelUI.BuildSelectionGlowPixels(
+                polygon,w,h,1448f,1086f,new Color32(255,60,40,255));
+            Check(red[inside].r==255 && red[inside].g==60,
+                "future red tint requires no different polygon data");
+            Check(red[inside].a==gold[inside].a,
+                "switching tint does not alter selection area");
+            var empty=WorldMapPanelUI.BuildSelectionGlowPixels(
+                new List<Vector2>(),w,h,1448f,1086f,new Color32(255,0,0,255));
+            Check(empty[inside].a==0,
+                "missing polygon never creates a fictitious highlight");
+        });
         Run("world catalog has 133 unique maps, seven animals and five approved starts",()=>{
             Check(WorldMapCatalog.All.Count==133,"133 maps loaded");
             var ids=new HashSet<string>();
