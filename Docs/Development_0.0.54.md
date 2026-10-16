@@ -67,7 +67,16 @@
 - **15/10/2026 – rà soát lần 2:** người phát triển xác nhận thêm 8 mã: TV-05 Đồi núi, TV-23 Rừng rậm, TL-13 Đồng bằng, TL-23 Đồng bằng, TL-25 Thảo nguyên (biến thể của Đồng bằng), TL-28 Rừng rậm, XD-17 Cao nguyên, TM-14 Đồi núi (Thác nước là cảnh quan). Cập nhật danh sách quái ứng viên tại TL-25, TL-28, TM-14.
 - **15/10/2026 – xác nhận mã Xích Diễm:** `XD-17` là Lưu Diễm Tràng, địa hình hỗn hợp **Đồi núi / Cao nguyên**; `XD-19` là Diễm Ảnh Quần Đảo, địa hình **Biển**. Vấn đề trùng mã từ ảnh AI đã giải quyết; CSV không còn cảnh báo từng dòng. Các node thiếu tên từ bản đồ tổng và bản ảnh trùng `TV-10` vẫn ghi riêng trong tài liệu, danh mục 133 map chưa là số lượng cuối cùng.
 - **15/10/2026 – mở rộng quái đợt 3:** từng map được bổ sung thêm đúng 3 loài quái từ pool sinh cảnh trong `TuTienEnums.cs`, không lặp lại 4 loài ban đầu và không chọn `Long` làm quái thường; kèm 1 loại đối thủ **Nhân tộc** thay đổi theo map/địa hình (sơn tặc, tà tu, hải tặc, tán tu tranh bảo...). CSV đã tách riêng cột quái gốc, bổ sung, Nhân tộc. Đây là danh mục *ứng viên*; chưa buộc mọi map spawn tất cả, chưa chốt phe phái/tỷ lệ.
-- **Chưa áp dụng** vào spawn, world graph, gameplay hay Save; chưa gán cấp quái, cảnh giới, mức độ nguy hiểm, wave, tỷ lệ xuất hiện, quái đặc biệt, boss và sự kiện. Chờ người phát triển cập nhật danh sách rồi chốt tiếp.
+- **Ghi chú lịch sử trước đợt tích hợp .54:** danh mục ban đầu chưa áp dụng vào spawn, world graph, gameplay hay Save. Trạng thái triển khai mới nhất nằm ở phần 16/10 bên dưới; cấp quái thử nghiệm và đồ thị thử nghiệm **không phải cân bằng/địa lý cuối cùng**.
+
+## 16/10/2026 — World Map đã tích hợp bước đầu: viền tương tác lục giác
+
+- World Map đọc danh mục **133 map**, các map Boss/endgame đã chốt và **5 điểm sinh** `TV-20`, `TL-16`, `XD-11`, `TM-12`, `HT-17`. New Game dùng World Map nếu tải dữ liệu thành công; Save cũ vẫn giữ chế độ tuần tự .53.
+- Sau 5 wave tối thiểu: **đánh dấu clear map**, Hero **đánh tiếp wave 1–5 vòng lặp**, không tự nhảy map. Chỉ thấy các ô liền kề có quyền khám phá sau khi mở bảng Bản đồ; click ô chỉ chọn, bấm nút di chuyển mới đổi node. Boss endgame chưa đủ điều kiện bị khóa.
+- Bản đồ UI có ảnh nền tùy nhập dưới `Assets/Resources/WorldMapArtwork.png`, fog phủ toàn bộ; vùng đã khám phá lộ ra qua **đa giác 6 đỉnh thực**; không dùng lỗ tròn ước lượng. Quốc gia (khi có tên/tọa độ) hiển thị trên fog, không dựng biên giới quốc gia bằng code.
+- `WorldMapPolygonEditorWindow` cho phép click/kéo 6 đỉnh, **dính góc ô kề** và lưu tọa độ 0–1 theo mã vào `Assets/Resources/WorldMapPolygons.json`. Có test trường hợp đa giác lệch, lõm, cạnh chung.
+- **Chưa hoàn tất:** JSON tọa độ vẫn rỗng (**0/133 ô đã định danh**), vì ảnh không quy định chính xác ID ↔ polygon. Phải gán đúng ID cho từng ô trên ảnh; đồ thị kề và cấp quái hiện là thử nghiệm, chưa suy ra từ các cạnh chung. Chưa đưa ảnh nền nhị phân lên repository, chưa chạy Unity Play Mode / `Tests~/run.sh` tại đây.
+- Hướng dẫn sử dụng: [World_Map_Polygon_Interaction_0.0.54.md](World_Map_Polygon_Interaction_0.0.54.md).
 
 ## Nguyên tắc phát triển .54
 
