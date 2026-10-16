@@ -123,6 +123,7 @@ public class HeroController : MonoBehaviour
             // Y only changes while a melee Hero approaches a selected target.
             p.x -= EffectiveMoveSpeed() * dt;
             MovementDistanceThisFrame = Mathf.Abs(p.x - startX);
+            p.y = space.ClampHeroFeetY(p.y);
             space.SetPosition(heroRect, p);
             HandleAnimation(true, false);
             return;
@@ -132,6 +133,7 @@ public class HeroController : MonoBehaviour
         p.x = BattleMotion.ForwardApproach(p.x, target.x, attackRange, EffectiveMoveSpeed(), dt, -1);
         if (attackMode == AttackMode.Melee && Mathf.Abs(target.x - p.x) > attackRange + .1f)
             p.y = Mathf.MoveTowards(p.y, target.y, laneSpeed * dt);
+        p.y = space.ClampHeroFeetY(p.y);
         MovementDistanceThisFrame = Mathf.Abs(p.x - startX);
         space.SetPosition(heroRect, p);
         RefreshCombatState(space);
@@ -189,7 +191,8 @@ public class HeroController : MonoBehaviour
         var space = EnvironmentManager.Instance;
         if (space != null && space.BattleArea != null)
         {
-            space.SetPosition(heroRect, new Vector2(space.HomeX, 0f));
+            space.SetPosition(heroRect, new Vector2(space.HomeX,
+                space.ClampHeroFeetY(0f)));
             if (followCamera) space.FollowHero(this);
         }
     }
