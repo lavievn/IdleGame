@@ -94,6 +94,28 @@ partial class MotionRegression
     static void Main()
     {
         WorldMapRegressionTests();
+        Run("six-vertex polygon uses true shape, not rectangular hitbox", () => {
+            var hex = new List<Vector2> {
+                new Vector2(.20f,.25f), new Vector2(.55f,.20f),
+                new Vector2(.80f,.40f), new Vector2(.77f,.68f),
+                new Vector2(.45f,.80f), new Vector2(.18f,.60f)
+            };
+            Check(WorldMapPolygons.ValidSixVertices(hex), "valid skewed hex");
+            Check(WorldMapPolygons.Contains(hex,new Vector2(.50f,.50f)), "center inside");
+            Check(!WorldMapPolygons.Contains(hex,new Vector2(.12f,.42f)),
+                "point inside bounding rectangle but outside polygon rejected");
+            Check(WorldMapPolygons.Contains(hex,new Vector2(.375f,.225f)),
+                "border points selectable");
+            var reversed = new List<Vector2>(hex);
+            reversed.Reverse();
+            Check(WorldMapPolygons.ValidSixVertices(reversed), "reversed winding accepted");
+            Check(WorldMapPolygons.Contains(reversed,new Vector2(.50f,.50f)),
+                "winding direction does not affect hit");
+            var invalid = new List<Vector2>(hex);
+            invalid[1] = hex[4];
+            Check(!WorldMapPolygons.ValidSixVertices(invalid),
+                "self-crossing or degenerate polygon rejected");
+        });
         Run("clamp approach in both directions, including long frame",()=>{
             Near(BattleMotion.Approach(0,100,30,1000,1),70,"right");Near(BattleMotion.Approach(0,-100,30,1000,1),-70,"left");Near(BattleMotion.Approach(0,10,30,1000,1),0,"already in range");
         });
