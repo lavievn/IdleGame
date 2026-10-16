@@ -33,7 +33,7 @@ public sealed class WorldMapRevealedGraphic : MaskableGraphic
         foreach (var id in hero.worldMapVisited)
         {
             var polygon = WorldMapPolygons.Find(id);
-            if (polygon == null || !WorldMapPolygons.ValidSixVertices(polygon.vertices)) continue;
+            if (polygon == null || !WorldMapPolygons.ValidPolygon(polygon.vertices)) continue;
             int start = vh.currentVertCount;
             for (int i = 0; i < polygon.vertices.Count; ++i)
             {
@@ -74,7 +74,7 @@ public sealed class WorldMapOutlineGraphic : MaskableGraphic
         bool allowedToExplore = WorldMapCatalog.IsCleared(hero, current.Id);
         foreach (var shape in WorldMapPolygons.Load().polygons)
         {
-            if (shape == null || !WorldMapPolygons.ValidSixVertices(shape.vertices)) continue;
+            if (shape == null || !WorldMapPolygons.ValidPolygon(shape.vertices)) continue;
             bool selected = shape.mapId == selectedId;
             bool adjacent = allowedToExplore && current.Links.Contains(shape.mapId);
             if (!selected && !adjacent) continue;
