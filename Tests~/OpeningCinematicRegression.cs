@@ -209,6 +209,47 @@ partial class MotionRegression
                 "No closes modal despite menuFade and entry state");
         });
 
+        Run("0.0.54 background video avoids duplicate Prepare on title replay", () =>
+        {
+            string previous=Application.streamingAssetsPath;
+            string dir=System.IO.Path.Combine(System.IO.Path.GetTempPath(),
+                "opening-video-lifecycle-"+Guid.NewGuid().ToString("N"));
+            var fileDir=System.IO.Path.Combine(dir,"OpeningBackground");
+            System.IO.Directory.CreateDirectory(fileDir);
+            System.IO.File.WriteAllBytes(System.IO.Path.Combine(fileDir,"opening.mp4"),
+                new byte[]{0}); // Stub decoder does not parse media
+            try
+            {
+                Application.streamingAssetsPath=dir;
+                new Field();
+                var parent=new GameObject("Video Test Parent",typeof(RectTransform));
+                var layer=OpeningBackgroundVideo.Install((RectTransform)parent.transform);
+                Check(layer!=null,"opening video created");
+                var video=layer.GetComponent<UnityEngine.Video.VideoPlayer>();
+                Check(video!=null && video.prepareCalls==1 && video.isPlaying,
+                    "single prepare on opening startup");
+                Set(layer,"prepared",false);
+                Set(layer,"preparing",true); // async Prepare pending
+                layer.StartPlayback();
+                layer.StartPlayback();
+                Check(video.prepareCalls==1,
+                    "restarting title during pending preparation does not double Prepare");
+                layer.StopPlayback();
+                layer.StartPlayback();
+                Check(video.prepareCalls==2 && video.isPlaying,
+                    "a canceled decoder may Prepare once on next title visit");
+                layer.StopPlayback();
+                layer.StartPlayback();
+                Check(video.prepareCalls==2 && video.isPlaying,
+                    "prepared decoder resumes without repeated Prepare");
+            }
+            finally
+            {
+                Application.streamingAssetsPath=previous;
+                System.IO.Directory.Delete(dir,true);
+            }
+        });
+
         Run("0.0.54 direct manual load cannot leave the opening curtain over combat", () =>
         {
             new Field(); // Clear prior stub scene and open a fresh UI hierarchy.
