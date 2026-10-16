@@ -81,6 +81,10 @@ public class SaveManager : MonoBehaviour
                 // Old saves lack a stance field; do not inherit the
                 // template asset's current Inspector stance by accident.
                 entityData.savedAttackMode = TuTienCore.AttackMode.Melee;
+                // Legacy snapshots do not contain a B2 roster. Never inherit
+                // test companions from the Inspector template or previous run.
+                entityData.b2PartyVersion = 0;
+                entityData.b2CompanionModes = new System.Collections.Generic.List<int>();
                 entityData.inventoryVersion = 0;
                 entityData.inventory = new System.Collections.Generic.List<InventoryStack>();
                 entityData.equippedItemId = "";
@@ -133,6 +137,7 @@ public class SaveManager : MonoBehaviour
                     return false;
                 }
                 entityData.NormalizeRoots();
+                entityData.NormalizeB2Party();
                 if (entityData.worldMapVersion > 0)
                 {
                     TuTienCore.WorldMapNode savedNode;
