@@ -124,9 +124,30 @@ public sealed class WorldMapPolygonEditorWindow : EditorWindow
         Handles.DrawAAPolyLine(2.2f, points);
     }
 
+    private bool CurrentTextureMatches()
+    {
+        return mapTexture != null &&
+            (document.artworkWidth <= 0 || document.artworkWidth == mapTexture.width) &&
+            (document.artworkHeight <= 0 || document.artworkHeight == mapTexture.height);
+    }
+
     private void Save()
     {
         if (document == null) return;
+        if (!CurrentTextureMatches())
+        {
+            EditorUtility.DisplayDialog("Không lưu",
+                "Bạn đang mở ảnh có kích thước khác nguồn polygon đã lưu. " +
+                "Không được sao chép tọa độ sang bản đồ có bố cục khác.",
+                "OK");
+            return;
+        }
+        if (mapTexture != null)
+        {
+            document.artworkWidth = mapTexture.width;
+            document.artworkHeight = mapTexture.height;
+            document.artworkReference = AssetDatabase.GetAssetPath(mapTexture);
+        }
         var valid = new HashSet<string>(ids);
         var unique = new HashSet<string>();
         int completed = 0;
@@ -177,6 +198,17 @@ public sealed class WorldMapPolygonEditorWindow : EditorWindow
 
         showAll = GUILayout.Toggle(showAll, "Hiện viền đã ghi", GUILayout.Width(115));
         snapToNeighbors = GUILayout.Toggle(snapToNeighbors, "Dính đỉnh ô kề", GUILayout.Width(115));
+        if (GUILayout.Button("Duyệt map này", GUILayout.Width(108)))
+        {
+            var polygon = ActivePolygon();
+            if (polygon != null && WorldMapPolygons.ValidSixVertices(polygon.vertices))
+            {
+                polygon.reviewed = true;
+                polygon.source = "verified-in-editor";
+                status = polygon.mapId + ": đã đánh dấu duyệt 6 đỉnh. Nhớ bấm Lưu các đỉnh.";
+                Repaint();
+            }
+        }
         if (GUILayout.Button("Vẽ lại map này", GUILayout.Width(115)))
         {
             if (EditorUtility.DisplayDialog("Xóa tọa độ", "Xóa 6 đỉnh đang chọn để vẽ lại?",
@@ -190,6 +222,14 @@ public sealed class WorldMapPolygonEditorWindow : EditorWindow
         EditorGUILayout.EndHorizontal();
 
         var current = ActivePolygon();
+        if (mapTexture != null && !CurrentTextureMatches())
+        {
+            EditorGUILayout.HelpBox("LỆCH ẢNH: hệ tọa độ hiện tại dựa trên ảnh có mã " +
+                document.artworkWidth + "×" + document.artworkHeight +
+                " px. Ảnh bạn đang chọn là " + mapTexture.width + "×" +
+                mapTexture.height + " px. Chỉ xem tham chiếu, không ghi/sửa dữ liệu " +
+                "trừ khi tạo bộ polygon mới cho ảnh này.", MessageType.Error);
+        }
         int done = 0;
         foreach (var p in document.polygons)
             if (p != null && WorldMapPolygons.ValidSixVertices(p.vertices)) done++;
@@ -197,7 +237,8 @@ public sealed class WorldMapPolygonEditorWindow : EditorWindow
             " map. Nhấn lần lượt 6 góc của một ô theo chiều kim đồng hồ hoặc ngược chiều; " +
             "kéo chấm tròn để tinh chỉnh. Không tự gán ID dựa trên thứ tự ô trong ảnh.",
             MessageType.Info);
-        EditorGUILayout.LabelField(status, EditorStyles.miniLabel);
+        EditorGUILayout.LabelField((current != null && current.reviewed
+            ? "ĐÃ DUYỆT " : "CHƯA DUYỆT ") + status, EditorStyles.miniLabel);
 
         Rect viewport = GUILayoutUtility.GetRect(80, 99999, 120, 99999,
             GUILayout.ExpandWidth(true), GUILayout.ExpandHeight(true));
@@ -232,7 +273,8 @@ public sealed class WorldMapPolygonEditorWindow : EditorWindow
         Handles.EndGUI();
 
         var e = Event.current;
-        if (e.type == EventType.MouseDown && e.button == 0 && rect.Contains(e.mousePosition))
+        if (CurrentTextureMatches() && e.type == EventType.MouseDown && e.button == 0 &&
+            rect.Contains(e.mousePosition))
         {
             current = ActivePolygon(true);
             dragVertex = -1;
@@ -243,6 +285,7 @@ public sealed class WorldMapPolygonEditorWindow : EditorWindow
             else if (current.vertices.Count < 6)
             {
                 current.vertices.Add(Snap(rect, e.mousePosition, current));
+                current.reviewed = false;
                 status = current.mapId + ": " + current.vertices.Count + "/6 đỉnh.";
             }
             else status = "Muốn thay đổi hình, hãy kéo đỉnh vàng hoặc chọn Vẽ lại map này.";
@@ -252,7 +295,10 @@ public sealed class WorldMapPolygonEditorWindow : EditorWindow
         {
             var p = ActivePolygon();
             if (p != null && dragVertex >= 0 && dragVertex < p.vertices.Count)
+            {
                 p.vertices[dragVertex] = Snap(rect, e.mousePosition, p);
+                p.reviewed = false;
+            }
             e.Use(); Repaint();
         }
         else if (e.type == EventType.MouseUp && e.button == 0)
