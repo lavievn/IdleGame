@@ -115,6 +115,13 @@ partial class MotionRegression
             invalid[1] = hex[4];
             Check(!WorldMapPolygons.ValidSixVertices(invalid),
                 "self-crossing or degenerate polygon rejected");
+            var concave = new List<Vector2> {
+                new Vector2(.2f,.2f),new Vector2(.8f,.2f),new Vector2(.8f,.45f),
+                new Vector2(.5f,.4f),new Vector2(.8f,.8f),new Vector2(.2f,.8f)
+            };
+            Check(WorldMapPolygons.ValidSixVertices(concave), "concave hex accepted");
+            Check(WorldMapPolygons.Triangulate(concave).Count == 12,
+                "six-sided concave shape triangulates into four triangles");
         });
         Run("clamp approach in both directions, including long frame",()=>{
             Near(BattleMotion.Approach(0,100,30,1000,1),70,"right");Near(BattleMotion.Approach(0,-100,30,1000,1),-70,"left");Near(BattleMotion.Approach(0,10,30,1000,1),0,"already in range");
