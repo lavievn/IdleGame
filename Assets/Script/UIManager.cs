@@ -172,6 +172,11 @@ public class UIManager : MonoBehaviour
         if (worldMapUI != null) worldMapUI.EndPan(screenPoint);
     }
 
+    public void CancelWorldMapPan()
+    {
+        if (worldMapUI != null) worldMapUI.CancelPan();
+    }
+
     public void ScrollWorldMap(Vector2 screenPoint, float delta)
     {
         if (worldMapUI != null) worldMapUI.ZoomAt(screenPoint, delta);
