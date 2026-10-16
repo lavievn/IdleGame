@@ -304,6 +304,7 @@ public class UIManager : MonoBehaviour
         overwritePage = MakePage("SystemOverwrite", "XÁC NHẬN GHI ĐÈ", root);
         loadPage = MakePage("SystemLoad", "TẢI BẢN LƯU", root);
         sizePage = MakePage("SystemSize", "KÍCH THƯỚC CỬA SỔ", root);
+        returnTitlePage = MakePage("SystemReturnTitleConfirm", "VỀ MÀN HÌNH CHÍNH?", root);
         saveTitle = savePage.GetComponentInChildren<TMPro.TextMeshProUGUI>(true);
         overwriteTitle = overwritePage.GetComponentInChildren<TMPro.TextMeshProUGUI>(true);
         MakeMenuButton(mainPage, "Exit", "Thoát", 0, ConfirmExit);
@@ -314,6 +315,8 @@ public class UIManager : MonoBehaviour
         });
         MakeMenuButton(mainPage, "WindowSize", "Kích thước cửa sổ", 4, () => ShowPage(sizePage));
         MakeMenuButton(mainPage, "ReturnTitle", "Quay lại màn hình chính", 5, ReturnToTitle);
+        MakeMenuButton(returnTitlePage, "ReturnTitleYes", "Có, về màn hình chính", 1, ConfirmReturnToTitle);
+        MakeMenuButton(returnTitlePage, "ReturnTitleNo", "Không, tiếp tục chơi", 2, CancelReturnToTitle);
         MakeMenuButton(savePage, "Save1", "Lưu vào ô 1", 0, () => SaveToSlot(SaveSlot.ManualSave1));
         MakeMenuButton(savePage, "Save2", "Lưu vào ô 2", 1, () => SaveToSlot(SaveSlot.ManualSave2));
         MakeMenuButton(savePage, "SaveBack", "Quay lại", 2, () => ShowPage(mainPage));
@@ -358,7 +361,7 @@ public class UIManager : MonoBehaviour
         }
     }
 
-    private GameObject mainPage, savePage, overwritePage, loadPage, sizePage;
+    private GameObject mainPage, savePage, overwritePage, loadPage, sizePage, returnTitlePage;
     private TMPro.TextMeshProUGUI menuFontTemplate, saveTitle, overwriteTitle;
     private SaveSlot pendingManualSlot;
     private GameObject MakePage(string name, string title, RectTransform parent)
@@ -1078,6 +1081,7 @@ public class UIManager : MonoBehaviour
         if (overwritePage != null) overwritePage.SetActive(overwritePage == page);
         if (loadPage != null) loadPage.SetActive(loadPage == page);
         if (sizePage != null) sizePage.SetActive(sizePage == page);
+        if (returnTitlePage != null) returnTitlePage.SetActive(returnTitlePage == page);
     }
 
     private void OpenLoadMenu()
@@ -1155,8 +1159,21 @@ public class UIManager : MonoBehaviour
     public void CloseSystemMenu() { if (systemMenu != null) systemMenu.SetActive(false); ShowPage(mainPage); }
     private void ReturnToTitle()
     {
+        // This button only OPENS confirmation. No autosave or scene transition
+        // is allowed until the user explicitly presses "Có".
+        ShowPage(returnTitlePage);
+    }
+    private void ConfirmReturnToTitle()
+    {
+        if (systemMenu == null || !systemMenu.activeInHierarchy ||
+            returnTitlePage == null || !returnTitlePage.activeInHierarchy) return;
         var gm=Object.FindFirstObjectByType<GameManager>();
         if(gm!=null && gm.ReturnToMainMenu())CloseSystemMenu();
+    }
+    private void CancelReturnToTitle()
+    {
+        if (returnTitlePage != null && returnTitlePage.activeInHierarchy)
+            ShowPage(mainPage);
     }
     private void LoadSlot(SaveSlot slot)
     {
