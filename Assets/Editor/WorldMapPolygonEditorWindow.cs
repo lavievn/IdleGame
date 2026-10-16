@@ -193,8 +193,14 @@ public sealed class WorldMapPolygonEditorWindow : EditorWindow
 
         EditorGUILayout.BeginHorizontal();
         EditorGUI.BeginDisabledGroup(ids.Count == 0);
+        int oldSelection = selectedIndex;
         selectedIndex = EditorGUILayout.Popup("Mã map", Mathf.Clamp(selectedIndex, 0,
             Mathf.Max(0, ids.Count - 1)), ids.ToArray(), GUILayout.MinWidth(190));
+        if (selectedIndex != oldSelection && isDrawing)
+        {
+            isDrawing = false; // Never accidentally add a corner to another map.
+            status = "Đã hủy chế độ vẽ khi đổi mã map. Các đỉnh cũ chưa bị xóa.";
+        }
         EditorGUI.EndDisabledGroup();
 
         showAll = GUILayout.Toggle(showAll, "Hiện viền đã ghi", GUILayout.Width(115));
