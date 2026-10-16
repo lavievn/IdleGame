@@ -230,11 +230,17 @@ public sealed class WorldMapPolygonEditorWindow : EditorWindow
                 mapTexture.height + " px. Chỉ xem tham chiếu, không ghi/sửa dữ liệu " +
                 "trừ khi tạo bộ polygon mới cho ảnh này.", MessageType.Error);
         }
-        int done = 0;
+        int done = 0, reviewed = 0;
         foreach (var p in document.polygons)
-            if (p != null && WorldMapPolygons.ValidSixVertices(p.vertices)) done++;
-        EditorGUILayout.HelpBox("Đã ghi " + done + "/" + ids.Count +
-            " map. Nhấn lần lượt 6 góc của một ô theo chiều kim đồng hồ hoặc ngược chiều; " +
+            if (p != null && WorldMapPolygons.ValidSixVertices(p.vertices))
+            {
+                done++;
+                if (p.reviewed) reviewed++;
+            }
+        EditorGUILayout.HelpBox("Đã có tọa độ " + done + "/" + ids.Count +
+            " map; ĐÃ CĂN VÀ DUYỆT " + reviewed + "/" + ids.Count +
+            ". Tọa độ sinh tự động là bản nháp, không được xem là đã duyệt. " +
+            "Nhấn lần lượt 6 góc của một ô theo chiều kim đồng hồ hoặc ngược chiều; " +
             "kéo chấm tròn để tinh chỉnh. Không tự gán ID dựa trên thứ tự ô trong ảnh.",
             MessageType.Info);
         EditorGUILayout.LabelField((current != null && current.reviewed
