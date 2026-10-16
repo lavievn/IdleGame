@@ -121,7 +121,7 @@ public sealed class WorldMapPolygonEditorWindow : EditorWindow
             if (!WorldMapPolygons.ValidSixVertices(polygon.vertices))
             {
                 EditorUtility.DisplayDialog("Chưa lưu",
-                    polygon.mapId + " phải có đúng 6 đỉnh tạo thành một đa giác lồi, không tự cắt.",
+                    polygon.mapId + " phải có đúng 6 đỉnh tạo thành đa giác đơn, không tự cắt (có thể lõm).",
                     "OK");
                 return;
             }
