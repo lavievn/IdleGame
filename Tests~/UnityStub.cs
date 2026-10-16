@@ -108,6 +108,10 @@ namespace UnityEngine
         public static Vector2 operator +(Vector2 a,Vector2 b) { return new Vector2(a.x+b.x,a.y+b.y); }
         public static Vector2 operator -(Vector2 a,Vector2 b) { return new Vector2(a.x-b.x,a.y-b.y); }
         public static implicit operator Vector3(Vector2 v) { return new Vector3(v.x,v.y,0); }
+        public static Vector2 operator *(Vector2 a,float b) { return new Vector2(a.x*b,a.y*b); }
+        public float sqrMagnitude { get { return x*x+y*y; } }
+        public float magnitude { get { return (float)System.Math.Sqrt(sqrMagnitude); } }
+        public Vector2 normalized { get { var len=magnitude;return len>0f?new Vector2(x/len,y/len):zero; } }
     }
     public struct Vector3
     {
@@ -152,7 +156,11 @@ namespace UnityEngine
     }
     public class CanvasRenderer : Component { }
     public class CanvasGroup : MonoBehaviour { public float alpha=1f; public bool interactable=true,blocksRaycasts=true; }
-    public class Sprite : Object { }
+    public class Sprite : Object
+    {
+        public Texture2D texture = new Texture2D(2,2,TextureFormat.RGBA32,false);
+        public Rect textureRect = new Rect(0,0,2,2);
+    }
     public class TextAsset : Object
     {
         public string text;
@@ -262,8 +270,18 @@ namespace UnityEngine.UI
     {
         public bool raycastTarget;
         public UnityEngine.RectTransform rectTransform { get { return (UnityEngine.RectTransform)transform; } }
+        protected static readonly UnityEngine.Texture s_WhiteTexture = new UnityEngine.Texture();
+        public virtual UnityEngine.Texture mainTexture { get { return s_WhiteTexture; } }
         public void SetVerticesDirty() { }
+        public void SetAllDirty() { }
         protected virtual void OnPopulateMesh(VertexHelper vh) { }
+    }
+    public struct UIVertex
+    {
+        public UnityEngine.Vector3 position;
+        public UnityEngine.Color color;
+        public UnityEngine.Vector2 uv0;
+        public static UIVertex simpleVert { get { return new UIVertex(); } }
     }
     public class VertexHelper
     {
@@ -272,6 +290,7 @@ namespace UnityEngine.UI
         public int currentVertCount { get { return vertices.Count; } }
         public void Clear() { vertices.Clear(); triangles.Clear(); }
         public void AddVert(UnityEngine.Vector3 p,UnityEngine.Color c,UnityEngine.Vector2 uv) { vertices.Add(p); }
+        public void AddVert(UIVertex vertex) { vertices.Add(vertex.position); }
         public void AddTriangle(int a,int b,int c) { triangles.Add(a);triangles.Add(b);triangles.Add(c); }
     }
 }
@@ -316,6 +335,7 @@ namespace UnityEngine {
  }
  // Test JSON double for primitive fields and identity lists; not Unity serialization.
  public static class JsonUtility {
+   public static T FromJson<T>(string json) where T : new() { return new T(); }
   public static string ToJson(object value,bool pretty){var fields=new List<string>();foreach(var f in value.GetType().GetFields()) {
    if(f.FieldType==typeof(int)||f.FieldType==typeof(float)||f.FieldType.IsEnum)fields.Add("\""+f.Name+"\":"+Convert.ToString(f.FieldType.IsEnum?(object)Convert.ToInt32(f.GetValue(value)):f.GetValue(value),System.Globalization.CultureInfo.InvariantCulture));
    else if(f.FieldType==typeof(List<int>) || f.FieldType==typeof(List<float>)) {
