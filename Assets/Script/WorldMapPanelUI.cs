@@ -206,8 +206,10 @@ public sealed class WorldMapPanelUI
     private Vector2 ToViewport(Vector2 screen)
     {
         Vector2 local;
+        // anchoredPosition uses the viewport CENTER, not its top-center pivot.
         return RectTransformUtility.ScreenPointToLocalPointInRectangle(
-            viewport, screen, null, out local) ? local : Vector2.zero;
+            viewport, screen, null, out local)
+            ? local - viewport.rect.center : Vector2.zero;
     }
 
     public bool BeginPan(Vector2 screen)
@@ -257,7 +259,7 @@ public sealed class WorldMapPanelUI
     }
 
     private void ZoomAroundViewportCenter(float multiplier)
-        => SetZoom(zoom * multiplier, viewport.rect.center);
+        => SetZoom(zoom * multiplier, Vector2.zero);
 
     private void SetZoom(float newZoom, Vector2 focus)
     {
