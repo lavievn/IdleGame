@@ -99,8 +99,8 @@ public class StartMenuUI : MonoBehaviour
         popup.GetComponent<Image>().raycastTarget = false;
         menu.message=menu.Label(textTemplate,popRect,"",
             new Vector2(0,55),new Vector2(410,145),21);
-        menu.MakeButton(template,popRect,"Có",new Vector2(-110,-66),gm.OnConfirmResetClicked);
-        menu.MakeButton(template,popRect,"Không",new Vector2(110,-66),gm.OnCancelResetClicked);
+        menu.MakeButton(template,popRect,"Có",new Vector2(-110,-66),gm.OnConfirmResetClicked,true);
+        menu.MakeButton(template,popRect,"Không",new Vector2(110,-66),gm.OnCancelResetClicked,true);
         gm.confirmationPopup=popup;
         popup.SetActive(false);
 
@@ -161,7 +161,8 @@ public class StartMenuUI : MonoBehaviour
         UIManager.ReadableText(label,fontSize);
         return label;
     }
-    private Button MakeButton(Button template,Transform parent,string title,Vector2 p,UnityAction action)
+    private Button MakeButton(Button template,Transform parent,string title,Vector2 p,
+        UnityAction action,bool confirmationAction=false)
     {
         var go=Instantiate(template.gameObject,parent);go.SetActive(true);
         go.name="Opening - "+title;
@@ -178,8 +179,18 @@ public class StartMenuUI : MonoBehaviour
         var background=go.GetComponent<Image>();
         if(background != null) { background.color=new Color(.06f,.18f,.24f,.94f);background.raycastTarget=false; }
         UnityAction clicked=()=>{
-            if(!openingMenuReady || !button.interactable || entryLocked ||
-               lastClickFrame==Time.frameCount)return;
+            if(!button.interactable || lastClickFrame==Time.frameCount)return;
+            if(confirmationAction)
+            {
+                // Modal confirmation must remain actionable even if a previous
+                // direct Load / return-to-title restarted the opening fade.
+                // Only the active pending popup may invoke Yes / No.
+                if(manager==null || !manager.HasPendingConfirmation ||
+                    manager.confirmationPopup==null ||
+                    !manager.confirmationPopup.activeInHierarchy)return;
+            }
+            else if(!openingMenuReady || entryLocked ||
+                (manager!=null && manager.HasPendingConfirmation))return;
             lastClickFrame=Time.frameCount;
             action();
         };
@@ -456,9 +467,13 @@ public class StartMenuUI : MonoBehaviour
     }
     public void ShowConfirmation(string text)
     {
+        if(manager==null || manager.confirmationPopup==null)return;
         message.text=text;
+        // Place above both the cinematic curtain and menu HUD, including after
+        // the return-to-title reparenting. Input does NOT depend on menu fade.
         manager.confirmationPopup.transform.SetAsLastSibling();
         manager.confirmationPopup.SetActive(true);
+        manager.confirmationPopup.transform.SetAsLastSibling();
     }
 
     public void RestoreMenu()
