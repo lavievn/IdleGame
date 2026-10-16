@@ -168,6 +168,45 @@ partial class MotionRegression
                   OpeningCinematicUI.ShowcaseCueSeconds<=30f,"cinematic art cue");
         });
 
+        Run("0.0.54 direct manual load cannot leave the opening curtain over combat", () =>
+        {
+            new Field(); // Clear prior stub scene and open a fresh UI hierarchy.
+            var gm = new GameObject("Direct Load GM").AddComponent<GameManager>();
+            gm.preGameUI = new GameObject("Direct Load Menu",
+                typeof(RectTransform), typeof(Image));
+            var canvas = new GameObject("Direct Load Canvas",typeof(RectTransform));
+            gm.preGameUI.transform.SetParent(canvas.transform,false);
+            var template = new GameObject("Direct Load Template",
+                typeof(RectTransform),typeof(Image),typeof(Button));
+            template.transform.SetParent(gm.preGameUI.transform,false);
+            var caption = new GameObject("Direct Load Caption",
+                typeof(RectTransform),typeof(TextMeshProUGUI));
+            caption.transform.SetParent(template.transform,false);
+            var menu = StartMenuUI.Install(gm);
+            Check(menu != null && menu.IsCinematic,"opening installed");
+
+            GameObject curtain=null, backdrop=null;
+            foreach(var o in UnityEngine.Object.objects)
+            {
+                var go = o as GameObject;
+                if(go==null)continue;
+                if(go.name=="Opening Black Curtain - Full Window")curtain=go;
+                if(go.name=="Opening Cinematic - Placeholder Layers")backdrop=go;
+            }
+            Check(curtain!=null && backdrop!=null,"opening siblings created");
+            menu.RestoreMenu();
+            Check(curtain.activeSelf && backdrop.activeSelf,
+                "menu restoration enables both opening layers");
+            menu.CompleteGameplayImmediately();
+            Check(!curtain.activeSelf && !backdrop.activeSelf,
+                "manual load removes curtain and overlay without entry animation");
+            Check(!gm.preGameUI.GetComponent<CanvasGroup>().blocksRaycasts,
+                "hidden title does not intercept gameplay clicks");
+            menu.RestoreMenu();
+            Check(curtain.activeSelf && backdrop.activeSelf,
+                "returning to title re-enables cinematic layers");
+        });
+
         Run("0.0.53 splash draws two distinct media from the drop-in folder", () =>
         {
             string previous=Application.streamingAssetsPath;
