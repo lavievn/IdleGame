@@ -75,40 +75,44 @@ namespace TuTienCore
             return inside;
         }
 
+        // A cell may have 3..24 corners: the source art is not a perfect hex grid.
+        // Keep the six-corner API for backwards-compatible regression tests.
         public static bool ValidSixVertices(IList<Vector2> points)
+            => points != null && points.Count == 6 && ValidPolygon(points);
+
+        public static bool ValidPolygon(IList<Vector2> points)
         {
-            if (points == null || points.Count != 6) return false;
-            float areaTwice = 0f;
-            for (int i = 0; i < 6; i++)
+            if (points == null || points.Count < 3 || points.Count > 24) return false;
+            int n = points.Count;
+            float twiceArea = 0f;
+            for (int i = 0; i < n; i++)
             {
-                Vector2 a = points[i], b = points[(i + 1) % 6];
+                Vector2 a = points[i], b = points[(i + 1) % n];
                 if (float.IsNaN(a.x) || float.IsNaN(a.y) ||
+                    float.IsInfinity(a.x) || float.IsInfinity(a.y) ||
                     a.x < 0f || a.y < 0f || a.x > 1f || a.y > 1f ||
                     (a - b).sqrMagnitude < .000001f) return false;
-                areaTwice += a.x * b.y - b.x * a.y;
+                twiceArea += a.x * b.y - b.x * a.y;
             }
-            if (Mathf.Abs(areaTwice) < .00001f) return false;
-            // Non-adjacent repeated vertices create a pinched region: invalid
-            // even when the segments merely touch without crossing.
-            for (int i = 0; i < 6; ++i)
-                for (int j = i + 1; j < 6; ++j)
+            if (Mathf.Abs(twiceArea) < .00001f) return false;
+            for (int i = 0; i < n; ++i)
+                for (int j = i + 1; j < n; ++j)
                     if ((points[i] - points[j]).sqrMagnitude < .000001f) return false;
-            // Reject crossed hexes, which would break fill and click logic.
-            for (int i = 0; i < 6; i++)
-            for (int j = i + 1; j < 6; j++)
-            {
-                if (j == i + 1 || (i == 0 && j == 5)) continue;
-                if (Intersects(points[i], points[(i + 1) % 6],
-                    points[j], points[(j + 1) % 6])) return false;
-            }
-            return true; // Concave six-sided maps are supported.
+            for (int i = 0; i < n; i++)
+                for (int j = i + 1; j < n; j++)
+                {
+                    if (j == i + 1 || (i == 0 && j == n - 1)) continue;
+                    if (Intersects(points[i], points[(i + 1) % n],
+                        points[j], points[(j + 1) % n])) return false;
+                }
+            return true;
         }
 
-        // Ear clipping supports irregular and concave six-sided shapes.
+        // Ear clipping supports simple concave polygons (3..24 corners).
         public static List<int> Triangulate(IList<Vector2> points)
         {
             var triangles = new List<int>();
-            if (!ValidSixVertices(points)) return triangles;
+            if (!ValidPolygon(points)) return triangles;
             float signedArea = 0f;
             for (int i = 0; i < points.Count; i++)
                 signedArea += Cross(points[i], points[(i + 1) % points.Count]);
@@ -116,7 +120,7 @@ namespace TuTienCore
             var remaining = new List<int>();
             for (int i = 0; i < points.Count; i++) remaining.Add(i);
             int guard = 0;
-            while (remaining.Count > 3 && guard++ < 24)
+            while (remaining.Count > 3 && guard++ < points.Count * points.Count)
             {
                 bool removed = false;
                 for (int i = 0; i < remaining.Count; i++)
@@ -178,7 +182,7 @@ namespace TuTienCore
             if (normalizedPosition.x < 0f || normalizedPosition.x > 1f ||
                 normalizedPosition.y < 0f || normalizedPosition.y > 1f) return null;
             foreach (var polygon in Load().polygons)
-                if (polygon != null && ValidSixVertices(polygon.vertices) &&
+                if (polygon != null && ValidPolygon(polygon.vertices) &&
                     (isVisible == null || isVisible(polygon.mapId)) &&
                     Contains(polygon.vertices, normalizedPosition)) return polygon.mapId;
             return null;
