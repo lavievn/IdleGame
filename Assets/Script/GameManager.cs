@@ -161,8 +161,10 @@ public class GameManager : MonoBehaviour
             actor.SpawnHero(false); // IMPORTANT: never steal the camera subject.
 
             Vector2 origin = environmentManager.Position(heroController.heroRect);
-            environmentManager.SetPosition(rect, origin +
-                new Vector2(30f + number * 25f, number % 2 == 0 ? -25f : 25f));
+            Vector2 companionStart = origin +
+                new Vector2(30f + number * 25f, number % 2 == 0 ? -25f : 25f);
+            companionStart.y = environmentManager.ClampHeroFeetY(companionStart.y);
+            environmentManager.SetPosition(rect, companionStart);
 
             actor.SetIdentityVisual(data);
             var image = rect.GetComponent<Image>();
@@ -284,8 +286,10 @@ public class GameManager : MonoBehaviour
             position++;
             member.Controller.SpawnHero(false); // never change camera target
             Vector2 home = environmentManager.Position(heroController.heroRect);
-            environmentManager.SetPosition(member.Controller.heroRect, home +
-                new Vector2(30f + position * 25f, position % 2 == 0 ? -25f : 25f));
+            Vector2 spawn = home +
+                new Vector2(30f + position * 25f, position % 2 == 0 ? -25f : 25f);
+            spawn.y = environmentManager.ClampHeroFeetY(spawn.y);
+            environmentManager.SetPosition(member.Controller.heroRect, spawn);
             combatManager.RegisterAdditionalHero(member.Controller, member.Data);
         }
     }
