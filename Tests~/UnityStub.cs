@@ -446,7 +446,8 @@ namespace UnityEngine.Video
         public UnityEngine.RenderTexture targetTexture;
         public event System.Action<VideoPlayer> prepareCompleted;
         public event System.Action<VideoPlayer,string> errorReceived;
-        public void Prepare(){ if(prepareCompleted!=null)prepareCompleted(this); }
+        public int prepareCalls;
+        public void Prepare(){ prepareCalls++; if(prepareCompleted!=null)prepareCompleted(this); }
         public void Play(){isPlaying=true;}
         public void Stop(){isPlaying=false;}
         public void Pause(){isPlaying=false;}
