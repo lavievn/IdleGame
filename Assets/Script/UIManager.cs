@@ -127,12 +127,54 @@ public class UIManager : MonoBehaviour
         Vector2 point;
         if(transparentWindow != null && transparentWindow.TryGetPointerPosition(out point)) { }
         else point=mouse.position.ReadValue();
+        if (worldMapUI != null && worldMapUI.IsOpen)
+        {
+            Vector2 scroll = mouse.scroll.ReadValue();
+            if (Mathf.Abs(scroll.y) > .001f)
+                worldMapUI.ZoomAt(point, scroll.y);
+        }
         if(mouse.leftButton.wasPressedThisFrame)
         {
-            if(!TryBeginOpeningVolumeDrag(point))HandleMouseClick(point);
+            if (!TryBeginOpeningVolumeDrag(point) && !TryBeginWorldMapPan(point))
+                HandleMouseClick(point);
         }
-        else if(mouse.leftButton.isPressed)DragOpeningVolume(point);
-        if(mouse.leftButton.wasReleasedThisFrame)EndOpeningVolumeDrag();
+        else if(mouse.leftButton.isPressed)
+        {
+            if (!DragWorldMapPan(point)) DragOpeningVolume(point);
+        }
+        if(mouse.leftButton.wasReleasedThisFrame)
+        {
+            EndWorldMapPan(point);
+            EndOpeningVolumeDrag();
+        }
+    }
+
+    // Shared with TransparentWindow's Win32 pointer routing. Capture the
+    // map gesture before the native window-drag gesture can start.
+    public bool TryBeginWorldMapPan(Vector2 screenPoint)
+    {
+        if (worldMapUI == null || !worldMapUI.HitMapSurface(screenPoint)) return false;
+        // Buttons have priority; do not pan if press began on a toolbar item.
+        if (HitControl(screenPoint) != null) return false;
+        return worldMapUI.BeginPan(screenPoint);
+    }
+
+    public bool DragWorldMapPan(Vector2 screenPoint)
+    {
+        if (worldMapUI == null || !worldMapUI.IsOpen) return false;
+        if (!worldMapUI.PanIsCaptured) return false;
+        worldMapUI.ContinuePan(screenPoint);
+        return true;
+    }
+
+    public void EndWorldMapPan(Vector2 screenPoint)
+    {
+        if (worldMapUI != null) worldMapUI.EndPan(screenPoint);
+    }
+
+    public void ScrollWorldMap(Vector2 screenPoint, float delta)
+    {
+        if (worldMapUI != null) worldMapUI.ZoomAt(screenPoint, delta);
     }
 
     public void RegisterInteractable(CustomInteractable item) { if (!interactables.Contains(item)) interactables.Add(item); }
