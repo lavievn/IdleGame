@@ -109,6 +109,8 @@ namespace UnityEngine
         public static Vector2 operator -(Vector2 a,Vector2 b) { return new Vector2(a.x-b.x,a.y-b.y); }
         public static implicit operator Vector3(Vector2 v) { return new Vector3(v.x,v.y,0); }
         public static Vector2 operator *(Vector2 a,float b) { return new Vector2(a.x*b,a.y*b); }
+        public static Vector2 Scale(Vector2 a,Vector2 b) { return new Vector2(a.x*b.x,a.y*b.y); }
+        public static float Dot(Vector2 a,Vector2 b) { return a.x*b.x+a.y*b.y; }
         public float sqrMagnitude { get { return x*x+y*y; } }
         public float magnitude { get { return (float)System.Math.Sqrt(sqrMagnitude); } }
         public Vector2 normalized { get { var len=magnitude;return len>0f?new Vector2(x/len,y/len):zero; } }
@@ -140,6 +142,9 @@ namespace UnityEngine
         public static float MoveTowards(float a,float b,float d) { return a+Math.Sign(b-a)*Math.Min(Math.Abs(b-a),d); }
         public static float Lerp(float a,float b,float t) { return a+(b-a)*Clamp01(t); }
         public static int RoundToInt(float a) { return (int)Math.Round(a); }
+        public static int FloorToInt(float a) { return (int)Math.Floor(a); }
+        public static int CeilToInt(float a) { return (int)Math.Ceiling(a); }
+        public static float Pow(float a,float b) { return (float)Math.Pow(a,b); }
     }
     public static class Random
     {
@@ -175,9 +180,13 @@ namespace UnityEngine
     }
     public class Texture : Object { }
     public enum TextureFormat { RGBA32 }
+    public enum FilterMode { Bilinear }
+    public enum TextureWrapMode { Clamp }
     public class Texture2D : Texture
     {
         public int width,height;
+        public FilterMode filterMode;
+        public TextureWrapMode wrapMode;
         public Texture2D(int w,int h,TextureFormat format,bool mipmap){width=w;height=h;}
         public Color32[] pixels;
         public void SetPixels32(Color32[] colors) { pixels=colors; }
@@ -410,7 +419,7 @@ namespace UnityEngine {
    else if(f.FieldType.IsEnum)f.SetValue(value,Enum.ToObject(f.FieldType,int.Parse(m.Groups[1].Value))); } }
  }
 }
-namespace UnityEngine.InputSystem { public class Mouse { public static Mouse current;public Control leftButton=new Control(),position=new Control(); public class Control {public bool wasPressedThisFrame,wasReleasedThisFrame,isPressed;public UnityEngine.Vector2 value;public UnityEngine.Vector2 ReadValue(){return value;}} } }
+namespace UnityEngine.InputSystem { public class Mouse { public static Mouse current;public Control leftButton=new Control(),position=new Control(),scroll=new Control(); public class Control {public bool wasPressedThisFrame,wasReleasedThisFrame,isPressed;public UnityEngine.Vector2 value;public UnityEngine.Vector2 ReadValue(){return value;}} } }
 
 namespace UnityEngine {
  public enum FindObjectsInactive { Include }
