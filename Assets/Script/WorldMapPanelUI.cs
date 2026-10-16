@@ -119,6 +119,9 @@ public sealed class WorldMapPanelUI
         outlineRect.offsetMax = Vector2.zero;
         outlines = outlineGO.GetComponent<WorldMapOutlineGraphic>();
         outlines.raycastTarget = false;
+        // Hide stroke/borders in gameplay; keep polygon hit tests, fog and routes.
+        // The graphic remains available for future editor/debug visualization.
+        outlines.enabled = false;
         // Render authored country names above the cloud layer, never borders.
         foreach (WorldMapNation nation in WorldMapCatalog.Nations)
         {
