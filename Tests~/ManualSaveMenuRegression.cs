@@ -15,6 +15,53 @@ partial class MotionRegression
 
     static void ManualSaveMenuTests()
     {
+        Run("0.0.54 system return-to-title asks Yes/No and honors cancellation",()=>{
+            var f=new Field();
+            SaveManager saves;string dir;
+            var gm=MenuManager(f,out saves,out dir);
+            try
+            {
+                var hero=HeroAt(4);
+                Set(gm,"runtimeHeroData",hero);
+                Set(gm,"hasDeployed",true);
+                var ui=new GameObject().AddComponent<UIManager>();
+                UIManager.Instance=ui;
+                var canvas=new GameObject(true);
+                ((RectTransform)canvas.transform).sizeDelta=new Vector2(900,500);
+                ui.systemMenu=new GameObject(true);
+                ui.systemMenu.transform.parent=canvas.transform;
+                var caption=new GameObject(true);
+                caption.transform.parent=ui.systemMenu.transform;
+                caption.AddComponent<TextMeshProUGUI>();
+                ui.systemMenu.SetActive(false);
+                Call(ui,"Start");
+
+                ui.ToggleSystemMenu();
+                ManualMenuButton(ui.systemMenu,"ReturnTitle").onClickEvent.Invoke();
+                Check(Get<bool>(gm,"hasDeployed") &&
+                      !saves.HasSave(SaveSlot.AutoSave),
+                    "opening confirmation does not exit or save");
+                Check(ManualMenuButton(ui.systemMenu,"ReturnTitleNo")
+                    .gameObject.activeInHierarchy,
+                    "confirmation Yes/No page visible");
+                ManualMenuButton(ui.systemMenu,"ReturnTitleNo").onClickEvent.Invoke();
+                Check(Get<bool>(gm,"hasDeployed") && ui.systemMenu.activeSelf,
+                    "No keeps running gameplay and returns to system menu");
+
+                ManualMenuButton(ui.systemMenu,"ReturnTitle").onClickEvent.Invoke();
+                ManualMenuButton(ui.systemMenu,"ReturnTitleYes").onClickEvent.Invoke();
+                Check(!Get<bool>(gm,"hasDeployed") &&
+                      saves.HasSave(SaveSlot.AutoSave) &&
+                      !ui.systemMenu.activeSelf,
+                    "Yes saves and returns to title only after confirmation");
+            }
+            finally
+            {
+                UIManager.Instance=null;
+                Directory.Delete(dir,true);
+            }
+        });
+
         Run("0.0.51 menu saves slot 1, confirms overwrite and protects cancellation",()=>{
             var f=new Field();
             SaveManager saves; string dir;
