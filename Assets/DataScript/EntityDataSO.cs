@@ -74,6 +74,33 @@ public class EntityDataSO : ScriptableObject
     // Persist the primary Hero's selected stance independently of its
     // long-term weapon/martial-arts aptitudes (future character generation).
     public AttackMode savedAttackMode = AttackMode.Melee;
+    // 0.0.54 B2 prototype: record the temporary companion ROSTER (0..2 actors)
+    // so a new runtime can rebuild it on Continue / manual Load / Retry.
+    // These are attack modes only, NOT separately progressed hero characters.
+    // Version 0 = older save without this feature; 1 = explicitly saved roster.
+    public int b2PartyVersion = 0;
+    public List<int> b2CompanionModes = new List<int>();
+
+    public void NormalizeB2Party()
+    {
+        if (b2CompanionModes == null) b2CompanionModes = new List<int>();
+        var safe = new List<int>();
+        if (b2PartyVersion > 0)
+            foreach (int mode in b2CompanionModes)
+            {
+                if (safe.Count >= 2) break;
+                if (mode >= (int)AttackMode.Melee &&
+                    mode <= (int)AttackMode.RangedMagic)
+                    safe.Add(mode);
+            }
+        if (b2PartyVersion < 0) b2PartyVersion = 0;
+        if (safe.Count != b2CompanionModes.Count)
+        {
+            b2CompanionModes = safe;
+            isDirty = true;
+        }
+    }
+
     public void SetSavedAttackMode(AttackMode mode)
     {
         if (mode != AttackMode.Melee && mode != AttackMode.RangedPhysical &&
