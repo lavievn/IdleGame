@@ -72,7 +72,12 @@ namespace TuTienCore
                 areaTwice += a.x * b.y - b.x * a.y;
             }
             if (Mathf.Abs(areaTwice) < .00001f) return false;
-            // Reject crossed hexes, which would break the UI triangle fan.
+            // Non-adjacent repeated vertices create a pinched region: invalid
+            // even when the segments merely touch without crossing.
+            for (int i = 0; i < 6; ++i)
+                for (int j = i + 1; j < 6; ++j)
+                    if ((points[i] - points[j]).sqrMagnitude < .000001f) return false;
+            // Reject crossed hexes, which would break fill and click logic.
             for (int i = 0; i < 6; i++)
             for (int j = i + 1; j < 6; j++)
             {
