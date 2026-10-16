@@ -89,6 +89,7 @@ public class GameManager : MonoBehaviour
         if (testCompanions.Count >= TestCompanionLimit)
         {
             ClearTestCompanions();
+            CaptureB2Roster();
             UpdateEventLog("[B2 TEST] Đã thu hồi đồng đội thử nghiệm.");
             return;
         }
@@ -100,12 +101,13 @@ public class GameManager : MonoBehaviour
             return;
         }
         testCompanions.Add(extra);
+        CaptureB2Roster();
         UpdateEventLog("[B2 TEST] Gọi đồng đội " + testCompanions.Count +
             "/2, dạng " + extra.Controller.attackMode + ". Tổng: " +
             (testCompanions.Count + 1) + " Hero.");
     }
 
-    private TestCompanion CreateTestCompanion()
+    private TestCompanion CreateTestCompanion(AttackMode? savedMode = null)
     {
         // Clone only the visible UI actor; cloning the scene's HeroController
         // GameObject would keep external scene references pointed at Hero #1.
@@ -130,7 +132,7 @@ public class GameManager : MonoBehaviour
             actor.atkStatusText = null; // Independent data, no duplicate HUD.
             actor.moveSpeed = heroController.moveSpeed;
             actor.laneSpeed = heroController.laneSpeed;
-            actor.attackMode = RandomUnusedTestMode();
+            actor.attackMode = savedMode.HasValue ? savedMode.Value : RandomUnusedTestMode();
 
             data = Instantiate(runtimeHeroData);
             // B2 companions are temporary test combatants, not persistent
@@ -148,6 +150,8 @@ public class GameManager : MonoBehaviour
             data.inventory = new List<InventoryStack>();
             data.equippedItemId = "";
             data.testItemsGranted = false;
+            data.b2PartyVersion = 0;
+            data.b2CompanionModes = new List<int>(); // clones never own saved rosters
             data.entityName = "Đồng đội B2-" + number;
             data.currentExp = 0;
             data.isDirty = false;
@@ -198,8 +202,65 @@ public class GameManager : MonoBehaviour
         }
         testCompanions.Clear();
     }
+    // Snapshot only the current B2 roster's roles. It is NOT a full second
+    // EntityDataSO save and does not copy equipment/progression for duplicates.
+    // Save BEFORE the runtime actors are cleared on ReturnToTitle or Load.
+    private void CaptureB2Roster()
+    {
+        if (runtimeHeroData == null) return;
+        var roles = new List<int>();
+        foreach (var member in testCompanions)
+        {
+            if (roles.Count >= TestCompanionLimit) break;
+            if (member == null || member.Controller == null) continue;
+            AttackMode mode = member.Controller.attackMode;
+            if (mode == AttackMode.Melee || mode == AttackMode.RangedPhysical ||
+                mode == AttackMode.RangedMagic)
+                roles.Add((int)mode);
+        }
+        var previous = runtimeHeroData.b2CompanionModes;
+        bool changed = runtimeHeroData.b2PartyVersion != 1 ||
+            previous == null || previous.Count != roles.Count;
+        if (!changed)
+            for (int i = 0; i < roles.Count; i++)
+                if (previous[i] != roles[i]) { changed = true; break; }
+        if (changed)
+        {
+            runtimeHeroData.b2PartyVersion = 1;
+            runtimeHeroData.b2CompanionModes = roles;
+            runtimeHeroData.isDirty = true; // autosave even if nothing else changed
+        }
+    }
+
+    private void RestoreB2Roster()
+    {
+        if (runtimeHeroData == null || runtimeHeroData.b2PartyVersion < 1 ||
+            runtimeHeroData.b2CompanionModes == null) return;
+        // Snapshot the mode list; CreateTestCompanion clones the current
+        // primary Data, so never share or mutate the source collection.
+        var roles = new List<int>(runtimeHeroData.b2CompanionModes);
+        int restored = 0;
+        foreach (int value in roles)
+        {
+            if (testCompanions.Count >= TestCompanionLimit) break;
+            if (value < (int)AttackMode.Melee ||
+                value > (int)AttackMode.RangedMagic) continue;
+            var companion = CreateTestCompanion((AttackMode)value);
+            if (companion == null)
+            {
+                Debug.LogWarning("[SaveLoad] Could not rebuild B2 companion; " +
+                    "keeping its saved slot for a later load.");
+                continue;
+            }
+            testCompanions.Add(companion);
+            restored++;
+        }
+        Debug.Log("[SaveLoad] Restored B2 companions: " + restored +
+            "/" + roles.Count);
+    }
+
     // Moving to another world node restarts the battle, but does not dissolve
-    // the living B2 test party. These temporary actors still do not enter saves.
+    // the living B2 test party. Its lightweight roster is saved separately.
     private List<TestCompanion> TravellingTestCompanions()
     {
         var moving = new List<TestCompanion>();
@@ -310,6 +371,8 @@ public class GameManager : MonoBehaviour
         // New characters start with the established melee test stance.
         // Randomized combat aptitudes belong to future character generation.
         runtimeHeroData.savedAttackMode = AttackMode.Melee;
+        runtimeHeroData.b2PartyVersion = 1;
+        runtimeHeroData.b2CompanionModes = new List<int>();
         EquipmentInventory.InitializeNewRun(runtimeHeroData);
         EquipmentRuntime.InitializeNewRun(runtimeHeroData);
         runtimeHeroData.originHealth = Mathf.Max(1,heroDataSO != null ? heroDataSO.baseHealth : CombatBalance.HeroHealth(1));
@@ -421,6 +484,7 @@ public class GameManager : MonoBehaviour
         ClearTestCompanions();
         if (combatManager != null) combatManager.SetupHeroInfo(runtimeHeroData);
         heroController.SpawnHero();
+        RestoreB2Roster();
         RestoreProgress();
         if (UIManager.Instance != null) UIManager.Instance.ShowMapTitle(runtimeHeroData.mapName);
         CallNextWave();
@@ -543,6 +607,7 @@ public class GameManager : MonoBehaviour
             return false;
         }
         CaptureSelectedStance();
+        CaptureB2Roster();
         bool saved = saveManager.SaveGame(runtimeHeroData, slot);
         if (saved)
             Debug.Log("[SaveLoad] Saved " + slot + ": level=" +
@@ -634,6 +699,7 @@ public class GameManager : MonoBehaviour
             if (hasDeployed && !HasPendingConfirmation && runtimeHeroData != null && saveManager != null)
             {
                 CaptureSelectedStance();
+                CaptureB2Roster();
                 if (runtimeHeroData.isDirty)
                     saveManager.SaveGame(runtimeHeroData, SaveSlot.AutoSave);
             }
@@ -672,6 +738,7 @@ public class GameManager : MonoBehaviour
         ClearTestCompanions();
         if (combatManager != null) combatManager.SetupHeroInfo(runtimeHeroData);
         heroController.SpawnHero();
+        RestoreB2Roster();
         RestoreProgress();
         if (UIManager.Instance != null) UIManager.Instance.ShowMapTitle(runtimeHeroData.mapName);
         CallNextWave();
@@ -687,6 +754,7 @@ public class GameManager : MonoBehaviour
         if (hasDeployed && runtimeHeroData != null)
         {
             CaptureSelectedStance();
+            CaptureB2Roster();
             if (saveManager == null || !saveManager.SaveGame(runtimeHeroData, SaveSlot.AutoSave))
             {
                 UpdateEventLog("Không thể lưu tiến trình. Vẫn ở lại trò chơi.");
@@ -966,6 +1034,7 @@ public class GameManager : MonoBehaviour
     {
         if (saveManager == null || !hasDeployed || runtimeHeroData == null) return;
         CaptureSelectedStance();
+        CaptureB2Roster();
         saveManager.SaveGame(runtimeHeroData, SaveSlot.AutoSave);
     }
 }
