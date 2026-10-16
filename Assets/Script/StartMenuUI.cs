@@ -481,6 +481,21 @@ public class StartMenuUI : MonoBehaviour
         foreach(var b in menuButtons)if(b!=null)b.interactable=false;
         settingsPage.SetActive(false);
     }
+    // Called when manual LoadAndContinue enters gameplay without playing the
+    // cloud transition. Unlike preGameUI, the video/canvas curtain is a sibling.
+    public void CompleteGameplayImmediately()
+    {
+        if (cinematic != null) cinematic.CompleteEntryImmediately();
+        entryLocked = false;
+        openingMenuReady = false;
+        if (rootFade != null)
+        {
+            rootFade.alpha = 0f;
+            rootFade.interactable = false;
+            rootFade.blocksRaycasts = false;
+        }
+    }
+
     public bool BeginGameplayTransition()
     {
         if(cinematic==null || cinematic.IsEntering)return false;
