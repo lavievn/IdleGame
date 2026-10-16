@@ -18,6 +18,7 @@ public sealed class WorldMapPolygonEditorWindow : EditorWindow
     private readonly List<string> ids = new List<string>();
     private int selectedIndex;
     private bool showAll = true;
+    private bool snapToNeighbors = true;
     private bool isDragging;
     private int dragVertex = -1;
     private string status = "Chọn đúng ảnh bản đồ đã chốt và click 6 đỉnh mỗi ô.";
@@ -89,6 +90,25 @@ public sealed class WorldMapPolygonEditorWindow : EditorWindow
         => new Vector2(Mathf.Clamp01((point.x - rect.x) / rect.width),
             Mathf.Clamp01(1f - (point.y - rect.y) / rect.height));
 
+    private Vector2 Snap(Rect rect, Vector2 screen, WorldMapPolygon current)
+    {
+        Vector2 value = FromScreen(rect, screen);
+        if (!snapToNeighbors) return value;
+        float bestPixels = 11f;
+        foreach (var polygon in document.polygons)
+        {
+            if (polygon == null || polygon == current || polygon.vertices == null) continue;
+            foreach (var neighbor in polygon.vertices)
+            {
+                float pixels = Vector2.Distance(ScreenPoint(rect, neighbor), screen);
+                if (pixels >= bestPixels) continue;
+                bestPixels = pixels;
+                value = neighbor; // Copy exact coordinates of shared corner.
+            }
+        }
+        return value;
+    }
+
     private void DrawPolyline(WorldMapPolygon polygon, Rect rect, Color color)
     {
         if (polygon == null || polygon.vertices == null || polygon.vertices.Count == 0) return;
@@ -156,6 +176,7 @@ public sealed class WorldMapPolygonEditorWindow : EditorWindow
         EditorGUI.EndDisabledGroup();
 
         showAll = GUILayout.Toggle(showAll, "Hiện viền đã ghi", GUILayout.Width(115));
+        snapToNeighbors = GUILayout.Toggle(snapToNeighbors, "Dính đỉnh ô kề", GUILayout.Width(115));
         if (GUILayout.Button("Vẽ lại map này", GUILayout.Width(115)))
         {
             if (EditorUtility.DisplayDialog("Xóa tọa độ", "Xóa 6 đỉnh đang chọn để vẽ lại?",
@@ -221,7 +242,7 @@ public sealed class WorldMapPolygonEditorWindow : EditorWindow
             if (dragVertex >= 0) isDragging = true;
             else if (current.vertices.Count < 6)
             {
-                current.vertices.Add(FromScreen(rect, e.mousePosition));
+                current.vertices.Add(Snap(rect, e.mousePosition, current));
                 status = current.mapId + ": " + current.vertices.Count + "/6 đỉnh.";
             }
             else status = "Muốn thay đổi hình, hãy kéo đỉnh vàng hoặc chọn Vẽ lại map này.";
@@ -231,7 +252,7 @@ public sealed class WorldMapPolygonEditorWindow : EditorWindow
         {
             var p = ActivePolygon();
             if (p != null && dragVertex >= 0 && dragVertex < p.vertices.Count)
-                p.vertices[dragVertex] = FromScreen(rect, e.mousePosition);
+                p.vertices[dragVertex] = Snap(rect, e.mousePosition, p);
             e.Use(); Repaint();
         }
         else if (e.type == EventType.MouseUp && e.button == 0)
