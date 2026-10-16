@@ -191,7 +191,11 @@ partial class MotionRegression
             menu.RestoreMenu(); // return-to-title restarts fade from zero
             Check(!gm.preGameUI.GetComponent<CanvasGroup>().blocksRaycasts,
                 "opening menu still fading; menu input initially gated");
+            var newHud = new GameObject("Reparented HUD Canvas",typeof(RectTransform));
+            gm.preGameUI.transform.SetParent(newHud.transform,false);
             gm.OnNewGameClicked();
+            Check(gm.confirmationPopup.transform.parent == gm.preGameUI.transform.parent,
+                "confirm popup follows menu into new Canvas when it appears");
             Check(gm.HasPendingConfirmation && gm.confirmationPopup.activeSelf,
                 "modal appears even before title fade finishes");
             CustomInteractable no=null;
