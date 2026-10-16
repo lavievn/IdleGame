@@ -18,6 +18,7 @@ public sealed class WorldMapPolygonEditorWindow : EditorWindow
     private readonly List<string> ids = new List<string>();
     private int selectedIndex;
     private bool showAll = true;
+    private bool showIds;
     private bool snapToNeighbors = true;
     private bool isDragging;
     private bool isDrawing;
@@ -36,6 +37,8 @@ public sealed class WorldMapPolygonEditorWindow : EditorWindow
     {
         LoadDocument();
         LoadIds();
+        mapTexture = AssetDatabase.LoadAssetAtPath<Texture2D>(
+            "Assets/Resources/WorldMapArtwork.png");
     }
 
     private void LoadIds()
@@ -204,6 +207,7 @@ public sealed class WorldMapPolygonEditorWindow : EditorWindow
         EditorGUI.EndDisabledGroup();
 
         showAll = GUILayout.Toggle(showAll, "Hiện viền đã ghi", GUILayout.Width(115));
+        showIds = GUILayout.Toggle(showIds, "Hiện mã ô", GUILayout.Width(87));
         snapToNeighbors = GUILayout.Toggle(snapToNeighbors, "Dính đỉnh ô kề", GUILayout.Width(115));
         if (GUILayout.Button("Duyệt map này", GUILayout.Width(108)))
         {
@@ -237,6 +241,23 @@ public sealed class WorldMapPolygonEditorWindow : EditorWindow
                 status = p.mapId + ": khép kín " + p.vertices.Count + " đỉnh, CHƯA duyệt.";
             }
             else status = "Đa giác chưa hợp lệ: cần 3–24 đỉnh, không tự cắt.";
+        }
+        if (GUILayout.Button("Ô chưa duyệt kế", GUILayout.Width(118)))
+        {
+            int count = ids.Count;
+            for (int offset = 1; offset <= count; offset++)
+            {
+                int index = (selectedIndex + offset) % count;
+                WorldMapPolygon match = document.polygons.Find(
+                    p => p != null && p.mapId == ids[index]);
+                if (match == null || !match.reviewed)
+                {
+                    selectedIndex = index;
+                    isDrawing = false;
+                    status = "Chọn " + ids[index] + ": chưa duyệt.";
+                    break;
+                }
+            }
         }
         EditorGUILayout.EndHorizontal();
 
@@ -284,6 +305,19 @@ public sealed class WorldMapPolygonEditorWindow : EditorWindow
                 if (p != current && p != null && WorldMapPolygons.ValidPolygon(p.vertices))
                     DrawPolyline(p, rect, new Color(.15f, 1f, .65f, .55f));
 
+        if (showIds)
+        {
+            var labelStyle = new GUIStyle(EditorStyles.miniBoldLabel);
+            labelStyle.normal.textColor = Color.white;
+            foreach (var p in document.polygons)
+            {
+                if (p == null || p.vertices == null || p.vertices.Count < 3) continue;
+                Vector2 sum = Vector2.zero;
+                foreach (var vertex in p.vertices) sum += vertex;
+                var at = ScreenPoint(rect, sum / p.vertices.Count);
+                Handles.Label(at, p.mapId, labelStyle);
+            }
+        }
         if (current != null && current.vertices != null)
         {
             DrawPolyline(current, rect, Color.yellow);
