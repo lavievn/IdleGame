@@ -69,6 +69,15 @@ public sealed class OpeningCinematicUI : MonoBehaviour
             blackCurtain.transform.SetParent(parent,false);
             blackCurtain.transform.SetAsLastSibling();
         }
+        // The confirmation popup is also a sibling of preGameUI. It must
+        // follow the same HUD/Canvas reparenting as the cinematic siblings,
+        // or native hit testing may use a different coordinate space.
+        if(game!=null && game.confirmationPopup!=null)
+        {
+            var modal=game.confirmationPopup.transform;
+            if(modal.parent!=parent)modal.SetParent(parent,false);
+            if(game.confirmationPopup.activeSelf)modal.SetAsLastSibling();
+        }
     }
 
     // Refuse to serialize positions from a split/misaligned canvas.
