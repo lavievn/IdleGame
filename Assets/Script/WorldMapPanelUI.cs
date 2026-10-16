@@ -14,6 +14,9 @@ public sealed class WorldMapPanelUI
     private readonly RectTransform root;
     private readonly Image artwork;
     private readonly RawImage fog;
+    private readonly WorldMapRevealedGraphic reveal;
+    private readonly WorldMapOutlineGraphic outlines;
+    private string selectedMapId = "";
     private readonly TextMeshProUGUI heading;
     private readonly TextMeshProUGUI summary;
     private readonly RectTransform[] choices = new RectTransform[8];
@@ -70,6 +73,29 @@ public sealed class WorldMapPanelUI
         fog.raycastTarget = false;
         fogTexture = new Texture2D(FogWidth,FogHeight,TextureFormat.RGBA32,false);
         fog.texture = fogTexture;
+        // Every visited cell re-displays the original map texture inside its
+        // six authored vertices; unknown cells remain covered by the full fog.
+        var revealedGO = new GameObject("FogRevealedHexagons",
+            typeof(RectTransform), typeof(CanvasRenderer), typeof(WorldMapRevealedGraphic));
+        var revealedRect = (RectTransform)revealedGO.transform;
+        revealedRect.SetParent(artRect, false);
+        revealedRect.anchorMin = Vector2.zero;
+        revealedRect.anchorMax = Vector2.one;
+        revealedRect.offsetMin = Vector2.zero;
+        revealedRect.offsetMax = Vector2.zero;
+        reveal = revealedGO.GetComponent<WorldMapRevealedGraphic>();
+        reveal.raycastTarget = false;
+
+        var outlineGO = new GameObject("HexagonTravelBoundaries",
+            typeof(RectTransform), typeof(CanvasRenderer), typeof(WorldMapOutlineGraphic));
+        var outlineRect = (RectTransform)outlineGO.transform;
+        outlineRect.SetParent(artRect, false);
+        outlineRect.anchorMin = Vector2.zero;
+        outlineRect.anchorMax = Vector2.one;
+        outlineRect.offsetMin = Vector2.zero;
+        outlineRect.offsetMax = Vector2.zero;
+        outlines = outlineGO.GetComponent<WorldMapOutlineGraphic>();
+        outlines.raycastTarget = false;
         // Render authored country names above the cloud layer, never borders.
         foreach (WorldMapNation nation in WorldMapCatalog.Nations)
         {
@@ -96,6 +122,9 @@ public sealed class WorldMapPanelUI
 
         owner.SmallButton(root,"WorldMapClose","Đóng",new Vector2(1f,1f),
             new Vector2(1f,1f),new Vector2(-14f,-14f),new Vector2(90f,32f),Close);
+        owner.SmallButton(root,"WorldMapTravelSelected","Tới ô đã chọn",new Vector2(1f,0f),
+            new Vector2(1f,0f),new Vector2(-14f,171f),new Vector2(130f,28f),
+            TravelSelected);
         navigation = (RectTransform)new GameObject("WorldMapRoutes",typeof(RectTransform)).transform;
         navigation.SetParent(root,false);
         navigation.anchorMin = new Vector2(1f,0f);
@@ -130,6 +159,46 @@ public sealed class WorldMapPanelUI
     }
 
     public bool IsOpen => root != null && root.gameObject.activeSelf;
+    public RectTransform Root => root;
+    public bool HitMapSurface(Vector2 screenPoint) =>
+        IsOpen && artwork != null &&
+        RectTransformUtility.RectangleContainsScreenPoint(
+            (RectTransform)artwork.transform, screenPoint, null);
+
+    // Hit against the exact six-corner region. Selection never auto-travels.
+    public bool HandleMapClick(Vector2 screenPoint)
+    {
+        if (!HitMapSurface(screenPoint)) return false;
+        EntityDataSO hero = host.HeroData;
+        if (hero == null || !WorldMapCatalog.Enabled(hero)) return true;
+        Vector2 position = WorldMapPolygons.NormalizedPoint(
+            (RectTransform)artwork.transform, screenPoint);
+        string id = WorldMapPolygons.HitTest(position, candidate =>
+        {
+            WorldMapNode current;
+            return (hero.worldMapVisited != null && hero.worldMapVisited.Contains(candidate)) ||
+                (WorldMapCatalog.TryGet(hero.worldMapId, out current) &&
+                 WorldMapCatalog.IsCleared(hero, current.Id) &&
+                 current.Links.Contains(candidate));
+        });
+        if (!string.IsNullOrEmpty(id))
+        {
+            selectedMapId = id;
+            Refresh();
+        }
+        else summary.text = WorldMapPolygons.Load().polygons.Count == 0
+            ? "Chưa có tọa độ lục giác: mở Tools > Bach Luyen Tien Do > World Map Polygon Editor (.54)."
+            : "Map chưa khám phá hoặc chưa có viền 6 đỉnh. Hoàn thành 5 wave để mở hướng đi kề.";
+        return true;
+    }
+
+    private void TravelSelected()
+    {
+        if (string.IsNullOrEmpty(selectedMapId)) return;
+        if (host.TryTravelToWorldMap(selectedMapId)) Close();
+        else Refresh();
+    }
+
     public void Toggle() { if(IsOpen) Close(); else Open(); }
 
     public void Open()
@@ -139,6 +208,7 @@ public sealed class WorldMapPanelUI
         previousPause=owner.IsPaused;
         owner.SetPaused(true);
         page=0;
+        selectedMapId = host.HeroData.worldMapId;
         Resize();
         root.gameObject.SetActive(true);
         root.SetAsLastSibling();
@@ -166,46 +236,27 @@ public sealed class WorldMapPanelUI
         ((RectTransform)summary.transform).anchoredPosition=new Vector2(Mathf.Min(270f,width*.36f),-height+73f);
     }
 
-    private static int Hash(string text)
+    private static int Hash(string value)
     {
-        unchecked { int hash=23; foreach(char c in text)hash=hash*31+c; return hash & int.MaxValue; }
+        unchecked { int h = 23; foreach (char ch in value) h = h * 31 + ch; return h & int.MaxValue; }
     }
 
     private void RebuildFog(EntityDataSO hero)
     {
-        var visited = new List<WorldMapNode>();
-        if(hero.worldMapVisited!=null)
+        // Texture is only the CLOUD LAYER. Never punch approximate circular
+        // holes; the polygon mesh above it owns every exact revealed area.
+        var colors = new Color32[FogWidth * FogHeight];
+        for (int y = 0; y < FogHeight; ++y)
+        for (int x = 0; x < FogWidth; ++x)
         {
-            foreach(string id in hero.worldMapVisited)
-            {
-                WorldMapNode node;
-                if(WorldMapCatalog.TryGet(id,out node))visited.Add(node);
-            }
-        }
-        var colors = new Color32[FogWidth*FogHeight];
-        for(int y=0;y<FogHeight;y++)
-        for(int x=0;x<FogWidth;x++)
-        {
-            // Semi-opaque, gently mottled "cloud" texture, no polygon/country outlines.
-            int noise=Hash(x/4+"-"+y/3)%34;
-            int alpha=218+noise;
-            float u=(x+.5f)/FogWidth, v=(y+.5f)/FogHeight;
-            foreach(var n in visited)
-            {
-                float dx=(u-n.PreviewPosition.x)*1.0f;
-                float dy=(v-n.PreviewPosition.y)*1.0f;
-                float dist=dx*dx+dy*dy;
-                if(dist<.00032f) { alpha=0; break; }
-                if(dist<.0010f)
-                {
-                    int fade=(int)(255f*Mathf.Clamp01((Mathf.Sqrt(dist)-.0178f)/.014f));
-                    if(alpha>fade)alpha=fade;
-                }
-            }
-            colors[y*FogWidth+x]=new Color32(155,168,169,(byte)Mathf.Clamp(alpha,0,255));
+            int noise = Hash((x / 4) + "-" + (y / 3)) % 36;
+            colors[y * FogWidth + x] = new Color32(179, 191, 197,
+                (byte)Mathf.Clamp(230 + noise / 2, 0, 255));
         }
         fogTexture.SetPixels32(colors);
         fogTexture.Apply(false);
+        reveal.SetSource(artwork.sprite, hero);
+        outlines.Refresh(hero, selectedMapId);
     }
 
     public void Refresh()
@@ -216,14 +267,20 @@ public sealed class WorldMapPanelUI
         WorldMapNode current;
         if(!WorldMapCatalog.TryGet(hero.worldMapId,out current)) { Close(); return; }
         RebuildFog(hero);
+        WorldMapNode selected;
+        bool selectedExists = WorldMapCatalog.TryGet(selectedMapId, out selected);
+        bool selectedAccessible = selectedExists &&
+            WorldMapCatalog.TravelBlockReason(hero, selectedMapId) == null;
         bool clear=WorldMapCatalog.IsCleared(hero,current.Id);
         string progress = clear ? "Đã vượt qua" :
             "Wave tối thiểu: "+hero.worldMapWaveProgress+"/5";
         heading.text="BẢN ĐỒ · "+current.Id+" · "+current.Name;
         summary.text="Đang ở: "+current.Name+" ("+current.TerrainLabel+")\n"+
             progress+"  |  Wave hiện tại: "+hero.worldMapLoopWave+"/5\n"+
-            (clear ? "Có thể chọn map liền kề (đồ thị tạm)." :
-                "Chưa vượt qua map: đường đi kế tiếp vẫn ẩn.");
+            (selectedExists ? "Đã chọn: "+selected.Id+" – "+selected.Name+
+                (selectedAccessible ? " · Có thể đi" : " · Chưa đi được") :
+                (clear ? "Chọn lục giác cạnh bên để di chuyển (đồ thị tạm)." :
+                    "Chưa vượt qua map: đường đi kế tiếp vẫn ẩn."));
         // The country list and exact polygon masks are deliberately EMPTY until
         // approved nation IDs, labels, centers and hex vertices are supplied.
         eligible.Clear();
