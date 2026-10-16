@@ -32,7 +32,8 @@ public class GameManager : MonoBehaviour
     public List<GameObject> activeMonsters = new List<GameObject>();
 
     // B2-only test harness; NOT the future permanent companion/encounter system.
-    // These objects and their copied progression never enter SaveManager.
+    // Only a lightweight count/attack-mode roster enters the primary Hero save.
+    // Cloned Hero objects, separate progression and equipment are NOT persisted.
     private sealed class TestCompanion
     {
         public GameObject ControllerRoot, VisualRoot;
