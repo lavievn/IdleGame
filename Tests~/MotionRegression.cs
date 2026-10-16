@@ -155,6 +155,24 @@ partial class MotionRegression
             Check(!WorldMapPolygons.ValidPolygon(tooFew),
                 "two corners cannot form a clickable map");
         });
+        Run("0.0.54 hero feet never sink below battle viewport during melee pursuit",()=>{
+            var f=new Field();
+            float bottom=f.ground.rect.yMin+12f;
+            Near(f.space.ClampHeroFeetY(-999f),bottom,
+                "monster lane below screen clamps to visible foot margin");
+            Check(f.space.Position(f.hero.heroRect).y>=bottom-.01f,
+                "primary Hero spawns above bottom boundary");
+            var monster=f.Monster(-300f,AttackMode.Melee,-1000f);
+            f.Battle(monster);
+            for(int i=0;i<60;i++)f.Step(1f/60f);
+            Check(f.space.Position(f.hero.heroRect).y>=bottom-.01f,
+                "melee target deep below ground cannot pull Hero off screen");
+            var second=B2Hero(f,-120f,AttackMode.Melee);
+            f.space.SetPosition(second.heroRect,new Vector2(-120f,-500f));
+            second.TickMovement(f.space,1f/60f);
+            Check(f.space.Position(second.heroRect).y>=bottom-.01f,
+                "deployed B2 Hero also obeys lower foot boundary");
+        });
         Run("clamp approach in both directions, including long frame",()=>{
             Near(BattleMotion.Approach(0,100,30,1000,1),70,"right");Near(BattleMotion.Approach(0,-100,30,1000,1),-70,"left");Near(BattleMotion.Approach(0,10,30,1000,1),0,"already in range");
         });
