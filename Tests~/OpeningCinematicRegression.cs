@@ -168,6 +168,43 @@ partial class MotionRegression
                   OpeningCinematicUI.ShowcaseCueSeconds<=30f,"cinematic art cue");
         });
 
+        Run("0.0.54 title confirmation remains clickable after direct load and menu replay", () =>
+        {
+            new Field();
+            var gm = new GameObject("Title Confirmation GM").AddComponent<GameManager>();
+            gm.preGameUI = new GameObject("Title Confirmation Root",
+                typeof(RectTransform), typeof(Image));
+            var canvas = new GameObject("Title Confirmation Canvas",
+                typeof(RectTransform));
+            gm.preGameUI.transform.SetParent(canvas.transform,false);
+            var template = new GameObject("Title Confirmation Template",
+                typeof(RectTransform), typeof(Image), typeof(Button));
+            template.transform.SetParent(gm.preGameUI.transform,false);
+            var label = new GameObject("Title Confirmation Label",
+                typeof(RectTransform),typeof(TextMeshProUGUI));
+            label.transform.SetParent(template.transform,false);
+            var menu = StartMenuUI.Install(gm);
+            Check(menu!=null && gm.confirmationPopup!=null,
+                "title and independent confirmation popup created");
+
+            menu.CompleteGameplayImmediately(); // manual load skips the transition
+            menu.RestoreMenu(); // return-to-title restarts fade from zero
+            Check(!gm.preGameUI.GetComponent<CanvasGroup>().blocksRaycasts,
+                "opening menu still fading; menu input initially gated");
+            gm.OnNewGameClicked();
+            Check(gm.HasPendingConfirmation && gm.confirmationPopup.activeSelf,
+                "modal appears even before title fade finishes");
+            CustomInteractable no=null;
+            foreach(var item in gm.confirmationPopup
+                .GetComponentsInChildren<CustomInteractable>(true))
+                if(item.gameObject.name=="Opening - Không")no=item;
+            Check(no!=null,"modal No control exists");
+            Time.frameCount++; // distinct physical click frame
+            no.onClickEvent.Invoke();
+            Check(!gm.HasPendingConfirmation && !gm.confirmationPopup.activeSelf,
+                "No closes modal despite menuFade and entry state");
+        });
+
         Run("0.0.54 direct manual load cannot leave the opening curtain over combat", () =>
         {
             new Field(); // Clear prior stub scene and open a fresh UI hierarchy.
