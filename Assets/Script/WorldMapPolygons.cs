@@ -8,6 +8,8 @@ namespace TuTienCore
     public sealed class WorldMapPolygon
     {
         public string mapId = "";
+        public bool reviewed = false; // true only when manually checked against exact source art
+        public string source = ""; // provenance for draft / inferred IDs
         // Image-space coordinates, bottom-left (0,0), top-right (1,1).
         public List<Vector2> vertices = new List<Vector2>(6);
     }
@@ -16,6 +18,9 @@ namespace TuTienCore
     public sealed class WorldMapPolygonDocument
     {
         public int version = 1;
+        public int artworkWidth = 0;
+        public int artworkHeight = 0;
+        public string artworkReference = "";
         public List<WorldMapPolygon> polygons = new List<WorldMapPolygon>();
     }
 
@@ -36,6 +41,17 @@ namespace TuTienCore
         }
 
         public static void InvalidateCache() { cached = null; }
+
+        // Pixel coordinates belong to ONE source map. Do not silently reuse
+        // indexed-map polygons on irregular map artwork: the cells differ.
+        public static bool MatchesArtwork(Sprite art)
+        {
+            if (art == null) return false;
+            var doc = Load();
+            return doc.artworkWidth > 0 && doc.artworkHeight > 0 &&
+                Mathf.Abs(art.rect.width - doc.artworkWidth) < 1f &&
+                Mathf.Abs(art.rect.height - doc.artworkHeight) < 1f;
+        }
 
         public static bool Contains(IList<Vector2> polygon, Vector2 point)
         {
