@@ -123,6 +123,38 @@ partial class MotionRegression
             Check(WorldMapPolygons.Triangulate(concave).Count == 12,
                 "six-sided concave shape triangulates into four triangles");
         });
+        Run("irregular world cells accept 3–24 vertices and reject crossed outlines", () => {
+            var tri = new List<Vector2> {
+                new Vector2(.1f,.1f),new Vector2(.9f,.1f),new Vector2(.5f,.9f)
+            };
+            Check(WorldMapPolygons.ValidPolygon(tri), "triangle outline is valid");
+            Check(WorldMapPolygons.Triangulate(tri).Count == 3,
+                "triangle renders as one face");
+            var seven = new List<Vector2> {
+                new Vector2(.2f,.15f),new Vector2(.5f,.12f),
+                new Vector2(.83f,.26f),new Vector2(.88f,.53f),
+                new Vector2(.69f,.83f),new Vector2(.37f,.87f),
+                new Vector2(.14f,.56f)
+            };
+            Check(WorldMapPolygons.ValidPolygon(seven), "seven-sided cell is valid");
+            Check(!WorldMapPolygons.ValidSixVertices(seven),
+                "legacy six-corner validator stays strict");
+            Check(WorldMapPolygons.Triangulate(seven).Count == 15,
+                "seven corners triangulate into five faces");
+            Check(WorldMapPolygons.Contains(seven,new Vector2(.5f,.5f)),
+                "seven-corner hit test follows polygon, not bounding box");
+            var crossed = new List<Vector2> {
+                new Vector2(.1f,.1f),new Vector2(.8f,.8f),
+                new Vector2(.1f,.8f),new Vector2(.8f,.1f)
+            };
+            Check(!WorldMapPolygons.ValidPolygon(crossed),
+                "self-crossed cell rejected");
+            var tooFew = new List<Vector2> {
+                new Vector2(.1f,.1f),new Vector2(.9f,.9f)
+            };
+            Check(!WorldMapPolygons.ValidPolygon(tooFew),
+                "two corners cannot form a clickable map");
+        });
         Run("clamp approach in both directions, including long frame",()=>{
             Near(BattleMotion.Approach(0,100,30,1000,1),70,"right");Near(BattleMotion.Approach(0,-100,30,1000,1),-70,"left");Near(BattleMotion.Approach(0,10,30,1000,1),0,"already in range");
         });
