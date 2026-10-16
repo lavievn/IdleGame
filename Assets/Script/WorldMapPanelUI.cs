@@ -229,9 +229,13 @@ public sealed class WorldMapPanelUI
         float height = Mathf.Max(260f,Mathf.Min(Screen.height-12f,650f));
         root.sizeDelta = new Vector2(width,height);
         var imageRect=(RectTransform)artwork.transform;
+        // Exact image aspect is required: otherwise six-vertex hit regions
+        // drift away from the visible polygons under preserveAspect.
+        float aspect = artwork.sprite != null && artwork.sprite.rect.height > 0f
+            ? artwork.sprite.rect.width / artwork.sprite.rect.height : 1.5f;
         float imageHeight=Mathf.Max(100f,height-175f);
-        float imageWidth=Mathf.Min(width-24f,imageHeight*1.5f);
-        imageHeight=Mathf.Min(imageHeight,imageWidth/1.5f);
+        float imageWidth=Mathf.Min(width-24f,imageHeight*aspect);
+        imageHeight=Mathf.Min(imageHeight,imageWidth/aspect);
         imageRect.sizeDelta=new Vector2(imageWidth,imageHeight);
         ((RectTransform)summary.transform).anchoredPosition=new Vector2(Mathf.Min(270f,width*.36f),-height+73f);
     }
