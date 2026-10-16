@@ -172,7 +172,12 @@ public sealed class OpeningHeroSplashVideo : MonoBehaviour
                 Debug.LogWarning("[Opening] No "+(leftSide?"L":"R")+
                     "-prefixed PNG/JPG/MP4 found in StreamingAssets/"+MediaFolder+
                     ". This splash frame will keep its placeholder.");
-            else LoadChosen();
+            else
+            {
+                Debug.Log("[Opening] Splash selected ("+
+                    (leftSide?"left":"right")+"): "+Path.GetFileName(chosenPath));
+                LoadChosen();
+            }
         }
         float t=Mathf.Clamp01((seconds-OpeningCinematicUI.ShowcaseCueSeconds) / RevealSeconds);
         fade.alpha=t*t*(3f-2f*t);
@@ -241,7 +246,8 @@ public sealed class OpeningHeroSplashVideo : MonoBehaviour
     }
     private void OnVideoError(VideoPlayer source,string error)
     {
-        Debug.LogWarning("[Opening] Splash video decoder failed: "+error);
+        Debug.LogWarning("[Opening] Splash video decoder failed ["+
+            (chosenPath==null?"unknown":Path.GetFileName(chosenPath))+"]: "+error);
         ShowPlaceholder();
         if(video!=null)video.Stop();
     }
