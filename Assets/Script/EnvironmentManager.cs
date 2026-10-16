@@ -141,6 +141,14 @@ public class EnvironmentManager : MonoBehaviour
     public RectTransform BattleArea => battleArea;
     public float Width => battleArea != null ? battleArea.rect.width : 0f;
     public float HomeX => battleArea.rect.xMin + Width * explorationHeroX;
+    // Hero pivot is at the FEET (HeroController.Awake). Keep the feet within
+    // the lower visible battle edge, even if a monster occupies a deeper lane.
+    // Does not clamp monsters or change horizontal targeting / scrolling.
+    public float ClampHeroFeetY(float requestedY)
+    {
+        if (battleArea == null) return requestedY;
+        return Mathf.Max(requestedY, battleArea.rect.yMin + 12f);
+    }
     private float ZoneMin => Mathf.Clamp01(Mathf.Min(speedZoneLeft, speedZoneRight));
     private float ZoneMax => Mathf.Clamp01(Mathf.Max(speedZoneLeft, speedZoneRight));
     private float ZoneInset => Mathf.Min(0.49f, Mathf.Max(0f, speedZoneInset)) * (ZoneMax - ZoneMin);
