@@ -80,20 +80,58 @@ namespace TuTienCore
                 if (Intersects(points[i], points[(i + 1) % 6],
                     points[j], points[(j + 1) % 6])) return false;
             }
-            // All vertices must lie on a convex hexagon for fan triangulation.
-            int winding = 0;
-            for (int i = 0; i < 6; i++)
+            return true; // Concave six-sided maps are supported.
+        }
+
+        // Ear clipping supports irregular and concave six-sided shapes.
+        public static List<int> Triangulate(IList<Vector2> points)
+        {
+            var triangles = new List<int>();
+            if (!ValidSixVertices(points)) return triangles;
+            float signedArea = 0f;
+            for (int i = 0; i < points.Count; i++)
+                signedArea += Cross(points[i], points[(i + 1) % points.Count]);
+            int winding = signedArea > 0f ? 1 : -1;
+            var remaining = new List<int>();
+            for (int i = 0; i < points.Count; i++) remaining.Add(i);
+            int guard = 0;
+            while (remaining.Count > 3 && guard++ < 24)
             {
-                Vector2 a = points[i], b = points[(i + 1) % 6],
-                    c = points[(i + 2) % 6];
-                float cross = (b.x - a.x) * (c.y - b.y) -
-                              (b.y - a.y) * (c.x - b.x);
-                if (Mathf.Abs(cross) < .0000001f) continue;
-                int sign = cross > 0 ? 1 : -1;
-                if (winding != 0 && winding != sign) return false;
-                winding = sign;
+                bool removed = false;
+                for (int i = 0; i < remaining.Count; i++)
+                {
+                    int ai = remaining[(i + remaining.Count - 1) % remaining.Count];
+                    int bi = remaining[i];
+                    int ci = remaining[(i + 1) % remaining.Count];
+                    Vector2 a = points[ai], b = points[bi], c = points[ci];
+                    if (Cross(b - a, c - a) * winding <= .0000001f) continue;
+                    bool occupied = false;
+                    foreach (int other in remaining)
+                    {
+                        if (other == ai || other == bi || other == ci) continue;
+                        if (InsideTriangle(points[other], a, b, c, winding))
+                        { occupied = true; break; }
+                    }
+                    if (occupied) continue;
+                    triangles.Add(ai); triangles.Add(bi); triangles.Add(ci);
+                    remaining.RemoveAt(i);
+                    removed = true;
+                    break;
+                }
+                if (!removed) { triangles.Clear(); return triangles; }
             }
-            return winding != 0;
+            if (remaining.Count != 3) { triangles.Clear(); return triangles; }
+            triangles.Add(remaining[0]); triangles.Add(remaining[1]); triangles.Add(remaining[2]);
+            return triangles;
+        }
+
+        private static bool InsideTriangle(Vector2 p, Vector2 a, Vector2 b,
+            Vector2 c, int winding)
+        {
+            const float epsilon = .0000001f;
+            return Cross(b - a, p - a) * winding >= -epsilon &&
+                   Cross(c - b, p - b) * winding >= -epsilon &&
+                   Cross(a - c, p - c) * winding >= -epsilon;
         }
 
         private static bool Intersects(Vector2 a, Vector2 b, Vector2 c, Vector2 d)
