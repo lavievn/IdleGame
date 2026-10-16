@@ -160,6 +160,7 @@ namespace UnityEngine
     {
         public Texture2D texture = new Texture2D(2,2,TextureFormat.RGBA32,false);
         public Rect textureRect = new Rect(0,0,2,2);
+        public Rect rect = new Rect(0,0,2,2);
     }
     public class TextAsset : Object
     {
