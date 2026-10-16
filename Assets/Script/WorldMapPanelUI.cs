@@ -171,6 +171,12 @@ public sealed class WorldMapPanelUI
         if (!HitMapSurface(screenPoint)) return false;
         EntityDataSO hero = host.HeroData;
         if (hero == null || !WorldMapCatalog.Enabled(hero)) return true;
+        if (!WorldMapPolygons.MatchesArtwork(artwork.sprite))
+        {
+            summary.text = "Ảnh WorldMapArtwork không khớp hệ tọa độ lục giác. " +
+                "Dùng ảnh có mã 1448×1086, hoặc hiệu chỉnh lại JSON theo ảnh hiện tại.";
+            return true;
+        }
         Vector2 position = WorldMapPolygons.NormalizedPoint(
             (RectTransform)artwork.transform, screenPoint);
         string id = WorldMapPolygons.HitTest(position, candidate =>
@@ -259,8 +265,9 @@ public sealed class WorldMapPanelUI
         }
         fogTexture.SetPixels32(colors);
         fogTexture.Apply(false);
-        reveal.SetSource(artwork.sprite, hero);
-        outlines.Refresh(hero, selectedMapId);
+        bool compatible = WorldMapPolygons.MatchesArtwork(artwork.sprite);
+        reveal.SetSource(compatible ? artwork.sprite : null, compatible ? hero : null);
+        outlines.Refresh(compatible ? hero : null, selectedMapId);
     }
 
     public void Refresh()
@@ -281,6 +288,9 @@ public sealed class WorldMapPanelUI
         heading.text="BẢN ĐỒ · "+current.Id+" · "+current.Name;
         summary.text="Đang ở: "+current.Name+" ("+current.TerrainLabel+")\n"+
             progress+"  |  Wave hiện tại: "+hero.worldMapLoopWave+"/5\n"+
+            (!WorldMapPolygons.MatchesArtwork(artwork.sprite)
+                ? "Chưa đúng ảnh 1448×1086 để dùng vùng click; danh sách map kề vẫn hoạt động.\n"
+                : "") +
             (selectedExists ? "Đã chọn: "+selected.Id+" – "+selected.Name+
                 (selectedAccessible ? " · Có thể đi" : " · Chưa đi được") :
                 (clear ? "Chọn lục giác cạnh bên để di chuyển (đồ thị tạm)." :
