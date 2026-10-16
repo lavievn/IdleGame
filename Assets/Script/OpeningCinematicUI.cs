@@ -500,6 +500,27 @@ public sealed class OpeningCinematicUI : MonoBehaviour
         backdrop.gameObject.SetActive(false);
     }
 
+    // A direct manual save load bypasses AnimateEntry(). Stop ALL opening
+    // siblings, especially the otherwise persistent opaque black curtain.
+    // ResetForMenu re-enables them next time the player returns to title.
+    public void CompleteEntryImmediately()
+    {
+        entering = false;
+        finished = true;
+        layoutEditing = false;
+        if (splashLeft != null) splashLeft.StopVideo();
+        if (splashRight != null) splashRight.StopVideo();
+        if (videoBackground != null) videoBackground.StopPlayback();
+        if (blackCurtain != null)
+        {
+            blackCurtain.color = new Color(0f, 0f, 0f, 0f);
+            blackCurtain.gameObject.SetActive(false);
+        }
+        if (backdropFade != null) backdropFade.alpha = 0f;
+        if (backdrop != null) backdrop.gameObject.SetActive(false);
+        if (menu != null) menu.SetOpeningMenuReady(false);
+    }
+
     public void ResetForMenu()
     {
         if(backdrop==null)return;
