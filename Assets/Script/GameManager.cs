@@ -198,6 +198,36 @@ public class GameManager : MonoBehaviour
         }
         testCompanions.Clear();
     }
+    // Moving to another world node restarts the battle, but does not dissolve
+    // the living B2 test party. These temporary actors still do not enter saves.
+    private List<TestCompanion> TravellingTestCompanions()
+    {
+        var moving = new List<TestCompanion>();
+        foreach (var member in testCompanions)
+            if (member != null && member.Controller != null &&
+                member.Data != null && member.Controller.IsDeployed)
+                moving.Add(member);
+        return moving;
+    }
+
+    private void RestoreTestCompanionsAfterTravel(List<TestCompanion> moving)
+    {
+        if (moving == null || combatManager == null || environmentManager == null ||
+            heroController == null || heroController.heroRect == null) return;
+        int position = 0;
+        foreach (var member in moving)
+        {
+            if (member == null || member.Controller == null ||
+                member.Controller.heroRect == null || member.Data == null) continue;
+            position++;
+            member.Controller.SpawnHero(false); // never change camera target
+            Vector2 home = environmentManager.Position(heroController.heroRect);
+            environmentManager.SetPosition(member.Controller.heroRect, home +
+                new Vector2(30f + position * 25f, position % 2 == 0 ? -25f : 25f));
+            combatManager.RegisterAdditionalHero(member.Controller, member.Data);
+        }
+    }
+
     private Coroutine nextWaveCoroutine;
     private int waveSpawnCount, retryWaveSize;
     [Min(0f)] public float waveDelay = 1.5f;
@@ -379,7 +409,14 @@ public class GameManager : MonoBehaviour
         // Keep the menu canvas until the animated cloud reveal completes.
         // Manual LoadAndContinue is immediate; only confirmed title choices animate.
         bool cinematic = showOpeningTransition && startMenu != null && startMenu.IsCinematic;
-        if (!cinematic && preGameUI != null) preGameUI.SetActive(false);
+        if (!cinematic)
+        {
+            // A manual load skips the entry animation. The cinematic curtain
+            // is a SIBLING of preGameUI, so hiding the menu alone leaves
+            // an opaque black layer on top of combat forever.
+            if (startMenu != null) startMenu.CompleteGameplayImmediately();
+            if (preGameUI != null) preGameUI.SetActive(false);
+        }
         hasDeployed = true;
         ClearTestCompanions();
         if (combatManager != null) combatManager.SetupHeroInfo(runtimeHeroData);
@@ -794,16 +831,19 @@ public class GameManager : MonoBehaviour
 
         // Change only after validation; cancel old wave and all stale projectiles
         // and monsters so they cannot score kills in the destination node.
+        // Preserve only companions who were actually following the primary
+        // Hero. SetupHeroInfo clears all CombatManager registrations.
+        var travellingCompanions = TravellingTestCompanions();
         CancelNextWave();
         if (combatManager != null) combatManager.ForceClearAllMonsters();
         activeMonsters.Clear();
-        ClearTestCompanions();
         if (!WorldMapCatalog.TryTravel(runtimeHeroData, targetId)) return false;
 
         // Prototype: travel starts a fresh battle from full HP. Reevaluate this
         // explicitly when designing travel costs and injuries.
         if (combatManager != null) combatManager.SetupHeroInfo(runtimeHeroData);
         if (heroController != null) heroController.SpawnHero();
+        RestoreTestCompanionsAfterTravel(travellingCompanions);
         RestoreProgress();
         if (UIManager.Instance != null) UIManager.Instance.ShowMapTitle(runtimeHeroData.mapName);
         UpdateEventLog("Đã đến " + runtimeHeroData.mapName + " (" + targetId + ").");
