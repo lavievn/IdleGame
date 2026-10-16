@@ -39,8 +39,8 @@ public sealed class WorldMapPanelUI
     private string cachedFogVisits = "";
     private int page;
     private readonly RectTransform navigation;
-    private const int FogWidth = 256;
-    private const int FogHeight = 192;
+    private const int FogWidth = 384;
+    private const int FogHeight = 288;
 
     private WorldMapPanelUI(UIManager owner, Transform parent, GameManager host)
     {
@@ -108,6 +108,10 @@ public sealed class WorldMapPanelUI
         revealedRect.offsetMax = Vector2.zero;
         reveal = revealedGO.GetComponent<WorldMapRevealedGraphic>();
         reveal.raycastTarget = false;
+        // The fog texture already reveals the original artwork inside the
+        // union of visited polygons. Drawing a SECOND exact polygon image
+        // creates faint antialiased seams between neighboring revealed cells.
+        reveal.enabled = false;
 
         var outlineGO = new GameObject("HexagonTravelBoundaries",
             typeof(RectTransform), typeof(CanvasRenderer), typeof(WorldMapOutlineGraphic));
@@ -450,9 +454,9 @@ public sealed class WorldMapPanelUI
         float width, float height)
     {
         if (!WorldMapPolygons.ValidPolygon(vertices)) return;
-        // Fog extends 20 pixels beyond visited borders, blending into the
-        // unexplored area without unlocking neighboring map selections.
-        const float rim = 20f;
+        // Fog extends 36 source pixels outside visited regions, with a
+        // smooth fade. Overlapping clear areas are joined by min alpha.
+        const float rim = 36f;
         float xmin = width, xmax = 0f, ymin = height, ymax = 0f;
         foreach (var v in vertices)
         {
@@ -494,7 +498,7 @@ public sealed class WorldMapPanelUI
     {
         bool compatible = WorldMapPolygons.MatchesArtwork(artwork.sprite);
         string key = compatible && hero.worldMapVisited != null
-            ? string.Join("|", hero.worldMapVisited) : "incompatible";
+            ? "visited:" + string.Join("|", hero.worldMapVisited) : "incompatible";
         if (key != cachedFogVisits)
         {
             cachedFogVisits = key;
