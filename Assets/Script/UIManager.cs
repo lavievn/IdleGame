@@ -140,6 +140,7 @@ public class UIManager : MonoBehaviour
 
     public bool CheckInteractableHover(Vector2 mousePos)
     {
+        if (worldMapUI != null && worldMapUI.HitMapSurface(mousePos)) return true;
         foreach (var item in interactables)
         {
             if (item != null && item.isActiveAndEnabled && RectTransformUtility.RectangleContainsScreenPoint(item.GetRect(), mousePos, null))
@@ -155,6 +156,9 @@ public class UIManager : MonoBehaviour
         foreach (var item in interactables)
         {
             if (item == null || !item.isActiveAndEnabled || item.GetRect() == null) continue;
+            // World map modal takes precedence over the underlying HUD/buttons.
+            if (worldMapUI != null && worldMapUI.IsOpen &&
+                !item.transform.IsChildOf(worldMapUI.Root)) continue;
             if (gm != null && gm.HasPendingConfirmation &&
                 (gm.confirmationPopup == null || !item.transform.IsChildOf(gm.confirmationPopup.transform))) continue;
             // The full-screen opening owns input while its menu is visible.
@@ -176,9 +180,19 @@ public class UIManager : MonoBehaviour
         }
         return hit;
     }
-    public void HandleMouseClick(Vector2 mousePos) { var hit = HitControl(mousePos); if (hit != null) hit.onClickEvent?.Invoke(); }
+    public void HandleMouseClick(Vector2 mousePos)
+    {
+        if (worldMapUI != null && worldMapUI.HandleMapClick(mousePos)) return;
+        var hit = HitControl(mousePos);
+        if (hit != null) hit.onClickEvent?.Invoke();
+    }
     public void HandlePointerClick(Vector2 press, Vector2 release)
     {
+        if (worldMapUI != null && worldMapUI.HitMapSurface(press))
+        {
+            if (worldMapUI.HitMapSurface(release)) worldMapUI.HandleMapClick(release);
+            return;
+        }
         var hit = HitControl(press);
         if (hit != null && hit == HitControl(release)) hit.onClickEvent?.Invoke();
     }
