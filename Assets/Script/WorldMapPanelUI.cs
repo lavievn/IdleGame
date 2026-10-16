@@ -13,6 +13,8 @@ public sealed class WorldMapPanelUI
     private readonly GameManager host;
     private readonly RectTransform root;
     private readonly Image artwork;
+    private readonly RectTransform viewport;
+    private readonly TextMeshProUGUI zoomLabel;
     private readonly RawImage fog;
     private readonly WorldMapRevealedGraphic reveal;
     private readonly WorldMapOutlineGraphic outlines;
@@ -25,10 +27,20 @@ public sealed class WorldMapPanelUI
     private readonly List<string> eligible = new List<string>();
     private Texture2D fogTexture;
     private bool previousPause;
+    private bool mapPointerHeld;
+    private bool hasPanned;
+    private Vector2 pointerStart;
+    private Vector2 lastPointer;
+    private float zoom = 1f;
+    private const float MinZoom = 1f;
+    private const float MaxZoom = 14f;
+    private const float PanDeadzone = 6f;
+    private const float DefaultNodeWidth = .4f;
+    private string cachedFogVisits = "";
     private int page;
     private readonly RectTransform navigation;
-    private const int FogWidth = 160;
-    private const int FogHeight = 92;
+    private const int FogWidth = 256;
+    private const int FogHeight = 192;
 
     private WorldMapPanelUI(UIManager owner, Transform parent, GameManager host)
     {
@@ -46,14 +58,23 @@ public sealed class WorldMapPanelUI
         backdrop.color = new Color(.08f, .09f, .12f, .98f);
         backdrop.raycastTarget = false;
 
+        var viewportGO = new GameObject("MapViewport", typeof(RectTransform),
+            typeof(RectMask2D));
+        viewport = (RectTransform)viewportGO.transform;
+        viewport.SetParent(root, false);
+        viewport.anchorMin = viewport.anchorMax = new Vector2(.5f, 1f);
+        viewport.pivot = new Vector2(.5f, 1f);
+        viewport.anchoredPosition = new Vector2(0f, -48f);
+        viewport.sizeDelta = new Vector2(605f, 400f);
+
         var artGO = new GameObject("Artwork", typeof(RectTransform),
             typeof(CanvasRenderer), typeof(Image));
         artwork = artGO.GetComponent<Image>();
         var artRect = (RectTransform)artGO.transform;
-        artRect.SetParent(root, false);
-        artRect.anchorMin = artRect.anchorMax = new Vector2(.5f,1f);
-        artRect.pivot = new Vector2(.5f,1f);
-        artRect.anchoredPosition = new Vector2(0f,-48f);
+        artRect.SetParent(viewport, false);
+        artRect.anchorMin = artRect.anchorMax = new Vector2(.5f,.5f);
+        artRect.pivot = new Vector2(.5f,.5f);
+        artRect.anchoredPosition = Vector2.zero;
         artRect.sizeDelta = new Vector2(605f,400f);
         artwork.color = new Color(.76f, .68f, .52f, 1f);
         artwork.raycastTarget = false;
@@ -72,6 +93,8 @@ public sealed class WorldMapPanelUI
         fogRect.offsetMin = fogRect.offsetMax = Vector2.zero;
         fog.raycastTarget = false;
         fogTexture = new Texture2D(FogWidth,FogHeight,TextureFormat.RGBA32,false);
+        fogTexture.filterMode = FilterMode.Bilinear;
+        fogTexture.wrapMode = TextureWrapMode.Clamp;
         fog.texture = fogTexture;
         // Every visited cell re-displays the original map texture inside its
         // six authored vertices; unknown cells remain covered by the full fog.
@@ -120,6 +143,21 @@ public sealed class WorldMapPanelUI
         summary.alignment = TextAlignmentOptions.TopLeft;
         summary.fontSize = 13f;
 
+        // Zoom toolbar stays outside the clipped artwork to remain interactive.
+        owner.SmallButton(root,"WorldMapZoomOut","−",new Vector2(0f,1f),
+            new Vector2(0f,1f),new Vector2(14f,-49f),new Vector2(34f,28f),
+            ()=>ZoomAroundViewportCenter(1f / 1.25f));
+        owner.SmallButton(root,"WorldMapZoomIn","+",new Vector2(0f,1f),
+            new Vector2(0f,1f),new Vector2(52f,-49f),new Vector2(34f,28f),
+            ()=>ZoomAroundViewportCenter(1.25f));
+        owner.SmallButton(root,"WorldMapZoomCurrent","Về vị trí",new Vector2(0f,1f),
+            new Vector2(0f,1f),new Vector2(148f,-49f),new Vector2(95f,28f),
+            FocusCurrentMap);
+        zoomLabel = owner.MakeLabel(root,"100%",new Vector2(111f,-63f),
+            new Vector2(54f,24f));
+        zoomLabel.alignment = TextAlignmentOptions.Center;
+        zoomLabel.fontSize = 12f;
+
         owner.SmallButton(root,"WorldMapClose","Đóng",new Vector2(1f,1f),
             new Vector2(1f,1f),new Vector2(-14f,-14f),new Vector2(90f,32f),Close);
         owner.SmallButton(root,"WorldMapTravelSelected","Tới ô đã chọn",new Vector2(1f,0f),
@@ -161,9 +199,115 @@ public sealed class WorldMapPanelUI
     public bool IsOpen => root != null && root.gameObject.activeSelf;
     public RectTransform Root => root;
     public bool HitMapSurface(Vector2 screenPoint) =>
-        IsOpen && artwork != null &&
-        RectTransformUtility.RectangleContainsScreenPoint(
-            (RectTransform)artwork.transform, screenPoint, null);
+        IsOpen && viewport != null &&
+        RectTransformUtility.RectangleContainsScreenPoint(viewport, screenPoint, null);
+
+    private Vector2 ToViewport(Vector2 screen)
+    {
+        Vector2 local;
+        return RectTransformUtility.ScreenPointToLocalPointInRectangle(
+            viewport, screen, null, out local) ? local : Vector2.zero;
+    }
+
+    public bool BeginPan(Vector2 screen)
+    {
+        if (!HitMapSurface(screen)) return false;
+        mapPointerHeld = true;
+        hasPanned = false;
+        pointerStart = lastPointer = screen;
+        return true;
+    }
+
+    public void ContinuePan(Vector2 screen)
+    {
+        if (!mapPointerHeld) return;
+        if (!hasPanned && (screen - pointerStart).sqrMagnitude >=
+            PanDeadzone * PanDeadzone) hasPanned = true;
+        if (hasPanned)
+        {
+            RectTransform art = (RectTransform)artwork.transform;
+            art.anchoredPosition += ToViewport(screen) - ToViewport(lastPointer);
+            ClampPan();
+        }
+        lastPointer = screen;
+    }
+
+    public void EndPan(Vector2 screen)
+    {
+        if (!mapPointerHeld) return;
+        ContinuePan(screen);
+        mapPointerHeld = false;
+        if (!hasPanned && HitMapSurface(screen)) HandleMapClick(screen);
+    }
+
+    public void ZoomAt(Vector2 screen, float scrollY)
+    {
+        if (!HitMapSurface(screen) || Mathf.Abs(scrollY) < .001f) return;
+        float steps = Mathf.Abs(scrollY) >= 15f ? scrollY / 120f : scrollY;
+        SetZoom(zoom * Mathf.Pow(1.2f, steps), ToViewport(screen));
+    }
+
+    private void ZoomAroundViewportCenter(float multiplier)
+        => SetZoom(zoom * multiplier, viewport.rect.center);
+
+    private void SetZoom(float newZoom, Vector2 focus)
+    {
+        newZoom = Mathf.Clamp(newZoom, MinZoom, MaxZoom);
+        if (Mathf.Abs(newZoom - zoom) < .00001f) return;
+        RectTransform art = (RectTransform)artwork.transform;
+        art.anchoredPosition = focus + (art.anchoredPosition - focus) * (newZoom / zoom);
+        zoom = newZoom;
+        art.localScale = Vector3.one * zoom;
+        ClampPan();
+        UpdateZoomLabel();
+    }
+
+    private void UpdateZoomLabel()
+    {
+        if (zoomLabel != null) zoomLabel.text = Mathf.RoundToInt(zoom * 100f) + "%";
+    }
+
+    private void ClampPan()
+    {
+        RectTransform art = (RectTransform)artwork.transform;
+        float boundX = Mathf.Max(0f, (art.rect.width * zoom - viewport.rect.width) * .5f);
+        float boundY = Mathf.Max(0f, (art.rect.height * zoom - viewport.rect.height) * .5f);
+        art.anchoredPosition = new Vector2(
+            Mathf.Clamp(art.anchoredPosition.x, -boundX, boundX),
+            Mathf.Clamp(art.anchoredPosition.y, -boundY, boundY));
+    }
+
+    private void FocusCurrentMap()
+    {
+        if (host == null || host.HeroData == null) return;
+        var shape = WorldMapPolygons.Find(host.HeroData.worldMapId);
+        if (shape == null || !WorldMapPolygons.ValidPolygon(shape.vertices))
+        {
+            zoom = MinZoom;
+            ((RectTransform)artwork.transform).localScale = Vector3.one;
+            ((RectTransform)artwork.transform).anchoredPosition = Vector2.zero;
+            UpdateZoomLabel();
+            return;
+        }
+        float minX = 1f, maxX = 0f, minY = 1f, maxY = 0f;
+        foreach (Vector2 p in shape.vertices)
+        {
+            minX = Mathf.Min(minX, p.x);
+            maxX = Mathf.Max(maxX, p.x);
+            minY = Mathf.Min(minY, p.y);
+            maxY = Mathf.Max(maxY, p.y);
+        }
+        var art = (RectTransform)artwork.transform;
+        // 40% of the viewport WIDTH for the current cell's bounding box.
+        zoom = Mathf.Clamp(viewport.rect.width * DefaultNodeWidth /
+            Mathf.Max(.0001f, (maxX - minX) * art.rect.width), MinZoom, MaxZoom);
+        art.localScale = Vector3.one * zoom;
+        Vector2 center = new Vector2((minX + maxX) * .5f, (minY + maxY) * .5f);
+        art.anchoredPosition = -new Vector2((center.x - .5f) * art.rect.width,
+            (center.y - .5f) * art.rect.height) * zoom;
+        ClampPan();
+        UpdateZoomLabel();
+    }
 
     // Hit against the exact six-corner region. Selection never auto-travels.
     public bool HandleMapClick(Vector2 screenPoint)
@@ -193,8 +337,8 @@ public sealed class WorldMapPanelUI
             Refresh();
         }
         else summary.text = WorldMapPolygons.Load().polygons.Count == 0
-            ? "Chưa có tọa độ lục giác: mở Tools > Bach Luyen Tien Do > World Map Polygon Editor (.54)."
-            : "Map chưa khám phá hoặc chưa có viền 6 đỉnh. Hoàn thành 5 wave để mở hướng đi kề.";
+            ? "Chưa có tọa độ polygon: mở Tools > Bach Luyen Tien Do > World Map Polygon Editor (.54)."
+            : "Vùng chưa khám phá hoặc chưa có polygon. Hoàn thành 5 wave để mở hướng đi kề.";
         return true;
     }
 
@@ -217,6 +361,7 @@ public sealed class WorldMapPanelUI
         selectedMapId = host.HeroData.worldMapId;
         Resize();
         root.gameObject.SetActive(true);
+        FocusCurrentMap();
         root.SetAsLastSibling();
         Refresh();
     }
@@ -225,47 +370,117 @@ public sealed class WorldMapPanelUI
     {
         if(!IsOpen) return;
         root.gameObject.SetActive(false);
+        mapPointerHeld = false;
         owner.SetPaused(previousPause);
     }
 
     public void Resize()
     {
-        if(root==null)return;
-        float width = Mathf.Max(340f,Mathf.Min(Screen.width-12f,1070f));
-        float height = Mathf.Max(260f,Mathf.Min(Screen.height-12f,650f));
-        root.sizeDelta = new Vector2(width,height);
-        var imageRect=(RectTransform)artwork.transform;
-        // Exact image aspect is required: otherwise six-vertex hit regions
-        // drift away from the visible polygons under preserveAspect.
+        if (root == null) return;
+        float width = Mathf.Max(340f, Mathf.Min(Screen.width - 12f, 1070f));
+        float height = Mathf.Max(260f, Mathf.Min(Screen.height - 12f, 650f));
+        float oldW = viewport.rect.width, oldH = viewport.rect.height;
+        Vector2 oldCenter = ((RectTransform)artwork.transform).anchoredPosition;
+        root.sizeDelta = new Vector2(width, height);
+
         float aspect = artwork.sprite != null && artwork.sprite.rect.height > 0f
             ? artwork.sprite.rect.width / artwork.sprite.rect.height : 1.5f;
-        float imageHeight=Mathf.Max(100f,height-175f);
-        float imageWidth=Mathf.Min(width-24f,imageHeight*aspect);
-        imageHeight=Mathf.Min(imageHeight,imageWidth/aspect);
-        imageRect.sizeDelta=new Vector2(imageWidth,imageHeight);
-        ((RectTransform)summary.transform).anchoredPosition=new Vector2(Mathf.Min(270f,width*.36f),-height+73f);
+        float viewWidth = Mathf.Max(100f, width - 24f);
+        float viewHeight = Mathf.Max(100f, height - 175f);
+        viewport.sizeDelta = new Vector2(viewWidth, viewHeight);
+        // Fit entire original artwork at zoom=1; scaling this child keeps the
+        // artwork, fog, outline and nation labels in the same coordinate space.
+        float fit = Mathf.Min(viewWidth / aspect, viewHeight);
+        var art = (RectTransform)artwork.transform;
+        art.sizeDelta = new Vector2(fit * aspect, fit);
+        if (IsOpen && oldW > 0f && oldH > 0f)
+        {
+            art.anchoredPosition = new Vector2(
+                oldCenter.x * viewWidth / oldW, oldCenter.y * viewHeight / oldH);
+            ClampPan();
+        }
+        else art.anchoredPosition = Vector2.zero;
+        ((RectTransform)summary.transform).anchoredPosition =
+            new Vector2(Mathf.Min(270f, width * .36f), -height + 73f);
     }
 
-    private static int Hash(string value)
+    private static float SegmentDistancePixels(Vector2 p, Vector2 a, Vector2 b)
     {
-        unchecked { int h = 23; foreach (char ch in value) h = h * 31 + ch; return h & int.MaxValue; }
+        Vector2 ab = b - a;
+        float t = ab.sqrMagnitude > 0f
+            ? Mathf.Clamp01(Vector2.Dot(p - a, ab) / ab.sqrMagnitude) : 0f;
+        return (p - (a + t * ab)).magnitude;
+    }
+
+    private static void OpenFogAround(Color32[] colors, IList<Vector2> vertices,
+        float width, float height)
+    {
+        if (!WorldMapPolygons.ValidPolygon(vertices)) return;
+        // Fog extends 20 pixels beyond visited borders, blending into the
+        // unexplored area without unlocking neighboring map selections.
+        const float rim = 20f;
+        float xmin = width, xmax = 0f, ymin = height, ymax = 0f;
+        foreach (var v in vertices)
+        {
+            xmin = Mathf.Min(xmin, v.x * width);
+            xmax = Mathf.Max(xmax, v.x * width);
+            ymin = Mathf.Min(ymin, v.y * height);
+            ymax = Mathf.Max(ymax, v.y * height);
+        }
+        int x0 = Mathf.Max(0, Mathf.FloorToInt((xmin - rim) * FogWidth / width));
+        int x1 = Mathf.Min(FogWidth - 1, Mathf.CeilToInt((xmax + rim) * FogWidth / width));
+        int y0 = Mathf.Max(0, Mathf.FloorToInt((ymin - rim) * FogHeight / height));
+        int y1 = Mathf.Min(FogHeight - 1, Mathf.CeilToInt((ymax + rim) * FogHeight / height));
+        for (int y = y0; y <= y1; y++)
+        for (int x = x0; x <= x1; x++)
+        {
+            Vector2 position = new Vector2((x + .5f) * width / FogWidth,
+                (y + .5f) * height / FogHeight);
+            Vector2 normalized = new Vector2(position.x / width, position.y / height);
+            float distance = float.MaxValue;
+            for (int i = 0; i < vertices.Count; ++i)
+            {
+                Vector2 a = Vector2.Scale(vertices[i], new Vector2(width, height));
+                Vector2 b = Vector2.Scale(vertices[(i + 1) % vertices.Count],
+                    new Vector2(width, height));
+                distance = Mathf.Min(distance, SegmentDistancePixels(position, a, b));
+            }
+            bool inside = WorldMapPolygons.Contains(vertices, normalized);
+            // Smooth outskirts; no extra polygon becomes marked visited.
+            float t = inside ? 0f : Mathf.Clamp01(distance / rim);
+            t = t * t * (3f - 2f * t);
+            int index = y * FogWidth + x;
+            Color32 c = colors[index];
+            c.a = (byte)Mathf.Min(c.a, Mathf.RoundToInt(240f * t));
+            colors[index] = c;
+        }
     }
 
     private void RebuildFog(EntityDataSO hero)
     {
-        // Texture is only the CLOUD LAYER. Never punch approximate circular
-        // holes; the polygon mesh above it owns every exact revealed area.
-        var colors = new Color32[FogWidth * FogHeight];
-        for (int y = 0; y < FogHeight; ++y)
-        for (int x = 0; x < FogWidth; ++x)
-        {
-            int noise = Hash((x / 4) + "-" + (y / 3)) % 36;
-            colors[y * FogWidth + x] = new Color32(179, 191, 197,
-                (byte)Mathf.Clamp(230 + noise / 2, 0, 255));
-        }
-        fogTexture.SetPixels32(colors);
-        fogTexture.Apply(false);
         bool compatible = WorldMapPolygons.MatchesArtwork(artwork.sprite);
+        string key = compatible && hero.worldMapVisited != null
+            ? string.Join("|", hero.worldMapVisited) : "incompatible";
+        if (key != cachedFogVisits)
+        {
+            cachedFogVisits = key;
+            var colors = new Color32[FogWidth * FogHeight];
+            for (int i = 0; i < colors.Length; ++i)
+                colors[i] = new Color32(179, 191, 197, 240);
+            if (compatible && hero.worldMapVisited != null)
+            {
+                var doc = WorldMapPolygons.Load();
+                foreach (string id in hero.worldMapVisited)
+                {
+                    var polygon = WorldMapPolygons.Find(id);
+                    if (polygon != null)
+                        OpenFogAround(colors, polygon.vertices,
+                            doc.artworkWidth, doc.artworkHeight);
+                }
+            }
+            fogTexture.SetPixels32(colors);
+            fogTexture.Apply(false);
+        }
         reveal.SetSource(compatible ? artwork.sprite : null, compatible ? hero : null);
         outlines.Refresh(compatible ? hero : null, selectedMapId);
     }
