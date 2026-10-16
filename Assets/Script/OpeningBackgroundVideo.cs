@@ -88,7 +88,7 @@ public sealed class OpeningBackgroundVideo : MonoBehaviour
 
     private void OnVideoReady(VideoPlayer ready)
     {
-        if(ready!=player)return;
+        if(ready!=player || !preparing)return;
         preparing=false;
         prepared=true;
         reportedError=false;
