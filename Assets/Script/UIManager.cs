@@ -182,19 +182,25 @@ public class UIManager : MonoBehaviour
     }
     public void HandleMouseClick(Vector2 mousePos)
     {
-        if (worldMapUI != null && worldMapUI.HandleMapClick(mousePos)) return;
+        // Buttons drawn above the map (Close, route list, confirmation) win
+        // over hex hit tests when their rectangles overlap the map artwork.
         var hit = HitControl(mousePos);
-        if (hit != null) hit.onClickEvent?.Invoke();
+        if (hit != null) { hit.onClickEvent?.Invoke(); return; }
+        if (worldMapUI != null && worldMapUI.HandleMapClick(mousePos)) return;
     }
     public void HandlePointerClick(Vector2 press, Vector2 release)
     {
+        var hit = HitControl(press);
+        if (hit != null)
+        {
+            if (hit == HitControl(release)) hit.onClickEvent?.Invoke();
+            return;
+        }
         if (worldMapUI != null && worldMapUI.HitMapSurface(press))
         {
             if (worldMapUI.HitMapSurface(release)) worldMapUI.HandleMapClick(release);
             return;
         }
-        var hit = HitControl(press);
-        if (hit != null && hit == HitControl(release)) hit.onClickEvent?.Invoke();
     }
 
     private StartMenuUI OpeningSettingsMenu()
