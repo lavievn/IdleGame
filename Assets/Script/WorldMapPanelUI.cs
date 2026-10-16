@@ -33,7 +33,7 @@ public sealed class WorldMapPanelUI
     private Vector2 lastPointer;
     private float zoom = 1f;
     private const float MinZoom = 1f;
-    private const float MaxZoom = 14f;
+    private const float MaxZoom = 16f;
     private const float PanDeadzone = 6f;
     private const float DefaultNodeWidth = .4f;
     private string cachedFogVisits = "";
