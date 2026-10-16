@@ -305,10 +305,10 @@ public sealed class WorldMapPanelUI
                     Mathf.Max(.0001f, typicalCellWidth * fallbackArt.rect.width),
                     MinZoom, MaxZoom);
                 fallbackArt.localScale = Vector3.one * zoom;
-                Vector2 center = node.PreviewPosition;
+                Vector2 fallbackCenter = node.PreviewPosition;
                 fallbackArt.anchoredPosition = -new Vector2(
-                    (center.x - .5f) * fallbackArt.rect.width,
-                    (center.y - .5f) * fallbackArt.rect.height) * zoom;
+                    (fallbackCenter.x - .5f) * fallbackArt.rect.width,
+                    (fallbackCenter.y - .5f) * fallbackArt.rect.height) * zoom;
                 ClampPan();
             }
             else
