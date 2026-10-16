@@ -105,6 +105,7 @@ public class TransparentWindow : MonoBehaviour
     }
 
     private bool nativeOpeningVolumeDrag;
+    private bool nativeWorldMapPan;
 
     void Update()
     {
@@ -118,8 +119,8 @@ public class TransparentWindow : MonoBehaviour
         POINT cursor;
         if (!GetCursorPos(out cursor)) return;
         Vector2 nativePoint = new Vector2(cursor.X, cursor.Y);
-        // Opening slider owns its own drag stream. Bypass the native window
-        // move gesture, otherwise dragging the volume bar moves the app itself.
+        // Sliders and the map own their drag streams. Bypass native window
+        // movement so their mouse gestures never drag the application itself.
         var openingUI=UIManager.Instance;
         if (pressed && openingUI != null)
         {
@@ -127,6 +128,43 @@ public class TransparentWindow : MonoBehaviour
             if (TryGetPointerPosition(out beginPoint) &&
                 openingUI.TryBeginOpeningVolumeDrag(beginPoint))
                 nativeOpeningVolumeDrag=true;
+        }
+        // Capture map pan BEFORE WindowPointerGesture captures a window drag.
+        if (!nativeOpeningVolumeDrag && pressed && openingUI != null)
+        {
+            Vector2 beginPoint;
+            if (TryGetPointerPosition(out beginPoint) &&
+                openingUI.TryBeginWorldMapPan(beginPoint))
+                nativeWorldMapPan = true;
+        }
+        if (nativeWorldMapPan)
+        {
+            Vector2 mapPoint;
+            bool hasPoint = TryGetPointerPosition(out mapPoint);
+            if (down)
+            {
+                if (hasPoint && openingUI != null) openingUI.DragWorldMapPan(mapPoint);
+            }
+            else
+            {
+                if (openingUI != null)
+                    openingUI.EndWorldMapPan(hasPoint ? mapPoint : Vector2.zero);
+                nativeWorldMapPan = false;
+            }
+            if (!isCurrentlyClickable) ToggleClickThrough(false);
+            return;
+        }
+        // Mouse wheel uses InputSystem; press/drag uses Win32 to support the
+        // existing transparent overlay's click-through behavior.
+        if (openingUI != null && Mouse.current != null)
+        {
+            Vector2 scrollPoint;
+            if (TryGetPointerPosition(out scrollPoint))
+            {
+                float wheel = Mouse.current.scroll.ReadValue().y;
+                if (Mathf.Abs(wheel) > .001f)
+                    openingUI.ScrollWorldMap(scrollPoint, wheel);
+            }
         }
         if (nativeOpeningVolumeDrag)
         {
