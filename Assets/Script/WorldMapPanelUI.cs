@@ -294,9 +294,29 @@ public sealed class WorldMapPanelUI
         var shape = WorldMapPolygons.Find(host.HeroData.worldMapId);
         if (shape == null || !WorldMapPolygons.ValidPolygon(shape.vertices))
         {
-            zoom = MinZoom;
-            ((RectTransform)artwork.transform).localScale = Vector3.one;
-            ((RectTransform)artwork.transform).anchoredPosition = Vector2.zero;
+            // Omitted polygons are deliberate (TM-03 / TM-13). Center on their
+            // catalog seed instead, without fabricating clickable geometry.
+            WorldMapNode node;
+            var fallbackArt = (RectTransform)artwork.transform;
+            if (WorldMapCatalog.TryGet(host.HeroData.worldMapId, out node))
+            {
+                const float typicalCellWidth = .065f; // visual fallback, not geometry
+                zoom = Mathf.Clamp(viewport.rect.width * DefaultNodeWidth /
+                    Mathf.Max(.0001f, typicalCellWidth * fallbackArt.rect.width),
+                    MinZoom, MaxZoom);
+                fallbackArt.localScale = Vector3.one * zoom;
+                Vector2 center = node.PreviewPosition;
+                fallbackArt.anchoredPosition = -new Vector2(
+                    (center.x - .5f) * fallbackArt.rect.width,
+                    (center.y - .5f) * fallbackArt.rect.height) * zoom;
+                ClampPan();
+            }
+            else
+            {
+                zoom = MinZoom;
+                fallbackArt.localScale = Vector3.one;
+                fallbackArt.anchoredPosition = Vector2.zero;
+            }
             UpdateZoomLabel();
             return;
         }
