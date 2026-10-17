@@ -74,6 +74,13 @@ partial class MotionRegression
                 "two optional sites exist in the same world region");
             Check(refugeeSite==StoryClues.Site(hero,StoryClues.RefugeeDiary,
                   birthplace.Continent),"follow-up site is seed stable");
+            foreach(string primary in new[]{StoryClues.Inscription,
+                    StoryClues.Jade,StoryClues.Seal})
+            {
+                string site=StoryClues.Site(hero,primary,birthplace.Continent);
+                Check(refugeeSite!=site && scarSite!=site,
+                    "follow-up locations do not overlap primary witnesses");
+            }
 
             hero.worldMapId=refugeeSite;
             StoryClues.OnCompletedWave(hero);
