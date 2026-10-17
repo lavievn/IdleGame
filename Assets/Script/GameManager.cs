@@ -304,6 +304,27 @@ public class GameManager : MonoBehaviour
     private readonly Queue<string> recentEvents = new Queue<string>();
     private readonly Queue<string> recentDamage = new Queue<string>();
     private readonly List<string> fullEventHistory = new List<string>();
+    private string storyNotice = "";
+    private float storyNoticeSeconds;
+    private void PresentStoryNotice(string message)
+    {
+        // Compact, temporary notification only. Full text survives in the
+        // event log and discoveries survive permanently in the Dị văn journal.
+        storyNotice = message ?? "";
+        storyNoticeSeconds = 8f;
+        RefreshCompactLog();
+    }
+    private void ResetStoryNotice()
+    {
+        storyNotice = "";
+        storyNoticeSeconds = 0f;
+    }
+    private void Update()
+    {
+        if (storyNoticeSeconds <= 0f) return;
+        storyNoticeSeconds = Mathf.Max(0f,storyNoticeSeconds-Time.unscaledDeltaTime);
+        if (storyNoticeSeconds <= 0f) RefreshCompactLog();
+    }
     public string FullEventHistory => fullEventHistory.Count==0 ? "Chưa có sự kiện." : string.Join("\n",fullEventHistory.ToArray());
     private readonly List<string> damageHistory = new List<string>();
     public string[] DamageHistory => damageHistory.ToArray();
@@ -325,8 +346,11 @@ public class GameManager : MonoBehaviour
     }
     private void RefreshCompactLog()
     {
-        if (eventLogText!=null) eventLogText.text=recentDamage.Count==0
-            ?"Chưa có sát thương":string.Join("\n",recentDamage.ToArray());
+        if (eventLogText!=null) eventLogText.text=storyNoticeSeconds>0f
+            ? storyNotice
+            : recentDamage.Count==0
+                ? "Chưa có sát thương"
+                : string.Join("\n",recentDamage.ToArray());
     }
     public EntityDataSO HeroData => runtimeHeroData;
     private enum MenuChoice { None, Continue, NewGame }
@@ -366,6 +390,7 @@ public class GameManager : MonoBehaviour
     private void InitHeroData()
     {
         recentEvents.Clear(); recentDamage.Clear(); fullEventHistory.Clear();
+        ResetStoryNotice();
         damageHistory.Clear();
         if (runtimeHeroData != null) Destroy(runtimeHeroData);
         runtimeHeroData = Instantiate(heroDataSO);
@@ -852,6 +877,7 @@ public class GameManager : MonoBehaviour
             if (runtimeHeroData != null) Destroy(runtimeHeroData);
             runtimeHeroData = loaded;
             recentEvents.Clear(); recentDamage.Clear(); fullEventHistory.Clear();
+            ResetStoryNotice();
             runtimeHeroData.ApplyHeroBalance();
             RestoreSelectedStance();
         }
@@ -993,7 +1019,10 @@ public class GameManager : MonoBehaviour
                 // Historical clues are generated only after a genuine cleared
                 // wave, never on an escaped-wave retry or failed combat.
                 foreach (string clueLog in StoryClues.OnCompletedWave(runtimeHeroData))
+                {
                     UpdateEventLog(clueLog);
+                    PresentStoryNotice(clueLog);
+                }
                 if (changed)
                 {
                     if (WorldMapCatalog.Enabled(runtimeHeroData))
