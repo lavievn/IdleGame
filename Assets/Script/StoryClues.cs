@@ -155,6 +155,8 @@ namespace TuTienCore
             if (hero == null || !WorldMapCatalog.Enabled(hero))
                 return "Nhật ký Dị Văn chỉ khả dụng trong chế độ Bản đồ Thế giới.";
             Normalize(hero);
+            if (hero.storyFoundIds.Count == 0)
+                return "DỊ VĂN\n\nChưa phát hiện dấu vết nào.\nTiếp tục chiến đấu ở bất kỳ map nào để nghe những lời đồn đầu tiên.";
             var sb = new StringBuilder();
             sb.AppendLine("ĐÊM TÁNG LINH MẠCH");
             int found = 0;
