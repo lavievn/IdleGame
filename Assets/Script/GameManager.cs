@@ -392,6 +392,8 @@ public class GameManager : MonoBehaviour
         // Old saves retain their unmodified legacy sequential maps.
         if (!WorldMapCatalog.StartNew(runtimeHeroData))
             Debug.LogWarning("[WorldMap] World catalog unavailable; new run remains in legacy mode.");
+        if (WorldMapCatalog.Enabled(runtimeHeroData))
+            StoryClues.InitializeNew(runtimeHeroData);
 
         {
             runtimeHeroData.gender = Random.Range(0, 2) == 0 ? GenderType.Nam : GenderType.Nu;
@@ -441,6 +443,7 @@ public class GameManager : MonoBehaviour
     private void RestoreProgress()
     {
         runtimeHeroData.NormalizeMapProgress();
+        StoryClues.Normalize(runtimeHeroData);
         runtimeHeroData.NormalizeRoots();
         if (UIManager.Instance != null)
         {
@@ -987,6 +990,10 @@ public class GameManager : MonoBehaviour
             {
                 bool changed = runtimeHeroData.CompleteWave();
                 RestoreProgress();
+                // Historical clues are generated only after a genuine cleared
+                // wave, never on an escaped-wave retry or failed combat.
+                foreach (string clueLog in StoryClues.OnCompletedWave(runtimeHeroData))
+                    UpdateEventLog(clueLog);
                 if (changed)
                 {
                     if (WorldMapCatalog.Enabled(runtimeHeroData))
