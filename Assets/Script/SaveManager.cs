@@ -118,6 +118,11 @@ public class SaveManager : MonoBehaviour
                 entityData.worldMapLoopWave = 1;
                 entityData.worldMapVisited = new System.Collections.Generic.List<string>();
                 entityData.worldMapCleared = new System.Collections.Generic.List<string>();
+                // Missing narrative fields on an old save must not inherit
+                // seed/clues from the ScriptableObject template.
+                entityData.storyVersion = 0;
+                entityData.storySeed = 0;
+                entityData.storyFoundIds = new System.Collections.Generic.List<string>();
                 entityData.regionIndex = -1;
                 entityData.regionTheme = TuTienCore.RegionTheme.SonLam;
                 entityData.monsterAnimal = "";
@@ -148,6 +153,7 @@ public class SaveManager : MonoBehaviour
                     }
                 }
                 entityData.NormalizeMapProgress();
+                TuTienCore.StoryClues.Normalize(entityData);
                 entityData.NormalizeCombatStats();
                 EquipmentInventory.Normalize(entityData);
                 // Both systems own distinct prefixes so normalization never
