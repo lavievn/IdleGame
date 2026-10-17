@@ -53,6 +53,63 @@ partial class MotionRegression
             Check(StoryClues.OnCompletedWave(h).Count==0,"no repeat");
             Check(StoryClues.Journal(h).Contains("CHÂN TƯỚNG"),"journal updated");
         });
+        Run("0.0.54 second-layer narrative unlocks from crossing clues without blocking idle",()=>{
+            var hero=new EntityDataSO {
+                worldMapVersion=1,worldMapId="TV-20",worldMapWaveProgress=5,
+                storyVersion=1,storySeed=57483,
+                storyFoundIds=new List<string>{
+                    StoryClues.Rumor,StoryClues.Inscription}
+            };
+            WorldMapNode birthplace;
+            Check(WorldMapCatalog.TryGet(hero.worldMapId,out birthplace),
+                "current continent exists");
+            string refugeeSite=StoryClues.Site(hero,StoryClues.RefugeeDiary,birthplace.Continent);
+            string scarSite=StoryClues.Site(hero,StoryClues.LingmaiScar,birthplace.Continent);
+            WorldMapNode refugeeNode,scarNode;
+            Check(WorldMapCatalog.TryGet(refugeeSite,out refugeeNode) &&
+                  WorldMapCatalog.TryGet(scarSite,out scarNode) &&
+                  refugeeNode.Continent==birthplace.Continent &&
+                  scarNode.Continent==birthplace.Continent &&
+                  !refugeeNode.IsBoss && !scarNode.IsBoss,
+                "two optional sites exist in the same world region");
+            Check(refugeeSite==StoryClues.Site(hero,StoryClues.RefugeeDiary,
+                  birthplace.Continent),"follow-up site is seed stable");
+            foreach(string primary in new[]{StoryClues.Inscription,
+                    StoryClues.Jade,StoryClues.Seal})
+            {
+                string site=StoryClues.Site(hero,primary,birthplace.Continent);
+                Check(refugeeSite!=site && scarSite!=site,
+                    "follow-up locations do not overlap primary witnesses");
+            }
+
+            hero.worldMapId=refugeeSite;
+            StoryClues.OnCompletedWave(hero);
+            Check(!StoryClues.Has(hero,StoryClues.RefugeeDiary),
+                "inscription alone does not unlock refugee diary");
+            hero.storyFoundIds.Add(StoryClues.Seal);
+            StoryClues.OnCompletedWave(hero);
+            Check(StoryClues.Has(hero,StoryClues.RefugeeDiary),
+                "inscription AND (jade OR seal) unlocks refugee diary");
+            Check(!StoryClues.Has(hero,StoryClues.Revelation),
+                "optional clue does not fabricate the historical truth");
+
+            hero.worldMapId=scarSite;
+            StoryClues.OnCompletedWave(hero);
+            Check(!StoryClues.Has(hero,StoryClues.LingmaiScar),
+                "seal without jade does not unlock the second thread");
+            hero.storyFoundIds.Add(StoryClues.Jade);
+            StoryClues.OnCompletedWave(hero);
+            Check(StoryClues.Has(hero,StoryClues.Revelation) &&
+                  StoryClues.Has(hero,StoryClues.LingmaiScar) &&
+                  StoryClues.Has(hero,StoryClues.Aftermath),
+                "three original witnesses plus both follow-up threads reveal aftermath");
+            Check(StoryClues.OnCompletedWave(hero).Count==0,
+                "aftermath may not repeat during idle farming");
+            Check(StoryClues.Journal(hero).Contains("HỆ QUẢ CÒN SÓT LẠI") &&
+                  StoryClues.Journal(hero).Contains("Dư âm"),
+                "journal ties together two independent aftereffects");
+        });
+
         Run("0.0.54 story clues are isolated between manual saves and older saves",()=>{
             var f=new Field();SaveManager saves;string dir;
             MenuManager(f,out saves,out dir);
@@ -61,7 +118,7 @@ partial class MotionRegression
                 var a=HeroAt(4);
                 a.worldMapVersion=1;a.worldMapId="TV-20";
                 a.storyVersion=1;a.storySeed=2468;
-                a.storyFoundIds=new List<string>{StoryClues.Rumor,StoryClues.Jade};
+                a.storyFoundIds=new List<string>{StoryClues.Rumor,StoryClues.Jade,StoryClues.RefugeeDiary};
                 var b=HeroAt(7);
                 b.worldMapVersion=1;b.worldMapId="TM-12";
                 b.storyVersion=1;b.storySeed=9753;
@@ -73,7 +130,9 @@ partial class MotionRegression
                 Check(saves.LoadGame(loadedB,SaveSlot.ManualSave2),"load B");
                 Check(loadedA.storySeed==2468 && loadedB.storySeed==9753 &&
                       StoryClues.Has(loadedA,StoryClues.Jade) &&
+                      StoryClues.Has(loadedA,StoryClues.RefugeeDiary) &&
                       !StoryClues.Has(loadedB,StoryClues.Jade) &&
+                      !StoryClues.Has(loadedB,StoryClues.RefugeeDiary) &&
                       StoryClues.Has(loadedB,StoryClues.Seal),
                     "seeds and collected clues remain separate");
 

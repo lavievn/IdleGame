@@ -16,7 +16,42 @@ namespace TuTienCore
         public const string Jade = "tanglinh.jade";
         public const string Seal = "tanglinh.seal";
         public const string Revelation = "tanglinh.revelation";
+        // Optional second layer: neither branch blocks the original reveal.
+        public const string RefugeeDiary = "tanglinh.refugee_diary";
+        public const string LingmaiScar = "tanglinh.lingmai_scar";
+        public const string Aftermath = "tanglinh.aftermath";
         private static readonly string[] physical = { Rumor, Inscription, Jade, Seal };
+
+        // Follow-up discoveries use a compact rule graph. RequireAll and
+        // RequireAny are evaluated on saved clue IDs; the location and wave
+        // threshold must ALSO be met. No online AI or runtime story rerolls.
+        private sealed class FollowUp
+        {
+            public readonly string Id, Notice;
+            public readonly string[] RequireAll, RequireAny;
+            public readonly int MinWave;
+            public FollowUp(string id,int minWave,string[] all,string[] any,string notice)
+            {
+                Id=id; MinWave=minWave; RequireAll=all; RequireAny=any; Notice=notice;
+            }
+        }
+        private static readonly FollowUp[] followUps =
+        {
+            new FollowUp(RefugeeDiary,2,new[]{Inscription},new[]{Jade,Seal},
+                "[Di thư] Nhật ký của một hậu duệ kể về dòng người chạy nạn. Họ căm ghét Tạ Vô Trần nhưng cũng nghi ngờ lời kết tội của tông môn."),
+            new FollowUp(LingmaiScar,3,new[]{Jade,Seal},null,
+                "[Linh mạch] Phát hiện vết nứt cổ: dấu khai thác trận pháp xuất hiện TRƯỚC khi Tạ Vô Trần cắt mạch.")
+        };
+
+        private static bool Eligible(EntityDataSO hero,FollowUp rule)
+        {
+            foreach (string id in rule.RequireAll)
+                if (!Has(hero,id)) return false;
+            if (rule.RequireAny == null || rule.RequireAny.Length == 0) return true;
+            foreach (string id in rule.RequireAny)
+                if (Has(hero,id)) return true;
+            return false;
+        }
 
         private static uint StableHash(string value)
         {
@@ -68,7 +103,8 @@ namespace TuTienCore
             foreach (string id in hero.storyFoundIds)
             {
                 if (id != Rumor && id != Inscription && id != Jade &&
-                    id != Seal && id != Revelation) continue;
+                    id != Seal && id != Revelation &&
+                    id != RefugeeDiary && id != LingmaiScar && id != Aftermath) continue;
                 if (unique.Add(id)) clean.Add(id);
             }
             if (clean.Count != hero.storyFoundIds.Count)
@@ -90,27 +126,47 @@ namespace TuTienCore
             return true;
         }
 
-        // Every large region receives one attainable copy of each discovery
-        // SITE (the discovered FACT is unique per character). Sites are chosen
-        // among low-level non-Boss maps; 3 physical clues never occupy the
-        // same map within a region when there are at least 3 candidates.
+        // The 3 original witnesses stay near each birth region (<= level 13).
+        // Optional second-layer sites use a slightly deeper map band when
+        // possible, without affecting its combat level or travel conditions.
+        // Each region provides a possible source; one discovered copy suffices.
         public static string Site(EntityDataSO hero, string clueId, string continent)
         {
+            bool deeper = clueId == RefugeeDiary || clueId == LingmaiScar;
             if (hero == null || hero.storySeed == 0 ||
-                (clueId != Inscription && clueId != Jade && clueId != Seal) ||
-                string.IsNullOrEmpty(continent)) return "";
+                (clueId != Inscription && clueId != Jade && clueId != Seal &&
+                 !deeper) || string.IsNullOrEmpty(continent)) return "";
+            // If temporary graph depth bands change, still never place a
+            // second-layer clue on the very same node as a primary witness.
+            var primarySites = new HashSet<string>(StringComparer.Ordinal);
+            if (deeper)
+                foreach (string primary in new[]{Inscription,Jade,Seal})
+                    primarySites.Add(Site(hero,primary,continent));
             var candidates = new List<WorldMapNode>();
             foreach (WorldMapNode n in WorldMapCatalog.All)
-                if (n.Continent == continent && !n.IsBoss && n.SuggestedLevel <= 13)
+                if (n.Continent == continent && !n.IsBoss &&
+                    !primarySites.Contains(n.Id) &&
+                    (deeper ? (n.SuggestedLevel >= 14 && n.SuggestedLevel <= 31)
+                            : n.SuggestedLevel <= 13))
                     candidates.Add(n);
+            // Never strand a story if a provisional graph changes its bands.
             if (candidates.Count == 0)
                 foreach (WorldMapNode n in WorldMapCatalog.All)
-                    if (n.Continent == continent && !n.IsBoss) candidates.Add(n);
+                    if (n.Continent == continent && !n.IsBoss &&
+                        !primarySites.Contains(n.Id) &&
+                        n.SuggestedLevel <= (deeper ? 31 : 13))
+                        candidates.Add(n);
+            if (candidates.Count == 0)
+                foreach (WorldMapNode n in WorldMapCatalog.All)
+                    if (n.Continent == continent && !n.IsBoss &&
+                        !primarySites.Contains(n.Id)) candidates.Add(n);
             if (candidates.Count == 0) return "";
             candidates.Sort((a,b) => string.CompareOrdinal(a.Id,b.Id));
-            uint h = StableHash(hero.storySeed.ToString() + "|" + continent);
-            int start = (int)(h % (uint)candidates.Count);
-            int offset = clueId == Inscription ? 0 : clueId == Jade ? 1 : 2;
+            uint hash = StableHash(hero.storySeed.ToString() + "|" +
+                continent + (deeper ? "|aftermath" : ""));
+            int start = (int)(hash % (uint)candidates.Count);
+            int offset = clueId == Inscription || clueId == RefugeeDiary ? 0 :
+                clueId == Jade || clueId == LingmaiScar ? 1 : 2;
             return candidates[(start + offset) % candidates.Count].Id;
         }
 
@@ -141,6 +197,20 @@ namespace TuTienCore
             if (Has(hero,Inscription) && Has(hero,Jade) && Has(hero,Seal) &&
                 Mark(hero,Revelation))
                 notices.Add("[Chân tướng] Thiên Huyền Tông đã làm nứt phong ấn; Tạ Vô Trần hy sinh một thành để cứu các vùng còn lại. Ông không hoàn toàn vô tội.");
+
+            // Discover extra consequences independently of the MAIN ending:
+            // all/any conditions and a second location-based interaction.
+            foreach (FollowUp followUp in followUps)
+            {
+                if (!Has(hero,followUp.Id) && Eligible(hero,followUp) &&
+                    hero.worldMapWaveProgress >= followUp.MinWave &&
+                    node.Id == Site(hero,followUp.Id,node.Continent) &&
+                    Mark(hero,followUp.Id))
+                    notices.Add(followUp.Notice);
+            }
+            if (Has(hero,Revelation) && Has(hero,RefugeeDiary) &&
+                Has(hero,LingmaiScar) && Mark(hero,Aftermath))
+                notices.Add("[Dư âm] Di thư và vết nứt xác nhận bi kịch còn để lại hậu quả. Sự thật đã rõ, nhưng những người sống sót không vì thế mà hết oán hận.");
             return notices;
         }
 
@@ -173,6 +243,12 @@ namespace TuTienCore
                 sb.AppendLine("• Ngọc giản: Việc cắt mạch có thể đã ngăn một tai kiếp lớn hơn.");
             if (Has(hero,Seal))
                 sb.AppendLine("• Trận văn: Có kẻ đã khai thác phong ấn trước đêm tai họa.");
+            if (Has(hero,Inscription) && Has(hero,Jade))
+                sb.AppendLine("\nSUY LUẬN: Bia cáo tội và ngọc giản mô tả cùng một hành động nhưng trái ngược về động cơ.");
+            if (Has(hero,Jade) && Has(hero,Seal))
+                sb.AppendLine("SUY LUẬN: Trận pháp đã bị can thiệp trước khi linh mạch bị cắt.");
+            if (Has(hero,Inscription) && Has(hero,Seal) && !Has(hero,Jade))
+                sb.AppendLine("SUY LUẬN: Bia đá có thể đã bỏ qua một phần nguyên nhân tai họa.");
             if (Has(hero,Revelation))
                 sb.AppendLine("\nCHÂN TƯỚNG: Tông môn gây ra tai kiếp, Tạ Vô Trần ngăn nó bằng một hy sinh tàn khốc. Lịch sử chính thống chỉ kể một nửa sự thật.");
             if (Has(hero,Rumor) && !Has(hero,Revelation))
@@ -187,6 +263,34 @@ namespace TuTienCore
                         sb.AppendLine("• Ngọc giản: " + Name(Site(hero,Jade,current.Continent)) + " (ít nhất 3 wave).");
                     if (!Has(hero,Seal))
                         sb.AppendLine("• Trận văn: " + Name(Site(hero,Seal,current.Continent)) + " (ít nhất 4 wave).");
+                }
+            }
+            if (Has(hero,RefugeeDiary) || Has(hero,LingmaiScar) ||
+                Has(hero,Inscription) || Has(hero,Seal))
+            {
+                sb.AppendLine("\nHỆ QUẢ CÒN SÓT LẠI");
+                if (Has(hero,RefugeeDiary))
+                    sb.AppendLine("• Nhật ký nạn dân: Người sống sót không biết toàn bộ sự thật và vẫn mang mối hận.");
+                if (Has(hero,LingmaiScar))
+                    sb.AppendLine("• Vết nứt linh mạch: Có chứng cứ vật chất về việc khai thác phong ấn trước thảm họa.");
+                if (Has(hero,Aftermath))
+                    sb.AppendLine("• Dư âm: Đã ghép được cả lời kể của hậu duệ lẫn vết tích linh mạch.");
+                else
+                {
+                    WorldMapNode current;
+                    if (WorldMapCatalog.TryGet(hero.worldMapId,out current))
+                    {
+                        foreach (FollowUp followUp in followUps)
+                            if (!Has(hero,followUp.Id) && Eligible(hero,followUp))
+                                sb.AppendLine("• " +
+                                    (followUp.Id == RefugeeDiary ? "Nhật ký nạn dân: " : "Vết nứt linh mạch: ") +
+                                    Name(Site(hero,followUp.Id,current.Continent)) +
+                                    " (ít nhất " + followUp.MinWave + " wave).");
+                    }
+                    if (!Has(hero,RefugeeDiary) && !Has(hero,Inscription))
+                        sb.AppendLine("• Có những dòng ghi chép chỉ có thể lần theo sau khi tìm thấy bia cáo tội.");
+                    if (!Has(hero,LingmaiScar) && (!Has(hero,Jade) || !Has(hero,Seal)))
+                        sb.AppendLine("• Cần đối chiếu ngọc giản với trận văn để lần theo dấu tích khai thác.");
                 }
             }
             sb.AppendLine("\nTự khám phá qua các wave; không tự chuyển map hay ngắt quá trình idle.");
