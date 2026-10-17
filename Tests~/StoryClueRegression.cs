@@ -51,6 +51,7 @@ partial class MotionRegression
             Check(StoryClues.Has(h,StoryClues.Revelation),"complete story unlocked");
             Check(StoryClues.OnCompletedWave(h).Count==0,"no repeat");
             Check(StoryClues.Journal(h).Contains("CHÂN TƯỚNG"),"journal updated");
+        });
         Run("0.0.54 story clues are isolated between manual saves and older saves",()=>{
             var f=new Field();SaveManager saves;string dir;
             MenuManager(f,out saves,out dir);
