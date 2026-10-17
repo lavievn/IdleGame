@@ -136,9 +136,16 @@ namespace TuTienCore
             if (hero == null || hero.storySeed == 0 ||
                 (clueId != Inscription && clueId != Jade && clueId != Seal &&
                  !deeper) || string.IsNullOrEmpty(continent)) return "";
+            // If temporary graph depth bands change, still never place a
+            // second-layer clue on the very same node as a primary witness.
+            var primarySites = new HashSet<string>(StringComparer.Ordinal);
+            if (deeper)
+                foreach (string primary in new[]{Inscription,Jade,Seal})
+                    primarySites.Add(Site(hero,primary,continent));
             var candidates = new List<WorldMapNode>();
             foreach (WorldMapNode n in WorldMapCatalog.All)
                 if (n.Continent == continent && !n.IsBoss &&
+                    !primarySites.Contains(n.Id) &&
                     (deeper ? (n.SuggestedLevel >= 14 && n.SuggestedLevel <= 31)
                             : n.SuggestedLevel <= 13))
                     candidates.Add(n);
@@ -146,11 +153,13 @@ namespace TuTienCore
             if (candidates.Count == 0)
                 foreach (WorldMapNode n in WorldMapCatalog.All)
                     if (n.Continent == continent && !n.IsBoss &&
+                        !primarySites.Contains(n.Id) &&
                         n.SuggestedLevel <= (deeper ? 31 : 13))
                         candidates.Add(n);
             if (candidates.Count == 0)
                 foreach (WorldMapNode n in WorldMapCatalog.All)
-                    if (n.Continent == continent && !n.IsBoss) candidates.Add(n);
+                    if (n.Continent == continent && !n.IsBoss &&
+                        !primarySites.Contains(n.Id)) candidates.Add(n);
             if (candidates.Count == 0) return "";
             candidates.Sort((a,b) => string.CompareOrdinal(a.Id,b.Id));
             uint hash = StableHash(hero.storySeed.ToString() + "|" +
