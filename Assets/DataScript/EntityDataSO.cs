@@ -207,6 +207,12 @@ public class EntityDataSO : ScriptableObject
     public List<string> worldMapVisited = new List<string>();
     public List<string> worldMapCleared = new List<string>();
 
+    // Reverse-story prototype .54. Stored ON the Hero save, never globally.
+    // storyVersion=0 in older saves; their old-world mode stays unchanged.
+    public int storyVersion = 0;
+    public int storySeed = 0;
+    public List<string> storyFoundIds = new List<string>();
+
     public void NormalizeMapProgress()
     {
         if (WorldMapCatalog.Enabled(this))
