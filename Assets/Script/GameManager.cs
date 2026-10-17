@@ -692,6 +692,7 @@ public class GameManager : MonoBehaviour
         if (runtimeHeroData != null) Destroy(runtimeHeroData);
         runtimeHeroData = loaded;
         recentEvents.Clear(); recentDamage.Clear(); fullEventHistory.Clear();
+        ResetStoryNotice();
         damageHistory.Clear();
         continueSlot = slot;
         manualSelection = true;
@@ -796,6 +797,7 @@ public class GameManager : MonoBehaviour
             }
         }
         hasDeployed=false;
+        ResetStoryNotice();
         CancelNextWave();
         ClearTestCompanions();
         if (combatManager != null) combatManager.ForceClearAllMonsters();
