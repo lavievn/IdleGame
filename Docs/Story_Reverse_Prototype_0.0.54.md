@@ -57,3 +57,21 @@ Thêm 3 trường trong `EntityDataSO`:
 - Chưa sửa 133 map, bảng quái, cảnh giới/Thiên Kiếp, UI bản đồ hoặc các số liệu cân bằng.
 
 **Tiêu chí nghiệm thu:** có cảm giác khám phá một câu chuyện từ các dấu vết rải rác, mà người chỉ muốn idle có thể bỏ qua toàn bộ. Nếu trải nghiệm chưa ổn, điều chỉnh cách xuất hiện/log/nhật ký trước khi bổ sung độ phức tạp.
+
+
+## 17/10/2026 — Lớp hậu quả có điều kiện chéo (.54, mở rộng thận trọng)
+
+**Đã triển khai mã, chờ kiểm thử Unity trên máy người phát triển.** Giữ bốn dấu vết và chân tướng v1 hoạt động đúng như bản đã nghiệm thu. Không sửa vị trí ba manh mối cũ theo seed; **không cần Chơi mới** để gặp nội dung bổ sung. Không thêm trường Save mới, không thay `storyVersion=1`. Trước khi triển khai, người phát triển xác nhận video opening, Dị văn và Save/Load bản trước hoạt động bình thường trên các máy đã thử.
+
+**Ý tưởng kể chuyện:** Câu chuyện lớn trong quá khứ đã có kết cục. Ba bằng chứng ban đầu cho phép kết luận chân tướng như cũ; sau đó, hoặc ngay trong quá trình khám phá, người chơi có thể đào sâu các *hệ quả chưa kết thúc*. Các tuyến phụ không chặn kết luận cốt truyện gốc, không mở khóa kỹ năng/map/Boss hay thay đổi idle.
+
+**Hai nhánh vật chứng phụ**, mỗi đại khu có vị trí riêng xác định bởi `storySeed`, ưu tiên các map không phải Boss có cấp gợi ý 14–31 (nếu đồ thị tạm không có map phù hợp sẽ chọn vùng dễ hơn hoặc map khác cùng đại khu):
+- `tanglinh.refugee_diary` — *Nhật ký nạn dân*: cần **bia đá VÀ (ngọc giản HOẶC trận văn)**, sau đó tới địa điểm gợi ý và đánh xong ít nhất 2 wave tại đó. Đây là minh họa cổng **AND kết hợp OR**. Kết quả: thấy góc nhìn của hậu duệ, không chỉ lịch sử chính thống.
+- `tanglinh.lingmai_scar` — *Vết nứt linh mạch*: cần **ngọc giản VÀ trận văn**, tới địa điểm gợi ý, hoàn thành ít nhất 3 wave. Kết quả: chứng cứ vật chất rằng phong ấn đã bị khai thác trước khi Tạ Vô Trần cắt mạch.
+- `tanglinh.aftermath` — *Dư âm*: tự động suy ra khi đã có **chân tướng VÀ nhật ký nạn dân VÀ vết nứt linh mạch**, không cần map khác. Bằng chứng này nhấn mạnh hậu quả của bi kịch với người sống sót.
+
+**Suy luận hiển thị động trong Dị văn:** Khi có các cặp bia+ngọc, ngọc+trận văn, hoặc bia+trận văn, nhật ký hiển thị những cách diễn giải mới; các dòng đó được tính từ ID đã lưu, không ghi thêm dữ liệu mới. Khi đủ điều kiện mở tuyến phụ, nhật ký gợi ý địa điểm từ seed. Khi chưa đủ, chỉ nói cần đối chiếu manh mối nào, không tự bật nhiệm vụ ép người chơi. Ngay cả khi ba chứng cứ đã đủ để giải chân tướng, các nhánh mở rộng vẫn hoàn toàn tùy chọn.
+
+**Kiểm thử bổ sung trong `Tests~/StoryClueRegression.cs`:** vị trí nhánh phụ ổn định, không chọn Boss; thiếu điều kiện không cấp vật chứng; minh họa OR với bia + trận văn nhưng không có ngọc giản; cấp nhánh thứ hai khi có ngọc+trận văn; cấp Dư âm đúng một lần; lưu/tải vật chứng mới độc lập trong hai slot. `Tests~/run.sh` đã chạy bộ tests khi được thực thi ở máy có Mono/mcs, **chưa chạy được tại môi trường trợ lý này**.
+
+**Kiểm thử Play Mode gợi ý:** dùng save cũ đã mở Dị văn, đọc các dòng suy luận; đi tới map nhật ký nạn dân được chỉ khi có đủ điều kiện; thử trường hợp thiếu manh mối thì ở đúng map vẫn không nhận được di vật; thu đủ hai tuyến phụ, kiểm tra dòng Dư âm và không phát lại sau nhiều vòng farm; load Save 1 và Save 2 sau các bước khác nhau để kiểm tra lịch sử.
