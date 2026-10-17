@@ -461,6 +461,8 @@ public class UIManager : MonoBehaviour
             new Vector2(1,1),new Vector2(-244,-4),new Vector2(62,24),ToggleMusicVolume);
         worldMapButton = SmallButton(canvas,"WorldMapButton","Bản đồ",new Vector2(1,1),
             new Vector2(1,1),new Vector2(-376,-4),new Vector2(62,24),ToggleWorldMapMenu);
+        storyJournalButton = SmallButton(canvas,"StoryJournalButton","Dị văn",new Vector2(1,1),
+            new Vector2(1,1),new Vector2(-444,-4),new Vector2(62,24),OpenStoryJournal);
         // The label is longer than 'Kho đồ': keep the same button size without
         // introducing a second text line at the compact 600px window preset.
         var volumeCaption = volumeButton.GetComponentInChildren<TMPro.TextMeshProUGUI>(true);
@@ -554,6 +556,8 @@ public class UIManager : MonoBehaviour
         if (volumeButton != null) volumeButton.gameObject.SetActive(shown);
         if (worldMapButton != null) worldMapButton.gameObject.SetActive(shown &&
             gm != null && TuTienCore.WorldMapCatalog.Enabled(gm.HeroData));
+        if (storyJournalButton != null) storyJournalButton.gameObject.SetActive(shown &&
+            gm != null && TuTienCore.WorldMapCatalog.Enabled(gm.HeroData));
         if (musicVolumePanel != null) musicVolumePanel.SetVisibleInGameplay(shown);
         if (statsPanel != null) statsPanel.gameObject.SetActive(shown && Screen.height >= 290);
         for (int i=0;i<attackButtons.Length;i++)
@@ -616,7 +620,9 @@ public class UIManager : MonoBehaviour
     private void RefreshDamageInfo()
     {
         if (damageText == null) return;
-        string title = detailKind == 1 ? "CHỈ SỐ HERO" : detailKind == 2 ? "NHẬT KÝ" : "SÁT THƯƠNG " + (damagePage+1) + "/" + System.Math.Max(1,displayedDamage.Length);
+        string title = detailKind == 1 ? "CHỈ SỐ HERO" :
+            detailKind == 2 ? "NHẬT KÝ" : detailKind == 3 ? "DỊ VĂN" :
+            "SÁT THƯƠNG " + (damagePage+1) + "/" + System.Math.Max(1,displayedDamage.Length);
         string content = detailKind != 0 ? detailSnapshot : displayedDamage.Length == 0 ? "Chưa có đòn đánh hoàn tất." : displayedDamage[damagePage];
         var pages = ReadablePages(content, Mathf.Max(12,Screen.width-40), Mathf.Max(20,Screen.height-92));
         detailSliceCount = pages.Count; detailSlice = Mathf.Clamp(detailSlice,0,pages.Count-1);
@@ -659,6 +665,13 @@ public class UIManager : MonoBehaviour
     {
         var gm = Object.FindFirstObjectByType<GameManager>();
         OpenTextDetail(2,gm != null ? gm.FullEventHistory : "Chưa có nhật ký.");
+    }
+    public void OpenStoryJournal()
+    {
+        var gm = Object.FindFirstObjectByType<GameManager>();
+        if(gm == null || !gm.IsGameplayHUDVisible || 
+            !TuTienCore.WorldMapCatalog.Enabled(gm.HeroData))return;
+        OpenTextDetail(3,TuTienCore.StoryClues.Journal(gm.HeroData));
     }
     private void OpenTextDetail(int kind,string text)
     {
@@ -735,7 +748,7 @@ public class UIManager : MonoBehaviour
         }
     }
 
-    private RectTransform hudCanvas, combatUIRoot, pauseRect, devButton, statsButton, inventoryButton, volumeButton, worldMapButton, statsPanel;
+    private RectTransform hudCanvas, combatUIRoot, pauseRect, devButton, statsButton, inventoryButton, volumeButton, worldMapButton, storyJournalButton, statsPanel;
     private WorldMapPanelUI worldMapUI;
     private MusicVolumePanelUI musicVolumePanel;
     private InventoryPanelUI inventoryUI;
@@ -957,6 +970,8 @@ public class UIManager : MonoBehaviour
             new Vector2(-204,-4),new Vector2(62,24));
         PlaceUI(worldMapButton,new Vector2(1,1),new Vector2(1,1),
             new Vector2(-336,-4),new Vector2(62,24));
+        PlaceUI(storyJournalButton,new Vector2(1,1),new Vector2(1,1),
+            new Vector2(-404,-4),new Vector2(62,24));
         if (worldMapUI != null) worldMapUI.Resize();
         if (musicVolumePanel != null) musicVolumePanel.Layout();
         if (inventoryUI != null) inventoryUI.Layout(w,h,Screen.width,Screen.height);
