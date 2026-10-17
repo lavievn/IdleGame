@@ -94,6 +94,7 @@ partial class MotionRegression
     static void Main()
     {
         WorldMapRegressionTests();
+        StoryClueRegressionTests();
         Run("six-vertex polygon uses true shape, not rectangular hitbox", () => {
             var hex = new List<Vector2> {
                 new Vector2(.20f,.25f), new Vector2(.55f,.20f),
