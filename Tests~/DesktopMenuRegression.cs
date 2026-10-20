@@ -14,9 +14,11 @@ partial class MotionRegression
             var button=trigger.AddComponent<UnityEngine.UI.Button>();
             button.onClick.AddListener(ui.ToggleSystemMenu);
             ui.systemMenu=new GameObject(true);ui.systemMenu.name="SystemMenu";ui.systemMenu.transform.parent=canvas.transform;
+            var oldControls=new System.Collections.Generic.List<CustomInteractable>();
             foreach(var name in new[]{"Btn_Scale200","Btn_Scale500","Btn_Scale1000"}) {
                 var go=new GameObject(true);go.name=name;go.transform.parent=ui.systemMenu.transform;go.AddComponent<TextMeshProUGUI>();
                 var c=go.AddComponent<CustomInteractable>();c.onClickEvent=new UnityEvent();ui.RegisterInteractable(c);
+                oldControls.Add(c);
             }
             var save=new GameObject(true);save.name="SaveUi";save.transform.parent=ui.systemMenu.transform;
             var saveLabel=new GameObject(true);saveLabel.transform.parent=save.transform;saveLabel.AddComponent<TextMeshProUGUI>();
@@ -28,17 +30,56 @@ partial class MotionRegression
             Check(System.Array.IndexOf(window.clickableUI,click.GetRect())>=0,"red trigger registered for Windows");
             ui.HandleMouseClick(click.GetRect().position);Check(ui.systemMenu.activeSelf,"red click opens menu");
             var visible=ui.systemMenu.GetComponentsInChildren<CustomInteractable>();
-            Check(visible.Length==5,"five main actions including restored manual save, old controls hidden");
+            var actions=new System.Collections.Generic.Dictionary<string,CustomInteractable>();
+            foreach(var item in visible) {
+                Check(!actions.ContainsKey(item.gameObject.name),"no duplicate main action "+item.gameObject.name);
+                actions.Add(item.gameObject.name,item);
+            }
+            var expectedActions=new System.Collections.Generic.HashSet<string>(new[]{
+                "Exit","Save","Load","Reset","WindowSize","ReturnTitle"});
+            Check(expectedActions.SetEquals(actions.Keys),"exactly six named main actions");
+            foreach(var old in oldControls)
+                Check(!old.gameObject.activeInHierarchy && System.Array.IndexOf(visible,old)<0,
+                    "legacy control hidden: "+old.gameObject.name);
+            Check(!save.activeInHierarchy,"legacy SaveUi hidden");
+            foreach(var name in expectedActions) {
+                var callback=Get<UnityAction>(actions[name].onClickEvent,"callback");
+                Check(callback!=null && callback.GetInvocationList().Length==1,"one bound action for "+name);
+                string method=name=="Exit"?"ConfirmExit":name=="Save"?"OpenManualSaveMenu":
+                    name=="Load"?"OpenLoadMenu":name=="ReturnTitle"?"ReturnToTitle":null;
+                if(method!=null)Check(callback.Target==ui && callback.Method.Name==method,
+                    name+" binds to "+method);
+            }
+            actions["Save"].onClickEvent.Invoke();
+            Check(Get<GameObject>(ui,"savePage").activeInHierarchy &&
+                !Get<GameObject>(ui,"mainPage").activeSelf,"Save opens manual save page");
+            ui.CloseSystemMenu();ui.ToggleSystemMenu();
+            actions["Load"].onClickEvent.Invoke();
+            Check(Get<GameObject>(ui,"loadPage").activeInHierarchy &&
+                !Get<GameObject>(ui,"mainPage").activeSelf,"Load opens load page");
+            ui.CloseSystemMenu();ui.ToggleSystemMenu();
+            var gm=new GameObject().AddComponent<GameManager>();
+            gm.confirmationPopup=new GameObject(true);gm.confirmationPopup.SetActive(false);
+            gm.preGameUI=new GameObject(true);gm.preGameUI.SetActive(false);
+            actions["Reset"].onClickEvent.Invoke();
+            Check(gm.HasPendingConfirmation && gm.confirmationPopup.activeSelf &&
+                !ui.systemMenu.activeSelf,"Reset asks GameManager for confirmation and closes menu");
+            gm.OnCancelResetClicked();ui.ToggleSystemMenu();
             foreach(var item in visible)if(item.gameObject.name=="WindowSize")ui.HandleMouseClick(item.GetRect().position);
             visible=ui.systemMenu.GetComponentsInChildren<CustomInteractable>();Check(visible.Length==4,"size page only three sizes and back");
-            bool has800=false,has250=false;
-            foreach(var item in visible) { if(item.gameObject.name=="Size800")has800=true; if(item.gameObject.name=="Size250")has250=true; }
-            Check(has800&&has250,"new requested sizes exist");
-            foreach(var item in visible)if(item.gameObject.name=="Size500")ui.HandleMouseClick(item.GetRect().position);
+            var sizeActions=new System.Collections.Generic.HashSet<string>();
+            foreach(var item in visible)sizeActions.Add(item.gameObject.name);
+            Check(sizeActions.SetEquals(new[]{"Size600","Size800","Size1150","SizeBack"}),
+                "current sizes and back exist without legacy size buttons");
+            foreach(var item in visible)if(item.gameObject.name=="Size600")ui.HandleMouseClick(item.GetRect().position);
             Check(!ui.systemMenu.activeSelf,"scale selection closes panel");
+            Check(Screen.width==600 && Screen.height==338,"small preset applies 600 by 338 window");
             ui.ToggleSystemMenu();visible=ui.systemMenu.GetComponentsInChildren<CustomInteractable>();
             bool main=false;foreach(var item in visible)if(item.gameObject.name=="Load")main=true;
             Check(main,"reopening starts at main page");
+            actions["ReturnTitle"].onClickEvent.Invoke();
+            Check(gm.preGameUI.activeSelf && !ui.systemMenu.activeSelf &&
+                !gm.HasPendingConfirmation,"ReturnTitle returns to title and closes menu");
             UIManager.Instance=null;
         });
         Run("scale child gets click before menu container irrespective of registration order",()=>{

@@ -18,7 +18,7 @@ partial class MotionRegression
             f.hero.UpdateStats(data,190,350);
             var text=f.hero.atkStatusText.text;
             Check(text==f.hero.FullStatDetails,"full stats not replaced with compact 3-line summary");
-            foreach(var part in new[]{"Cấp:","Cung","HP: 190/350","EXP:","ATK cơ bản:",
+            foreach(var part in new[]{"Cấp:","Cung","HP: 190/350","EXP:","ATK: 21 + 0 (đặc tính ±) = 21",
                 "ATK Hỏa:","ATK Mộc:","Di chuyển:","Tốc đánh:","Nhịp đánh:","Tầm đánh:"})
                 Check(text.Contains(part),"missing "+part);
         });

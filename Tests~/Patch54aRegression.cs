@@ -68,6 +68,8 @@ partial class MotionRegression
         Run("pause and info work through native-compatible dispatcher and pause freezes movement and launched shots",()=>{
             var f=new Field();SaveManager save;string dir;var gm=MenuManager(f,out save,out dir);
             try {
+                // This scenario exercises the gameplay HUD, not the opening menu.
+                gm.preGameUI.SetActive(false);Set(gm,"hasDeployed",true);
                 var canvas=new GameObject(true);((RectTransform)canvas.transform).sizeDelta=new Vector2(1920,1080);
                 gm.eventLog=new GameObject(true).AddComponent<Image>();gm.eventLog.transform.parent=canvas.transform;gm.eventLogText=new GameObject(true).AddComponent<TextMeshProUGUI>();gm.eventLogText.transform.parent=gm.eventLog.transform;
                 var ui=new GameObject().AddComponent<UIManager>();UIManager.Instance=ui;ui.transparentWindow=new GameObject().AddComponent<TransparentWindow>();

@@ -39,13 +39,14 @@ namespace UnityEngine
         public void StopAllCoroutines() { }
         public void StopCoroutine(Coroutine coroutine) { coroutine.stopped = true; }
     }
+    public class Camera : Component { }
     public class Coroutine { public IEnumerator routine; public bool stopped; }
     public class WaitForSeconds { public float seconds; public WaitForSeconds(float seconds) { this.seconds = seconds; } }
     public class WaitForSecondsRealtime { public float seconds; public WaitForSecondsRealtime(float seconds) { this.seconds = seconds; } }
     public class ScriptableObject : Object { }
     public class GameObject : Object
     {
-        public string name;
+        public string name = "New Game Object";
         public bool activeSelf = true;
         public bool activeInHierarchy { get { return activeSelf && (transform.parent == null || transform.parent.gameObject.activeInHierarchy); } }
         public Transform transform;
@@ -153,6 +154,8 @@ namespace UnityEngine
         public float r,g,b,a;
         public Color(float r,float g,float b,float a=1f) { this.r=r;this.g=g;this.b=b;this.a=a; }
         public static Color white { get { return new Color(1f,1f,1f,1f); } }
+        public static Color black { get { return new Color(0f,0f,0f,1f); } }
+        public static Color gray { get { return new Color(.5f,.5f,.5f,1f); } }
     }
     public class CanvasRenderer : Component { }
     public class CanvasGroup : MonoBehaviour { public float alpha=1f; public bool interactable=true,blocksRaycasts=true; }
@@ -173,11 +176,10 @@ namespace UnityEngine
         public Color32(byte r, byte g, byte b, byte a)
         { this.r = r; this.g = g; this.b = b; this.a = a; }
     }
-    public class Texture : Object { }
+    public class Texture : Object { public int width,height; }
     public enum TextureFormat { RGBA32 }
     public class Texture2D : Texture
     {
-        public int width,height;
         public Texture2D(int w,int h,TextureFormat format,bool mipmap){width=w;height=h;}
         public Color32[] pixels;
         public void SetPixels32(Color32[] colors) { pixels=colors; }
@@ -207,7 +209,7 @@ namespace UnityEngine
     public enum RenderTextureFormat { ARGB32 }
     public class RenderTexture : Texture
     {
-        public int width,height,depth;public RenderTextureFormat format;
+        public int depth;public RenderTextureFormat format;
         public RenderTexture(int w,int h,int d,RenderTextureFormat f){width=w;height=h;depth=d;format=f;}
         public void Create(){} public void Release(){}
     }
@@ -247,6 +249,7 @@ namespace UnityEngine
     public class RangeAttribute : Attribute { public RangeAttribute(float a,float b) { } }
     public class MinAttribute : Attribute { public MinAttribute(float a) { } }
     public class DefaultExecutionOrder : Attribute { public DefaultExecutionOrder(int v) { } }
+    public class RequireComponent : Attribute { public RequireComponent(Type type) { } }
     public class CreateAssetMenuAttribute : Attribute { public string fileName,menuName; }
 }
 namespace UnityEngine.UI
@@ -256,7 +259,7 @@ namespace UnityEngine.UI
       public ScaleMode uiScaleMode; public UnityEngine.Vector2 referenceResolution;
     }
     public class RawImage : UnityEngine.MonoBehaviour {
-      public UnityEngine.Texture texture;public bool raycastTarget;
+      public UnityEngine.Texture texture;public bool raycastTarget;public UnityEngine.Color color=UnityEngine.Color.white;
     }
     public class Image : UnityEngine.MonoBehaviour {
       public enum Type { Simple, Sliced }
@@ -307,7 +310,7 @@ namespace TMPro {
   public UnityEngine.RectTransform textViewport;public TextMeshProUGUI textComponent;
   public void ActivateInputField(){isFocused=true;}
  }
- public enum TextAlignmentOptions { Center, TopLeft, Left, BottomRight }
+ public enum TextAlignmentOptions { Center, TopLeft, Left, BottomRight, TopRight, MidlineLeft }
  public class TextMeshProUGUI : UnityEngine.Component { public TMP_FontAsset font=new TMP_FontAsset(); public object fontSharedMaterial; public FontStyles fontStyle; public FontWeight fontWeight;public TextOverflowModes overflowMode;public bool enableWordWrapping; public string text; public float alpha,fontSize,fontSizeMin,fontSizeMax; public bool enableAutoSizing,raycastTarget; public UnityEngine.Color color; public TextAlignmentOptions alignment; }
 }
 namespace UnityEngine.Pool

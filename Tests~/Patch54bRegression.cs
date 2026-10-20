@@ -22,16 +22,29 @@ partial class MotionRegression
             Check(f.Enemies[0].currentHP<10000&&f.combat.CurrentHeroHP<heroHP,"both strike without waiting for movement or lane alignment");
             int hp=f.Enemies[0].currentHP;CombatStep(f,.1f);Check(f.Enemies[0].currentHP==hp,"melee cooldown enforced");
         });
-        Run("bow per-shot factor stays in 55 to 80 percent and appears in damage trace",()=>{
+        Run("Hero bow uses fixed 70 percent factor and reports it in damage trace",()=>{
             var f=new Field();f.hero.ChangeAttackMode(1);var m=f.Monster(-200);f.Battle(m);Tough(f);
             var h=Get<EntityDataSO>(f.combat,"runtimeHeroData");h.baseDamage=100;h.spiritRoots=new List<ElementType>{ElementType.Vo};
-            float lo=1,hi=0;
             for(int i=0;i<200;i++){CombatStep(f,.7f);var shot=ShotList(f)[0];var tr=ShotField<DamageTrace>(shot,"trace");
-                Check(tr.modeMultiplier>=.55f&&tr.modeMultiplier<=.8f,"bow reduction bounds");
-                Check(tr.rolledDamage>=47&&tr.rolledDamage<=80,"separate old 85..100 percent variation");
-                Check(tr.Describe(1,1,tr.elementDamage).Contains("kiểu đánh ×"),"Info contains factor");lo=Math.Min(lo,tr.modeMultiplier);hi=Math.Max(hi,tr.modeMultiplier);
+                Check(tr.modeMultiplier==.7f,"Hero bow factor is always 0.7");
+                Check(tr.roll>=.85f&&tr.roll<=1f,"general damage roll remains within 85..100 percent");
+                Check(tr.rolledDamage>=60&&tr.rolledDamage<=70,"100 ATK bow respects fixed factor and rounding");
+                Check(tr.Describe(1,1,tr.elementDamage).Contains("kiểu đánh ×"),"Info contains factor");
                 Set(f.combat,"heroAttackTimer",0f);typeof(CombatManager).GetMethod("ClearProjectiles",System.Reflection.BindingFlags.NonPublic|System.Reflection.BindingFlags.Instance).Invoke(f.combat,new object[]{true});}
-            Check(lo<.57f&&hi>.78f,"random factor varies across intended range");
+        });
+        Run("general damage variation clamps to 85..100 percent independently of bow factor",()=>{
+            var attacker=HeroAt(1);attacker.baseDamage=1000;
+            attacker.spiritRoots=new List<ElementType>{ElementType.Vo};
+            var defender=HeroAt(1);defender.spiritRoots=new List<ElementType>{ElementType.Vo};
+            float[] inputs={.5f,.85f,.9f,.95f,1f,1.5f};
+            float[] expectedRolls={.85f,.85f,.9f,.95f,1f,1f};
+            int[] expectedDamage={850,850,900,950,1000,1000};
+            for(int i=0;i<inputs.Length;i++) {
+                var trace=SynergyMath.EvaluateDamage(attacker,defender,AttackMode.Melee,inputs[i]);
+                Check(trace.modeMultiplier==1f,"neutral stance isolates general variation");
+                Check(trace.roll==expectedRolls[i],"explicit roll is clamped at both endpoints");
+                Check(trace.rolledDamage==expectedDamage[i],"general variation produces exact damage for explicit input");
+            }
         });
         Run("moving physical target is missed at fixed launch point, X and Y",()=>{
             foreach(bool vertical in new[]{false,true}){
@@ -50,7 +63,8 @@ partial class MotionRegression
         });
         Run("enemy bow can miss a moving hero and uses same damage reduction",()=>{
             var f=new Field();var m=f.Monster(-200,AttackMode.RangedPhysical);f.Battle(m);CombatStep(f,.01f);
-            var tr=ShotField<DamageTrace>(ShotList(f)[0],"trace");Check(tr.modeMultiplier>=.55f&&tr.modeMultiplier<=.8f,"monster bow nerf");
+            var tr=ShotField<DamageTrace>(ShotList(f)[0],"trace");Check(tr.modeMultiplier==.7f,"monster bow uses the same fixed 0.7 factor");
+            Check(tr.roll>=.85f&&tr.roll<=1f,"monster retains the separate general damage variation");
             int hp=f.combat.CurrentHeroHP;f.space.SetPosition(f.hero.heroRect,new Vector2(-30,0));CombatStep(f,.2f);Check(f.combat.CurrentHeroHP==hp,"enemy shot misses");
         });
         Run("magic charges before first cast, launches only one enlarged fireball",()=>{
@@ -63,8 +77,11 @@ partial class MotionRegression
         });
         Run("magic does not charge until an enemy enters range",()=>{
             var f=new Field();f.hero.ChangeAttackMode(2);var m=f.Monster(-480);f.Battle(m);Tough(f);
-            CombatStep(f,2);Check(f.combat.PendingProjectileCount==0,"out of range does not fire");var bar=Get<MagicChargeBar>(f.hero,"chargeBar");Near(Get<float>(f.combat,"heroAttackTimer"),0,"not precharged");
+            CombatStep(f,2);Check(f.combat.PendingProjectileCount==0,"out of range does not fire");Near(Get<float>(f.combat,"heroAttackTimer"),0,"not precharged");
             f.space.SetPosition(m.Rect,new Vector2(-400,0));CombatStep(f,.7f);Check(f.combat.PendingProjectileCount==0,"starts from zero");
+            var bar=Get<MagicChargeBar>(f.hero,"chargeBar");
+            Check(bar!=null && bar.Root.gameObject.activeSelf,"charge bar exists after eligible target starts windup");
+            Near(bar.Fill.fillAmount,.7f/1.4f,"charge begins only after target enters range");
             CombatStep(f,.7f);Check(f.combat.PendingProjectileCount==1,"cast after full windup");Near(bar.Fill.fillAmount,0,"cast resets bar");
         });
         Run("hero magic explosion uses Ground-local radius 250",()=>{
@@ -99,7 +116,11 @@ partial class MotionRegression
         });
         Run("monster magic charge matches its interval, pause freezes both bars and bolts",()=>{
             var f=new Field();f.hero.ChangeAttackMode(2);var m=f.Monster(-200,AttackMode.RangedMagic);f.Battle(m);CombatStep(f,1);
-            var mb=Get<MagicChargeBar>(m,"chargeBar");Near(mb.Fill.fillAmount,1/CombatBalance.AttackInterval(m.attackMode,f.Enemies[0].data.baseAttackSpeed),"monster own charge speed");
+            var enemy=f.Enemies[0].data;
+            float speed=CombatStats.Get(enemy,CombatStatId.AttackSpeed,enemy.baseAttackSpeed,
+                ElementType.Vo,new [] { CombatStats.StanceTag(m.attackMode) });
+            float interval=CombatBalance.AttackInterval(m.attackMode,speed,CombatBalance.MonsterDev!=null,true);
+            var mb=Get<MagicChargeBar>(m,"chargeBar");Near(mb.Fill.fillAmount,1/interval,"monster own charge speed");
             var hb=Get<MagicChargeBar>(f.hero,"chargeBar");float h=hb.Fill.fillAmount,v=mb.Fill.fillAmount;Time.timeScale=0;CombatStep(f,5);Near(hb.Fill.fillAmount,h,"hero pause");Near(mb.Fill.fillAmount,v,"monster pause");Check(f.combat.PendingProjectileCount==0,"no cast while paused");Time.timeScale=1;
             CombatStep(f,1);Check(f.combat.PendingProjectileCount==2,"each magic caster fires once");f.combat.ForceClearAllMonsters();Check(f.combat.PendingProjectileCount==0&&!hb.Root.gameObject.activeSelf&&!mb.Root.gameObject.activeSelf,"clear cancels UI and projectiles");
         });

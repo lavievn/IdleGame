@@ -93,13 +93,29 @@ partial class MotionRegression
             var m=f.Monster(-20);var mi=m.gameObject.AddComponent<Image>();mi.color=new Color(1,1,1,1);m.SetIdentityVisual(data);
             data.spiritRoots=new List<ElementType>{ElementType.Thuy};m.SetIdentityVisual(data);Near(mi.color.r,.55f,"new life uses original color");Near(mi.color.b,1,"water blue");
         });
-        Run("event log retains hero name race roots map and damage alongside EXP",()=>{
+        Run("compact log shows recent damage while detail panels retain identity map and events",()=>{
             var f=new Field();SaveManager save;string dir;var gm=MenuManager(f,out save,out dir);
             try {var data=HeroAt(1);data.entityName="Hàn Tuyết Lôi";data.race=RaceType.MaToc;data.spiritRoots=new List<ElementType>{ElementType.Hoa};data.mapNumber=6;data.difficulty=1;data.NormalizeMapProgress();
                 Set(gm,"runtimeHeroData",data);gm.eventLogText=new GameObject(true).AddComponent<TextMeshProUGUI>();gm.UpdateEventLog("Nhận 12 EXP");gm.UpdateEventLog("Quái gây 10 sát thương");
-                string text=gm.eventLogText.text;Check(text.Contains("Hàn Tuyết Lôi")&&text.Contains("Ma tộc")&&text.Contains("Hỏa")&&text.Contains(data.mapName),"identity and map persistent");
-                Check(text.Contains("12 EXP")&&text.Contains("10 sát thương"),"recent events coexist");
-            }finally{Directory.Delete(dir,true);}
+                Check(gm.eventLogText.text=="Chưa có sát thương","events do not replace compact damage log");
+                gm.RecordDamageEvent("Hero","Quái",10);gm.RecordDamageEvent("Quái","Hero",4);
+                gm.RecordDamageEvent("Hero","Quái",7);
+                Check(gm.eventLogText.text=="Quái → Hero - 4\nHero → Quái - 7",
+                    "compact log keeps exactly the last two damage events");
+                var ui=new GameObject().AddComponent<UIManager>();UIManager.Instance=ui;Call(ui,"Start");
+                f.hero.UpdateStats(data,data.GetCalculatedHealth(),data.GetCalculatedHealth());
+                ui.OpenHeroStats();string details=Get<string>(ui,"detailSnapshot");
+                Check(Get<GameObject>(ui,"damagePanel").activeSelf &&
+                    details.Contains("Hàn Tuyết Lôi")&&details.Contains("Ma tộc")&&details.Contains("Hỏa"),
+                    "identity remains in the full character panel");
+                Check(details.Contains("12 EXP")&&details.Contains("10 sát thương"),
+                    "full character panel retains both event messages");
+                ui.ShowMapTitle(data.mapName);
+                Check(Get<TextMeshProUGUI>(ui,"mapTitleText").text==data.mapName &&
+                    Get<RectTransform>(ui,"mapTitleRect").gameObject.activeSelf,"map has its dedicated visible title");
+                ui.OpenLogInfo();string history=Get<string>(ui,"detailSnapshot");
+                Check(history.Contains("12 EXP")&&history.Contains("10 sát thương"),"event history retains both messages");
+            }finally{UIManager.Instance=null;Directory.Delete(dir,true);}
         });
     }
 }

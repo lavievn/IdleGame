@@ -163,9 +163,29 @@ partial class MotionRegression
                 "Ground pan equals actor and projectile camera pan",.01f);
 
             f.hero.moveSpeed=0f;
-            for(int i=0;i<90;i++)f.Step(1f/60f);
+            bool settled=false;
+            for(int i=0;i<180;i++)
+            {
+                f.Step(1f/60f);
+                if(Math.Abs(f.space.CurrentCameraSpeed)<.1f &&
+                    Math.Abs(f.space.CurrentBackgroundSpeed)<.1f)
+                { settled=true; break; }
+            }
+            Check(settled,"camera and Ground converge within 180 steps at 60 FPS");
             Near(f.space.CurrentCameraSpeed,0f,"camera stops after Hero stops",.1f);
             Near(f.space.CurrentBackgroundSpeed,0f,"Ground also stops",.1f);
+            float restX=f.space.BattleArea.rect.xMin+f.space.Width*f.space.cameraIdleRestX;
+            float settledHeroX=f.space.Position(f.hero.heroRect).x;
+            float settledGroundX=f.space.Position(f.grass).x;
+            Near(settledHeroX,restX,"Hero settles at the 40 percent recovery point",.5f);
+            for(int i=0;i<30;i++)
+            {
+                f.Step(1f/60f);
+                Check(Math.Abs(f.space.CurrentCameraSpeed)<.1f &&
+                    Math.Abs(f.space.CurrentBackgroundSpeed)<.1f,"camera and Ground remain stopped");
+                Near(f.space.Position(f.hero.heroRect).x,settledHeroX,"no camera drift after convergence",.01f);
+                Near(f.space.Position(f.grass).x,settledGroundX,"no Ground drift after convergence",.01f);
+            }
             f.space.FollowHero(f.hero);
             Near(f.space.CameraFollowVelocity,0f,"Retry resets inertia",.01f);
         });
@@ -461,6 +481,8 @@ partial class MotionRegression
             f.space.useSoftZoneCamera=true;
             f.space.cameraUseCombatCenter=false;
             f.space.cameraSmoothTime=.2f;f.space.cameraDeadzoneRatio=.38f;
+            f.space.advanceStationaryCombatToRight=true;
+            f.space.stationaryCombatSmoothTime=.6f;
             f.hero.ChangeAttackMode(0);f.hero.moveSpeed=600f;
             var ranged=f.Monster(-110f,AttackMode.RangedPhysical);
             float before=f.space.Position(ranged.Rect).x;
@@ -470,9 +492,72 @@ partial class MotionRegression
             Near(f.space.Position(ranged.Rect).x-before,
                 f.space.CurrentBackgroundSpeed*.1f,
                 "stationary ranged defender moves exactly with Ground",.05f);
-            for(int i=0;i<90;i++)f.Step(1f/60f);
+            float targetX=f.space.ZoneRightX;
+            float combatGap=0f;
+            int panSteps=0;
+            bool settled=false;
+            // Float32 replay reaches speed < .3 at step 201, then distance
+            // <= .01 at step 245; allow 300 steps for this explicit .6s fixture.
+            for(int i=0;i<300;i++)
+            {
+                float heroBefore=f.space.Position(f.hero.heroRect).x;
+                float monsterBefore=f.space.Position(ranged.Rect).x;
+                float groundBefore=f.space.Position(f.grass).x;
+                f.Step(1f/60f);
+                float heroX=f.space.Position(f.hero.heroRect).x;
+                float monsterX=f.space.Position(ranged.Rect).x;
+                Check(heroX<=targetX,"stationary combat pan never passes ZoneRightX");
+                if(Math.Abs(f.space.CurrentCameraSpeed)>0f)
+                {
+                    Check(f.hero.CurrentState==HeroState.Combat,
+                        "camera advances while melee Hero stands in combat");
+                    Near(f.hero.MovementDistanceThisFrame,0f,
+                        "standing Hero has no independent walk during camera pan",.001f);
+                    if(panSteps==0) combatGap=heroBefore-monsterBefore;
+                    panSteps++;
+                    float heroPan=heroX-heroBefore;
+                    Near(monsterX-monsterBefore,heroPan,
+                        "standing Hero and ranged defender share actual camera pan",.01f);
+                    Near(f.space.Position(f.grass).x-groundBefore,heroPan,
+                        "Ground and standing fighters share actual camera pan",.01f);
+                    Near(heroPan,f.space.CurrentCameraSpeed/60f,
+                        "actor displacement matches reported camera pan",.01f);
+                    Near(f.space.CurrentBackgroundSpeed,f.space.CurrentCameraSpeed,
+                        "stationary combat camera and Ground speeds match",.01f);
+                    Near(heroX-monsterX,combatGap,
+                        "camera pan preserves Hero-monster combat distance",.01f);
+                }
+                if(Math.Abs(f.space.CurrentCameraSpeed)<.3f &&
+                    Math.Abs(f.space.CurrentBackgroundSpeed)<.3f &&
+                    Math.Abs(heroX-targetX)<=.01f)
+                { settled=true; break; }
+            }
+            Check(panSteps>0,"shared-pan assertions exercise actual camera movement");
+            Check(settled,"stationary combat camera converges within 300 steps at 60 FPS");
             Near(f.space.CurrentCameraSpeed,0f,
                 "camera eventually settles when melee Hero stops in range",.3f);
+            Near(f.space.CurrentBackgroundSpeed,0f,"Ground settles with camera",.3f);
+            float settledHeroX=f.space.Position(f.hero.heroRect).x;
+            float settledMonsterX=f.space.Position(ranged.Rect).x;
+            float settledGroundX=f.space.Position(f.grass).x;
+            Near(settledHeroX,targetX,"stationary combat reaches ZoneRightX",.01f);
+            for(int i=0;i<30;i++)
+            {
+                f.Step(1f/60f);
+                Check(Math.Abs(f.space.CurrentCameraSpeed)<.3f &&
+                    Math.Abs(f.space.CurrentBackgroundSpeed)<.3f,
+                    "camera and Ground remain settled during stationary combat");
+                float heroX=f.space.Position(f.hero.heroRect).x;
+                Check(heroX<=targetX,"settled Hero never overshoots ZoneRightX");
+                Near(heroX,targetX,"settled Hero stays at ZoneRightX",.01f);
+                Near(heroX,settledHeroX,"no camera drift after combat convergence",.01f);
+                Near(f.space.Position(ranged.Rect).x,settledMonsterX,
+                    "no ranged defender drift after combat convergence",.01f);
+                Near(f.space.Position(f.grass).x,settledGroundX,
+                    "no Ground drift after combat convergence",.01f);
+                Near(heroX-f.space.Position(ranged.Rect).x,combatGap,
+                    "combat distance stays fixed after convergence",.01f);
+            }
         });
     }
 }

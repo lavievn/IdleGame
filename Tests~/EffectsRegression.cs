@@ -86,9 +86,19 @@ partial class MotionRegression
         });
         Run("projectile and particles pan with camera rather than independent scenery",()=>{
             var f=new Field();f.hero.ChangeAttackMode(2);var m=f.Monster(-200);f.Battle(m);f.hero.TickMovement(f.space,0);
+            float startX=f.space.Position(f.hero.heroRect).x;
+            float endX=f.space.Position(m.Rect).x;
+            var data=f.combat.StateFor(f.hero).Data;
+            float speed=CombatStats.Get(data,CombatStatId.AttackSpeed,data.baseAttackSpeed,
+                ElementType.Vo,new [] { CombatStats.StanceTag(f.hero.attackMode) });
+            float interval=CombatBalance.AttackInterval(f.hero.attackMode,speed,
+                CombatBalance.HeroDev!=null);
+            float flight=BattleMotion.FlightDuration(f.combat.magicFlightTime,interval);
+            float progress=Mathf.Clamp01((.3f+.3f)/flight);
+            float expectedX=startX+(endX-startX)*progress+15f;
             CombatStep(f,2);CombatStep(f,.3f);var bolt=Bolts(f)[0];float x=bolt.position.x;
             Time.deltaTime=.1f;Call(f.space,"LateUpdate");Near(bolt.position.x-x,15,"bolt follows camera");
-            CombatStep(f,.3f);Near(bolt.position.x,-85,"start and target both pan before interpolation",.01f);
+            CombatStep(f,.3f);Near(bolt.position.x,expectedX,"start and target both pan before interpolation",.01f);
         });
         Run("cleared shots cannot damage pooled monster reused in new wave",()=>{
             var f=new Field();f.hero.ChangeAttackMode(1);var m=f.Monster(-200);f.Battle(m);f.hero.TickMovement(f.space,0);CombatStep(f,1);
