@@ -191,6 +191,80 @@ public static class EquipmentFoundation
     public const int MaximumItemLevel = 999;
     public const int MaximumRefineLevel = 100;
 
+    // Compatibility only: never normalize, repair, allocate lists on the Hero,
+    // or filter items through IsValid before examining their saved versions.
+    public static bool SupportsSaveVersions(EntityDataSO hero)
+    {
+        string reason;
+        return TryValidateSaveVersions(hero, out reason);
+    }
+
+    public static bool TryValidateSaveVersions(EntityDataSO hero, out string reason)
+    {
+        if (hero == null) { reason = "Missing Hero data."; return false; }
+        return TryValidateSaveVersions(hero.inventoryVersion, hero.equipmentVersion,
+            hero.equipmentItems, out reason);
+    }
+
+    public static bool TryValidateSaveVersions(int inventoryVersion, int equipmentVersion,
+        IEnumerable<EquipmentInstance> items, out string reason)
+    {
+        if (!SupportedVersion("inventoryVersion", inventoryVersion,
+                EquipmentInventory.SchemaVersion, out reason) ||
+            !SupportedVersion("equipmentVersion", equipmentVersion, Version, out reason))
+            return false;
+        if (items != null)
+        {
+            int index = 0;
+            foreach (var item in items)
+            {
+                if (!TryValidateItemVersions(item, out reason))
+                {
+                    reason = "equipmentItems[" + index + "]." + reason;
+                    return false;
+                }
+                index++;
+            }
+        }
+        reason = null;
+        return true;
+    }
+
+    public static bool SupportsItemVersions(EquipmentInstance item)
+    {
+        string reason;
+        return TryValidateItemVersions(item, out reason);
+    }
+
+    private static bool TryValidateItemVersions(EquipmentInstance item, out string reason)
+    {
+        // Null entries still belong to existing data validation/normalization.
+        if (item == null) { reason = null; return true; }
+        if (!SupportedVersion("affixSchemaVersion", item.affixSchemaVersion,
+                AffixSchemaVersion, out reason) ||
+            !SupportedVersion("forgeSchemaVersion", item.forgeSchemaVersion,
+                EquipmentRefinement.SchemaVersion, out reason))
+            return false;
+        if (item.forgeHistory != null)
+            for (int i = 0; i < item.forgeHistory.Count; i++)
+            {
+                var stage = item.forgeHistory[i];
+                if (stage != null && !SupportedVersion("forgeHistory[" + i +
+                    "].checkpointVersion", stage.checkpointVersion,
+                    EquipmentRefinement.SchemaVersion, out reason))
+                    return false;
+            }
+        reason = null;
+        return true;
+    }
+
+    private static bool SupportedVersion(string field, int value, int maximum, out string reason)
+    {
+        if (value >= 0 && value <= maximum) { reason = null; return true; }
+        reason = field + "=" + value + " is unsupported (supported: 0.." + maximum + ").";
+        return false;
+    }
+
     // Extend via catalog data later; these initial templates establish
     // real slot compatibility, but no other gear is generated/dropped yet.
     private static readonly EquipmentTemplate[] templates = {

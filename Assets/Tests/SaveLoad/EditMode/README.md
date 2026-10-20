@@ -1,4 +1,4 @@
-# Kiểm thử Edit Mode cho dữ liệu Save/Load — W1.6
+# Kiểm thử Edit Mode cho dữ liệu Save/Load — W1.6 / W1.7a
 
 Mục tiêu là kiểm chứng serializer thật và các hàm xử lý dữ liệu thật của dự án,
 không thay đổi gameplay hoặc giả định các lỗi W1.4 đã được sửa.
@@ -28,7 +28,7 @@ Fixture kiểm tra đường dẫn không trùng/nằm trong/chứa
 Chỉ thư mục có marker sở hữu đúng GUID mới được dọn. Getter persistentDataPath
 chỉ dùng kiểm tra vị trí; không đọc, ghi, sao lưu hoặc xóa save người chơi.
 
-Không tạo GameObject, SaveManager, GameManager hoặc tải Scene. Vì vậy không có
+Nhóm 11 ca W1.6 không tạo GameObject, SaveManager, GameManager hoặc tải Scene. Vì vậy không có
 `SaveManager.Awake()` tự chọn thư mục người chơi hay coroutine AutoSave phát sinh.
 Chỉ dùng ScriptableObject tạm, `JsonUtility` thật và các hàm dữ liệu thuần;
 đối tượng được DestroyImmediate khi teardown. Cấu hình DEVB trong RAM được lưu
@@ -61,11 +61,47 @@ ATK ba thế 31/21/25. Không lấy kết quả hàm đang kiểm tra làm giá 
 Các ca characterization chỉ ghi nhận `JsonUtility` thực sự làm gì. PASS của
 chúng **không** chứng nhận `LoadGame` xử lý thiếu trường hay version an toàn.
 Các ca SaveDataSafety giữ nguyên yêu cầu bảo toàn dữ liệu và phải báo FAIL khi
-runtime vi phạm. Đọc mã hiện tại cho thấy ba ca này có khả năng FAIL vì
-`EquipmentInventory.Normalize`, `EquipmentRuntime.Normalize` ép version về hiện tại
-và `EquipmentRefinement.NormalizeMetadata` đặt lại dữ liệu rèn không cùng version.
-Đây là dự đoán từ mã, chưa phải kết quả thực thi. Không Ignore/Explicit test,
-không đổi kỳ vọng sang hành vi phá dữ liệu để làm bộ test xanh.
+runtime vi phạm. Người dùng đã báo kết quả Unity trước W1.7a: 8 PASS, 3 FAIL
+do version kho/trang bị/rèn bị hạ. W1.7a thêm guard runtime, chưa được chạy lại
+bằng Unity trong Codex. Không Ignore/Explicit test, không đổi kỳ vọng sang hành
+vi phá dữ liệu để làm bộ test xanh.
+
+## Bổ sung W1.7a
+
+`EquipmentVersionGuardTests.cs` thêm **40 ca**, tổng cộng **51 ca NUnit**:
+
+- 10 ca gọi guard/normalizer trực tiếp với từng version tương lai và hai giá trị
+  isDirty; so sánh toàn bộ Hero và tham chiếu danh sách, không chỉ số version.
+- 3 ca món không mặc/template chưa biết nằm cuối danh sách, chặn migration một phần.
+- 1 ca guard thuần với danh sách null của legacy; 2 ca version âm bị từ chối.
+- 5 ca Load từ chối mà giữ đích/file; 5 ca Save kiểu EntityDataSO bị từ chối;
+  5 ca overload JSON thô không thể bỏ qua guard; 2 ca không tạo file mới khi từ chối.
+- 5 ca dữ liệu hiện tại không được ghi đè slot chứa phiên bản tương lai.
+- 2 ca SaveManager đọc legacy thiếu trường và round-trip snapshot hiện tại,
+  bảo toàn roll, lịch sử rèn và tiến trình.
+
+Các ca I/O mới tạo GameObject **inactive trước khi AddComponent SaveManager**,
+kiểm tra Awake chưa chạy/Instance không đổi, rồi gán saveDirectory qua reflection
+vào thư mục GUID của fixture. Không activate component, không chạy Scene,
+không tạo GameManager và không gọi API xóa save. Đây là kiểm thử API đồng bộ
+trong Edit Mode, không phải kiểm thử lifecycle/Play Mode.
+
+Guard W1.7a kiểm tra inventory/equipment/affix/forge/checkpoint trước mutation;
+không thay đổi JSON hoặc nhánh migration được hỗ trợ. Version thiếu vẫn là 0.
+Version âm hoặc vượt trần bị từ chối. Normalize là no-op khi không tương thích;
+SaveManager báo warning và không sửa đích, isDirty, file cuối hay file tạm.
+Slot cũ có version tương lai cũng được bảo vệ khi dữ liệu ghi vào là hiện tại.
+Không mở rộng thành bộ kiểm tra mọi loại JSON hỏng: slot hỏng không giải mã được
+version vẫn có thể được thay thế theo cơ chế ghi hiện có.
+
+Kiểm chứng Codex cho W1.7a: mcs biên dịch runtime cùng UnityStub thành công,
+16 cảnh báo có sẵn; 7 kịch bản smoke cho guard PASS. Các nhóm Mono liên quan
+chạy được 44 PASS rồi dừng ở `metadata roundtrips exactly` trong
+`Tests~/AffixDiscoveryRegression.cs`. Biên dịch và chạy lại mã HEAD bằng bản sao
+tạm cũng cho đúng 44 PASS và cùng lỗi, xác nhận chưa có bằng chứng lỗi mới do
+W1.7a. Nhóm Forge phía sau chưa chạy. Không sửa bài cũ hoặc migration để ép PASS.
+Các kết quả Mono này không phải kết quả của 51 ca NUnit/Unity; các ca đó chưa chạy
+lại bằng Unity thật sau W1.7a.
 
 ## Chạy trong Unity
 
@@ -81,8 +117,9 @@ khi import; cần kiểm tra diff trước khi lưu các asset metadata sinh th�
 
 ## Chưa bao phủ và quyền runtime cần riêng
 
-- Không gọi `SaveManager.LoadGame`: chưa kiểm tra validation, defaults/migration
-  đầy đủ, lựa chọn ô, `.tmp`/Replace, backup hoặc bảo toàn file khi I/O thất bại.
+- Nhóm W1.6 không gọi SaveManager; W1.7a mới kiểm tra version rejection và hai
+  đường đọc/ghi hợp lệ. Chưa bao phủ validation/defaults/migration đầy đủ,
+  lựa chọn ô, lỗi `.tmp`/Replace, backup hoặc I/O thất bại giữa chừng.
 - Không normalize world-map/catalog hoặc kiểm thử migration balance cũ; test map
   hiện chỉ xác nhận các trường serialized còn nguyên qua JsonUtility.
 - Chưa có test giao dịch Load lỗi sau validation, khôi phục tham chiếu combat,
@@ -94,5 +131,7 @@ khi import; cần kiểm tra diff trước khi lưu các asset metadata sinh th�
   truyền thư mục I/O trước Awake, mặc định vẫn dùng đường dẫn hiện tại. Phải xin
   phép riêng để sửa runtime; không dùng reflection đổi đường dẫn sau Awake vì
   lúc đó Awake đã có thể tạo thư mục save thật.
-- Guard version tương lai, giao dịch Load và ghi AutoSave an toàn cũng cần phạm
-  vi sửa runtime riêng. Bộ test này chưa triển khai các phương án đó.
+- W1.7a không bảo vệ các version balance/combat/map, không thêm rollback sau
+  triển khai và không đổi Retry/New Game. Các mutator như TryApply/GrantSamples
+  vẫn có thể tiếp tục sau no-op normalize nếu nhận dữ liệu không hỗ trợ trực tiếp;
+  việc bảo vệ các lối vào đó thuộc phạm vi tiếp theo, không được coi đã hoàn tất.

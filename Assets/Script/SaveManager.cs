@@ -56,6 +56,12 @@ public class SaveManager : MonoBehaviour
     public bool SaveGame(EntityDataSO entityData, SaveSlot slot)
     {
         if (entityData == null) return false;
+        string reason;
+        if (!EquipmentFoundation.TryValidateSaveVersions(entityData, out reason))
+        {
+            Debug.LogWarning("[SaveManager] Refusing save: " + reason);
+            return false;
+        }
         
         // Serialize ScriptableObject thành JSON string ở Main Thread
         string jsonData = JsonUtility.ToJson(entityData, true);
@@ -76,6 +82,12 @@ public class SaveManager : MonoBehaviour
             try
             {
                 if (!jsonData.TrimStart().StartsWith("{") || !jsonData.Contains("\"currentLevel\"")) return false;
+                string reason;
+                if (!TryValidateEquipmentJson(jsonData, out reason))
+                {
+                    Debug.LogWarning("[SaveManager] Refusing load from " + slot + ": " + reason);
+                    return false;
+                }
                 // JsonUtility.FromJsonOverwrite leaves template values intact for
                 // missing fields. Clear 0.0.51 lists before loading 0.0.50 saves.
                 // Old saves lack a stance field; do not inherit the
@@ -246,14 +258,73 @@ public class SaveManager : MonoBehaviour
 
     public void SaveGame(string slotName, string jsonData) { WriteToFile(slotName, jsonData); }
 
+    // A separate plain object keeps both the caller and its template untouched
+    // until every item version has passed. Missing fields remain legacy zero.
+    // Reuse EquipmentInstance so nested affix/forge/checkpoint versions are read
+    // by JsonUtility, not a regex or a second implementation of the JSON schema.
+    [Serializable]
+    private sealed class EquipmentVersionProbe
+    {
+        public int inventoryVersion = 0;
+        public int equipmentVersion = 0;
+        public System.Collections.Generic.List<EquipmentInstance> equipmentItems = null;
+    }
+
+    private static bool TryValidateEquipmentJson(string json, out string reason)
+    {
+        EquipmentVersionProbe probe;
+        return TryReadEquipmentVersions(json, out probe, out reason) &&
+            EquipmentFoundation.TryValidateSaveVersions(probe.inventoryVersion,
+                probe.equipmentVersion, probe.equipmentItems, out reason);
+    }
+
+    private static bool TryReadEquipmentVersions(string json,
+        out EquipmentVersionProbe probe, out string reason)
+    {
+        probe = null;
+        if (string.IsNullOrEmpty(json) || !json.TrimStart().StartsWith("{"))
+        { reason = "Expected a JSON object."; return false; }
+        try
+        {
+            probe = new EquipmentVersionProbe();
+            JsonUtility.FromJsonOverwrite(json, probe);
+            reason = null;
+            return true;
+        }
+        catch (Exception error)
+        {
+            reason = "Cannot read equipment versions: " + error.Message;
+            return false;
+        }
+    }
+
     // Small JSON saves are serialized on the main thread. No queued old write
     // can recreate a deleted save after the player confirms New Game.
     private bool WriteToFile(string slotName, string data)
     {
+        string reason;
+        if (!TryValidateEquipmentJson(data, out reason))
+        {
+            Debug.LogWarning("[SaveManager] Refusing write to " + slotName + ": " + reason);
+            return false;
+        }
         string finalPath = Path.Combine(saveDirectory, slotName + SAVE_EXTENSION);
         string tempPath = Path.Combine(saveDirectory, slotName + TEMP_EXTENSION);
         try
         {
+            // Even a supported running Hero must not overwrite a newer game's
+            // existing slot (for example, after refusing to load that slot).
+            // Unreadable-version/corrupt JSON is not a detected future schema;
+            // preserve the existing ability to explicitly replace corrupt saves.
+            EquipmentVersionProbe existing;
+            if (File.Exists(finalPath) &&
+                TryReadEquipmentVersions(File.ReadAllText(finalPath), out existing, out reason) &&
+                !EquipmentFoundation.TryValidateSaveVersions(existing.inventoryVersion,
+                    existing.equipmentVersion, existing.equipmentItems, out reason))
+            {
+                Debug.LogWarning("[SaveManager] Refusing overwrite of " + slotName + ": " + reason);
+                return false;
+            }
             File.WriteAllText(tempPath, data);
             if (File.Exists(finalPath)) File.Replace(tempPath, finalPath, null);
             else File.Move(tempPath, finalPath);

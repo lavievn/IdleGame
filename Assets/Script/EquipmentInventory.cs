@@ -67,7 +67,7 @@ public static class EquipmentInventory
     // stale equipment-owned modifier is removed, never counted twice.
     public static void Normalize(EntityDataSO hero)
     {
-        if (hero == null) return;
+        if (!EquipmentFoundation.SupportsSaveVersions(hero)) return;
         bool changed = false;
         if (hero.inventory == null) { hero.inventory = new List<InventoryStack>(); changed = true; }
         var unique = new List<InventoryStack>();

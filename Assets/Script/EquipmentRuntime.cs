@@ -92,7 +92,7 @@ public static class EquipmentRuntime
     // must restore the very same item, even when its lines have empty slots.
     public static void Normalize(EntityDataSO hero)
     {
-        if(hero == null) return;
+        if(!EquipmentFoundation.SupportsSaveVersions(hero)) return;
         bool changed=false;
         if(hero.equipmentItems==null) {hero.equipmentItems=new List<EquipmentInstance>();changed=true;}
         if(hero.professionProgress==null) {hero.professionProgress=new List<ProfessionProgress>();changed=true;}

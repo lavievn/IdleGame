@@ -108,7 +108,8 @@ public static class EquipmentRefinement
     // Never modify or regenerate the saved stats of an older item.
     public static bool NormalizeMetadata(EquipmentInstance item)
     {
-        if(item==null || item.forgeSchemaVersion==SchemaVersion)return false;
+        if(item==null || !EquipmentFoundation.SupportsItemVersions(item) ||
+           item.forgeSchemaVersion==SchemaVersion)return false;
         // Old forge schema 1 used ten attempts to jump to the ceiling.
         // Preserve rarity, refinement count and ALL saved affixes; reset only
         // the test-stage counter to the new per-rarity rules.
