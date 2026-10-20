@@ -1,0 +1,11 @@
+{
+  "name": "IdleGame.SaveLoad.EditMode",
+  "rootNamespace": "IdleGame.Tests.SaveLoad",
+  "references": [],
+  "includePlatforms": ["Editor"],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "autoReferenced": false,
+  "optionalUnityReferences": ["TestAssemblies"],
+  "noEngineReferences": false
+}
