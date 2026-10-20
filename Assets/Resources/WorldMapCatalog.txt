@@ -69,7 +69,7 @@ XD-07	Xích Diễm Chi Địa	Nham Hỏa Nguyên	Đồi núi	Ngô Công, Điêu,
 XD-08	Xích Diễm Chi Địa	Ma Diễm Sơn	Đồi núi	Mãng, Ngô Công, Báo, Hạt, Ưng, Bức, Xà	Thợ săn linh thú	-	-
 XD-09	Xích Diễm Chi Địa	Tẫn Vân Hải Ngạn	Sa mạc	Ưng, Hạt, Ngô Công, Mãng, Hổ, Điêu, Nghĩ	Độc sư sa mạc	-	-
 XD-10	Xích Diễm Chi Địa	Liệt Hỏa Bàn	Đồi núi	Mãng, Hạt, Lộc, Dương, Điêu, Ngô Công, Báo	Kiếm tu lưu vong	-	-
-XD-11	Xích Diễm Chi Địa	Xích Diễm Cồn	Sa mạc	Ưng, Hạt, Mãng, Điêu, Báo, Ngô Công, Xà	Độc sư sa mạc	-	-
+XD-11	Xích Diễm Chi Địa	Xích Diễm Cồn	Sa mạc	Ưng, Hạt, Mãng, Điêu, Báo, Ngô Công, Xà	Độc sư sa mạc	-	S
 XD-12	Xích Diễm Chi Địa	Tro Hỏa Bình Nguyên	Đồi núi	Mãng, Điêu, Dương, Báo, Hạt, Lang, Hùng	Tán tu đoạt bảo	-	-
 XD-13	Xích Diễm Chi Địa	Diễm Phong Hải Lộ	Sa mạc	Xà, Điêu, Mãng, Nghĩ, Thử, Hạt, Ngô Công	Sa tặc	-	-
 XD-14	Xích Diễm Chi Địa	Hỏa Thực Sơn Cốc	Đồi núi	Mãng, Ngô Công, Hạt, Lang, Ưng, Thố, Dương	Tán tu đoạt bảo	-	-
