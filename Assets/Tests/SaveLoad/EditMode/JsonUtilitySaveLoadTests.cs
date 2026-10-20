@@ -5,7 +5,7 @@ using UnityEngine;
 
 namespace IdleGame.Tests.SaveLoad
 {
-    [TestFixture, NonParallelizable]
+    [TestFixture]
     public sealed class JsonUtilitySaveLoadTests : SaveLoadFixture
     {
         [Test, Category("NativeJsonCharacterization")]

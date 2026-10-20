@@ -32,7 +32,14 @@ Không tạo GameObject, SaveManager, GameManager hoặc tải Scene. Vì vậy 
 `SaveManager.Awake()` tự chọn thư mục người chơi hay coroutine AutoSave phát sinh.
 Chỉ dùng ScriptableObject tạm, `JsonUtility` thật và các hàm dữ liệu thuần;
 đối tượng được DestroyImmediate khi teardown. Cấu hình DEVB trong RAM được lưu
-và khôi phục, không đọc/ghi `dev_balance.jsonl`. Fixture không chạy song song.
+và khôi phục, không đọc/ghi `dev_balance.jsonl`.
+
+Fixture dựa vào thực thi tuần tự mặc định, không khai báo `Parallelizable`.
+Không dùng `NonParallelizable`: Unity 6000.5.0f1 với cấu hình NUnit hiện tại
+đã báo CS0246 cho attribute này. Việc bỏ attribute không bật chạy song song.
+Các ca độc lập qua setup/teardown khi chạy tuần tự; chúng không an toàn khi chạy
+đồng thời vì cùng thay đổi `CombatBalance.HeroDev`/`MonsterDev` và dùng Unity API.
+Không bật parallel execution cho bộ này nếu chưa cô lập các trạng thái đó.
 
 ## Các ca được tạo
 
