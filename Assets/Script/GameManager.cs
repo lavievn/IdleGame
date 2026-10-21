@@ -353,7 +353,7 @@ public class GameManager : MonoBehaviour
     }
 
 
-    private void SetupPreGameUI()
+    private void SetupPreGameUI(bool restartOpening = false)
     {
         if (UIManager.Instance != null) UIManager.Instance.HideMapTitle();
         bool reopening = !preGameUI.activeInHierarchy;
@@ -361,7 +361,7 @@ public class GameManager : MonoBehaviour
         preGameUI.transform.SetAsLastSibling();
         if (startMenu != null)
         {
-            if (reopening) startMenu.RestoreMenu();
+            if (reopening || restartOpening) startMenu.RestoreMenu();
             else startMenu.Refresh();
         }
         if (infoText != null) infoText.text = CanContinue
@@ -379,7 +379,11 @@ public class GameManager : MonoBehaviour
         // Keep the menu canvas until the animated cloud reveal completes.
         // Manual LoadAndContinue is immediate; only confirmed title choices animate.
         bool cinematic = showOpeningTransition && startMenu != null && startMenu.IsCinematic;
-        if (!cinematic && preGameUI != null) preGameUI.SetActive(false);
+        if (!cinematic)
+        {
+            if (startMenu != null) startMenu.EnterGameplayImmediately();
+            if (preGameUI != null) preGameUI.SetActive(false);
+        }
         hasDeployed = true;
         ClearTestCompanions();
         if (combatManager != null) combatManager.SetupHeroInfo(runtimeHeroData);
@@ -561,11 +565,12 @@ public class GameManager : MonoBehaviour
         continueSlot = slot;
         manualSelection = true;
 
-        // 3. Đưa người chơi về Màn Hình Chờ an toàn
+        // Only the legacy non-deploying load returns to the waiting menu.
+        // Immediate loads must not restart the opening/black curtain first.
         runtimeHeroData.ApplyHeroBalance();
         RestoreSelectedStance();
         if (heroController != null) heroController.SetIdentityVisual(runtimeHeroData);
-        SetupPreGameUI();
+        if (!deploy) SetupPreGameUI(true);
         RestoreProgress();
         UpdateEventLog("Đã tải " + slot + ": cấp " + loaded.currentLevel +
             ", EXP " + loaded.currentExp + ", map " + loaded.mapNumber + ".");

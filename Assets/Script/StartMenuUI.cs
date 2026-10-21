@@ -485,6 +485,12 @@ public class StartMenuUI : MonoBehaviour
     {
         if(cinematic==null || cinematic.IsEntering)return false;
         cinematic.BeginEntering();
-        return true;
+        return cinematic.IsEntering;
+    }
+
+    public void EnterGameplayImmediately()
+    {
+        LockButtonsForEntry();
+        if(cinematic!=null)cinematic.CompleteGameplayTransition();
     }
 }

@@ -490,14 +490,22 @@ public sealed class OpeningCinematicUI : MonoBehaviour
         far.localScale=near.localScale=new Vector3(scale,scale,1f);
         sky.localScale=new Vector3(1f+.15f*eased,1f+.15f*eased,1f);
         if(t<1f)return;
+        CompleteGameplayTransition();
+    }
+
+    // Shared by animated entry and direct Load; hide only opening-owned layers.
+    public void CompleteGameplayTransition()
+    {
         finished=true;
+        entering=false;
+        layoutEditing=false;
         if(splashLeft!=null)splashLeft.StopVideo();
         if(splashRight!=null)splashRight.StopVideo();
         if(videoBackground!=null)videoBackground.StopPlayback();
         if(blackCurtain!=null)blackCurtain.gameObject.SetActive(false);
         if(game!=null&&game.preGameUI!=null)game.preGameUI.SetActive(false);
         if(UIManager.Instance!=null)UIManager.Instance.SetPaused(false);
-        backdrop.gameObject.SetActive(false);
+        if(backdrop!=null)backdrop.gameObject.SetActive(false);
     }
 
     public void ResetForMenu()
