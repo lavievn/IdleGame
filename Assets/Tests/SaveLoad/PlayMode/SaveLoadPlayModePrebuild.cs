@@ -1,7 +1,6 @@
 #if UNITY_EDITOR
 using System;
 using UnityEngine;
-using UnityEngine.SceneManagement;
 using UnityEngine.TestTools;
 
 namespace IdleGame.Tests.SaveLoad.PlayMode
@@ -14,12 +13,9 @@ namespace IdleGame.Tests.SaveLoad.PlayMode
         {
             if (Application.isPlaying)
                 throw new InvalidOperationException("Run W1.8a from the Editor Test Runner before entering Play Mode.");
-            if (SceneManager.sceneCount != 1)
-                throw new InvalidOperationException("Open exactly one unsaved EMPTY scene before running W1.8a.");
-            Scene scene = SceneManager.GetSceneAt(0);
-            if (!scene.isLoaded || !string.IsNullOrEmpty(scene.path) || scene.rootCount != 0)
-                throw new InvalidOperationException("W1.8a requires an unsaved EMPTY scene: no Camera, Light or gameplay roots.");
-            SaveLoadPlayModeFixture.RequireNoSaveOrGameManager();
+            // The runner may already have replaced the user's scene with a
+            // bootstrap scene. Validate content, not root count, path or names.
+            SaveLoadPlayModeFixture.RequireCleanTestEnvironment();
         }
     }
 }

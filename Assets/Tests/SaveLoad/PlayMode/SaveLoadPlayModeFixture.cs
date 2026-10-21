@@ -286,7 +286,98 @@ namespace IdleGame.Tests.SaveLoad.PlayMode
             return assembly == "UnityEngine.TestRunner" || assembly == "UnityEditor.TestRunner";
         }
 
-        private static void RequireCleanTestStart()
+        private static bool IsUrpType(object value, string name)
+        {
+            return value is UnityEngine.Object && (UnityEngine.Object)value != null &&
+                value.GetType().FullName == "UnityEngine.Rendering.Universal." + name &&
+                value.GetType().Assembly.GetName().Name == "Unity.RenderPipelines.Universal.Runtime";
+        }
+
+        private static object ReadUrpField(object value, string name)
+        {
+            for (Type type = value.GetType(); type != null; type = type.BaseType)
+            {
+                FieldInfo field = type.GetField(name, BindingFlags.Instance | BindingFlags.Public |
+                    BindingFlags.NonPublic | BindingFlags.DeclaredOnly);
+                if (field != null) return field.GetValue(value);
+            }
+            // Fail closed on a package/schema change. Never invoke renderer or
+            // cameraStack getters: those can initialize a renderer or emit logs.
+            throw new InvalidOperationException("Unrecognized URP schema; fixture I/O refused: " + name);
+        }
+
+        private static bool UsesPlainDefaultRenderer2D()
+        {
+            object asset = UnityEngine.Rendering.GraphicsSettings.currentRenderPipeline;
+            if (!IsUrpType(asset, "UniversalRenderPipelineAsset")) return false;
+            var renderers = ReadUrpField(asset, "m_RendererDataList") as IList;
+            object index = ReadUrpField(asset, "m_DefaultRendererIndex");
+            if (renderers == null || !(index is int) || (int)index < 0 || (int)index >= renderers.Count) return false;
+            // URP may initialize more than the selected renderer. Do not allow
+            // unreviewed renderer data or custom features elsewhere in the asset.
+            foreach (object renderer in renderers)
+            {
+                if (!IsUrpType(renderer, "Renderer2DData")) return false;
+                var features = ReadUrpField(renderer, "m_RendererFeatures") as IList;
+                if (features == null || features.Count != 0) return false;
+            }
+            return true;
+        }
+
+        private static bool IsPlainUrpCameraData(Component component)
+        {
+            if (!IsUrpType(component, "UniversalAdditionalCameraData")) return false;
+            object mode = ReadUrpField(component, "m_CameraType");
+            var stack = ReadUrpField(component, "m_Cameras") as IList;
+            object renderer = ReadUrpField(component, "m_RendererIndex");
+            object postProcessing = ReadUrpField(component, "m_RenderPostProcessing");
+            object screenOverride = ReadUrpField(component, "m_UseScreenCoordOverride");
+            return mode != null && mode.GetType().IsEnum && Enum.GetName(mode.GetType(), mode) == "Base" &&
+                stack != null && stack.Count == 0 && renderer is int && (int)renderer == -1 &&
+                ReadUrpField(component, "m_VolumeTrigger") == null &&
+                postProcessing is bool && !(bool)postProcessing &&
+                screenOverride is bool && !(bool)screenOverride && UsesPlainDefaultRenderer2D();
+        }
+
+        private static bool IsPlainDisplayRoot(GameObject root)
+        {
+            if (root.transform.childCount != 0) return false;
+            bool camera = false, light = false, listener = false, urp = false;
+            foreach (Component component in root.GetComponents<Component>())
+            {
+                if (component == null) return false;
+                Type type = component.GetType();
+                if (type == typeof(Transform)) continue;
+                if (type == typeof(Camera))
+                {
+                    // Accept only a plain native camera, with no off-screen asset.
+                    if (((Camera)component).targetTexture != null) return false;
+                    camera = true;
+                }
+                else if (type == typeof(AudioListener)) listener = true;
+                else if (type == typeof(Light))
+                {
+                    if (((Light)component).cookie != null) return false;
+                    light = true;
+                }
+                else if (!urp && IsPlainUrpCameraData(component)) urp = true;
+                else return false; // No other scripts, subclasses or additional URP behaviours.
+            }
+            return (camera && !light) || (light && !camera && !listener && !urp);
+        }
+
+        private static string DescribeRoot(GameObject root)
+        {
+            Component[] components = root.GetComponentsInChildren<Component>(true);
+            return "scene '" + root.scene.name + "', root '" + root.name + "': " +
+                string.Join(", ", Array.ConvertAll(components, component => component == null
+                    ? "<missing script>"
+                    : component.GetType().FullName + " [" + component.GetType().Assembly.GetName().Name + "]"));
+        }
+
+        // Shared by IPrebuildSetup and UnitySetUp; neither loads/modifies scenes.
+        // A scene path or a GameObject name is never treated as proof of safety.
+        public static void RequireCleanTestEnvironment()
         {
             RequireNoSaveOrGameManager();
             if (PlayModeRuntime.Instance != null || SceneManager.sceneCount < 1)
@@ -294,30 +385,36 @@ namespace IdleGame.Tests.SaveLoad.PlayMode
             for (int i = 0; i < SceneManager.sceneCount; i++)
             {
                 Scene scene = SceneManager.GetSceneAt(i);
-                if (!scene.isLoaded || !string.IsNullOrEmpty(scene.path))
-                    throw new InvalidOperationException("A saved/unloaded scene prevents isolated fixture I/O.");
-                // The only non-empty roots allowed belong to Unity's Test Runner.
-                // A name such as 'TestRunner' alone is NOT accepted as evidence.
+                if (!scene.isLoaded)
+                    throw new InvalidOperationException("An unloaded scene prevents isolated fixture I/O.");
                 foreach (GameObject root in scene.GetRootGameObjects())
                 {
+                    // Accept native display roots or the narrowly checked URP 2D
+                    // camera shape, independent of creator or GameObject name.
+                    if (IsPlainDisplayRoot(root)) continue;
                     bool runner = false;
                     foreach (Component component in root.GetComponentsInChildren<Component>(true))
                     {
-                        if (component == null) throw new InvalidOperationException("A missing script prevents fixture I/O.");
+                        if (component == null)
+                            throw new InvalidOperationException("A missing script prevents fixture I/O: " + DescribeRoot(root));
                         if (component is Transform) continue;
+                        if (component.gameObject != root && IsPlainDisplayRoot(component.gameObject)) continue;
                         if (!IsTestRunnerComponent(component))
-                            throw new InvalidOperationException("A non-TestRunner scene component prevents fixture I/O.");
+                            throw new InvalidOperationException("An unapproved scene component prevents fixture I/O: " + DescribeRoot(root));
                         runner = true;
                     }
-                    if (!runner) throw new InvalidOperationException("An unexpected scene root prevents fixture I/O.");
+                    if (!runner)
+                        throw new InvalidOperationException("An unexpected scene root prevents fixture I/O: " + DescribeRoot(root));
                 }
             }
             // Also inspect DontDestroyOnLoad behaviours, which sceneCount omits.
             foreach (UnityEngine.Object value in Resources.FindObjectsOfTypeAll(typeof(MonoBehaviour)))
             {
                 var component = value as MonoBehaviour;
-                if (component != null && component.gameObject.scene.IsValid() && !IsTestRunnerComponent(component))
-                    throw new InvalidOperationException("An existing runtime behaviour prevents fixture I/O.");
+                if (component != null && component.gameObject.scene.IsValid() && !IsTestRunnerComponent(component) &&
+                    !(IsUrpType(component, "UniversalAdditionalCameraData") && IsPlainDisplayRoot(component.gameObject)))
+                    throw new InvalidOperationException("An existing runtime behaviour prevents fixture I/O: " +
+                        component.GetType().FullName + " [" + component.GetType().Assembly.GetName().Name + "]");
             }
         }
 
@@ -328,7 +425,7 @@ namespace IdleGame.Tests.SaveLoad.PlayMode
             throw new InvalidOperationException("W1.8a supports Editor Play Mode only; player tests are not approved.");
 #endif
             Assert.That(Application.isPlaying, Is.True);
-            RequireCleanTestStart(); // Direct, fresh validation BEFORE any fixture I/O.
+            RequireCleanTestEnvironment(); // Direct, fresh validation BEFORE any fixture I/O.
             previousScene = SceneManager.GetActiveScene();
             fixtureScene = SceneManager.CreateScene("W1.8a-" + Guid.NewGuid().ToString("N"));
             Assert.That(fixtureScene.rootCount, Is.EqualTo(0));
