@@ -1,7 +1,7 @@
 {
   "name": "IdleGame.SaveLoad.PlayMode",
   "rootNamespace": "IdleGame.Tests.SaveLoad.PlayMode",
-  "references": ["UnityEngine.TestRunner"],
+  "references": [],
   "includePlatforms": [],
   "excludePlatforms": [],
   "allowUnsafeCode": false,
