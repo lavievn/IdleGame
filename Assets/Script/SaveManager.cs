@@ -12,20 +12,56 @@ public class SaveManager : MonoBehaviour
     private const string TEMP_EXTENSION = ".tmp";
     
     private string saveDirectory;
+    private bool customSaveDirectoryRequested;
+    private bool awakeStarted;
+
+    public string SaveDirectory => saveDirectory;
+
+    // Call on an inactive GameObject, before Awake. Path validation only: no I/O.
+    public void ConfigureSaveDirectoryBeforeAwake(string directory)
+    {
+        if (awakeStarted)
+            throw new InvalidOperationException("The save directory is locked once Awake has started.");
+
+        // An invalid explicit request must never fall back to the player directory,
+        // even if the caller catches the validation exception and activates us.
+        customSaveDirectoryRequested = true;
+        saveDirectory = null;
+        if (string.IsNullOrWhiteSpace(directory) || !Path.IsPathRooted(directory) ||
+            directory.IndexOfAny(Path.GetInvalidPathChars()) >= 0)
+            throw new ArgumentException("An absolute save-directory path is required.", nameof(directory));
+        string absolute = Path.GetFullPath(directory);
+        // Windows drive-relative paths (C:folder or \folder) are rooted but
+        // still depend on the current drive/directory; do not accept them.
+        if (!string.Equals(Path.GetPathRoot(directory), Path.GetPathRoot(absolute),
+                StringComparison.OrdinalIgnoreCase))
+            throw new ArgumentException("An absolute save-directory path is required.", nameof(directory));
+        saveDirectory = absolute;
+    }
 
     private void Awake()
     {
+        awakeStarted = true;
         // Singleton pattern chuẩn
         if (Instance != null && Instance != this)
         {
             Destroy(gameObject);
             return;
         }
+        if (customSaveDirectoryRequested)
+        {
+            if (string.IsNullOrEmpty(saveDirectory))
+                throw new InvalidOperationException("The explicitly configured save directory is invalid.");
+        }
+        else
+        {
+            // Preserve the existing gameplay default exactly.
+            saveDirectory = Application.persistentDataPath + "/Saves/";
+        }
         Instance = this;
         DontDestroyOnLoad(gameObject);
 
-        // Khởi tạo thư mục Save
-        saveDirectory = Application.persistentDataPath + "/Saves/";
+        // Khởi tạo thư mục Save (custom or default, chosen before any I/O).
         if (!Directory.Exists(saveDirectory))
         {
             Directory.CreateDirectory(saveDirectory);
