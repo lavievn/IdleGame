@@ -504,8 +504,9 @@ public sealed class OpeningCinematicUI : MonoBehaviour
         if(videoBackground!=null)videoBackground.StopPlayback();
         if(blackCurtain!=null)blackCurtain.gameObject.SetActive(false);
         if(game!=null&&game.preGameUI!=null)game.preGameUI.SetActive(false);
-        if(UIManager.Instance!=null)UIManager.Instance.SetPaused(false);
         if(backdrop!=null)backdrop.gameObject.SetActive(false);
+        if(game!=null && game.IsEnteringGameplay)game.OnOpeningRevealCompleted();
+        else if(UIManager.Instance!=null)UIManager.Instance.SetPaused(false);
     }
 
     public void ResetForMenu()

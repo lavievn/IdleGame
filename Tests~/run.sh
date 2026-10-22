@@ -7,5 +7,6 @@ mcs -define:UNITY_EDITOR -out:"$build_dir/MotionRegression.exe" \
   Tests~/*.cs \
   Assets/Script/{OpeningArtTheme,OpeningEdgeFeather,OpeningBackgroundVideo,OpeningHeroSplashVideo,OpeningCinematicUI,MapBgmCatalog,MapBgmController,MusicVolumePanelUI,EquipmentFoundation,EquipmentRuntime,EquipmentInventory,EquipmentRefinement,EquipmentStatPreview,InventoryPanelUI,InventoryArtTheme,ManagementWindowLayout,CombatStats,CombatDamage,DevBalanceUI,TransparentWindow,GroundPresentation,StartMenuUI,SaveMenuUI,UIManager,CustomInteractable,SaveManager,CombatBalance,BattleMotion,BattleEffects,EnvironmentManager,HeroController,MonsterController,MonsterSpawner,HeroCombatState,CombatManager,GameManager,SaveSlot,TuTienEnums,WorldMapCatalog,WorldMapPolygons,WorldMapPolygonGraphics,WorldMapPanelUI}.cs \
   Assets/Script/CultivationSpriteBridge.cs \
+  Assets/Script/HeroSpawnVfx.cs \
   Assets/DataScript/EntityDataSO.cs
 mono "$build_dir/MotionRegression.exe" "$@"

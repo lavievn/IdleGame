@@ -93,6 +93,7 @@ partial class MotionRegression
 
     static void Main(string[] args)
     {
+        if(args.Length==1 && args[0]=="--spawn") { SpawnEntryTests();return; }
         if (args.Length == 1 && args[0] == "--desktop-ui") {
             DesktopMenuHotfixTests();DesktopMenuTests();ManualSaveMenuTests();
             MenuDifficultyTests();ManualLoadUiRegressionTests();
@@ -104,6 +105,7 @@ partial class MotionRegression
         SpritePresentationTests();
         if (args.Length == 1 && args[0] == "--sprites") return;
         WorldMapRegressionTests();
+        SpawnEntryTests();
         DesktopMenuHotfixTests();
         ManualLoadUiRegressionTests();
         Run("six-vertex polygon uses true shape, not rectangular hitbox", () => {

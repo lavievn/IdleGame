@@ -12,6 +12,8 @@ public class HeroController : MonoBehaviour
     [Header("REFERENCES")]
     public RectTransform heroRect;
     public string spawnSkin = "FadeIn_01";
+    [Header("SPAWN PRESENTATION")]
+    [Min(.1f)] public float spawnVfxScale = 1.4f;
     [Header("COMBAT STATS")]
     public AttackMode attackMode = AttackMode.Melee;
     public float attackRange = 30f;
@@ -93,6 +95,7 @@ public class HeroController : MonoBehaviour
     public void ChangeAttackMode(int modeIndex)
     {
         if (modeIndex < 0 || modeIndex > 2) return;
+        HeroSpawnVfx.Cancel(heroRect);
         attackMode = (AttackMode)modeIndex;
         UpdateChargeBar(false, 0f);
         CultivationSpriteBridge.AttachHero(this);
@@ -223,6 +226,7 @@ public class HeroController : MonoBehaviour
 
     private void ResetFeedback()
     {
+        HeroSpawnVfx.Cancel(heroRect);
         CultivationSpriteBridge.ResetPose(heroRect);
         if (chargeBar != null) chargeBar.Set(false, 0f);
         if (fadeDmgCoroutine != null) StopCoroutine(fadeDmgCoroutine);

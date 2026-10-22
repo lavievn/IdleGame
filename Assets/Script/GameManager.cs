@@ -238,10 +238,15 @@ public class GameManager : MonoBehaviour
     private SaveSlot continueSlot;
     private bool manualSelection;
     private StartMenuUI startMenu;
+    private bool enteringGameplay, openingRevealed;
+    private bool resumeEntryWave;
+    private float entryElapsed;
+    private HeroSpawnVfx entryVfx;
+    public bool IsEnteringGameplay => enteringGameplay;
     public bool IsHardMode => runtimeHeroData != null && runtimeHeroData.difficulty == 1;
     public bool HasPendingConfirmation => pendingChoice != MenuChoice.None;
     // Visible HUD only during active gameplay, never on start/confirmation/death screens.
-    public bool IsGameplayHUDVisible => hasDeployed &&
+    public bool IsGameplayHUDVisible => hasDeployed && !enteringGameplay &&
         (preGameUI == null || !preGameUI.activeInHierarchy) &&
         (gameOverPanel == null || !gameOverPanel.activeInHierarchy) &&
         (confirmationPopup == null || !confirmationPopup.activeInHierarchy);
@@ -267,7 +272,7 @@ public class GameManager : MonoBehaviour
         StartCoroutine(AutoSaveRoutine());
     }
 
-    private void InitHeroData()
+    private void InitHeroData(bool showMenu = true)
     {
         recentEvents.Clear(); recentDamage.Clear(); fullEventHistory.Clear();
         damageHistory.Clear();
@@ -304,7 +309,7 @@ public class GameManager : MonoBehaviour
 
         runtimeHeroData.ApplyHeroBalance();
         if (heroController != null) heroController.SetIdentityVisual(runtimeHeroData);
-        SetupPreGameUI();
+        if(showMenu)SetupPreGameUI();
     }
 
     private void ConfigureEventLog()
@@ -355,6 +360,7 @@ public class GameManager : MonoBehaviour
 
     private void SetupPreGameUI(bool restartOpening = false)
     {
+        CancelGameplayEntry();
         if (UIManager.Instance != null) UIManager.Instance.HideMapTitle();
         bool reopening = !preGameUI.activeInHierarchy;
         preGameUI.SetActive(true);
@@ -378,7 +384,8 @@ public class GameManager : MonoBehaviour
         CancelNextWave();
         // Keep the menu canvas until the animated cloud reveal completes.
         // Manual LoadAndContinue is immediate; only confirmed title choices animate.
-        bool cinematic = showOpeningTransition && startMenu != null && startMenu.IsCinematic;
+        bool cinematic = showOpeningTransition && startMenu != null && startMenu.IsCinematic &&
+            preGameUI != null && preGameUI.activeInHierarchy;
         if (!cinematic)
         {
             if (startMenu != null) startMenu.EnterGameplayImmediately();
@@ -388,11 +395,67 @@ public class GameManager : MonoBehaviour
         ClearTestCompanions();
         if (combatManager != null) combatManager.SetupHeroInfo(runtimeHeroData);
         heroController.SpawnHero();
+        if(cinematic)
+        {
+            enteringGameplay=true;openingRevealed=false;entryElapsed=0f;
+            entryVfx=HeroSpawnVfx.Prepare(heroController);
+            SetEntryPaused(true);
+        }
         RestoreProgress();
-        if (UIManager.Instance != null) UIManager.Instance.ShowMapTitle(runtimeHeroData.mapName);
-        CallNextWave();
-        if (cinematic && startMenu.BeginGameplayTransition() && UIManager.Instance != null)
-            UIManager.Instance.SetPaused(true);
+        if(cinematic)
+        {
+            if(!startMenu.BeginGameplayTransition())startMenu.EnterGameplayImmediately();
+        }
+        else
+        {
+            if (UIManager.Instance != null) UIManager.Instance.ShowMapTitle(runtimeHeroData.mapName);
+            CallNextWave();
+        }
+    }
+
+    private static void SetEntryPaused(bool paused)
+    {
+        if(UIManager.Instance!=null)UIManager.Instance.SetPaused(paused);
+        else Time.timeScale=paused?0f:1f;
+    }
+    public void OnOpeningRevealCompleted()
+    {
+        if(!enteringGameplay || openingRevealed)return;
+        openingRevealed=true;
+        if(entryVfx==null || !entryVfx.Begin())CompleteGameplayEntry();
+    }
+    void Update()
+    {
+        if(!enteringGameplay)return;
+        // Own the pause across the handoff; no actor/camera advances in a gap.
+        SetEntryPaused(true);
+        entryElapsed+=Mathf.Max(0f,Time.unscaledDeltaTime);
+        if(!openingRevealed && entryElapsed>OpeningCinematicUI.EntrySeconds+.5f)
+        {
+            // Missing/disabled opening cannot leave the game black or paused.
+            if(startMenu!=null)startMenu.EnterGameplayImmediately();
+            OnOpeningRevealCompleted();
+        }
+        if(enteringGameplay && openingRevealed && (entryVfx==null || !entryVfx.Advance(Time.unscaledDeltaTime)))
+            CompleteGameplayEntry();
+    }
+    private void CancelGameplayEntry()
+    {
+        if(!enteringGameplay)return;
+        enteringGameplay=false;openingRevealed=false;
+        if(entryVfx!=null)entryVfx.Finish();entryVfx=null;
+        SetEntryPaused(false);
+    }
+    private void CompleteGameplayEntry()
+    {
+        if(!enteringGameplay)return;
+        CancelGameplayEntry();
+        if(startMenu!=null)startMenu.EnterGameplayImmediately();
+        if(hasDeployed && heroController!=null && heroController.IsDeployed)
+        {
+            if(UIManager.Instance!=null)UIManager.Instance.ShowMapTitle(runtimeHeroData.mapName);
+            CallNextWave();
+        }
     }
 
     private void CaptureSelectedStance()
@@ -548,6 +611,7 @@ public class GameManager : MonoBehaviour
             Destroy(loaded);
             return false;
         }
+        CancelGameplayEntry();
         // 1. Dọn dẹp sạch sẽ chiến trường tránh kẹt Coroutine
         hasDeployed = false;
         CancelNextWave();
@@ -611,6 +675,7 @@ public class GameManager : MonoBehaviour
     public void OnHeroDied()
     {
         if (!hasDeployed) return;
+        CancelGameplayEntry();
         if (UIManager.Instance != null) UIManager.Instance.HideMapTitle();
         hasDeployed = false;
         CancelNextWave();
@@ -662,6 +727,7 @@ public class GameManager : MonoBehaviour
                 return false;
             }
         }
+        CancelGameplayEntry();
         hasDeployed=false;
         CancelNextWave();
         ClearTestCompanions();
@@ -717,6 +783,7 @@ public class GameManager : MonoBehaviour
     {
         var choice = pendingChoice;
         if (choice == MenuChoice.None) return;
+        bool fromTitle=preGameUI!=null && preGameUI.activeInHierarchy;
         pendingChoice = MenuChoice.None;
         if (confirmationPopup != null) confirmationPopup.SetActive(false);
         if (choice == MenuChoice.Continue)
@@ -753,6 +820,7 @@ public class GameManager : MonoBehaviour
             // player and must never be deleted or overwritten by New Game.
             if (saveManager == null || !saveManager.ResetAutoSave())
             { UpdateEventLog("Không đặt lại được ô lưu tự động. Chưa tạo trò chơi mới."); return; }
+            CancelGameplayEntry();
             hasDeployed = false;
             CancelNextWave();
             ClearTestCompanions();
@@ -760,14 +828,14 @@ public class GameManager : MonoBehaviour
             activeMonsters.Clear();
             if (heroController != null) heroController.HideHero();
             manualSelection = false;
-            InitHeroData();
+            InitHeroData(fromTitle);
             if (heroController != null) heroController.ChangeAttackMode(0);
         }
         manualSelection = false;
         if (gameOverPanel != null) gameOverPanel.SetActive(false);
         if (heroController != null) heroController.SetIdentityVisual(runtimeHeroData);
         if (UIManager.Instance != null) UIManager.Instance.ApplyDifficultyVisual(IsHardMode);
-        DeployHero(true);
+        DeployHero(fromTitle);
         CaptureSelectedStance();
         if (saveManager != null && !saveManager.SaveGame(runtimeHeroData, SaveSlot.AutoSave))
             UpdateEventLog("Đã bắt đầu nhưng chưa ghi được bản lưu. Kiểm tra quyền ghi thư mục Saves.");
@@ -923,8 +991,22 @@ public class GameManager : MonoBehaviour
 
     private void OnDisable()
     {
+        // Restore presentation on cancellation, but never spawn a wave while
+        // disabling the scene/component (including application shutdown).
+        if(enteringGameplay)
+        {
+            resumeEntryWave=hasDeployed;
+            CancelGameplayEntry();
+            if(startMenu!=null)startMenu.EnterGameplayImmediately();
+        }
         CancelNextWave();
         ClearTestCompanions();
+    }
+    private void OnEnable()
+    {
+        if(!resumeEntryWave)return;
+        resumeEntryWave=false;
+        if(hasDeployed && heroController!=null && heroController.IsDeployed)CallNextWave();
     }
 
     private void OnApplicationQuit()

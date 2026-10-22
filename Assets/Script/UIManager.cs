@@ -152,6 +152,7 @@ public class UIManager : MonoBehaviour
     public CustomInteractable HitControl(Vector2 mousePos)
     {
         GameManager gm = Object.FindFirstObjectByType<GameManager>();
+        if(gm!=null && gm.IsEnteringGameplay)return null;
         bool confirmation = gm != null && gm.HasPendingConfirmation;
         CustomInteractable hit = null;
         foreach (var item in interactables)
@@ -371,6 +372,10 @@ public class UIManager : MonoBehaviour
     private int damagePage;
     public void SetPaused(bool paused)
     {
+        if(!paused) {
+            var gm=Object.FindFirstObjectByType<GameManager>();
+            if(gm!=null && gm.IsEnteringGameplay)return;
+        }
         IsPaused = paused; Time.timeScale = paused ? 0f : 1f;
         if (pauseText != null) pauseText.text = paused ? "Tiếp tục" : "Tạm dừng";
     }

@@ -32,6 +32,19 @@ public sealed class CultivationSpriteBridge : MonoBehaviour
     private Pose pose = Pose.Normal;
     private float returnAt;
     private Sprite normal, attack, hit;
+    private float bodyOpacity = 1f;
+    public Vector2 VisibleBodySize => image != null && normal != null
+        ? new Vector2(430f,480f) * (Mathf.Max(.01f,enemy?monsterScale:heroScale)/SourcePixelsPerUnit)
+        : ((RectTransform)transform).rect.size;
+    public static void SetBodyOpacity(RectTransform rect,float opacity)
+    {
+        if (rect == null) return;
+        var bridge=rect.GetComponent<CultivationSpriteBridge>();
+        var graphic=bridge!=null && bridge.image!=null && bridge.normal!=null
+            ? bridge.image : rect.GetComponent<Image>();
+        if(bridge!=null)bridge.bodyOpacity=Mathf.Clamp01(opacity);
+        if(graphic!=null) { var c=graphic.color;c.a=Mathf.Clamp01(opacity);graphic.color=c; }
+    }
 
     public static void AttachHero(HeroController controller)
     {
@@ -158,6 +171,7 @@ public sealed class CultivationSpriteBridge : MonoBehaviour
         image.sprite = pose == Pose.Hit && hit != null ? hit :
                        pose == Pose.Attack && attack != null ? attack : normal;
         image.color = Color.white; // Enemy tint is already baked into PNG.
+        var tint=image.color;tint.a=bodyOpacity;image.color=tint;
         image.preserveAspect = false; // rect uses the full frame's exact aspect ratio.
         ApplyLayout();
     }
