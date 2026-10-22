@@ -58,7 +58,7 @@ partial class MotionRegression
                     Check(f.field.hero.IsDeployed && rect.gameObject.activeInHierarchy,"logic actor stays active");
                     Near(SpriteBody(rect).color.a,0,"body hidden before reveal");Near(hp.color.a,1,"HP alpha preserved");
                     Check(!hp.enabled && !damage.enabled && !charge.enabled && !off.enabled,"all attached UI hidden during cinematic");
-                    Near(x,f.field.space.HomeX,"one canonical spawn location");
+                    Near(x,f.field.space.BattleArea.rect.xMin+f.field.space.Width*.8f,"map already spawns at its final 80-percent location while hidden");
                     Check(MonsterController.ActiveMonsters.Count==0,"no wave spawned under opening");
                     Time.deltaTime=.1f;Call(f.field.space,"Update");Call(f.field.space,"LateUpdate");Call(f.field.combat,"Update");
                     Near(f.field.space.Position(rect).x,x,"no movement/pan during reveal");
@@ -89,10 +89,12 @@ partial class MotionRegression
                     Check(!image.gameObject.activeSelf && !glow.gameObject.activeSelf,"VFX hidden at completion");
                 }
             });
-            Run("W2.2 manual Load during appearance cancels old entry and remains immediate",()=>{
+            Run("W2.2h manual Load during appearance replaces old entry with short appear",()=>{
                 using(var f=new DesktopHotfixFixture(800,true)) {
                     EntryBody(f);EntryTitle(f,false);EntryReveal(f);EntryTick(f,.2f);
                     Check(f.manager.LoadAndContinue(SaveSlot.ManualSave1),"manual load succeeds");
+                    Check(f.manager.IsEnteringGameplay && !f.menu.IsEnteringCinematic,"manual load uses appear without title zoom");
+                    EntryTick(f,HeroSpawnVfx.Duration);
                     Check(!f.manager.IsEnteringGameplay && !f.manager.preGameUI.activeInHierarchy && Time.timeScale==1,"manual Load never replays opening");
                     Near(SpriteBody(f.field.hero.heroRect).color.a,1,"Load restores body");EntryTick(f,8);
                     Check(!f.manager.IsEnteringGameplay && f.manager.HeroData.currentLevel==6,"old entry cannot resume");
@@ -106,6 +108,7 @@ partial class MotionRegression
                     EntryTick(f,.01f);Check(!hp.enabled && !off.enabled,"late-created UI suppressed before rendering");
                     EntryReveal(f);EntryTick(f,.2f);Check(!hp.enabled,"late UI hidden through reveal");
                     Check(f.manager.LoadAndContinue(SaveSlot.ManualSave1),"Load cancels entry");
+                    EntryTick(f,HeroSpawnVfx.Duration);
                     Check(hp.enabled && !off.enabled,"cancellation restores intended states");
                     Near(SpriteBody(f.field.hero.heroRect).color.a,1,"cancellation restores body");
                 }
@@ -132,8 +135,12 @@ partial class MotionRegression
             Run("W2.2 Reset and Retry during gameplay do not replay title cinematic",()=>{
                 using(var f=new DesktopHotfixFixture(800,true)) {
                     EntryBody(f);f.manager.OnResetClicked();f.manager.OnConfirmResetClicked();
+                    Check(f.manager.IsEnteringGameplay && !f.menu.IsEnteringCinematic,"Reset uses short appear");
+                    EntryTick(f,HeroSpawnVfx.Duration);
                     Check(!f.manager.IsEnteringGameplay && !f.manager.preGameUI.activeInHierarchy,"gameplay Reset is immediate");
                     f.field.hero.Die();f.manager.OnHeroDied();f.manager.OnRetryClicked();
+                    Check(f.manager.IsEnteringGameplay && !f.menu.IsEnteringCinematic,"Retry uses short appear");
+                    EntryTick(f,HeroSpawnVfx.Duration);
                     Check(!f.manager.IsEnteringGameplay && f.field.hero.IsDeployed && Time.timeScale==1,"Retry retains existing entry behaviour");
                 }
             });
@@ -152,7 +159,10 @@ partial class MotionRegression
                     Check(!f.manager.IsEnteringGameplay && Time.timeScale==1f,"disable cannot strand pause");
                     Near(SpriteBody(f.field.hero.heroRect).color.a,1,"disable restores body");
                     Check(MonsterController.ActiveMonsters.Count==0,"disable/shutdown never spawns a new wave");
-                    Call(f.manager,"OnEnable");Check(MonsterController.ActiveMonsters.Count>0,"reenable resumes the deferred wave");
+                    Call(f.manager,"OnEnable");
+                    Check(f.manager.IsEnteringGameplay && MonsterController.ActiveMonsters.Count==0,"reenable restarts appearance before wave");
+                    EntryTick(f,HeroSpawnVfx.Duration);
+                    Check(MonsterController.ActiveMonsters.Count>0,"reenable resumes the deferred wave");
                 }
             });
             Run("W2.2 resize during VFX keeps foot anchor and Hero-relative scale",()=>{
@@ -185,6 +195,8 @@ partial class MotionRegression
                 using(var f=new DesktopHotfixFixture(800,true)) {
                     EntryBody(f);EntryTitle(f,false);EntryReveal(f);EntryTick(f,.2f);
                     f.manager.OnResetClicked();f.manager.OnConfirmResetClicked();
+                    Check(f.manager.IsEnteringGameplay && !f.menu.IsEnteringCinematic,"new Reset appearance replaces the old entry");
+                    EntryTick(f,HeroSpawnVfx.Duration);
                     Check(!f.manager.IsEnteringGameplay && Time.timeScale==1f,"API reset cancels entry");
                     EntryTick(f,8f);
                     Check(MonsterController.ActiveMonsters.Count==Get<int>(f.manager,"waveSpawnCount"),"old entry cannot spawn another wave");

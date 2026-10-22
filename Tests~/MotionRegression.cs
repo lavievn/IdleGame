@@ -12,6 +12,15 @@ partial class MotionRegression
     static void Near(float a,float b,string message,float tolerance=0.002f) { Check(Math.Abs(a-b)<=tolerance,message+": "+a+" != "+b); }
     static void Run(string name,Action test) { test(); tests++; Console.WriteLine("PASS "+name); }
     static void Call(object value,string method) { value.GetType().GetMethod(method,BindingFlags.NonPublic|BindingFlags.Instance).Invoke(value,null); }
+    static void FinishShortMapEntry(GameManager manager,EnvironmentManager space)
+    {
+        Check(manager.IsEnteringGameplay && Get<bool>(manager,"openingRevealed"),"short map entry is pending");
+        Check(Time.timeScale==0f && manager.activeMonsters.Count==0,"entry is paused before first wave");
+        float old=Time.unscaledDeltaTime;Time.unscaledDeltaTime=HeroSpawnVfx.Duration;Time.frameCount++;
+        try { Call(manager,"Update");Call(space,"LateUpdate");Call(manager,"LateUpdate"); }
+        finally { Time.unscaledDeltaTime=old; }
+        Check(!manager.IsEnteringGameplay && Time.timeScale==1f,"short entry completes before gameplay assertions");
+    }
     // Legacy regression cases refer to the old CombatManager scalar field
     // names. Resolve them to HeroCombatState instead of keeping duplicate
     // mutable HP/timer data just to satisfy reflection from older tests.
@@ -61,6 +70,9 @@ partial class MotionRegression
         public CombatManager combat;
         public Field(float scale=1f)
         {
+            // A fresh simulated scene cannot inherit the previous scene's
+            // asynchronous map-entry pause. Individual pause cases set it later.
+            Time.timeScale=1f;
             if (EnvironmentManager.Instance != null) Call(EnvironmentManager.Instance,"OnDestroy");
             CombatBalance.ResetDevProfiles();
             HeroController.ActiveHeroes.Clear();HeroController.VisibleHeroes.Clear();MonsterController.ActiveMonsters.Clear();UnityEngine.Object.objects.Clear();
@@ -96,6 +108,7 @@ partial class MotionRegression
     {
         if(args.Length==1 && args[0]=="--position-hotfix") { B2SpawnPositionTests();return; }
         if(args.Length==1 && args[0]=="--multi-zone") { MultiZoneCameraTests();return; }
+        if(args.Length==1 && args[0]=="--map-entry") { UnifiedMapEntryTests();return; }
         if(args.Length==1 && args[0]=="--distance-waves") { DistanceWaveTests();return; }
         if(args.Length==1 && args[0]=="--soft-formation") { SoftFormationTests();return; }
         if(args.Length==1 && args[0]=="--camera-entry") { CameraEntryHandoffTests();return; }
@@ -115,6 +128,7 @@ partial class MotionRegression
         if (args.Length == 1 && args[0] == "--sprites") return;
         WorldMapRegressionTests();
         MultiZoneCameraTests();
+        UnifiedMapEntryTests();
         CameraEntryHandoffTests();
         WorldEntryTraceTests();
         WaveEntryTests();

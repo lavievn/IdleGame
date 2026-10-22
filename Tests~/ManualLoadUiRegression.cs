@@ -79,7 +79,7 @@ partial class MotionRegression
             {
                 // Opening completion now hands off after the paused camera's
                 // LateUpdate. Keep the original UI assertions unchanged.
-                Call(field.space,"LateUpdate");Call(manager,"LateUpdate");
+                Call(manager,"Update");Call(field.space,"LateUpdate");Call(manager,"LateUpdate");
             }
         }
         internal void ShowOpening()
@@ -96,6 +96,11 @@ partial class MotionRegression
         }
         internal void CheckPlaying(int level)
         {
+            if(manager.IsEnteringGameplay)
+            {
+                Check(Time.timeScale==0f && !opening.IsEntering,"short map appearance owns pause without replaying cinematic");
+                Tick(HeroSpawnVfx.Duration);
+            }
             Check(Get<bool>(manager,"hasDeployed") && field.hero.IsDeployed,
                 "loaded Hero is deployed");
             Check(manager.HeroData.currentLevel==level &&

@@ -342,6 +342,11 @@ public class GameManager : MonoBehaviour
     private bool resumeEntryWave;
     private float entryElapsed;
     private HeroSpawnVfx entryVfx;
+    [Header("MAP ENTRY — unscaled presentation seconds, not combat timing")]
+    [Min(.01f)] public float mapEntryCoverSeconds=.15f;
+    private Image mapEntryCover;
+    private bool shortMapEntry;
+    private float mapEntryCoverElapsed;
     public bool IsEnteringGameplay => enteringGameplay;
     // Read-only snapshot for opt-in frame diagnostics; never advances entry/VFX.
     public string DescribeGameplayEntry()
@@ -352,6 +357,9 @@ public class GameManager : MonoBehaviour
             " openingEntering="+(startMenu!=null && startMenu.IsEnteringCinematic)+
             " menuActive="+(preGameUI!=null && preGameUI.activeInHierarchy)+
             " vfxPlaying="+(entryVfx!=null && entryVfx.IsPlaying)+
+            " shortMapEntry="+shortMapEntry+
+            " entryCoverActive="+(mapEntryCover!=null && mapEntryCover.gameObject.activeInHierarchy)+
+            " entryCoverAlpha="+(mapEntryCover!=null?mapEntryCover.color.a.ToString("R",System.Globalization.CultureInfo.InvariantCulture):"none")+
             " waveMembers="+activeMonsters.Count+" waitingWave="+(nextWaveCoroutine!=null)+
             " exploring="+waitingForExploration+" explorationDistance="+
             explorationDistance.ToString("R",System.Globalization.CultureInfo.InvariantCulture);
@@ -501,27 +509,32 @@ public class GameManager : MonoBehaviour
         if (UIManager.Instance != null) UIManager.Instance.SetPaused(false);
         if (hasDeployed) return;
         CancelNextWave();
-        // Keep the menu canvas until the animated cloud reveal completes.
-        // Manual LoadAndContinue is immediate; only confirmed title choices animate.
+        // Only title choices run the long cinematic. Every actual map entry
+        // shares the same paused, hidden spawn -> appear -> first-wave pipeline.
         bool cinematic = showOpeningTransition && startMenu != null && startMenu.IsCinematic &&
             preGameUI != null && preGameUI.activeInHierarchy;
         if (!cinematic)
         {
+            ShowMapEntryCover();
             if (startMenu != null) startMenu.EnterGameplayImmediately();
             if (preGameUI != null) preGameUI.SetActive(false);
         }
         hasDeployed = true;
         ClearTestCompanions();
+        if(combatManager!=null)combatManager.ForceClearAllMonsters();
+        activeMonsters.Clear();
+        heroController.HideHero();
         heroController.useStanceMoveSpeeds=useW2StanceMoveSpeeds;
         if (combatManager != null) combatManager.SetupHeroInfo(runtimeHeroData);
         ResetEntryCamera();
-        heroController.SpawnHero();
-        if(cinematic)
-        {
-            enteringGameplay=true;openingRevealed=false;entryElapsed=0f;
-            entryVfx=HeroSpawnVfx.Prepare(heroController);
-            SetEntryPaused(true);
-        }
+        var space=environmentManager!=null?environmentManager:EnvironmentManager.Instance;
+        Vector2 spawn=space!=null && space.BattleArea!=null
+            ?new Vector2(space.BattleArea.rect.xMin+space.Width*.8f,0f):Vector2.zero;
+        heroController.SpawnHero(true,spawn);
+        enteringGameplay=true;openingRevealed=false;entryCompletionPending=false;entryElapsed=0f;
+        shortMapEntry=!cinematic;
+        entryVfx=HeroSpawnVfx.Prepare(heroController);
+        SetEntryPaused(true);
         RestoreProgress();
         if(cinematic)
         {
@@ -529,9 +542,32 @@ public class GameManager : MonoBehaviour
         }
         else
         {
-            if (UIManager.Instance != null) UIManager.Instance.ShowMapTitle(runtimeHeroData.mapName);
-            CallNextWave();
+            OnOpeningRevealCompleted(); // VFX only; no title cinematic or stale opening overlay.
         }
+    }
+
+    private void ShowMapEntryCover()
+    {
+        if(mapEntryCover==null)
+        {
+            var root=new GameObject("Map Entry Cover",typeof(RectTransform),typeof(Canvas),typeof(GraphicRaycaster));
+            // Overlay canvases are top-level screen projections, like Readable
+            // HUD. Do not inherit GameController's arbitrary scene transform.
+            var canvas=root.GetComponent<Canvas>();canvas.renderMode=RenderMode.ScreenSpaceOverlay;
+            canvas.sortingOrder=1000;canvas.scaleFactor=1f;
+            var fill=new GameObject("Map Entry Shade",typeof(RectTransform),typeof(Image));
+            fill.transform.SetParent(root.transform,false);
+            mapEntryCover=fill.GetComponent<Image>();mapEntryCover.raycastTarget=true;
+            var rect=mapEntryCover.rectTransform;rect.anchorMin=Vector2.zero;rect.anchorMax=Vector2.one;
+            rect.offsetMin=rect.offsetMax=Vector2.zero;
+        }
+        mapEntryCoverElapsed=0f;mapEntryCover.color=Color.black;
+        mapEntryCover.transform.parent.gameObject.SetActive(true);
+    }
+    private void HideMapEntryCover()
+    {
+        if(mapEntryCover!=null)mapEntryCover.transform.parent.gameObject.SetActive(false);
+        shortMapEntry=false;mapEntryCoverElapsed=0f;
     }
 
     private static void SetEntryPaused(bool paused)
@@ -561,7 +597,12 @@ public class GameManager : MonoBehaviour
             heroController.TracePosition("80-percent placement before VFX");
         }
         openingRevealed=true;
-        if(entryVfx==null || !entryVfx.Begin())entryCompletionPending=true;
+        try { if(entryVfx==null || !entryVfx.Begin())entryCompletionPending=true; }
+        catch(System.Exception ex)
+        {
+            Debug.LogWarning("[MapEntry] Appear asset unavailable: "+ex.Message);
+            entryCompletionPending=true;
+        }
     }
     void Update()
     {
@@ -570,6 +611,13 @@ public class GameManager : MonoBehaviour
         // Own the pause across the handoff; no actor/camera advances in a gap.
         SetEntryPaused(true);
         entryElapsed+=Mathf.Max(0f,Time.unscaledDeltaTime);
+        if(shortMapEntry && openingRevealed && mapEntryCover!=null)
+        {
+            mapEntryCoverElapsed+=Mathf.Max(0f,Time.unscaledDeltaTime);
+            float seconds=float.IsNaN(mapEntryCoverSeconds)||float.IsInfinity(mapEntryCoverSeconds)
+                ?.15f:Mathf.Clamp(mapEntryCoverSeconds,.01f,HeroSpawnVfx.Duration*.25f);
+            mapEntryCover.color=new Color(0,0,0,1f-Mathf.Clamp01(mapEntryCoverElapsed/seconds));
+        }
         if(!openingRevealed && entryVfx!=null)entryVfx.HoldForCinematic();
         if(!openingRevealed && entryElapsed>OpeningCinematicUI.EntrySeconds+.5f)
         {
@@ -577,8 +625,15 @@ public class GameManager : MonoBehaviour
             if(startMenu!=null)startMenu.EnterGameplayImmediately();
             OnOpeningRevealCompleted();
         }
-        if(enteringGameplay && openingRevealed && (entryVfx==null || !entryVfx.Advance(Time.unscaledDeltaTime)))
-            entryCompletionPending=true;
+        if(enteringGameplay && openingRevealed)
+        {
+            try { if(entryVfx==null || !entryVfx.Advance(Time.unscaledDeltaTime))entryCompletionPending=true; }
+            catch(System.Exception ex)
+            {
+                Debug.LogWarning("[MapEntry] Appear interrupted: "+ex.Message);
+                entryCompletionPending=true;
+            }
+        }
         // Re-arm at the completion request, even if the earlier reveal window
         // has expired while the VFX played. Include the still-paused LateUpdate.
         if(entryCompletionPending)
@@ -590,6 +645,7 @@ public class GameManager : MonoBehaviour
     {
         var space=environmentManager!=null?environmentManager:EnvironmentManager.Instance;
         if(space!=null)space.CancelCameraEntryHandoff();
+        HideMapEntryCover();
         if(!enteringGameplay)return;
         enteringGameplay=false;openingRevealed=false;entryCompletionPending=false;
         if(entryVfx!=null)entryVfx.Finish();entryVfx=null;
@@ -853,18 +909,8 @@ public class GameManager : MonoBehaviour
     public void OnRetryClicked()
     {
         if (hasDeployed || HasPendingConfirmation || runtimeHeroData == null) return;
-        if (UIManager.Instance != null) UIManager.Instance.SetPaused(false);
-        CancelNextWave();
         if (gameOverPanel != null) gameOverPanel.SetActive(false);
-        hasDeployed = true;
-        ClearTestCompanions();
-        heroController.useStanceMoveSpeeds=useW2StanceMoveSpeeds;
-        if (combatManager != null) combatManager.SetupHeroInfo(runtimeHeroData);
-        ResetEntryCamera();
-        heroController.SpawnHero();
-        RestoreProgress();
-        if (UIManager.Instance != null) UIManager.Instance.ShowMapTitle(runtimeHeroData.mapName);
-        CallNextWave();
+        DeployHero();
     }
 
     // Return to the interactive title without reloading the Unity scene.
@@ -1024,29 +1070,26 @@ public class GameManager : MonoBehaviour
 
         // Change only after validation; cancel old wave and all stale projectiles
         // and monsters so they cannot score kills in the destination node.
+        CancelGameplayEntry();ShowMapEntryCover();
         CancelNextWave();
         if (combatManager != null) combatManager.ForceClearAllMonsters();
         activeMonsters.Clear();
         ClearTestCompanions();
-        if (!WorldMapCatalog.TryTravel(runtimeHeroData, targetId)) return false;
+        if (!WorldMapCatalog.TryTravel(runtimeHeroData, targetId)) { HideMapEntryCover();return false; }
 
         // Prototype: travel starts a fresh battle from full HP. Reevaluate this
         // explicitly when designing travel costs and injuries.
-        if (combatManager != null) combatManager.SetupHeroInfo(runtimeHeroData);
-        ResetEntryCamera();
-        if (heroController != null) heroController.SpawnHero();
-        RestoreProgress();
-        if (UIManager.Instance != null) UIManager.Instance.ShowMapTitle(runtimeHeroData.mapName);
+        hasDeployed=false;
+        DeployHero();
         UpdateEventLog("Đã đến " + runtimeHeroData.mapName + " (" + targetId + ").");
         if (saveManager != null && !saveManager.SaveGame(runtimeHeroData, SaveSlot.AutoSave))
             UpdateEventLog("Chưa lưu được bản đồ vừa chọn. Kiểm tra quyền ghi Saves.");
-        CallNextWave();
         return true;
     }
 
     private void CallNextWave()
     {
-        if (!hasDeployed || monsterSpawner == null || activeMonsters.Count>0) return;
+        if (!hasDeployed || enteringGameplay || monsterSpawner == null || activeMonsters.Count>0) return;
         waitingForExploration=false;explorationDistance=0d;
         foreach(var hero in HeroController.ActiveHeroes)
             if(hero!=null)hero.TracePosition("CallNextWave before spawn");
@@ -1213,7 +1256,8 @@ public class GameManager : MonoBehaviour
     {
         if(!resumeEntryWave)return;
         resumeEntryWave=false;
-        if(hasDeployed && heroController!=null && heroController.IsDeployed)CallNextWave();
+        if(hasDeployed && heroController!=null && heroController.IsDeployed)
+        { hasDeployed=false;DeployHero(); }
     }
 
     private void OnApplicationQuit()
@@ -1221,5 +1265,9 @@ public class GameManager : MonoBehaviour
         if (saveManager == null || !hasDeployed || runtimeHeroData == null) return;
         CaptureSelectedStance();
         saveManager.SaveGame(runtimeHeroData, SaveSlot.AutoSave);
+    }
+    private void OnDestroy()
+    {
+        if(mapEntryCover!=null)Destroy(mapEntryCover.transform.parent.gameObject);
     }
 }

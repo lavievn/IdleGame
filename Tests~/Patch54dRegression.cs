@@ -134,6 +134,7 @@ partial class MotionRegression
                 Check(before.mapNumber==6&&before.completedWavesInMap==0&&!Get<bool>(gm,"hasDeployed"),"ready at first map of current region");
                 var loaded=HeroAt(1);Check(save.LoadGame(loaded,SaveSlot.AutoSave)&&loaded.mapNumber==6&&loaded.completedWavesInMap==0&&loaded.currentLevel==20,"checkpoint persists before retry");
                 gm.OnHeroDied();Check(before.mapVisits==visits,"duplicate callback ignored");gm.OnRetryClicked();Check(Get<bool>(gm,"hasDeployed")&&gm.HeroData.mapNumber==6&&gm.HeroData.completedWavesInMap==0,"retry deploys checkpoint");
+                FinishShortMapEntry(gm,f.space);
                 Check(f.combat.CurrentHeroHP==f.combat.MaxHeroHP&&gm.activeMonsters.Count>0,"retry heals and spawns");
             } finally{Directory.Delete(dir,true);}
         });

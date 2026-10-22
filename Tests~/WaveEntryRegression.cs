@@ -105,6 +105,15 @@ partial class MotionRegression
                     else if(action=="Reset") { f.manager.OnResetClicked();f.manager.OnConfirmResetClicked(); }
                     else if(action=="ReturnTitle")Check(f.manager.ReturnToMainMenu(),"return title");
                     else Call(f.manager,"OnDisable");
+                    if(action=="Load" || action=="Reset")
+                    {
+                        Check(f.manager.IsEnteringGameplay && !Get<bool>(f.manager,"entryCompletionPending") &&
+                            f.manager.activeMonsters.Count==0,"replacement appearance starts without old completion flag");
+                        Call(f.field.space,"LateUpdate");Call(f.manager,"LateUpdate");
+                        Check(f.manager.IsEnteringGameplay && f.manager.activeMonsters.Count==0,
+                            "old LateUpdate cannot complete the replacement VFX");
+                        EntryTick(f,HeroSpawnVfx.Duration);
+                    }
                     var wave=new List<GameObject>(f.manager.activeMonsters);
                     Call(f.field.space,"LateUpdate");Call(f.manager,"LateUpdate");
                     Check(!f.manager.IsEnteringGameplay && f.manager.activeMonsters.Count==wave.Count,"old completion cannot deploy another wave");
@@ -116,6 +125,7 @@ partial class MotionRegression
                     WaveEntryScene(f);WaveEntryFinish(f);Call(f.manager,"RecoverEscapedWave");var old=Get<Coroutine>(f.manager,"nextWaveCoroutine");
                     Time.deltaTime=4;Check(old.routine.MoveNext(),"old wait has four seconds");
                     Check(f.manager.LoadAndContinue(SaveSlot.ManualSave1),"start another session state");
+                    EntryTick(f,HeroSpawnVfx.Duration);
                     Call(f.manager,"RecoverEscapedWave");var current=Get<Coroutine>(f.manager,"nextWaveCoroutine");Check(current!=old,"new wait identity");
                     Time.deltaTime=10;Check(!old.routine.MoveNext(),"old generation rejected");
                     Check(Get<Coroutine>(f.manager,"nextWaveCoroutine")==current,"new handle not cleared by old iterator");
