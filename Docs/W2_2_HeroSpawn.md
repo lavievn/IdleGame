@@ -13,10 +13,15 @@ movement/camera follow khi lớp phong cảnh vừa kết thúc. Đây là đư�
 sớm có bằng chứng từ mã. Không đủ dữ liệu để kết luận mọi cú giật quan sát được
 trên máy người dùng là một lệnh teleport; cần nghiệm thu chuyển động thực tế.
 
-Luồng mới: spawn ở HomeX chuẩn → ẩn Image thân → giữ pause và hoãn wave → giữ
-nguyên chuyển cảnh → phát VFX/fade thân → hiện hoàn toàn và bắt đầu wave.
+Luồng sau W2.2b: spawn logic ở HomeX trong khi toàn bộ hình/UI Hero bị ẩn →
+giữ pause và hoãn wave → giữ nguyên chuyển cảnh → khi cinematic kết thúc,
+đặt Hero tại `BattleArea.rect.xMin + Width * 0.8` trong khi vẫn đang ẩn →
+phát VFX/fade thân → khôi phục UI gắn Hero và bắt đầu wave.
 GameObject logic vẫn hoạt động; không đổi phép tính camera, AI hay cooldown.
-Opacity không áp lên HP bar/damage popup. VFX đặt trên thân, dưới UI con.
+HP, damage text, charge bar và các Graphic con được tạm vô hiệu hóa việc vẽ,
+giữ nguyên alpha/layout và khôi phục đúng enabled ban đầu khi xong hoặc hủy.
+Graphic tạo muộn cũng bị ẩn. VFX chỉ bật sau cinematic, neo chân Hero.
+80% chỉ là vị trí xuất hiện, không thay HomeX/camera hay buộc vị trí khi chơi.
 UI không thể bỏ pause giữa entry; timeline dùng unscaledDeltaTime.
 
 Chỉ New Game/Continue thực sự từ title dùng toàn bộ entry. Reset khi đang chơi,
@@ -53,6 +58,6 @@ Chạy thêm `--desktop-ui`, `--sprites` và nhóm B2. Toàn suite vẫn có blo
 
 Chưa có Unity Editor/Windows Player trong Cloud. Cần kiểm tra trực quan New Game,
 Continue, ReturnTitle→Continue, Load giữa entry, Reset và Retry; quay video tại
-600/800/1150 để xác nhận không nhảy vị trí, ánh sáng che đủ thân, UI còn nguyên,
+600/800/1150 để xác nhận không nhảy vị trí, ánh sáng che đủ thân, UI chỉ hiện sau VFX,
 chỉ bắt đầu đánh sau VFX. Kiểm tra Console, thiếu sheet, DPI/resize, đồng đội B2
 được clone sau entry, Windows Player build. Không thay SaveManager/định dạng save.

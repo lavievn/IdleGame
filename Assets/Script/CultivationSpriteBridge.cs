@@ -33,6 +33,7 @@ public sealed class CultivationSpriteBridge : MonoBehaviour
     private float returnAt;
     private Sprite normal, attack, hit;
     private float bodyOpacity = 1f;
+    public Image BodyGraphic => image != null && normal != null ? image : GetComponent<Image>();
     public Vector2 VisibleBodySize => image != null && normal != null
         ? new Vector2(430f,480f) * (Mathf.Max(.01f,enemy?monsterScale:heroScale)/SourcePixelsPerUnit)
         : ((RectTransform)transform).rect.size;

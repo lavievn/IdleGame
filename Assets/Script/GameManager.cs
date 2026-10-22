@@ -421,6 +421,16 @@ public class GameManager : MonoBehaviour
     public void OnOpeningRevealCompleted()
     {
         if(!enteringGameplay || openingRevealed)return;
+        // Commit the final gameplay position while ALL actor visuals are hidden.
+        // BattleArea units are independent of the Windows client/window size.
+        Canvas.ForceUpdateCanvases();
+        var space=environmentManager!=null?environmentManager:EnvironmentManager.Instance;
+        if(space!=null && space.BattleArea!=null && heroController!=null && heroController.heroRect!=null)
+        {
+            Vector2 position=space.Position(heroController.heroRect);
+            position.x=space.BattleArea.rect.xMin+space.Width*.8f;
+            space.SetPosition(heroController.heroRect,position);
+        }
         openingRevealed=true;
         if(entryVfx==null || !entryVfx.Begin())CompleteGameplayEntry();
     }
@@ -430,6 +440,7 @@ public class GameManager : MonoBehaviour
         // Own the pause across the handoff; no actor/camera advances in a gap.
         SetEntryPaused(true);
         entryElapsed+=Mathf.Max(0f,Time.unscaledDeltaTime);
+        if(!openingRevealed && entryVfx!=null)entryVfx.HoldForCinematic();
         if(!openingRevealed && entryElapsed>OpeningCinematicUI.EntrySeconds+.5f)
         {
             // Missing/disabled opening cannot leave the game black or paused.

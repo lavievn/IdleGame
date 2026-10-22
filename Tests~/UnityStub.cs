@@ -266,22 +266,21 @@ namespace UnityEngine.UI
       public enum ScaleMode { ConstantPixelSize, ScaleWithScreenSize, ConstantPhysicalSize }
       public ScaleMode uiScaleMode; public UnityEngine.Vector2 referenceResolution;
     }
-    public class RawImage : UnityEngine.MonoBehaviour {
-      public UnityEngine.Texture texture;public bool raycastTarget;public UnityEngine.Color color=UnityEngine.Color.white;
-    }
-    public class Image : UnityEngine.MonoBehaviour {
-      public enum Type { Simple, Sliced }
-      public float fillAmount; public UnityEngine.Color color;public UnityEngine.Sprite sprite;public Type type;public bool preserveAspect,raycastTarget;
-      public UnityEngine.Material material;
+    public class Graphic : UnityEngine.MonoBehaviour {
+      public bool raycastTarget;public UnityEngine.Color color=UnityEngine.Color.white;
       public UnityEngine.RectTransform rectTransform { get { return (UnityEngine.RectTransform)transform; } }
+    }
+    public class RawImage : MaskableGraphic { public UnityEngine.Texture texture; }
+    public class Image : MaskableGraphic {
+      public enum Type { Simple, Sliced }
+      public float fillAmount;public UnityEngine.Sprite sprite;public Type type;public bool preserveAspect;
+      public UnityEngine.Material material;
     }
     public class GraphicRaycaster : UnityEngine.Component { }
     public class RectMask2D : UnityEngine.Component { }
     public class Button : UnityEngine.MonoBehaviour { public bool interactable=true; public class ButtonClickedEvent:UnityEngine.Events.UnityEvent {} public ButtonClickedEvent onClick=new ButtonClickedEvent(); }
-    public class MaskableGraphic : UnityEngine.MonoBehaviour
+    public class MaskableGraphic : Graphic
     {
-        public bool raycastTarget;
-        public UnityEngine.RectTransform rectTransform { get { return (UnityEngine.RectTransform)transform; } }
         protected static readonly UnityEngine.Texture s_WhiteTexture = new UnityEngine.Texture();
         public virtual UnityEngine.Texture mainTexture { get { return s_WhiteTexture; } }
         public void SetVerticesDirty() { }
@@ -319,7 +318,7 @@ namespace TMPro {
   public void ActivateInputField(){isFocused=true;}
  }
  public enum TextAlignmentOptions { Center, TopLeft, Left, BottomRight, TopRight, MidlineLeft }
- public class TextMeshProUGUI : UnityEngine.Component { public TMP_FontAsset font=new TMP_FontAsset(); public object fontSharedMaterial; public FontStyles fontStyle; public FontWeight fontWeight;public TextOverflowModes overflowMode;public bool enableWordWrapping; public string text; public float alpha,fontSize,fontSizeMin,fontSizeMax; public bool enableAutoSizing,raycastTarget; public UnityEngine.Color color; public TextAlignmentOptions alignment; }
+ public class TextMeshProUGUI : UnityEngine.UI.MaskableGraphic { public TMP_FontAsset font=new TMP_FontAsset(); public object fontSharedMaterial; public FontStyles fontStyle; public FontWeight fontWeight;public TextOverflowModes overflowMode;public bool enableWordWrapping; public string text; public float alpha,fontSize,fontSizeMin,fontSizeMax; public bool enableAutoSizing; public TextAlignmentOptions alignment; }
 }
 namespace UnityEngine.Pool
 {

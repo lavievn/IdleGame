@@ -1,7 +1,8 @@
 using UnityEngine;
 using UnityEngine.UI;
+using System.Collections.Generic;
 
-// Body-only presentation. GameManager owns the entry lock and wave activation.
+// Actor presentation only. GameManager owns the entry lock and wave activation.
 public sealed class HeroSpawnVfx : MonoBehaviour
 {
     public const int FrameCount=38;
@@ -16,15 +17,40 @@ public sealed class HeroSpawnVfx : MonoBehaviour
     private Sprite glowSprite;
     private Texture2D glowTexture;
     private float elapsed;
+    private readonly Dictionary<Graphic,bool> hiddenUI = new Dictionary<Graphic,bool>();
+    private bool prepared;
 
     public static HeroSpawnVfx Prepare(HeroController hero)
     {
         if(hero==null || hero.heroRect==null)return null;
         var fx=hero.heroRect.GetComponent<HeroSpawnVfx>();
         if(fx==null)fx=hero.heroRect.gameObject.AddComponent<HeroSpawnVfx>();
+        fx.Finish();
         fx.actor=hero.heroRect;fx.heightMultiplier=hero.spawnVfxScale;
-        CultivationSpriteBridge.SetBodyOpacity(fx.actor,0f);
+        fx.prepared=true;
+        fx.HoldForCinematic();
         return fx;
+    }
+    // Include late-created charge bars and nested TMP/RawImage graphics. Do not
+    // deactivate the actor, change layout, or alter a graphic's intended alpha.
+    private void HideAttachedUI()
+    {
+        var bridge=actor.GetComponent<CultivationSpriteBridge>();
+        var body=bridge!=null?bridge.BodyGraphic:actor.GetComponent<Image>();
+        foreach(var graphic in actor.GetComponentsInChildren<Graphic>(true))
+        {
+            if(graphic==body || graphic==effect || graphic==glow)continue;
+            if(!hiddenUI.ContainsKey(graphic))hiddenUI.Add(graphic,graphic.enabled);
+            graphic.enabled=false;
+        }
+    }
+    public void HoldForCinematic()
+    {
+        if(!prepared || actor==null)return;
+        HideAttachedUI();
+        CultivationSpriteBridge.SetBodyOpacity(actor,0f);
+        if(effect!=null)effect.gameObject.SetActive(false);
+        if(glow!=null)glow.gameObject.SetActive(false);
     }
     public static void Cancel(RectTransform rect)
     {
@@ -34,7 +60,7 @@ public sealed class HeroSpawnVfx : MonoBehaviour
     }
     public bool Begin()
     {
-        if(!isActiveAndEnabled) { Finish();return false; }
+        if(!isActiveAndEnabled || actor==null) { Finish();return false; }
         var sheet=sheetOverride!=null?sheetOverride:Resources.Load<Texture2D>("Spawn/Appear");
         if(sheet==null || sheet.width!=4000 || sheet.height!=2500) { Finish();return false; }
         if(frames==null)
@@ -74,6 +100,7 @@ public sealed class HeroSpawnVfx : MonoBehaviour
         if(!IsPlaying)return false;
         elapsed+=Mathf.Max(0f,dt);
         if(elapsed>=Duration || actor==null || !actor.gameObject.activeInHierarchy) { Finish();return false; }
+        HideAttachedUI();
         effect.sprite=frames[Mathf.Clamp((int)(elapsed*FramesPerSecond),0,FrameCount-1)];
         float p=elapsed/Duration;
         float reveal=Mathf.Clamp01((p-.18f)/.27f);
@@ -96,8 +123,10 @@ public sealed class HeroSpawnVfx : MonoBehaviour
     }
     public void Finish()
     {
-        IsPlaying=false;elapsed=0f;
+        IsPlaying=false;prepared=false;elapsed=0f;
         CultivationSpriteBridge.SetBodyOpacity(actor!=null?actor:(RectTransform)transform,1f);
+        foreach(var saved in hiddenUI)if(saved.Key!=null)saved.Key.enabled=saved.Value;
+        hiddenUI.Clear();
         if(effect!=null)effect.gameObject.SetActive(false);
         if(glow!=null)glow.gameObject.SetActive(false);
     }

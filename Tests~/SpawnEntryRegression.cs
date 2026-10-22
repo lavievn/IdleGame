@@ -40,16 +40,20 @@ partial class MotionRegression
         {
             Resources.Register("Spawn/Appear",new Texture2D(4000,2500,TextureFormat.RGBA32,false));
             foreach(int width in new[]{600,800,1150})foreach(bool fresh in new[]{false,true})
-            Run("W2.2 "+width+(fresh?" New Game":" Continue")+" hides only body, waits for reveal/VFX then starts combat",()=>{
+            Run("W2.2b "+width+(fresh?" New Game":" Continue")+" hides actor UI, settles at 80 percent before VFX then starts combat",()=>{
                 using(var f=new DesktopHotfixFixture(width,true))
                 {
                     EntryBody(f);
                     var hp=new GameObject(true).AddComponent<Image>();hp.transform.SetParent(f.field.hero.heroRect,false);hp.color=Color.white;
+                    var damage=new GameObject(true).AddComponent<TMPro.TextMeshProUGUI>();damage.transform.SetParent(f.field.hero.heroRect,false);
+                    var charge=new GameObject(true).AddComponent<RawImage>();charge.transform.SetParent(f.field.hero.heroRect,false);
+                    var off=new GameObject(true).AddComponent<Image>();off.transform.SetParent(f.field.hero.heroRect,false);off.enabled=false;
                     EntryTitle(f,fresh);
                     var rect=f.field.hero.heroRect;float x=f.field.space.Position(rect).x;
                     Check(f.manager.IsEnteringGameplay && Time.timeScale==0f,"entry locks gameplay");
                     Check(f.field.hero.IsDeployed && rect.gameObject.activeInHierarchy,"logic actor stays active");
-                    Near(SpriteBody(rect).color.a,0,"body hidden before reveal");Near(hp.color.a,1,"HP bar not faded");
+                    Near(SpriteBody(rect).color.a,0,"body hidden before reveal");Near(hp.color.a,1,"HP alpha preserved");
+                    Check(!hp.enabled && !damage.enabled && !charge.enabled && !off.enabled,"all attached UI hidden during cinematic");
                     Near(x,f.field.space.HomeX,"one canonical spawn location");
                     Check(MonsterController.ActiveMonsters.Count==0,"no wave spawned under opening");
                     Time.deltaTime=.1f;Call(f.field.space,"Update");Call(f.field.space,"LateUpdate");Call(f.field.combat,"Update");
@@ -59,8 +63,13 @@ partial class MotionRegression
                     Check(f.ui.HitControl(ControlCenter(menuTrigger))==null,"entry owns pointer input");
                     EntryReveal(f);Check(f.manager.IsEnteringGameplay && Time.timeScale==0f,"handoff remains paused");
                     Check(!f.manager.preGameUI.activeInHierarchy,"opening gone before VFX");
+                    x=f.field.space.BattleArea.rect.xMin+f.field.space.Width*.8f;
+                    Near(f.field.space.Position(rect).x,x,"80 percent in BattleArea coordinates before fade");
                     EntryTick(f,.35f);
                     float alpha=SpriteBody(rect).color.a;Check(alpha>0 && alpha<1,"Hero fades during light burst");
+                    Check(!hp.enabled && !damage.enabled && !charge.enabled,"attached UI remains hidden during VFX");
+                    Check(MonsterController.ActiveMonsters.Count==0,"no wave during VFX");
+                    f.field.Step(.1f,true);Near(f.field.space.Position(rect).x,x,"no visible movement or camera pan during VFX");
                     var fx=rect.GetComponent<HeroSpawnVfx>();var image=Get<Image>(fx,"effect");var glow=Get<Image>(fx,"glow");
                     Near(image.color.a,1,"frame Image does not inherit hidden body alpha");
                     Near(image.rectTransform.pivot.y,.09f,"effect anchored to source ground ring");
@@ -71,6 +80,7 @@ partial class MotionRegression
                     EntryTick(f,1f);
                     Check(!f.manager.IsEnteringGameplay && Time.timeScale==1f,"entry completed");
                     Near(SpriteBody(rect).color.a,1,"body restored");Near(f.field.space.Position(rect).x,x,"no second spawn or coordinate correction");
+                    Check(hp.enabled && damage.enabled && charge.enabled && !off.enabled,"original UI enabled states restored only after VFX");
                     Check(MonsterController.ActiveMonsters.Count>0,"wave begins only after VFX");
                     Check(!image.gameObject.activeSelf && !glow.gameObject.activeSelf,"VFX hidden at completion");
                 }
@@ -82,6 +92,18 @@ partial class MotionRegression
                     Check(!f.manager.IsEnteringGameplay && !f.manager.preGameUI.activeInHierarchy && Time.timeScale==1,"manual Load never replays opening");
                     Near(SpriteBody(f.field.hero.heroRect).color.a,1,"Load restores body");EntryTick(f,8);
                     Check(!f.manager.IsEnteringGameplay && f.manager.HeroData.currentLevel==6,"old entry cannot resume");
+                }
+            });
+            Run("W2.2b late UI stays hidden and cancellation restores every original enabled state",()=>{
+                using(var f=new DesktopHotfixFixture(800,true)) {
+                    EntryBody(f);EntryTitle(f,false);
+                    var hp=new GameObject(true).AddComponent<Image>();hp.transform.SetParent(f.field.hero.heroRect,false);
+                    var off=new GameObject(true).AddComponent<Image>();off.transform.SetParent(f.field.hero.heroRect,false);off.enabled=false;
+                    EntryTick(f,.01f);Check(!hp.enabled && !off.enabled,"late-created UI suppressed before rendering");
+                    EntryReveal(f);EntryTick(f,.2f);Check(!hp.enabled,"late UI hidden through reveal");
+                    Check(f.manager.LoadAndContinue(SaveSlot.ManualSave1),"Load cancels entry");
+                    Check(hp.enabled && !off.enabled,"cancellation restores intended states");
+                    Near(SpriteBody(f.field.hero.heroRect).color.a,1,"cancellation restores body");
                 }
             });
             Run("W2.2 return-to-title during VFX cancels fade and can Continue again",()=>{
