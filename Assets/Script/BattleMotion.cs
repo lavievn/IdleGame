@@ -3,6 +3,19 @@ using System;
 // Pure motion rules, in Ground-local units. No Canvas scale or animation scale enters AI.
 public static class BattleMotion
 {
+    public const float DefaultMaxMovementDeltaTime = 1f / 30f;
+    // A render-frame walking budget, NOT a substep loop. Deliberately discard
+    // stall time: replaying a backlog would move too far in this/later renders.
+    // Normal frame times and nominal move speeds are unchanged. Combat, camera,
+    // projectiles, VFX and the global Unity clock do not use this budget.
+    public static float MovementDeltaTime(float elapsed,float maxStep)
+    {
+        if(float.IsNaN(elapsed) || float.IsInfinity(elapsed) || elapsed<=0f)return 0f;
+        if(float.IsNaN(maxStep) || float.IsInfinity(maxStep) || maxStep<=0f)
+            maxStep=DefaultMaxMovementDeltaTime;
+        return Math.Min(elapsed,maxStep);
+    }
+
     public static float Approach(float position, float target, float range, float speed, float deltaTime)
     {
         float gap = Math.Abs(target - position);

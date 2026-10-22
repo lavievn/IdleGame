@@ -19,3 +19,18 @@ Ba tỷ lệ Canvas tương ứng 600/800/1150 được kiểm tra bằng Canvas
 resize cửa sổ Windows. Chưa bao phủ render, chuyển động nhiều frame, combat,
 Retry/Load hay camera handoff thật. Cần kiểm thử gameplay theo checklist trong
 `Tests~/PositionHotfix.md`; PASS của fixture không thay thế nghiệm thu này.
+
+## W2.2j — giới hạn bước di chuyển
+
+Thêm 6 ca NUnit đồng bộ dùng cùng fixture cô lập, giữ các assertion B2 trước
+đây: 3 thế đánh qua VFX thật rồi truyền dt 0.016/0.033/0.1/0.28/0.016; 3 tỷ lệ
+Canvas cho đội B2 ba Hero. Kiểm tra giới hạn runtime mặc định 1/30 giây, quãng
+dịch chuyển logic/screen và không có bước tăng tốc bù. Không tạo SaveManager,
+không truy cập filesystem, không thay đổi Time.timeScale.
+
+**Các ca mới chưa được biên dịch/chạy bằng Unity Editor trong Cloud.** Chúng
+truyền dt tường minh vào TickMovement; không tạo stall CPU/GPU 280 ms thật,
+không chạy vòng entry đầy đủ hoặc camera nhiều frame. Vẫn cần nghiệm thu native
+New/Continue/Load/Travel/Retry/Reset, camera sau VFX và Windows Player; xem
+`Tests~/HeroMovementSpike.md`. Chỉ dùng TestCase/Assert.That đã có trong fixture,
+không dùng các API NUnit từng không tương thích ở W1.6.

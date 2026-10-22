@@ -211,5 +211,79 @@ namespace IdleGame.Tests.Presentation.PlayMode
                 }
             }
         }
+
+        static Vector2 NativeFootScreen(Component hero)
+        {
+            var root=(RectTransform)Get(hero,"heroRect");
+            var bridge=root.GetComponent(Runtime("CultivationSpriteBridge"));
+            var image=(Component)Get(bridge,"BodyGraphic");
+            var rect=(RectTransform)image.transform;
+            Vector2 uv=(Vector2)Get(bridge,"BodyReferenceFootUV");
+            var bounds=rect.rect;
+            return RectTransformUtility.WorldToScreenPoint(null,rect.TransformPoint(
+                new Vector3(bounds.xMin+bounds.width*uv.x,bounds.yMin+bounds.height*uv.y,0)));
+        }
+
+        [TestCase(0,450f)]
+        [TestCase(1,450f)]
+        [TestCase(2,200f)]
+        public void NativeVfxFinish_InjectedLongWalkingStep_IsBoundedWithoutCatchUp(int mode,float speed)
+        {
+            // Real Unity objects/imported sprites/Canvas/VFX, but injected dt.
+            // Synchronous: does NOT reproduce a 280-ms native render/CPU stall.
+            using(var f=new Fixture(1150f))
+            {
+                Assert.That((float)Get(f.Space,"maxHeroMovementDeltaTime"),Is.EqualTo(1f/30f));
+                Set(f.Primary,"useStanceMoveSpeeds",true);
+                Set(f.Primary,"meleeMoveSpeed",450f);Set(f.Primary,"physicalMoveSpeed",450f);Set(f.Primary,"magicMoveSpeed",200f);
+                Call(f.Primary,"ChangeAttackMode",mode);
+                var rect=(RectTransform)Get(f.Primary,"heroRect");
+                Call(f.Space,"SetPosition",rect,new Vector2(576,0));
+                var fx=(Component)Runtime("HeroSpawnVfx").GetMethod("Prepare",BindingFlags.Public|BindingFlags.Static)
+                    .Invoke(null,new object[]{f.Primary});
+                Assert.That(Call(fx,"Begin"),Is.True,"Use the real imported Appear sheet.");
+                Call(fx,"Advance",.4f);Canvas.ForceUpdateCanvases();
+                var before=NativeFootScreen(f.Primary);
+                Call(fx,"Advance",1f);Canvas.ForceUpdateCanvases();
+                Assert.That(NativeFootScreen(f.Primary).x,Is.EqualTo(before.x).Within(.01f),"Finish itself does not reposition body.");
+                Assert.That(NativeFootScreen(f.Primary).y,Is.EqualTo(before.y).Within(.01f));
+                Assert.That(Position(f.Space,rect).x,Is.EqualTo(576f).Within(.002f),"80-percent spawn.");
+                foreach(float dt in new[]{.016f,.033f,.1f,.28f,.016f})
+                {
+                    var p=Position(f.Space,rect);before=NativeFootScreen(f.Primary);
+                    Call(f.Primary,"TickMovement",f.Space,dt);Canvas.ForceUpdateCanvases();
+                    float expected=speed*Mathf.Min(dt,1f/30f);
+                    Assert.That(p.x-Position(f.Space,rect).x,Is.EqualTo(expected).Within(.002f));
+                    Assert.That((float)Get(f.Primary,"MovementDeltaThisFrame"),Is.EqualTo(Mathf.Min(dt,1f/30f)));
+                    Assert.That(NativeFootScreen(f.Primary).x-before.x,
+                        Is.EqualTo(-expected*f.Canvas.scaleFactor).Within(.01f),"Native screen displacement is bounded; no residual debt.");
+                }
+            }
+        }
+
+        [TestCase(600f)]
+        [TestCase(800f)]
+        [TestCase(1150f)]
+        public void NativeB2Party_InjectedLongWalkingStep_UsesSameBudget(float projectionWidth)
+        {
+            using(var f=new Fixture(projectionWidth))
+            {
+                Call(f.Manager,"CycleTestCompanions");Call(f.Manager,"CycleTestCompanions");
+                Assert.That(f.Heroes.Count,Is.EqualTo(3));
+                var positions=new Dictionary<Component,Vector2>();
+                foreach(Component hero in f.Heroes)positions.Add(hero,Position(f.Space,(RectTransform)Get(hero,"heroRect")));
+                foreach(Component hero in f.Heroes)Call(hero,"TickMovement",f.Space,.28f);
+                Canvas.ForceUpdateCanvases();
+                foreach(Component hero in f.Heroes)
+                {
+                    float speed=(float)Call(hero,"EffectiveMoveSpeed");
+                    var rect=(RectTransform)Get(hero,"heroRect");
+                    float distance=positions[hero].x-Position(f.Space,rect).x;
+                    Assert.That(distance,Is.GreaterThanOrEqualTo(0f));
+                    Assert.That(distance,Is.LessThanOrEqualTo(speed/30f+.002f));
+                    Assert.That((float)Get(hero,"MovementDeltaThisFrame"),Is.EqualTo(1f/30f));
+                }
+            }
+        }
     }
 }

@@ -68,7 +68,7 @@ partial class MotionRegression
         public RectTransform ground,grass;
         public MonsterSpawner spawner;
         public CombatManager combat;
-        public Field(float scale=1f)
+        public Field(float scale=1f,bool limitRenderMovement=false)
         {
             // A fresh simulated scene cannot inherit the previous scene's
             // asynchronous map-entry pause. Individual pause cases set it later.
@@ -79,6 +79,11 @@ partial class MotionRegression
             ground=(RectTransform)new GameObject(true).transform;ground.sizeDelta=new Vector2(1000,100);ground.localScale=new Vector3(scale,scale,1);
             grass=(RectTransform)new GameObject(true).transform;grass.parent=ground;grass.anchoredPosition=new Vector2(600,0);grass.sizeDelta=new Vector2(200,100);
             space=new GameObject().AddComponent<EnvironmentManager>();
+            // Historical math/AI tests advance seconds in a single call; those
+            // are elapsed-time slices, not render frames. Keep that reference
+            // explicit without changing their assertions. Hitch tests opt into
+            // the production 1/30 budget; native fixtures keep runtime defaults.
+            if(!limitRenderMovement)space.maxHeroMovementDeltaTime=float.MaxValue;
             space.useMultiZoneCamera=false; // Explicit legacy camera reference; W2.2h has its own default-on cases.
             // Existing camera tests describe the original hard-zone behavior.
             // Keep that reference available; new tests exercise soft chasing.
@@ -106,6 +111,7 @@ partial class MotionRegression
 
     static void Main(string[] args)
     {
+        if(args.Length==1 && args[0]=="--movement-spike") { HeroMovementSpikeTests();return; }
         if(args.Length==1 && args[0]=="--render-trace") { HeroRenderTraceTests();return; }
         if(args.Length==1 && args[0]=="--position-hotfix") { B2SpawnPositionTests();return; }
         if(args.Length==1 && args[0]=="--multi-zone") { MultiZoneCameraTests();return; }
@@ -133,6 +139,7 @@ partial class MotionRegression
         CameraEntryHandoffTests();
         WorldEntryTraceTests();
         HeroRenderTraceTests();
+        HeroMovementSpikeTests();
         WaveEntryTests();
         DistanceWaveTests();
         FormationTests();

@@ -68,7 +68,12 @@ public sealed class HeroRenderProbe : MonoBehaviour
     }
     private void OnDisable() { StopTracing(); }
     private void OnDestroy() { StopTracing(); }
-    private void Sample(string stage) { Debug.Log(Describe(owner,stage)); }
+    private void Sample(string stage)
+    {
+        // Stack traces on every render-stage log add Console work/allocations.
+        // Retain the stage/frame data without repeatedly formatting a call stack.
+        Debug.LogFormat(LogType.Log,LogOption.NoStacktrace,null,"{0}",Describe(owner,stage));
+    }
 
     // A reference point in an Image's full rect, NOT its alpha silhouette.
     // Pixel-adjusted rect observes native Canvas pixel rounding without rebuilding.
@@ -100,6 +105,10 @@ public sealed class HeroRenderProbe : MonoBehaviour
             .Append(" dt=").Append(N(Time.deltaTime)).Append(" unscaledDt=").Append(N(Time.unscaledDeltaTime))
             .Append(" timeScale=").Append(N(Time.timeScale)).Append(" state=").Append(hero.CurrentState)
             .Append(" moved=").Append(N(hero.MovementDistanceThisFrame))
+            .Append(" movementFrame=").Append(hero.MovementFrame)
+            .Append(" movementInputDt=").Append(N(hero.MovementInputDeltaThisFrame))
+            .Append(" movementDt=").Append(N(hero.MovementDeltaThisFrame))
+            .Append(" discardedMovementDt=").Append(N(hero.MovementInputDeltaThisFrame-hero.MovementDeltaThisFrame))
             .Append(" mode=").Append(hero.attackMode).Append(" pose=").Append(bridge!=null?bridge.CurrentPose.ToString():"fallback")
             .Append(" window=").Append(Screen.width).Append('x').Append(Screen.height)
             .Append(" canvasPath=").Append(canvas!=null?Path(canvas.transform):"none")

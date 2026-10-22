@@ -53,6 +53,8 @@ public class HeroController : MonoBehaviour
     public int MovementFrame { get; private set; }=-1;
     public bool IsExplorationMovement { get; private set; }
     public float MovementBudgetThisFrame { get; private set; }
+    public float MovementInputDeltaThisFrame { get; private set; }
+    public float MovementDeltaThisFrame { get; private set; }
     // Identity of the CURRENT deployed life, not the reusable GameObject.
     public int SpawnVersion { get; private set; }
 
@@ -141,9 +143,13 @@ public class HeroController : MonoBehaviour
     {
         MovementFrame=Time.frameCount;IsExplorationMovement=false;
         MovementBudgetThisFrame=0f;
+        MovementInputDeltaThisFrame=MovementDeltaThisFrame=0f;
         MovementDistanceThisFrame = 0f;
         if (!IsDeployed) { LastMovementSpeed=0f;return; }
-        MovementBudgetThisFrame=EffectiveMoveSpeed()*Mathf.Max(0f,dt);
+        MovementInputDeltaThisFrame=float.IsNaN(dt)||float.IsInfinity(dt)?0f:Mathf.Max(0f,dt);
+        dt=space.HeroMovementDeltaTime(dt);
+        MovementDeltaThisFrame=dt;
+        MovementBudgetThisFrame=EffectiveMoveSpeed()*dt;
         TracePositionFrame("TickMovement before");
         attackRange = space.AttackRange(attackMode, true);
         // Keep an in-range target during a strike; otherwise rescan the closest eligible opponent.
@@ -297,6 +303,9 @@ public class HeroController : MonoBehaviour
             " dt="+Number(Time.deltaTime)+" unscaledDt="+Number(Time.unscaledDeltaTime)+
             " timeScale="+Number(Time.timeScale)+" state="+CurrentState+
             " speed="+Number(EffectiveMoveSpeed())+" walked="+Number(MovementDistanceThisFrame)+
+            " movementFrame="+MovementFrame+" movementInputDt="+Number(MovementInputDeltaThisFrame)+
+            " movementDt="+Number(MovementDeltaThisFrame)+
+            " discardedMovementDt="+Number(MovementInputDeltaThisFrame-MovementDeltaThisFrame)+
             " anchor="+Pair(heroRect.anchoredPosition)+" battle="+Pair(space.Position(heroRect))+
             " heroLocal="+Triple(heroRect.localPosition)+" heroWorld="+Triple(heroRect.position)+
             " heroParent="+(heroRect.parent!=null?heroRect.parent.gameObject.name:"none")+
@@ -362,6 +371,7 @@ public class HeroController : MonoBehaviour
 
     private void ResetFeedback()
     {
+        MovementInputDeltaThisFrame=MovementDeltaThisFrame=0f;
         HeroSpawnVfx.Cancel(heroRect);
         CultivationSpriteBridge.ResetPose(heroRect);
         if (chargeBar != null) chargeBar.Set(false, 0f);

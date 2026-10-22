@@ -347,11 +347,14 @@ namespace UnityEngine.Events {
  public class UnityEvent { private UnityAction callback;public void AddListener(UnityAction a){callback+=a;} public void Invoke(){if(callback!=null)callback();} }
 }
 namespace UnityEngine {
+ public enum LogType { Log }
+ public enum LogOption { NoStacktrace }
  public static class Application { public static string persistentDataPath=System.IO.Path.Combine(System.IO.Path.GetTempPath(),"idle-tests-"+Guid.NewGuid());public static string streamingAssetsPath=System.IO.Path.GetTempPath();public static void Quit(){} }
  public static class Debug {
      // Opt-in observation for diagnostics regressions; silent by default.
      public static System.Action<string> LogObserver;
      public static void Log(string s){if(LogObserver!=null)LogObserver(s);}
+     public static void LogFormat(LogType type,LogOption option,Object context,string format,params object[] args) { Log(string.Format(format,args)); }
      public static void LogWarning(string s){}
      public static void LogError(string s){System.Console.Error.WriteLine(s); }
  }

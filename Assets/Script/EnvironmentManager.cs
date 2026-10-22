@@ -18,6 +18,14 @@ public class EnvironmentManager : MonoBehaviour
 
     [Min(0f)] public float scrollSpeed = 150f;
 
+    [Header("HERO WALKING — render-frame safety (not the camera/combat clock)")]
+    [Tooltip("Hero/B2 walking alone discards stall time above this limit; no catch-up backlog. Below 30 FPS walking intentionally slows. Monsters, camera and combat retain Time.deltaTime.")]
+    [Min(.001f)] public float maxHeroMovementDeltaTime=BattleMotion.DefaultMaxMovementDeltaTime;
+    public float HeroMovementDeltaTime(float elapsed)
+    {
+        return Time.timeScale<=0f?0f:BattleMotion.MovementDeltaTime(elapsed,maxHeroMovementDeltaTime);
+    }
+
     [Header("VÙNG CAMERA - tỷ lệ chiều rộng Ground")]
     [Range(0.2f, 0.8f)] public float explorationHeroX = 0.5f;
     [Range(0f, 1f)] public float speedZoneLeft = 0.06f;
