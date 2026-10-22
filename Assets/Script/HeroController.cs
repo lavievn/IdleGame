@@ -19,6 +19,11 @@ public class HeroController : MonoBehaviour
     public float attackRange = 30f;
     [Min(0f)] public float moveSpeed = 150f;
     [Min(0f)] public float laneSpeed = 150f;
+    [Header("W2 MOVEMENT TEST DEFAULTS (not saved)")]
+    public bool useStanceMoveSpeeds;
+    [Min(0f)] public float meleeMoveSpeed=450f;
+    [Min(0f)] public float physicalMoveSpeed=450f;
+    [Min(0f)] public float magicMoveSpeed=200f;
     [Header("UI ELEMENTS")]
     public Image hpFillImage;
     public TextMeshProUGUI dmgTextPrototype;
@@ -106,9 +111,15 @@ public class HeroController : MonoBehaviour
     {
         var manager = CombatManager.Instance;
         var state = manager != null ? manager.StateFor(this) : null;
-        return state == null || state.Data == null ? Mathf.Max(0f,moveSpeed) :
+        // DEVB remains an explicit override. Gear/passive/stance modifiers are
+        // applied AFTER choosing the base; neither data nor isDirty is changed.
+        float baseSpeed=useStanceMoveSpeeds && CombatBalance.HeroDev==null
+            ? attackMode==AttackMode.Melee?meleeMoveSpeed:
+                attackMode==AttackMode.RangedPhysical?physicalMoveSpeed:magicMoveSpeed
+            : moveSpeed;
+        return state == null || state.Data == null ? Mathf.Max(0f,baseSpeed) :
             Mathf.Max(0f,CombatStats.Get(state.Data,CombatStatId.MovementSpeed,
-                moveSpeed,ElementType.Vo,new [] { CombatStats.StanceTag(attackMode) }));
+                baseSpeed,ElementType.Vo,new [] { CombatStats.StanceTag(attackMode) }));
     }
 
     public void TickMovement(EnvironmentManager space, float dt)
@@ -120,6 +131,16 @@ public class HeroController : MonoBehaviour
         if (CurrentTarget == null || !CanAttack(CurrentTarget, space)) CurrentTarget = FindClosestMonster(space);
         Vector2 p = space.Position(heroRect);
         float startX = p.x;
+        float formationX;
+        if(HeroFormation.TryStep(this,space,dt,out formationX))
+        {
+            CurrentState=HeroState.Returning;
+            p.x=formationX;
+            MovementDistanceThisFrame=Mathf.Abs(p.x-startX);
+            space.SetPosition(heroRect,p);
+            HandleAnimation(MovementDistanceThisFrame>.001f,false);
+            return;
+        }
         if (CurrentTarget == null)
         {
             CurrentState = HeroState.Returning;
@@ -176,7 +197,9 @@ public class HeroController : MonoBehaviour
     public void SpawnHero() { SpawnHero(true); }
 
     // Test companions must not steal camera focus from the active subject.
-    public void SpawnHero(bool followCamera)
+    public void SpawnHero(bool followCamera) { SpawnHero(followCamera,null); }
+
+    public void SpawnHero(bool followCamera,Vector2? initialPosition)
     {
         if (heroRect == null) return;
         SpawnVersion++;
@@ -194,7 +217,7 @@ public class HeroController : MonoBehaviour
         var space = EnvironmentManager.Instance;
         if (space != null && space.BattleArea != null)
         {
-            space.SetPosition(heroRect, new Vector2(space.HomeX, 0f));
+            space.SetPosition(heroRect, initialPosition ?? new Vector2(space.HomeX, 0f));
             if (followCamera) space.FollowHero(this);
         }
     }

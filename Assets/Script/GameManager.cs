@@ -42,6 +42,8 @@ public class GameManager : MonoBehaviour
     private readonly List<TestCompanion> testCompanions = new List<TestCompanion>();
     public int TestCompanionCount => testCompanions.Count;
     public const int TestCompanionLimit = 2;
+    [Header("W2 MOVEMENT TEST")]
+    public bool useW2StanceMoveSpeeds=true;
 
     private static T CorrespondingVisual<T>(
         RectTransform original, RectTransform clone, T originalComponent) where T : Component
@@ -130,6 +132,10 @@ public class GameManager : MonoBehaviour
             actor.atkStatusText = null; // Independent data, no duplicate HUD.
             actor.moveSpeed = heroController.moveSpeed;
             actor.laneSpeed = heroController.laneSpeed;
+            actor.useStanceMoveSpeeds=useW2StanceMoveSpeeds;
+            actor.meleeMoveSpeed=heroController.meleeMoveSpeed;
+            actor.physicalMoveSpeed=heroController.physicalMoveSpeed;
+            actor.magicMoveSpeed=heroController.magicMoveSpeed;
             actor.attackMode = RandomUnusedTestMode();
 
             data = Instantiate(runtimeHeroData);
@@ -152,12 +158,15 @@ public class GameManager : MonoBehaviour
             data.currentExp = 0;
             data.isDirty = false;
 
-            rig.SetActive(true); // Deferred Awake binds damage popup to this actor.
-            actor.SpawnHero(false); // IMPORTANT: never steal the camera subject.
-
             Vector2 origin = environmentManager.Position(heroController.heroRect);
-            environmentManager.SetPosition(rect, origin +
-                new Vector2(30f + number * 25f, number % 2 == 0 ? -25f : 25f));
+            foreach(var peer in HeroController.ActiveHeroes)
+                if(peer!=null && peer.IsDeployed)
+                    origin.x=Mathf.Max(origin.x,environmentManager.Position(peer.heroRect).x);
+            var formation=environmentManager.GetComponent<HeroFormation>();
+            float gap=formation!=null?Mathf.Max(1f,formation.spacing):100f;
+            Vector2 spawn=origin+new Vector2(gap,number%2==0?-25f:25f);
+            rig.SetActive(true); // Deferred Awake binds damage popup to this actor.
+            actor.SpawnHero(false,spawn); // One initial placement; never steal camera focus.
 
             actor.SetIdentityVisual(data);
             var image = rect.GetComponent<Image>();
@@ -260,6 +269,7 @@ public class GameManager : MonoBehaviour
         if (heroController == null) heroController = Object.FindFirstObjectByType<HeroController>();
         if (combatManager == null) combatManager = GetComponent<CombatManager>();
         if (saveManager == null) saveManager = GetComponent<SaveManager>();
+        if(heroController!=null)heroController.useStanceMoveSpeeds=useW2StanceMoveSpeeds;
 
         if (gameOverPanel != null) gameOverPanel.SetActive(false);
         if (confirmationPopup != null) confirmationPopup.SetActive(false);
@@ -393,6 +403,7 @@ public class GameManager : MonoBehaviour
         }
         hasDeployed = true;
         ClearTestCompanions();
+        heroController.useStanceMoveSpeeds=useW2StanceMoveSpeeds;
         if (combatManager != null) combatManager.SetupHeroInfo(runtimeHeroData);
         heroController.SpawnHero();
         if(cinematic)
@@ -714,6 +725,7 @@ public class GameManager : MonoBehaviour
         if (gameOverPanel != null) gameOverPanel.SetActive(false);
         hasDeployed = true;
         ClearTestCompanions();
+        heroController.useStanceMoveSpeeds=useW2StanceMoveSpeeds;
         if (combatManager != null) combatManager.SetupHeroInfo(runtimeHeroData);
         heroController.SpawnHero();
         RestoreProgress();

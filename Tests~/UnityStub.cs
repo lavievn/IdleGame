@@ -15,7 +15,7 @@ namespace UnityEngine
         public static GameObject Instantiate(GameObject source, Transform parent) {
             var g = new GameObject(source.transform is RectTransform);g.name=source.name;g.transform.parent=parent;
             foreach(var c in source.components) { if(c is Transform)continue; var copy=(Component)Activator.CreateInstance(c.GetType());
-                foreach(var f in c.GetType().GetFields()) f.SetValue(copy,f.GetValue(c));copy.gameObject=g;g.components.Add(copy); }
+                foreach(var f in c.GetType().GetFields(BindingFlags.Instance|BindingFlags.Public)) f.SetValue(copy,f.GetValue(c));copy.gameObject=g;g.components.Add(copy); }
             foreach(Transform child in source.transform)Instantiate(child.gameObject,g.transform);return g;
         }
         public static T[] FindObjectsByType<T>(FindObjectsInactive inactive, FindObjectsSortMode sort) where T:Object { var list=new List<T>();foreach(var o in objects)if(o is T)list.Add((T)o);return list.ToArray(); }
