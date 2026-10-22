@@ -46,6 +46,7 @@ namespace UnityEngine
     public class ScriptableObject : Object { }
     public class GameObject : Object
     {
+        public int layer;
         public string name = "New Game Object";
         public bool activeSelf = true;
         public bool activeInHierarchy { get { return activeSelf && (transform.parent == null || transform.parent.gameObject.activeInHierarchy); } }
@@ -164,7 +165,13 @@ namespace UnityEngine
         public Texture2D texture = new Texture2D(2,2,TextureFormat.RGBA32,false);
         public Rect textureRect = new Rect(0,0,2,2);
         public Rect rect = new Rect(0,0,2,2);
+        public static Sprite Create(Texture2D texture,Rect rect,Vector2 pivot,float pixelsPerUnit,
+            uint extrude=0,SpriteMeshType meshType=SpriteMeshType.Tight)
+        {
+            return new Sprite { texture=texture,rect=rect,textureRect=rect };
+        }
     }
+    public enum SpriteMeshType { FullRect, Tight }
     public class TextAsset : Object
     {
         public string text;
@@ -243,6 +250,7 @@ namespace UnityEngine
         public static void Save() { }
     }
     public class SerializeField : Attribute { }
+    public class HideInInspector : Attribute { }
     public class TooltipAttribute : Attribute { public TooltipAttribute(string s){} }
     public class HeaderAttribute : Attribute { public HeaderAttribute(string s) { } }
     public class ContextMenu : Attribute { public ContextMenu(string s) { } }

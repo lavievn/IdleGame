@@ -91,8 +91,10 @@ partial class MotionRegression
         public List<CombatManager.ActiveMonsterInfo> Enemies { get { return Get<List<CombatManager.ActiveMonsterInfo>>(combat,"activeMonsters"); } }
     }
 
-    static void Main()
+    static void Main(string[] args)
     {
+        SpritePresentationTests();
+        if (args.Length == 1 && args[0] == "--sprites") return;
         WorldMapRegressionTests();
         ManualLoadUiRegressionTests();
         Run("six-vertex polygon uses true shape, not rectangular hitbox", () => {

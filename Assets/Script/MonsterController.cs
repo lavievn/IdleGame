@@ -144,11 +144,13 @@ public class MonsterController : MonoBehaviour
         attackMode = (AttackMode)Random.Range(0, 3);
         var space = EnvironmentManager.Instance;
         if (space != null && space.Width > 0f) attackRange = space.AttackRange(attackMode, false);
+        CultivationSpriteBridge.AttachMonster(this);
     }
 
     public void MarkDead()
     {
         currentState = MonsterState.Dead;
+        CultivationSpriteBridge.ResetPose(rect);
         UpdateChargeBar(false, 0f);
         CurrentTarget = null;
         ActiveMonsters.Remove(this);
@@ -156,6 +158,7 @@ public class MonsterController : MonoBehaviour
 
     private void ResetFeedback()
     {
+        CultivationSpriteBridge.ResetPose(rect);
         if (chargeBar != null) chargeBar.Set(false, 0f);
         if (attackFeedbackCoroutine != null) StopCoroutine(attackFeedbackCoroutine);
         if (fadeDmgCoroutine != null) StopCoroutine(fadeDmgCoroutine);
@@ -188,6 +191,8 @@ public class MonsterController : MonoBehaviour
     }
     public void PlayAttackFeedback()
     {
+        if (!IsAlive) return;
+        CultivationSpriteBridge.Attack(rect);
         if (attackFeedbackCoroutine != null) StopCoroutine(attackFeedbackCoroutine);
         attackFeedbackCoroutine = StartCoroutine(AttackFeedbackRoutine());
     }
@@ -202,6 +207,7 @@ public class MonsterController : MonoBehaviour
     public void ShowDamage(int damageAmount) { ShowDamage(damageAmount, -1f); }
     public void ShowDamage(int damageAmount, float awaySign)
     {
+        if (IsAlive) CultivationSpriteBridge.Hit(rect);
         if (dmgTextPrototype == null) return;
         if (damageTextRect == null) AlignDamageTextToBody();
         if (damageTextRect == null) return;
