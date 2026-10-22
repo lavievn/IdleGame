@@ -95,6 +95,7 @@ public class HeroController : MonoBehaviour
         if (modeIndex < 0 || modeIndex > 2) return;
         attackMode = (AttackMode)modeIndex;
         UpdateChargeBar(false, 0f);
+        CultivationSpriteBridge.AttachHero(this);
         if (!IsDead) CurrentState = HeroState.Idle;
     }
 
@@ -183,6 +184,7 @@ public class HeroController : MonoBehaviour
         CurrentState = HeroState.Returning;
         deployed = true;
         heroRect.gameObject.SetActive(true);
+        CultivationSpriteBridge.AttachHero(this);
         if (!ActiveHeroes.Contains(this)) ActiveHeroes.Add(this);
         if (!VisibleHeroes.Contains(this)) VisibleHeroes.Add(this);
         Canvas.ForceUpdateCanvases();
@@ -260,6 +262,7 @@ public class HeroController : MonoBehaviour
     public void PlayAttackFeedback()
     {
         if (heroRect == null) return;
+        CultivationSpriteBridge.Attack(heroRect);
         if (attackFeedbackCoroutine != null) StopCoroutine(attackFeedbackCoroutine);
         attackFeedbackCoroutine = StartCoroutine(AttackFeedbackRoutine());
     }
@@ -305,6 +308,7 @@ public class HeroController : MonoBehaviour
     public void ShowDamage(int damageAmount) { ShowDamage(damageAmount, 1f); }
     public void ShowDamage(int damageAmount, float awaySign)
     {
+        CultivationSpriteBridge.Hit(heroRect);
         if (dmgTextPrototype == null) return;
         if (damageTextRect == null) AlignDamageTextToBody();
         if (damageTextRect == null) return;

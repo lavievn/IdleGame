@@ -62,6 +62,7 @@ public class MonsterController : MonoBehaviour
         ResetFeedback();
         // Exactly one random roll per activation (including pooled respawns).
         InitRandomAttackMode();
+        CultivationSpriteBridge.AttachMonster(this);
         currentState = MonsterState.PassiveScroll;
         CurrentTarget = null;
         if (!ActiveMonsters.Contains(this)) ActiveMonsters.Add(this);
@@ -188,6 +189,7 @@ public class MonsterController : MonoBehaviour
     }
     public void PlayAttackFeedback()
     {
+        CultivationSpriteBridge.Attack(rect);
         if (attackFeedbackCoroutine != null) StopCoroutine(attackFeedbackCoroutine);
         attackFeedbackCoroutine = StartCoroutine(AttackFeedbackRoutine());
     }
@@ -202,6 +204,7 @@ public class MonsterController : MonoBehaviour
     public void ShowDamage(int damageAmount) { ShowDamage(damageAmount, -1f); }
     public void ShowDamage(int damageAmount, float awaySign)
     {
+        CultivationSpriteBridge.Hit(rect);
         if (dmgTextPrototype == null) return;
         if (damageTextRect == null) AlignDamageTextToBody();
         if (damageTextRect == null) return;
