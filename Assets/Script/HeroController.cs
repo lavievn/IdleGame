@@ -255,8 +255,13 @@ public class HeroController : MonoBehaviour
     // window changes here; no movement/camera/entry state is written.
     public void ArmPositionTrace()
     {
+        ArmPositionTraceForFrames(0);
+    }
+    public void ArmPositionTraceForFrames(int minimumFrames)
+    {
         if(tracePositionChanges)
-            positionTraceUntilFrame=Time.frameCount+Mathf.Clamp(positionTraceFrameCount,1,120)-1;
+            positionTraceUntilFrame=Time.frameCount+
+                Mathf.Clamp(Mathf.Max(positionTraceFrameCount,minimumFrames),1,120)-1;
     }
     public void TracePositionFrame(string stage)
     {
@@ -286,6 +291,9 @@ public class HeroController : MonoBehaviour
             " speed="+Number(EffectiveMoveSpeed())+" walked="+Number(MovementDistanceThisFrame)+
             " anchor="+Pair(heroRect.anchoredPosition)+" battle="+Pair(space.Position(heroRect))+
             " heroLocal="+Triple(heroRect.localPosition)+" heroWorld="+Triple(heroRect.position)+
+            " heroParent="+(heroRect.parent!=null?heroRect.parent.gameObject.name:"none")+
+            " heroSize="+Pair(heroRect.rect.size)+" heroPivot="+Pair(heroRect.pivot)+
+            " heroAnchors="+Pair(heroRect.anchorMin)+Pair(heroRect.anchorMax)+" heroScale="+Triple(heroRect.localScale)+
             " HomeX="+Number(space.HomeX)+" focus="+Number(space.CurrentCameraFocusX)+
             " filteredFocus="+Number(space.CurrentCameraSmoothedFocusX)+" cameraSpeed="+Number(space.CurrentCameraSpeed)+
             " pan="+Number(space.LastAppliedCameraPan)+" backgroundSpeed="+Number(space.CurrentBackgroundSpeed)+
@@ -293,6 +301,7 @@ public class HeroController : MonoBehaviour
             " groundAnchor="+Pair(space.BattleArea.anchoredPosition)+
             " groundLocal="+Triple(space.BattleArea.localPosition)+" groundWorld="+Triple(space.BattleArea.position)+
             " groundScale="+Triple(space.BattleArea.localScale)+" groundPivot="+Pair(space.BattleArea.pivot)+
+            " groundHeight="+Number(space.BattleArea.rect.height)+
             " battleWidth="+Number(space.Width)+" window="+Screen.width+"x"+Screen.height+
             " windowWidth="+Screen.width+
             " canvasScale="+(canvas!=null?Number(canvas.scaleFactor):"none")+
@@ -303,6 +312,7 @@ public class HeroController : MonoBehaviour
             " terrainPhase="+(terrain!=null?Number(terrain.TilePhase):"none")+
             " farPhase="+(terrain!=null?Number(terrain.FarPhase):"none")+
             " distantPhase="+(terrain!=null?Number(terrain.DistantPhase):"none")+" screen="+Pair(screen)+
+            (terrain!=null?terrain.DescribeLayoutTrace():"")+
             (manager!=null?manager.DescribeGameplayEntry():" manager=none");
     }
     private static string Number(float value) { return value.ToString("R",System.Globalization.CultureInfo.InvariantCulture); }

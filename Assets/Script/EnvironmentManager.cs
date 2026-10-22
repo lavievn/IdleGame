@@ -59,7 +59,31 @@ public class EnvironmentManager : MonoBehaviour
     private readonly DeadzoneCamera deadzoneCamera = new DeadzoneCamera();
     private float plannedCameraPan, plannedBackgroundPan;
     private bool hasPlannedPan;
-    public float CameraFollowVelocity => deadzoneCamera.Velocity;
+    public float CameraFollowVelocity => useMultiZoneCamera?multiZoneCamera.Velocity:deadzoneCamera.Velocity;
+
+    [Header("W2 MULTI-ZONE — widths are full fractions of BattleArea; speeds in Ground units/s")]
+    public bool useMultiZoneCamera=true;
+    [Range(.01f,.96f)] public float greenZoneWidth=.2f;
+    [Range(.02f,.98f)] public float yellowZoneWidth=.45f;
+    [Range(.03f,1f)] public float redZoneWidth=.75f;
+    [Min(1f)] public float minFollowSpeed=30f;
+    [Min(1f)] public float maxFollowSpeed=450f;
+    [Min(1f)] public float maxAcceleration=900f;
+    [Min(1f)] public float maxDeceleration=1200f;
+    [Min(1f)] public float correctionSpeed=900f;
+    [Min(.1f)] public float maxCameraStep=48f;
+    private readonly MultiZoneCamera multiZoneCamera=new MultiZoneCamera();
+    private HeroController multiZoneSubject;
+    private bool multiZoneFocusReady;
+    private float previousMultiZoneFocus;
+    public float MultiZoneVelocity => multiZoneCamera.Velocity;
+
+    // Only call while a new map is hidden. Gameplay subject changes never reset velocity.
+    public void ResetCameraForMapEntry()
+    {
+        multiZoneCamera.Reset();combatFocusSmoother.Reset();multiZoneFocusReady=false;multiZoneSubject=null;
+        deadzoneCamera.Reset();stationaryCombatVelocity=0f;hasPlannedPan=false;
+    }
 
     [Header("CAMERA ENTRY ONLY — normal gameplay camera is unchanged")]
     [Min(.1f)] public float cameraEntryDuration=.8f;
@@ -71,10 +95,19 @@ public class EnvironmentManager : MonoBehaviour
 
     public void BeginCameraEntryHandoff()
     {
+        if(useMultiZoneCamera)
+        {
+            // The same bounded controller starts from the hidden map's reset
+            // state; no second velocity or release-to-another-controller phase.
+            IsCameraEntryHandoff=false;
+            traceEntryStartFrame=Time.frameCount;TraceEntryBoundary("unified-follow");return;
+        }
         CancelCameraEntryHandoff();
         deadzoneCamera.Reset();combatFocusSmoother.Reset();stationaryCombatVelocity=0f;
         hasPlannedPan=false;
         if(cameraTarget!=null && cameraTarget.IsDeployed)IsCameraEntryHandoff=true;
+        traceEntryStartFrame=Time.frameCount;
+        TraceEntryBoundary(IsCameraEntryHandoff?"began":"not-started");
     }
     public void CancelCameraEntryHandoff()
     {
@@ -83,6 +116,7 @@ public class EnvironmentManager : MonoBehaviour
         entryCameraElapsed=entryCameraVelocity=entryCameraMatched=0f;
         deadzoneCamera.Reset();combatFocusSmoother.Reset();stationaryCombatVelocity=0f;
         hasPlannedPan=false;
+        TraceEntryBoundary("cancelled");
     }
     private static float EntrySetting(float value,float fallback)
     {
@@ -90,8 +124,22 @@ public class EnvironmentManager : MonoBehaviour
     }
     private void PlanPresentationPan(out float pan,out float background)
     {
+        if(traceEntryPlanFrame!=Time.frameCount)traceEntryPlanCount=0;
+        traceEntryPlanFrame=Time.frameCount;traceEntryPlanCount++;
+        traceEntryWasActive=IsCameraEntryHandoff;
+        traceEntryVelocityBefore=entryCameraVelocity;
+        traceCameraVelocityBefore=CameraFollowVelocity;
+        if(useMultiZoneCamera)
+        {
+            MultiZonePresentationPan(out pan);background=pan;
+            traceCameraVelocityAfter=multiZoneCamera.Velocity;
+            entryCameraRequestedPan=pan;traceRawBackgroundPan=background;
+            return;
+        }
         if(IsCameraEntryHandoff && (cameraTarget==null || !cameraTarget.IsDeployed))CancelCameraEntryHandoff();
         PresentationPan(out pan,out background);
+        traceCameraVelocityAfter=deadzoneCamera.Velocity;
+        traceRawBackgroundPan=background;
         entryCameraRequestedPan=pan;
         if(!IsCameraEntryHandoff || Time.timeScale==0f || Time.deltaTime<=0f)return;
         float speed=EntrySetting(cameraEntryMaxSpeed,450f);
@@ -99,6 +147,7 @@ public class EnvironmentManager : MonoBehaviour
         // or the original camera's parameters/formula.
         float dt=Mathf.Min(Time.deltaTime,EntrySetting(cameraEntryMaxStep,12f)/speed);
         float wanted=Mathf.Clamp(pan/Time.deltaTime,-speed,speed);
+        traceEntryStepDelta=dt;traceEntryWantedVelocity=wanted;
         entryCameraVelocity=Mathf.MoveTowards(entryCameraVelocity,wanted,
             EntrySetting(cameraEntryAcceleration,900f)*dt);
         entryCameraVelocity=Mathf.Clamp(entryCameraVelocity,-speed,speed);
@@ -112,6 +161,8 @@ public class EnvironmentManager : MonoBehaviour
             deadzoneCamera.Reset();stationaryCombatVelocity=0f;
         }
         entryCameraMatched=matched?entryCameraMatched+Time.deltaTime:0f;
+        traceEntryMatchTime=entryCameraMatched;
+        traceEntryLimitedPan=limited;
         pan=background=limited;
         if(entryCameraElapsed>=EntrySetting(cameraEntryDuration,.8f) && entryCameraMatched>=.1f)
         {
@@ -119,6 +170,7 @@ public class EnvironmentManager : MonoBehaviour
             // exactly, so its current velocity is already safe to continue.
             IsCameraEntryHandoff=false;
             entryCameraElapsed=entryCameraVelocity=entryCameraMatched=0f;
+            TraceEntryBoundary("matched-release");
         }
     }
 
@@ -126,6 +178,24 @@ public class EnvironmentManager : MonoBehaviour
     private int traceUpdateFrame=-1, tracePlanFrame=-1, traceAppliedFrame=-1;
     private float traceActualPan, traceActualBackgroundPan;
     private string tracePanSource="not-run";
+    private int traceEntryStartFrame=-1,traceEntryPlanFrame=-1,traceEntryPlanCount;
+    private bool traceEntryWasActive;
+    private float traceEntryVelocityBefore,traceCameraVelocityBefore,traceCameraVelocityAfter;
+    private float traceRawBackgroundPan,traceEntryStepDelta,traceEntryWantedVelocity,traceEntryMatchTime,traceEntryLimitedPan;
+    private string traceEntryBoundary="none";
+    private int traceEntryBoundaryFrame=-1;
+    private void TraceEntryBoundary(string reason)
+    {
+        traceEntryBoundary=reason;traceEntryBoundaryFrame=Time.frameCount;
+        foreach(var hero in HeroController.ActiveHeroes)
+            if(hero!=null)
+            {
+                // Include the boundary frame plus 30 subsequent frames even if
+                // the original reveal window expired before camera release.
+                hero.ArmPositionTraceForFrames(31);
+                hero.TracePosition("Camera entry "+reason);
+            }
+    }
     public float LastAppliedCameraPan => traceActualPan;
     public string DescribeCameraTrace()
     {
@@ -141,6 +211,16 @@ public class EnvironmentManager : MonoBehaviour
             " cameraEntry="+IsCameraEntryHandoff+" entryCameraElapsed="+TraceNumber(entryCameraElapsed)+
             " entryCameraVelocity="+TraceNumber(entryCameraVelocity)+
             " entryRequestedPan="+TraceNumber(entryCameraRequestedPan)+
+            " entryRawBackgroundPan="+TraceNumber(traceRawBackgroundPan)+
+            " entryPlanWasActive="+traceEntryWasActive+" entryPlanCount="+traceEntryPlanCount+
+            " entryVelocityBefore="+TraceNumber(traceEntryVelocityBefore)+
+            " cameraVelocityBeforePlan="+TraceNumber(traceCameraVelocityBefore)+
+            " cameraVelocityAfterPlan="+TraceNumber(traceCameraVelocityAfter)+
+            " entryStepDt="+TraceNumber(traceEntryStepDelta)+
+            " entryWantedVelocity="+TraceNumber(traceEntryWantedVelocity)+
+            " entryLimitedPan="+TraceNumber(traceEntryLimitedPan)+" entryMatchTime="+TraceNumber(traceEntryMatchTime)+
+            " entryBoundary="+traceEntryBoundary+" entryBoundaryFrame="+traceEntryBoundaryFrame+
+            " multiZone="+useMultiZoneCamera+" multiZoneVelocity="+TraceNumber(multiZoneCamera.Velocity)+
             " cameraTarget="+(cameraTarget!=null?cameraTarget.gameObject.name:"none");
     }
     private static string TraceNumber(float value)
@@ -244,6 +324,10 @@ public class EnvironmentManager : MonoBehaviour
 
     public void FollowHero(HeroController hero)
     {
+        if(useMultiZoneCamera)
+        {
+            cameraTarget=hero;hasPlannedPan=false;return;
+        }
         CancelCameraEntryHandoff();
         if(hero!=null)hero.TracePosition("FollowHero before camera reset");
         cameraTarget = hero;
@@ -272,6 +356,11 @@ public class EnvironmentManager : MonoBehaviour
     // All AI moves before CombatManager.Update. Camera presentation runs after both.
     void Update()
     {
+        // Cover the handoff itself (up to 120 frames) as well as its boundaries.
+        // A stuck handoff cannot enable unbounded frame logging.
+        if((IsCameraEntryHandoff || useMultiZoneCamera) && traceEntryStartFrame>=0 && Time.frameCount-traceEntryStartFrame<120)
+            foreach(var hero in HeroController.ActiveHeroes)
+                if(hero!=null)hero.ArmPositionTraceForFrames(31);
         TraceFrame("Environment.Update before projection/movement");
         traceUpdateFrame=Time.frameCount;
         hasPlannedPan = false;
@@ -318,7 +407,18 @@ public class EnvironmentManager : MonoBehaviour
         // compensation. Advancing the soft camera again here would desync them.
         // CombatManager can kill the camera subject AFTER EnvironmentManager.Update
         // but BEFORE this LateUpdate. Never apply a stale, pre-death camera pan.
-        if (hasPlannedPan && cameraTarget != null && cameraTarget.IsDeployed)
+        if(useMultiZoneCamera && hasPlannedPan)
+        {
+            // A casualty after Update cannot step the velocity controller twice.
+            // Keep this bounded plan for surviving actors; rebase next Update.
+            bool living=false;
+            foreach(var hero in HeroController.ActiveHeroes)
+                if(hero!=null && hero.IsDeployed) { living=true;break; }
+            pan=living?plannedCameraPan:0f;backgroundPan=pan;
+            if(!living)ResetCameraForMapEntry();
+            tracePanSource="planned-multi-zone";
+        }
+        else if (hasPlannedPan && cameraTarget != null && cameraTarget.IsDeployed)
         {
             pan = plannedCameraPan;
             backgroundPan = plannedBackgroundPan;
@@ -336,8 +436,40 @@ public class EnvironmentManager : MonoBehaviour
         traceActualBackgroundPan=backgroundPan;
         CurrentBackgroundSpeed = Time.deltaTime > 0f ? backgroundPan / Time.deltaTime : 0f;
         CurrentCameraSpeed = Time.deltaTime > 0f ? pan / Time.deltaTime : 0f;
+        if(useMultiZoneCamera)previousMultiZoneFocus=CurrentCameraSmoothedFocusX+pan;
         IsScrolling = Mathf.Abs(pan) > 0.01f;
         TraceFrame("Environment.LateUpdate after pan");
+    }
+
+    private void MultiZonePresentationPan(out float pan)
+    {
+        pan=0f;
+        if(Time.timeScale==0f || Time.deltaTime<=0f || battleArea==null || Width<=0f)return;
+        if(cameraTarget==null || !cameraTarget.IsDeployed)
+        {
+            cameraTarget=null;
+            foreach(var hero in HeroController.ActiveHeroes)
+                if(hero!=null && hero.IsDeployed) { cameraTarget=hero;break; }
+        }
+        if(cameraTarget==null)
+        {
+            ResetCameraForMapEntry();CurrentCameraFocusX=CurrentCameraSmoothedFocusX=0f;
+            CurrentCameraFocusCount=0;return;
+        }
+        float heroX=Position(cameraTarget.heroRect).x;int count=1;
+        float raw=cameraUseCombatCenter?CombatCenterX(heroX,out count):heroX;
+        // Preserve the absolute filtered center when the anchor Hero dies or
+        // changes. Retain focus AND pan velocities across gameplay roster changes.
+        if(multiZoneFocusReady && multiZoneSubject!=cameraTarget)
+            combatFocusSmoother.Rebase(previousMultiZoneFocus-heroX-combatFocusSmoother.Offset);
+        multiZoneSubject=cameraTarget;multiZoneFocusReady=true;
+        float offset=combatFocusSmoother.Step(raw-heroX,Time.deltaTime,
+            cameraCombatFocusSmoothTime,cameraCombatFocusMaxSpeed);
+        float focus=heroX+offset;
+        CurrentCameraFocusX=raw;CurrentCameraSmoothedFocusX=focus;CurrentCameraFocusCount=count;
+        pan=multiZoneCamera.Pan(focus,battleArea.rect.xMin,battleArea.rect.xMax,Time.deltaTime,
+            greenZoneWidth,yellowZoneWidth,redZoneWidth,minFollowSpeed,maxFollowSpeed,
+            maxAcceleration,maxDeceleration,correctionSpeed,maxCameraStep);
     }
 
     // Equal-weight center of all deployed Heroes and living, ON-SCREEN monsters.

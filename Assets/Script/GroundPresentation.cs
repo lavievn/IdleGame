@@ -49,6 +49,25 @@ public class GroundPresentation : MonoBehaviour
     public float TilePhase => phase;
     public float ScrollingHeight => grassHeight;
     public Image SourceImage => sourceImage;
+    // Read-only diagnostics sampled both before and after this component's
+    // order-200 layout. Phase wraps alone do not imply a visible world jump.
+    public string DescribeLayoutTrace()
+    {
+        return " terrainLayoutSize="+TracePair(new Vector2(previousWidth,previousHeight))+
+            TraceTile("terrainTile0",tiles)+TraceTile("farTile0",farTiles)+TraceTile("distantTile0",distantTiles);
+    }
+    private static string TraceTile(string label,List<RectTransform> layer)
+    {
+        if(layer.Count==0 || layer[0]==null)return " "+label+"=none";
+        var rect=layer[0];
+        return " "+label+"Anchor="+TracePair(rect.anchoredPosition)+
+            " "+label+"World="+TracePair(rect.position)+" "+label+"Size="+TracePair(rect.rect.size);
+    }
+    private static string TracePair(Vector2 value)
+    {
+        return "("+value.x.ToString("R",System.Globalization.CultureInfo.InvariantCulture)+","+
+            value.y.ToString("R",System.Globalization.CultureInfo.InvariantCulture)+")";
+    }
     public static readonly Color FixedTint = new Color(0.17f, 0.17f, 0.17f, 1f);
 
     public static GroundPresentation Install(EnvironmentManager environment, RectTransform[] details)
@@ -368,6 +387,8 @@ public class GroundPresentation : MonoBehaviour
     {
         Scroll(0f);
         SortDepth();
+        foreach(var hero in HeroController.ActiveHeroes)
+            if(hero!=null)hero.TracePositionFrame("Ground.LateUpdate after layout/depth");
     }
     void OnDestroy()
     {

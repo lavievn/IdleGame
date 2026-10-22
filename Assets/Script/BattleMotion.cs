@@ -293,6 +293,10 @@ public sealed class CombatFocusSmoother
         velocity = 0f;
     }
 
+    // Change the anchor Hero without changing the absolute filtered focus or
+    // its velocity. Only map initialization should discard presentation state.
+    public void Rebase(float delta) { offset += delta; }
+
     public float Step(float rawOffset, float dt, float smoothTime, float maxSpeed)
     {
         if (dt <= 0f) return offset;
@@ -327,5 +331,73 @@ public sealed class CombatFocusSmoother
             velocity = 0f;
         }
         return offset;
+    }
+}
+
+// One velocity controller for map entry AND ordinary gameplay. Ground units/s;
+// no cumulative world offset, camera teleport, coroutine, or separate entry pan.
+public sealed class MultiZoneCamera
+{
+    public float Velocity { get; private set; }
+    public void Reset() { Velocity=0f; }
+    private static float Valid(float value,float fallback)
+        => float.IsNaN(value)||float.IsInfinity(value)||value<=0f?fallback:value;
+    private static float Clamp(float v,float lo,float hi) => Math.Max(lo,Math.Min(hi,v));
+    private static float Blend(float a,float b,float t)
+    {
+        t=Clamp(t,0f,1f);return a+(b-a)*t*t*(3f-2f*t);
+    }
+    public static float ResponseSpeed(float distance,float width,float green,float yellow,float red,
+        float minimum,float maximum,float correction)
+    {
+        green=Clamp(Valid(green,.2f),.01f,.96f)*width*.5f;
+        yellow=Clamp(Valid(yellow,.45f),green*2f/width+.01f,.98f)*width*.5f;
+        red=Clamp(Valid(red,.75f),yellow*2f/width+.01f,1f)*width*.5f;
+        minimum=Valid(minimum,30f);maximum=Math.Max(minimum,Valid(maximum,450f));
+        correction=Math.Max(maximum,Valid(correction,900f));
+        float middle=Math.Max(minimum,maximum*.5f);
+        // Nonzero crawl near the center, bounded by stopping distance below:
+        // a stationary focus reaches rest rather than an endless position Lerp.
+        if(distance<=green)return Blend(minimum*.2f,minimum,distance/green);
+        if(distance<=yellow)return Blend(minimum,middle,(distance-green)/(yellow-green));
+        if(distance<=red)return Blend(middle,maximum,(distance-yellow)/(red-yellow));
+        return Blend(maximum,correction,(distance-red)/Math.Max(1f,width*.5f-red));
+    }
+    public float Pan(float focus,float left,float right,float dt,float green,float yellow,float red,
+        float minimum,float maximum,float acceleration,float deceleration,float correction,float maxStep)
+    {
+        if(dt<=0f || right<=left || float.IsNaN(focus) || float.IsInfinity(focus))return 0f;
+        acceleration=Valid(acceleration,900f);deceleration=Valid(deceleration,1200f);
+        float limit=Math.Max(Valid(maximum,450f),Valid(correction,900f));
+        // A stalled render frame cannot apply an entire catch-up journey at once.
+        float remaining=Math.Min(dt,Valid(maxStep,48f)/limit),pan=0f;
+        while(remaining>0f)
+        {
+            float h=Math.Min(remaining,1f/120f);remaining-=h;
+            float error=(left+right)*.5f-focus-pan;
+            if(Math.Abs(error)<.001f && Math.Abs(Velocity)<.01f) { Velocity=0f;break; }
+            float speed=ResponseSpeed(Math.Abs(error),right-left,green,yellow,red,minimum,maximum,correction);
+            // Brake BEFORE reaching the center. Substeps keep this continuous
+            // across frame rates and through zone boundaries/direction reversals.
+            speed=Math.Min(speed,(float)Math.Sqrt(2f*deceleration*Math.Abs(error)));
+            float desired=Math.Sign(error)*speed;
+            bool braking=Velocity*desired<0f || Math.Abs(desired)<Math.Abs(Velocity);
+            float delta=(braking?deceleration:acceleration)*h;
+            float next=Velocity+Clamp(desired-Velocity,-delta,delta);
+            float step=(Velocity+next)*.5f*h;
+            if(Velocity*desired<0f && Math.Abs(Velocity)<deceleration*h)
+            {
+                // Split a reversal at zero: braking time cannot be reused at
+                // the higher deceleration rate to accelerate the other way.
+                float stopTime=Math.Abs(Velocity)/deceleration,runTime=h-stopTime;
+                next=Math.Sign(desired)*Math.Min(Math.Abs(desired),acceleration*runTime);
+                step=Velocity*stopTime*.5f+next*runTime*.5f;
+            }
+            // Finish a small, physically brakeable final step without oscillation.
+            if(step*error>=0f && Math.Abs(step)>=Math.Abs(error) && Math.Abs(Velocity)<=deceleration*h)
+            { pan+=error;Velocity=0f;break; }
+            pan+=step;Velocity=next;
+        }
+        return pan;
     }
 }

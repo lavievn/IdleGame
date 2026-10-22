@@ -67,6 +67,7 @@ partial class MotionRegression
             ground=(RectTransform)new GameObject(true).transform;ground.sizeDelta=new Vector2(1000,100);ground.localScale=new Vector3(scale,scale,1);
             grass=(RectTransform)new GameObject(true).transform;grass.parent=ground;grass.anchoredPosition=new Vector2(600,0);grass.sizeDelta=new Vector2(200,100);
             space=new GameObject().AddComponent<EnvironmentManager>();
+            space.useMultiZoneCamera=false; // Explicit legacy camera reference; W2.2h has its own default-on cases.
             // Existing camera tests describe the original hard-zone behavior.
             // Keep that reference available; new tests exercise soft chasing.
             space.useSoftZoneCamera=false;
@@ -94,6 +95,7 @@ partial class MotionRegression
     static void Main(string[] args)
     {
         if(args.Length==1 && args[0]=="--position-hotfix") { B2SpawnPositionTests();return; }
+        if(args.Length==1 && args[0]=="--multi-zone") { MultiZoneCameraTests();return; }
         if(args.Length==1 && args[0]=="--distance-waves") { DistanceWaveTests();return; }
         if(args.Length==1 && args[0]=="--soft-formation") { SoftFormationTests();return; }
         if(args.Length==1 && args[0]=="--camera-entry") { CameraEntryHandoffTests();return; }
@@ -112,6 +114,7 @@ partial class MotionRegression
         SpritePresentationTests();
         if (args.Length == 1 && args[0] == "--sprites") return;
         WorldMapRegressionTests();
+        MultiZoneCameraTests();
         CameraEntryHandoffTests();
         WorldEntryTraceTests();
         WaveEntryTests();

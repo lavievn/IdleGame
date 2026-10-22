@@ -161,6 +161,39 @@ partial class MotionRegression
                     Check(hero.SpawnVersion==life,"same deployed life, no second spawn");
                 }
             });
+            Run("position hotfix diagnostics cover handoff release plus 30 frames and final Ground layout",()=>{
+                using(var f=new DesktopHotfixFixture(800,true)) {
+                    WaveEntryScene(f);var hero=f.field.hero;var space=f.field.space;
+                    hero.tracePositionChanges=true;hero.positionTraceFrameCount=1;
+                    var logs=new List<string>();Debug.LogObserver=s=>{if(s.StartsWith("[HeroPosition]"))logs.Add(s);};
+                    WaveEntryFinish(f);int start=Time.frameCount,release=-1;
+                    var terrain=f.field.ground.GetComponent<GroundPresentation>();
+                    for(int i=0;i<1200;i++) {
+                        bool active=space.IsCameraEntryHandoff;
+                        NativeOrderTraceFrame(f,1f/60f);Call(terrain,"LateUpdate");
+                        if(active && !space.IsCameraEntryHandoff) { release=Time.frameCount;break; }
+                    }
+                    Check(release>start,"observed real limiter release in this model");
+                    Check(logs.Exists(s=>s.Contains("Camera entry matched-release")),"explicit release marker");
+                    Check(logs.Exists(s=>s.Contains("Camera entry began")),"explicit begin marker");
+                    var first30=new HashSet<int>();
+                    foreach(var line in logs)if(line.Contains("Ground.LateUpdate after layout/depth")) {
+                        int frame=(int)TraceValue(line,"frame");if(frame>start && frame<=start+30)first30.Add(frame);
+                        Check(line.Contains("terrainTile0World=") && line.Contains("terrainLayoutSize="),"actual tile layout captured after order-200 component");
+                    }
+                    Check(first30.Count==30,"every one of first 30 post-VFX frames captured");
+                    logs.Clear();
+                    for(int i=0;i<31;i++) { NativeOrderTraceFrame(f,1f/60f);Call(terrain,"LateUpdate"); }
+                    var finalFrames=new HashSet<int>();
+                    foreach(var line in logs)if(line.Contains("Ground.LateUpdate after layout/depth")) {
+                        int frame=(int)TraceValue(line,"frame");finalFrames.Add(frame);
+                        Check(frame>release && frame<=release+30,"no unbounded window after release");
+                        Check(line.Contains("entryBoundary=matched-release") && line.Contains("entryPlanWasActive=False"),"ordinary camera phase distinguished from handoff");
+                    }
+                    Check(finalFrames.Count==30,"all 30 subsequent frames covered after late release");
+                }
+                Debug.LogObserver=null;
+            });
             foreach(int width in new[]{600,800,1150})foreach(bool party in new[]{false,true})
             Run("W2.2e opt-in tracing leaves entry/movement/combat/camera/parallax identical "+width+(party?" three Heroes":" solo"),()=>{
                 var logs=new List<string>();Debug.LogObserver=s=>{if(s.StartsWith("[HeroPosition]"))logs.Add(s);};

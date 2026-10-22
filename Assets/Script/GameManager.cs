@@ -514,6 +514,7 @@ public class GameManager : MonoBehaviour
         ClearTestCompanions();
         heroController.useStanceMoveSpeeds=useW2StanceMoveSpeeds;
         if (combatManager != null) combatManager.SetupHeroInfo(runtimeHeroData);
+        ResetEntryCamera();
         heroController.SpawnHero();
         if(cinematic)
         {
@@ -537,6 +538,11 @@ public class GameManager : MonoBehaviour
     {
         if(UIManager.Instance!=null)UIManager.Instance.SetPaused(paused);
         else Time.timeScale=paused?0f:1f;
+    }
+    private void ResetEntryCamera()
+    {
+        var space=environmentManager!=null?environmentManager:EnvironmentManager.Instance;
+        if(space!=null)space.ResetCameraForMapEntry();
     }
     public void OnOpeningRevealCompleted()
     {
@@ -854,6 +860,7 @@ public class GameManager : MonoBehaviour
         ClearTestCompanions();
         heroController.useStanceMoveSpeeds=useW2StanceMoveSpeeds;
         if (combatManager != null) combatManager.SetupHeroInfo(runtimeHeroData);
+        ResetEntryCamera();
         heroController.SpawnHero();
         RestoreProgress();
         if (UIManager.Instance != null) UIManager.Instance.ShowMapTitle(runtimeHeroData.mapName);
@@ -1026,6 +1033,7 @@ public class GameManager : MonoBehaviour
         // Prototype: travel starts a fresh battle from full HP. Reevaluate this
         // explicitly when designing travel costs and injuries.
         if (combatManager != null) combatManager.SetupHeroInfo(runtimeHeroData);
+        ResetEntryCamera();
         if (heroController != null) heroController.SpawnHero();
         RestoreProgress();
         if (UIManager.Instance != null) UIManager.Instance.ShowMapTitle(runtimeHeroData.mapName);
