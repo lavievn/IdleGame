@@ -1,0 +1,11 @@
+{
+  "name": "IdleGame.Presentation.PlayMode",
+  "rootNamespace": "IdleGame.Tests.Presentation.PlayMode",
+  "references": [],
+  "includePlatforms": [],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "autoReferenced": false,
+  "optionalUnityReferences": ["TestAssemblies"],
+  "noEngineReferences": false
+}

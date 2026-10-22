@@ -99,6 +99,7 @@ namespace UnityEngine
         public Rect(float x,float y,float w,float h) { xMin=x;yMin=y;width=w;height=h; }
         public Vector2 size { get { return new Vector2(width,height); } }
         public float xMax { get { return xMin+width; } }
+        public float yMax { get { return yMin+height; } }
         public Vector2 center { get { return new Vector2(xMin+width/2,yMin+height/2); } }
     }
     public struct Vector2

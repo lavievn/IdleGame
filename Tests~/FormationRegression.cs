@@ -214,7 +214,17 @@ partial class MotionRegression
                 }
                 Check(Get<HeroController>(f.field.space,"cameraTarget")==target,"B2 does not steal camera");
                 var members=HeroController.ActiveHeroes;
-                for(int i=1;i<members.Count;i++)Check(f.field.space.Position(members[i].heroRect).x-f.field.space.Position(members[i-1].heroRect).x>=100,"spawn starts separated, never snapped into front slot");
+                // The old always-right assertion put the second companion at
+                // x=500 on a 1000-wide area, beyond the body's valid right edge.
+                // Bounded spawn may use the other side; keep the same minimum
+                // spacing for EVERY pair and additionally require body containment.
+                for(int i=1;i<members.Count;i++) {
+                    CheckB2BodyInside(f.field.space,members[i]);
+                    for(int j=0;j<i;j++)
+                        Check(Mathf.Abs(f.field.space.Position(members[i].heroRect).x-
+                            f.field.space.Position(members[j].heroRect).x)>=100,
+                            "spawn starts separated by at least configured spacing, without moving existing actors");
+                }
             }
         });
         Run("formation regroup follows existing soft camera pan while leader keeps walking",()=>{

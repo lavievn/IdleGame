@@ -93,6 +93,7 @@ partial class MotionRegression
 
     static void Main(string[] args)
     {
+        if(args.Length==1 && args[0]=="--position-hotfix") { B2SpawnPositionTests();return; }
         if(args.Length==1 && args[0]=="--distance-waves") { DistanceWaveTests();return; }
         if(args.Length==1 && args[0]=="--soft-formation") { SoftFormationTests();return; }
         if(args.Length==1 && args[0]=="--camera-entry") { CameraEntryHandoffTests();return; }
@@ -116,6 +117,7 @@ partial class MotionRegression
         WaveEntryTests();
         DistanceWaveTests();
         FormationTests();
+        B2SpawnPositionTests();
         SoftFormationTests();
         SpawnEntryTests();
         DesktopMenuHotfixTests();

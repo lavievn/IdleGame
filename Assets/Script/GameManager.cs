@@ -160,15 +160,21 @@ public class GameManager : MonoBehaviour
             data.currentExp = 0;
             data.isDirty = false;
 
-            Vector2 origin = environmentManager.Position(heroController.heroRect);
-            foreach(var peer in HeroController.ActiveHeroes)
-                if(peer!=null && peer.IsDeployed)
-                    origin.x=Mathf.Max(origin.x,environmentManager.Position(peer.heroRect).x);
-            var formation=environmentManager.GetComponent<HeroFormation>();
-            float gap=formation!=null?Mathf.Max(1f,formation.spacing):100f;
-            Vector2 spawn=origin+new Vector2(gap,number%2==0?-25f:25f);
             rig.SetActive(true); // Deferred Awake binds damage popup to this actor.
+            // Measure this clone AFTER Awake and sprite binding. Never inherit
+            // the source's transient attack/bounce scale as spawn geometry.
+            rect.localScale=Vector3.one;
+            CultivationSpriteBridge.AttachHero(actor);
+            Canvas.ForceUpdateCanvases();
+            Vector2 spawn;
+            if(!TryTestCompanionPosition(actor,out spawn))
+            {
+                Debug.LogWarning("[B2 TEST] No non-overlapping body position fits inside BattleArea.");
+                Destroy(rig);Destroy(visual);Destroy(data);
+                return null;
+            }
             actor.SpawnHero(false,spawn); // One initial placement; never steal camera focus.
+            actor.TracePosition("B2 companion after bounded spawn");
 
             actor.SetIdentityVisual(data);
             var image = rect.GetComponent<Image>();
@@ -194,6 +200,77 @@ public class GameManager : MonoBehaviour
             if (data != null) Destroy(data);
             return null;
         }
+    }
+
+    // Full rendered frame is deliberately conservative: this also contains the
+    // alpha silhouette in every pose, without requiring readable PNG textures.
+    // Convert all four corners through BattleArea, just like Position/SetPosition;
+    // neither screen pixels nor an anchoredPosition from a different parent enter here.
+    private Rect TestCompanionBodyBounds(HeroController actor)
+    {
+        var bridge=actor.heroRect.GetComponent<CultivationSpriteBridge>();
+        var graphic=bridge!=null?bridge.BodyGraphic:actor.heroRect.GetComponent<Image>();
+        var rect=graphic!=null?graphic.rectTransform:actor.heroRect;
+        float minX=float.PositiveInfinity,minY=minX,maxX=float.NegativeInfinity,maxY=maxX;
+        for(int i=0;i<4;i++)
+        {
+            var p=environmentManager.BattleArea.InverseTransformPoint(rect.TransformPoint(new Vector3(
+                i%2==0?rect.rect.xMin:rect.rect.xMax,i<2?rect.rect.yMin:rect.rect.yMax,0f)));
+            minX=Mathf.Min(minX,p.x);minY=Mathf.Min(minY,p.y);
+            maxX=Mathf.Max(maxX,p.x);maxY=Mathf.Max(maxY,p.y);
+        }
+        return new Rect(minX,minY,maxX-minX,maxY-minY);
+    }
+
+    private bool TryTestCompanionPosition(HeroController actor,out Vector2 spawn)
+    {
+        spawn=Vector2.zero;
+        var area=environmentManager.BattleArea.rect;
+        var feet=environmentManager.Position(actor.heroRect);
+        var body=TestCompanionBodyBounds(actor);
+        var offset=new Rect(body.xMin-feet.x,body.yMin-feet.y,body.width,body.height);
+        float left=area.xMin-offset.xMin,right=area.xMax-offset.xMax;
+        float bottom=area.yMin-offset.yMin,top=area.yMax-offset.yMax;
+        // World -> Canvas -> BattleArea round trips can differ by a few float
+        // ULPs even when a 100-unit frame exactly fits the 100-unit Ground.
+        const float conversionEpsilon=.001f;
+        if(left>right+conversionEpsilon || bottom>top+conversionEpsilon)return false;
+        if(left>right)left=right=(left+right)*.5f;
+        if(bottom>top)bottom=top=(bottom+top)*.5f;
+        var origin=environmentManager.Position(heroController.heroRect);
+        float y=Mathf.Clamp(origin.y,bottom,top);
+        var formation=environmentManager.GetComponent<HeroFormation>();
+        float gap=formation!=null?Mathf.Max(1f,formation.spacing):100f;
+        var peers=new List<Rect>();
+        var candidates=new List<float>();
+        float front=origin.x;
+        foreach(var peer in HeroController.ActiveHeroes)
+        {
+            if(peer==null || !peer.IsDeployed)continue;
+            var bounds=TestCompanionBodyBounds(peer);peers.Add(bounds);
+            float x=environmentManager.Position(peer.heroRect).x;
+            front=Mathf.Max(front,x);
+            // First prefer the right, then use the left if the group is near an edge.
+            candidates.Add(Mathf.Max(x+gap,bounds.xMax-offset.xMin+gap*.01f));
+            candidates.Add(Mathf.Min(x-gap,bounds.xMin-offset.xMax-gap*.01f));
+        }
+        candidates.Insert(0,front+gap);
+        foreach(float candidate in candidates)
+        {
+            float x=Mathf.Clamp(candidate,left,right);
+            var next=new Rect(x+offset.xMin,y+offset.yMin,body.width,body.height);
+            bool overlaps=false;
+            foreach(var peer in HeroController.ActiveHeroes)
+                if(peer!=null && peer.IsDeployed &&
+                    Mathf.Abs(x-environmentManager.Position(peer.heroRect).x)<gap-conversionEpsilon)
+                { overlaps=true;break; }
+            foreach(var peer in peers)
+                if(next.xMin<peer.xMax && next.xMax>peer.xMin && next.yMin<peer.yMax && next.yMax>peer.yMin)
+                { overlaps=true;break; }
+            if(overlaps)continue;
+            spawn=new Vector2(x,y);return true;
+        }
+        return false;
     }
 
     private void ClearTestCompanions()
