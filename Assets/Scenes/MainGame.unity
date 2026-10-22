@@ -3816,7 +3816,7 @@ MonoBehaviour:
   combatManager: {fileID: 649540127}
   saveManager: {fileID: 0}
   activeMonsters: []
-  waveDelay: 1.5
+  waveDelay: 5
 --- !u!4 &649540125
 Transform:
   m_ObjectHideFlags: 0

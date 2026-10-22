@@ -42,7 +42,7 @@ partial class MotionRegression
             Near(f.space.CurrentBackgroundSpeed,0,"background stops at right");
             f.hero.Die();f.Step();Near(f.space.CurrentBackgroundSpeed,0,"corpse edge remains still");
         });
-        Run("wave delay inverse speed has hard quarter floor",()=>{
+        Run("legacy WaveDelay helper preserves inverse-speed arithmetic, separate from gameplay scheduler",()=>{
             Near(BattleMotion.WaveDelay(1.5f,150),1.5f,"baseline");
             Near(BattleMotion.WaveDelay(1.5f,300),.75f,"double speed");
             Near(BattleMotion.WaveDelay(1.5f,600),.375f,"quadruple speed");
@@ -50,15 +50,17 @@ partial class MotionRegression
             Near(BattleMotion.WaveDelay(1.5f,75),3f,"slow speed");
             Check(float.IsPositiveInfinity(BattleMotion.WaveDelay(1.5f,0)),"zero pauses");
         });
-        Run("pending wave reacts to speed changes and pauses at zero",()=>{
+        Run("pending wave waits five gameplay seconds regardless of movement speed and pauses with gameplay",()=>{
             var f=new Field();var gm=new GameObject().AddComponent<GameManager>();
             Set(gm,"heroController",f.hero);Set(gm,"hasDeployed",true);
             var e=(IEnumerator)typeof(GameManager).GetMethod("WaitAndCallNextWave",BindingFlags.NonPublic|BindingFlags.Instance).Invoke(gm,null);
-            Check(e.MoveNext(),"starts waiting");Time.deltaTime=.15f;
-            for(int i=0;i<5;i++)Check(e.MoveNext(),"half at base speed");
-            f.hero.moveSpeed=0;for(int i=0;i<100;i++)Check(e.MoveNext(),"zero speed freezes pending progress");
+            Check(e.MoveNext(),"starts waiting");Time.deltaTime=.5f;
+            for(int i=0;i<4;i++)Check(e.MoveNext(),"two gameplay seconds at base speed");
+            Time.timeScale=0;for(int i=0;i<100;i++)Check(e.MoveNext(),"pause freezes progress despite stale delta");
+            Time.timeScale=1;f.hero.moveSpeed=0;
+            for(int i=0;i<4;i++)Check(e.MoveNext(),"stationary Hero does not freeze the next two seconds");
             f.hero.moveSpeed=300;
-            Check(e.MoveNext(),"70 percent");Check(e.MoveNext(),"90 percent");Check(!e.MoveNext(),"finishes using faster rate");
+            Check(e.MoveNext(),"four and a half seconds");Check(!e.MoveNext(),"finishes at five seconds, not faster with Hero speed");
         });
         Run("physical shot damages one target only at impact",()=>{
             var f=new Field();f.hero.ChangeAttackMode(1);var a=f.Monster(-200);var b=f.Monster(-250);f.Battle(a,b);f.hero.TickMovement(f.space,0);

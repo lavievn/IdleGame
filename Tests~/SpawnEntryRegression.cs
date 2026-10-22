@@ -15,11 +15,15 @@ partial class MotionRegression
     static void EntryTick(DesktopHotfixFixture f,float dt)
     {
         Time.unscaledDeltaTime=dt;Call(f.manager,"Update");
+        // Native ordering: Environment (-200) finishes LateUpdate BEFORE the
+        // GameManager releases entry. Never hide a camera-only resume frame.
+        Call(f.field.space,"LateUpdate");Call(f.manager,"LateUpdate");
     }
     static void EntryReveal(DesktopHotfixFixture f)
     {
         Time.unscaledDeltaTime=OpeningCinematicUI.EntrySeconds;
         Call(Get<OpeningCinematicUI>(f.menu,"cinematic"),"Update");
+        Call(f.field.space,"LateUpdate");Call(f.manager,"LateUpdate");
     }
     static void EntryBody(DesktopHotfixFixture f)
     {

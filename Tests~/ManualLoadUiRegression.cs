@@ -75,6 +75,12 @@ partial class MotionRegression
         {
             Time.unscaledDeltaTime=seconds;
             Call(opening,"Update");
+            if(manager.IsEnteringGameplay)
+            {
+                // Opening completion now hands off after the paused camera's
+                // LateUpdate. Keep the original UI assertions unchanged.
+                Call(field.space,"LateUpdate");Call(manager,"LateUpdate");
+            }
         }
         internal void ShowOpening()
         {

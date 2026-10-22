@@ -221,7 +221,7 @@ namespace UnityEngine
         public void Create(){} public void Release(){}
     }
     public enum RenderMode { ScreenSpaceOverlay }
-    public class Canvas : Component { public RenderMode renderMode; public int sortingOrder,sortingLayerID,targetDisplay,additionalShaderChannels; public float scaleFactor; public static void ForceUpdateCanvases() { } }
+    public class Canvas : Component { public RenderMode renderMode;public Camera worldCamera; public int sortingOrder,sortingLayerID,targetDisplay,additionalShaderChannels; public float scaleFactor; public static void ForceUpdateCanvases() { } }
     public static class Time { public static float deltaTime=1f/60f,unscaledDeltaTime=1f/60f,time,timeScale=1f; public static int frameCount; }
     public class AudioClip : Object { public float length = 180f; }
     public class AudioSource : MonoBehaviour
@@ -341,6 +341,7 @@ namespace UnityEngine {
  public static class Debug { public static void Log(string s){} public static void LogWarning(string s){} public static void LogError(string s){System.Console.Error.WriteLine(s); } }
  public static class ColorUtility { public static bool TryParseHtmlString(string s,out Color c){c=new Color();return true;} }
  public static class RectTransformUtility {
+  public static Vector2 WorldToScreenPoint(Camera camera,Vector3 point){if(camera!=null)throw new NotSupportedException("Only modeled screen-overlay projection is supported by UnityStub.");return (Vector2)point;}
   public static bool RectangleContainsScreenPoint(RectTransform r,Vector2 p,object camera=null){ if(r==null)return false;var v=r.InverseTransformPoint(p);return v.x>=r.rect.xMin&&v.x<=r.rect.xMax&&v.y>=r.rect.yMin&&v.y<=r.rect.yMin+r.rect.height; }
   public static bool ScreenPointToLocalPointInRectangle(RectTransform r,Vector2 screen,object camera,out Vector2 local){local=r==null?Vector2.zero:(Vector2)r.InverseTransformPoint(screen);return r!=null;}
  }

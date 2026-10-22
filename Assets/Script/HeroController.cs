@@ -14,6 +14,9 @@ public class HeroController : MonoBehaviour
     public string spawnSkin = "FadeIn_01";
     [Header("SPAWN PRESENTATION")]
     [Min(.1f)] public float spawnVfxScale = 1.4f;
+    [Header("POSITION DIAGNOSTICS (off by default)")]
+    public bool tracePositionChanges;
+    private int positionTraceFrames;
     [Header("COMBAT STATS")]
     public AttackMode attackMode = AttackMode.Melee;
     public float attackRange = 30f;
@@ -52,6 +55,7 @@ public class HeroController : MonoBehaviour
 
     void Awake()
     {
+        TracePosition("Awake before pivot initialization",true);
         if (heroRect != null)
         {
             // Use the feet centre as the logical origin. Scaling feedback no longer
@@ -64,6 +68,7 @@ public class HeroController : MonoBehaviour
         AlignDamageTextToBody();
         if (dmgTextPrototype != null) dmgTextPrototype.alpha = 0f;
         if (atkStatusText != null) atkStatusText.text = "";
+        TracePosition("Awake after pivot initialization");
     }
 
     private void AlignDamageTextToBody()
@@ -126,6 +131,7 @@ public class HeroController : MonoBehaviour
     {
         MovementDistanceThisFrame = 0f;
         if (!IsDeployed) return;
+        if(positionTraceFrames>0)TracePosition("TickMovement before");
         attackRange = space.AttackRange(attackMode, true);
         // Keep an in-range target during a strike; otherwise rescan the closest eligible opponent.
         if (CurrentTarget == null || !CanAttack(CurrentTarget, space)) CurrentTarget = FindClosestMonster(space);
@@ -139,6 +145,7 @@ public class HeroController : MonoBehaviour
             MovementDistanceThisFrame=Mathf.Abs(p.x-startX);
             space.SetPosition(heroRect,p);
             HandleAnimation(MovementDistanceThisFrame>.001f,false);
+            if(positionTraceFrames>0)TracePosition("TickMovement after formation step");
             return;
         }
         if (CurrentTarget == null)
@@ -150,6 +157,7 @@ public class HeroController : MonoBehaviour
             MovementDistanceThisFrame = Mathf.Abs(p.x - startX);
             space.SetPosition(heroRect, p);
             HandleAnimation(true, false);
+            if(positionTraceFrames>0)TracePosition("TickMovement after exploration step");
             return;
         }
 
@@ -160,6 +168,7 @@ public class HeroController : MonoBehaviour
         MovementDistanceThisFrame = Mathf.Abs(p.x - startX);
         space.SetPosition(heroRect, p);
         RefreshCombatState(space);
+        if(positionTraceFrames>0)TracePosition("TickMovement after approach step");
     }
 
     public void RefreshCombatState(EnvironmentManager space)
@@ -202,6 +211,8 @@ public class HeroController : MonoBehaviour
     public void SpawnHero(bool followCamera,Vector2? initialPosition)
     {
         if (heroRect == null) return;
+        if(tracePositionChanges)positionTraceFrames=30;
+        TracePosition("SpawnHero before",true);
         SpawnVersion++;
         gameObject.SetActive(true);
         ResetFeedback();
@@ -220,6 +231,48 @@ public class HeroController : MonoBehaviour
             space.SetPosition(heroRect, initialPosition ?? new Vector2(space.HomeX, 0f));
             if (followCamera) space.FollowHero(this);
         }
+        TracePosition("SpawnHero after");
+    }
+
+    // Read-only diagnostics. Enable on the main HeroController before Play;
+    // capture 30 unpaused frames plus explicit spawn/entry events.
+    public void TracePosition(string stage,bool includeCaller=false)
+    {
+        if(!tracePositionChanges)return;
+        Debug.Log(DescribePosition(stage)+(includeCaller?"\n"+new System.Diagnostics.StackTrace(1,true):""));
+    }
+    public string DescribePosition(string stage)
+    {
+        var space=EnvironmentManager.Instance;
+        if(heroRect==null || space==null || space.BattleArea==null)return "[HeroPosition] "+stage+" references not ready";
+        Canvas canvas=null;
+        for(Transform t=heroRect;t!=null;t=t.parent)
+        {
+            canvas=t.GetComponent<Canvas>();if(canvas!=null)break;
+        }
+        Camera camera=canvas!=null && canvas.renderMode!=RenderMode.ScreenSpaceOverlay?canvas.worldCamera:null;
+        var screen=RectTransformUtility.WorldToScreenPoint(camera,heroRect.position);
+        var terrain=space.BattleArea.GetComponent<GroundPresentation>();
+        return "[HeroPosition] "+stage+" actor="+gameObject.name+" frame="+Time.frameCount+" life="+SpawnVersion+
+            " dt="+Number(Time.deltaTime)+" timeScale="+Number(Time.timeScale)+" state="+CurrentState+
+            " speed="+Number(EffectiveMoveSpeed())+" walked="+Number(MovementDistanceThisFrame)+
+            " anchor="+Pair(heroRect.anchoredPosition)+" battle="+Pair(space.Position(heroRect))+
+            " HomeX="+Number(space.HomeX)+" focus="+Number(space.CurrentCameraFocusX)+
+            " filteredFocus="+Number(space.CurrentCameraSmoothedFocusX)+" cameraSpeed="+Number(space.CurrentCameraSpeed)+
+            " pan="+Number(space.CurrentCameraSpeed*Time.deltaTime)+" backgroundSpeed="+Number(space.CurrentBackgroundSpeed)+
+            " groundAnchor="+Pair(space.BattleArea.anchoredPosition)+
+            " battleWidth="+Number(space.Width)+" windowWidth="+Screen.width+
+            " canvasScale="+(canvas!=null?Number(canvas.scaleFactor):"none")+
+            " terrainPhase="+(terrain!=null?Number(terrain.TilePhase):"none")+
+            " farPhase="+(terrain!=null?Number(terrain.FarPhase):"none")+
+            " distantPhase="+(terrain!=null?Number(terrain.DistantPhase):"none")+" screen="+Pair(screen);
+    }
+    private static string Number(float value) { return value.ToString("R",System.Globalization.CultureInfo.InvariantCulture); }
+    private static string Pair(Vector2 value) { return "("+Number(value.x)+","+Number(value.y)+")"; }
+    void LateUpdate()
+    {
+        if(!tracePositionChanges || positionTraceFrames<=0 || Time.timeScale==0f)return;
+        TracePosition("LateUpdate after camera");positionTraceFrames--;
     }
 
     public void HideHero()

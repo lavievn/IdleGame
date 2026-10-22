@@ -136,6 +136,7 @@ public class GameManager : MonoBehaviour
             actor.meleeMoveSpeed=heroController.meleeMoveSpeed;
             actor.physicalMoveSpeed=heroController.physicalMoveSpeed;
             actor.magicMoveSpeed=heroController.magicMoveSpeed;
+            actor.tracePositionChanges=heroController.tracePositionChanges;
             actor.attackMode = RandomUnusedTestMode();
 
             data = Instantiate(runtimeHeroData);
@@ -208,11 +209,11 @@ public class GameManager : MonoBehaviour
         testCompanions.Clear();
     }
     private Coroutine nextWaveCoroutine;
+    private int waveWaitVersion;
     private int waveSpawnCount, retryWaveSize;
-    [Min(0f)] public float waveDelay = 1.5f;
-    public float CurrentWaveDelay => BattleMotion.WaveDelay(waveDelay,
-        combatManager != null ? Mathf.Max(0f,combatManager.ActiveHeroMovementSpeed) :
-        heroController != null ? Mathf.Max(0f,heroController.moveSpeed) : 150f);
+    [Tooltip("Scaled gameplay seconds after the last monster dies; independent of Hero movement speed.")]
+    [Min(0f)] public float waveDelay = 5f;
+    public float CurrentWaveDelay => Mathf.Max(0f,waveDelay);
     private bool hasDeployed = false;
     private readonly Queue<string> recentEvents = new Queue<string>();
     private readonly Queue<string> recentDamage = new Queue<string>();
@@ -248,6 +249,7 @@ public class GameManager : MonoBehaviour
     private bool manualSelection;
     private StartMenuUI startMenu;
     private bool enteringGameplay, openingRevealed;
+    private bool entryCompletionPending;
     private bool resumeEntryWave;
     private float entryElapsed;
     private HeroSpawnVfx entryVfx;
@@ -441,9 +443,10 @@ public class GameManager : MonoBehaviour
             Vector2 position=space.Position(heroController.heroRect);
             position.x=space.BattleArea.rect.xMin+space.Width*.8f;
             space.SetPosition(heroController.heroRect,position);
+            heroController.TracePosition("80-percent placement before VFX");
         }
         openingRevealed=true;
-        if(entryVfx==null || !entryVfx.Begin())CompleteGameplayEntry();
+        if(entryVfx==null || !entryVfx.Begin())entryCompletionPending=true;
     }
     void Update()
     {
@@ -459,18 +462,19 @@ public class GameManager : MonoBehaviour
             OnOpeningRevealCompleted();
         }
         if(enteringGameplay && openingRevealed && (entryVfx==null || !entryVfx.Advance(Time.unscaledDeltaTime)))
-            CompleteGameplayEntry();
+            entryCompletionPending=true;
     }
     private void CancelGameplayEntry()
     {
         if(!enteringGameplay)return;
-        enteringGameplay=false;openingRevealed=false;
+        enteringGameplay=false;openingRevealed=false;entryCompletionPending=false;
         if(entryVfx!=null)entryVfx.Finish();entryVfx=null;
         SetEntryPaused(false);
     }
     private void CompleteGameplayEntry()
     {
         if(!enteringGameplay)return;
+        if(heroController!=null)heroController.TracePosition("VFX complete before gameplay release");
         CancelGameplayEntry();
         if(startMenu!=null)startMenu.EnterGameplayImmediately();
         if(hasDeployed && heroController!=null && heroController.IsDeployed)
@@ -912,6 +916,8 @@ public class GameManager : MonoBehaviour
     private void CallNextWave()
     {
         if (!hasDeployed || monsterSpawner == null) return;
+        foreach(var hero in HeroController.ActiveHeroes)
+            if(hero!=null)hero.TracePosition("CallNextWave before spawn");
         activeMonsters.Clear();
 
         RestoreProgress();
@@ -930,10 +936,17 @@ public class GameManager : MonoBehaviour
         }
 
         if (combatManager != null) combatManager.StartBattle(activeMonsters, currentMonsterDataSO);
+        foreach(var hero in HeroController.ActiveHeroes)
+            if(hero!=null)hero.TracePosition("CallNextWave after StartBattle");
     }
 
     void LateUpdate()
     {
+        // EnvironmentManager (-200) has already finished its paused LateUpdate.
+        // Release entry AFTER camera/actor steps so no camera-only half-frame
+        // can run with a stale delta. The first wave still starts this frame;
+        // actors, combat and camera first advance together in the next frame.
+        if(enteringGameplay && entryCompletionPending)CompleteGameplayEntry();
         if (!hasDeployed || Time.timeScale == 0f ||
             (combatManager != null ? !combatManager.HasLivingHero :
              heroController == null || !heroController.IsDeployed) ||
@@ -989,24 +1002,26 @@ public class GameManager : MonoBehaviour
 
     private IEnumerator WaitAndCallNextWave()
     {
-        // Accumulate normalized progress so speed changes affect a pending wave.
-        // At speed 0, wait without resetting the progress already earned.
-        float progress = 0f;
-        do
+        // Time.deltaTime already follows gameplay timeScale. Movement speed
+        // (including a stationary/regrouping Hero) must never alter this clock.
+        int version=waveWaitVersion;
+        double elapsed=0d;
+        while(true)
         {
             yield return null;
+            if(version!=waveWaitVersion)yield break;
             if (!hasDeployed) { nextWaveCoroutine = null; yield break; }
             if (Time.timeScale == 0f) continue;
-            float delay = CurrentWaveDelay;
-            if (delay <= 0f) break;
-            progress += Time.deltaTime / delay;
-        } while (progress < 1f);
+            elapsed+=Mathf.Max(0f,Time.deltaTime);
+            if(elapsed>=CurrentWaveDelay)break;
+        }
         nextWaveCoroutine = null;
         if (hasDeployed) CallNextWave();
     }
 
     private void CancelNextWave()
     {
+        waveWaitVersion++;
         if (nextWaveCoroutine != null) StopCoroutine(nextWaveCoroutine);
         nextWaveCoroutine = null;
         retryWaveSize = 0;
