@@ -93,6 +93,7 @@ partial class MotionRegression
 
     static void Main(string[] args)
     {
+        if(args.Length==1 && args[0]=="--distance-waves") { DistanceWaveTests();return; }
         if(args.Length==1 && args[0]=="--soft-formation") { SoftFormationTests();return; }
         if(args.Length==1 && args[0]=="--camera-entry") { CameraEntryHandoffTests();return; }
         if(args.Length==1 && args[0]=="--world-trace") { WorldEntryTraceTests();return; }
@@ -113,6 +114,7 @@ partial class MotionRegression
         CameraEntryHandoffTests();
         WorldEntryTraceTests();
         WaveEntryTests();
+        DistanceWaveTests();
         FormationTests();
         SoftFormationTests();
         SpawnEntryTests();
@@ -245,9 +247,9 @@ partial class MotionRegression
             var save=Get<SaveManager>(gm,"saveManager");var dir=System.IO.Path.Combine(System.IO.Path.GetTempPath(),"idle-regression-"+Guid.NewGuid());System.IO.Directory.CreateDirectory(dir);Set(save,"saveDirectory",dir);save.SaveGame(new EntityDataSO(),SaveSlot.AutoSave);
             gm.preGameUI=new GameObject();gm.infoText=new GameObject().AddComponent<TMPro.TextMeshProUGUI>();
             var dead=new GameObject();gm.activeMonsters.Add(dead);gm.OnMonsterDied(dead);
-            var pending=Get<Coroutine>(gm,"nextWaveCoroutine");Check(pending!=null,"scheduled once");
-            gm.OnMonsterDied(dead);Check(Get<Coroutine>(gm,"nextWaveCoroutine")==pending,"duplicate death ignored");
-            gm.ForceManualLoad(0);Check(pending.stopped,"pending wave stopped");Check(Get<Coroutine>(gm,"nextWaveCoroutine")==null,"handle cleared");Check(!f.hero.IsDeployed,"loaded hero hidden");
+            Check(gm.IsWaitingForExploration && Get<Coroutine>(gm,"nextWaveCoroutine")==null,"distance wait scheduled without a timer");
+            gm.OnMonsterDied(dead);Check(gm.IsWaitingForExploration && gm.ExplorationDistance==0,"duplicate death ignored");
+            gm.ForceManualLoad(0);Check(!gm.IsWaitingForExploration && gm.ExplorationDistance==0,"pending distance wave stopped");Check(Get<Coroutine>(gm,"nextWaveCoroutine")==null,"handle cleared");Check(!f.hero.IsDeployed,"loaded hero hidden");
         });
         Run("lethal monster hit stops hero and clears battle",()=>{
             var f=new Field();var m=f.Monster(-20);f.Battle(m);m.TickMovement(f.space,0);Set(f.combat,"currentHeroHP",1);

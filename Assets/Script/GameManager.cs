@@ -212,9 +212,20 @@ public class GameManager : MonoBehaviour
     private Coroutine nextWaveCoroutine;
     private int waveWaitVersion;
     private int waveSpawnCount, retryWaveSize;
-    [Tooltip("Scaled gameplay seconds after the last monster dies; independent of Hero movement speed.")]
+    [Tooltip("Escape recovery only: gameplay seconds before replaying an unfinished escaped wave.")]
     [Min(0f)] public float waveDelay = 5f;
     public float CurrentWaveDelay => Mathf.Max(0f,waveDelay);
+    // The timer above is retained ONLY for replaying an escaped unfinished wave.
+    public const float DefaultDistancePerWave=1000f;
+    [Header("EXPLORATION WAVES — Ground-local units, not camera distance")]
+    [Min(1f)] public float distancePerWave=DefaultDistancePerWave;
+    public float CurrentDistancePerWave => float.IsNaN(distancePerWave) ||
+        float.IsInfinity(distancePerWave) || distancePerWave<=0f?DefaultDistancePerWave:distancePerWave;
+    private double explorationDistance;
+    private bool waitingForExploration;
+    private int explorationFrame=-1;
+    public float ExplorationDistance => (float)explorationDistance;
+    public bool IsWaitingForExploration => waitingForExploration;
     private bool hasDeployed = false;
     private readonly Queue<string> recentEvents = new Queue<string>();
     private readonly Queue<string> recentDamage = new Queue<string>();
@@ -264,7 +275,9 @@ public class GameManager : MonoBehaviour
             " openingEntering="+(startMenu!=null && startMenu.IsEnteringCinematic)+
             " menuActive="+(preGameUI!=null && preGameUI.activeInHierarchy)+
             " vfxPlaying="+(entryVfx!=null && entryVfx.IsPlaying)+
-            " waveMembers="+activeMonsters.Count+" waitingWave="+(nextWaveCoroutine!=null);
+            " waveMembers="+activeMonsters.Count+" waitingWave="+(nextWaveCoroutine!=null)+
+            " exploring="+waitingForExploration+" explorationDistance="+
+            explorationDistance.ToString("R",System.Globalization.CultureInfo.InvariantCulture);
     }
     private static void TraceEntryFrame(string stage)
     {
@@ -948,7 +961,8 @@ public class GameManager : MonoBehaviour
 
     private void CallNextWave()
     {
-        if (!hasDeployed || monsterSpawner == null) return;
+        if (!hasDeployed || monsterSpawner == null || activeMonsters.Count>0) return;
+        waitingForExploration=false;explorationDistance=0d;
         foreach(var hero in HeroController.ActiveHeroes)
             if(hero!=null)hero.TracePosition("CallNextWave before spawn");
         activeMonsters.Clear();
@@ -981,6 +995,7 @@ public class GameManager : MonoBehaviour
         // can run with a stale delta. The first wave still starts this frame;
         // actors, combat and camera first advance together in the next frame.
         if(enteringGameplay && entryCompletionPending)CompleteGameplayEntry();
+        TickExplorationProgress();
         if (!hasDeployed || Time.timeScale == 0f ||
             (combatManager != null ? !combatManager.HasLivingHero :
              heroController == null || !heroController.IsDeployed) ||
@@ -1030,14 +1045,46 @@ public class GameManager : MonoBehaviour
                     }
                 }
             }
-            nextWaveCoroutine = StartCoroutine(WaitAndCallNextWave());
+            waitingForExploration=true;explorationDistance=0d;
+            // Movement in the death frame was calculated while that wave was
+            // still alive. Never bank it for the next encounter.
+            explorationFrame=Time.frameCount;
+        }
+    }
+
+    private void TickExplorationProgress()
+    {
+        if(!waitingForExploration || explorationFrame==Time.frameCount)return;
+        explorationFrame=Time.frameCount;
+        if(!hasDeployed || enteringGameplay || Time.timeScale==0f || Time.deltaTime<=0f ||
+            activeMonsters.Count!=0 || nextWaveCoroutine!=null)return;
+        float common=float.MaxValue;int count=0;
+        var seen=new HashSet<HeroController>();
+        foreach(var hero in HeroController.ActiveHeroes)
+        {
+            var state=combatManager!=null?combatManager.StateFor(hero):null;
+            if(hero==null || !hero.IsDeployed || state==null || !state.CanFight || !seen.Add(hero))continue;
+            count++;
+            float step=hero.MovementFrame==Time.frameCount && hero.IsExplorationMovement?
+                hero.MovementDistanceThisFrame:0f;
+            float budget=hero.MovementBudgetThisFrame;
+            if(float.IsNaN(step) || float.IsInfinity(step) || float.IsNaN(budget) || float.IsInfinity(budget))step=0f;
+            else step=Mathf.Clamp(step,0f,Mathf.Max(0f,budget));
+            common=Mathf.Min(common,step);
+        }
+        if(count==0)return;
+        // Per-frame minimum, never sum, centroid/camera delta or a fastest Hero.
+        // New/unticked members contribute zero; death removes them next sample.
+        explorationDistance+=common;
+        if(explorationDistance>=CurrentDistancePerWave)
+        {
+            CallNextWave(); // Drops excess distance; one threshold = one wave.
         }
     }
 
     private IEnumerator WaitAndCallNextWave()
     {
-        // Time.deltaTime already follows gameplay timeScale. Movement speed
-        // (including a stationary/regrouping Hero) must never alter this clock.
+        // Escape recovery only. Normal completed waves use exploration distance.
         int version=waveWaitVersion;
         double elapsed=0d;
         while(true)
@@ -1055,6 +1102,7 @@ public class GameManager : MonoBehaviour
 
     private void CancelNextWave()
     {
+        waitingForExploration=false;explorationDistance=0d;explorationFrame=Time.frameCount;
         waveWaitVersion++;
         if (nextWaveCoroutine != null) StopCoroutine(nextWaveCoroutine);
         nextWaveCoroutine = null;

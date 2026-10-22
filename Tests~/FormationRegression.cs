@@ -239,8 +239,8 @@ partial class MotionRegression
                 foreach(var go in monsters) { go.GetComponent<MonsterController>().MarkDead();f.manager.OnMonsterDied(go); }
                 FormationTick(f.field,.1f,f.field.hero,mage);
                 Check(Formation(f.field).CurrentPhase==HeroFormation.Phase.Regrouping,"long catch-up in progress");
-                var pending=Get<Coroutine>(f.manager,"nextWaveCoroutine");Check(pending!=null,"normal wave scheduled");
-                for(int i=0;i<100 && f.manager.activeMonsters.Count==0;i++) { Time.deltaTime=.1f;pending.routine.MoveNext(); }
+                Check(f.manager.IsWaitingForExploration,"distance-based encounter scheduled");f.manager.distancePerWave=10;
+                for(int i=0;i<100 && f.manager.activeMonsters.Count==0;i++) { FormationTick(f.field,.1f,f.field.hero,mage);Call(f.manager,"LateUpdate"); }
                 Check(f.manager.activeMonsters.Count>0 && Formation(f.field).CurrentPhase==HeroFormation.Phase.Regrouping,"scheduler does not wait for formation");
                 FormationTick(f.field,.1f,f.field.hero,mage);
                 Check(Formation(f.field).CurrentPhase==HeroFormation.Phase.Combat,"new wave immediately breaks regroup");

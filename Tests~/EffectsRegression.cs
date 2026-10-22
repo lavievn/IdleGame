@@ -50,7 +50,7 @@ partial class MotionRegression
             Near(BattleMotion.WaveDelay(1.5f,75),3f,"slow speed");
             Check(float.IsPositiveInfinity(BattleMotion.WaveDelay(1.5f,0)),"zero pauses");
         });
-        Run("pending wave waits five gameplay seconds regardless of movement speed and pauses with gameplay",()=>{
+        Run("escaped-wave replay waits five gameplay seconds regardless of movement speed and pauses with gameplay",()=>{
             var f=new Field();var gm=new GameObject().AddComponent<GameManager>();
             Set(gm,"heroController",f.hero);Set(gm,"hasDeployed",true);
             var e=(IEnumerator)typeof(GameManager).GetMethod("WaitAndCallNextWave",BindingFlags.NonPublic|BindingFlags.Instance).Invoke(gm,null);

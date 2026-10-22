@@ -47,6 +47,9 @@ public class HeroController : MonoBehaviour
 
     public float MovementDistanceThisFrame { get; private set; }
     public float LastMovementSpeed { get; private set; }
+    public int MovementFrame { get; private set; }=-1;
+    public bool IsExplorationMovement { get; private set; }
+    public float MovementBudgetThisFrame { get; private set; }
     // Identity of the CURRENT deployed life, not the reusable GameObject.
     public int SpawnVersion { get; private set; }
 
@@ -133,8 +136,11 @@ public class HeroController : MonoBehaviour
 
     public void TickMovement(EnvironmentManager space, float dt)
     {
+        MovementFrame=Time.frameCount;IsExplorationMovement=false;
+        MovementBudgetThisFrame=0f;
         MovementDistanceThisFrame = 0f;
         if (!IsDeployed) { LastMovementSpeed=0f;return; }
+        MovementBudgetThisFrame=EffectiveMoveSpeed()*Mathf.Max(0f,dt);
         TracePositionFrame("TickMovement before");
         attackRange = space.AttackRange(attackMode, true);
         // Keep an in-range target during a strike; otherwise rescan the closest eligible opponent.
@@ -144,6 +150,7 @@ public class HeroController : MonoBehaviour
         float formationX;
         if(HeroFormation.TryStep(this,space,dt,out formationX))
         {
+            IsExplorationMovement=true;
             CurrentState=HeroState.Returning;
             p.x=formationX;
             MovementDistanceThisFrame=Mathf.Abs(p.x-startX);
@@ -155,6 +162,7 @@ public class HeroController : MonoBehaviour
         }
         if (CurrentTarget == null)
         {
+            IsExplorationMovement=true;
             CurrentState = HeroState.Returning;
             // No current enemy: explore straight left at the current Y.
             // Y only changes while a melee Hero approaches a selected target.
@@ -221,6 +229,7 @@ public class HeroController : MonoBehaviour
         ArmPositionTrace();
         TracePosition("SpawnHero before",true);
         SpawnVersion++;
+        MovementFrame=-1;IsExplorationMovement=false;
         LastMovementSpeed=0f;
         gameObject.SetActive(true);
         ResetFeedback();
