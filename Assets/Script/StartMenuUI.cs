@@ -99,8 +99,8 @@ public class StartMenuUI : MonoBehaviour
         popup.GetComponent<Image>().raycastTarget = false;
         menu.message=menu.Label(textTemplate,popRect,"",
             new Vector2(0,55),new Vector2(410,145),21);
-        menu.MakeButton(template,popRect,"Có",new Vector2(-110,-66),gm.OnConfirmResetClicked);
-        menu.MakeButton(template,popRect,"Không",new Vector2(110,-66),gm.OnCancelResetClicked);
+        menu.MakeButton(template,popRect,"Xác nhận",new Vector2(-110,-66),gm.OnConfirmResetClicked,true);
+        menu.MakeButton(template,popRect,"Hủy",new Vector2(110,-66),gm.OnCancelResetClicked,true);
         gm.confirmationPopup=popup;
         popup.SetActive(false);
 
@@ -161,7 +161,8 @@ public class StartMenuUI : MonoBehaviour
         UIManager.ReadableText(label,fontSize);
         return label;
     }
-    private Button MakeButton(Button template,Transform parent,string title,Vector2 p,UnityAction action)
+    private Button MakeButton(Button template,Transform parent,string title,Vector2 p,UnityAction action,
+        bool confirmation=false)
     {
         var go=Instantiate(template.gameObject,parent);go.SetActive(true);
         go.name="Opening - "+title;
@@ -178,8 +179,15 @@ public class StartMenuUI : MonoBehaviour
         var background=go.GetComponent<Image>();
         if(background != null) { background.color=new Color(.06f,.18f,.24f,.94f);background.raycastTarget=false; }
         UnityAction clicked=()=>{
-            if(!openingMenuReady || !button.interactable || entryLocked ||
-               lastClickFrame==Time.frameCount)return;
+            if(!go.activeInHierarchy || !button.interactable || lastClickFrame==Time.frameCount)return;
+            // The confirmation is a sibling of the opening, also used during
+            // gameplay. Its controls must not inherit the cinematic entry lock.
+            if(confirmation)
+            {
+                if(manager==null || !manager.HasPendingConfirmation ||
+                   manager.confirmationPopup==null || !manager.confirmationPopup.activeInHierarchy)return;
+            }
+            else if(!openingMenuReady || entryLocked)return;
             lastClickFrame=Time.frameCount;
             action();
         };
@@ -187,6 +195,11 @@ public class StartMenuUI : MonoBehaviour
         var custom=go.GetComponent<CustomInteractable>();
         if(custom==null)custom=go.AddComponent<CustomInteractable>();
         custom.onClickEvent=new UnityEvent();custom.onClickEvent.AddListener(clicked);
+        // Native Windows clicks use CustomInteractable, not EventSystem raycasts.
+        // Bind immediately, including when the popup was built inactive.
+        if(UIManager.Instance!=null)UIManager.Instance.RegisterInteractable(custom);
+        var window=Object.FindFirstObjectByType<TransparentWindow>();
+        if(window!=null)window.RegisterClickable(go.GetComponent<RectTransform>());
         return button;
     }
 

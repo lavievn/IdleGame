@@ -152,29 +152,38 @@ public class UIManager : MonoBehaviour
     public CustomInteractable HitControl(Vector2 mousePos)
     {
         GameManager gm = Object.FindFirstObjectByType<GameManager>();
+        bool confirmation = gm != null && gm.HasPendingConfirmation;
         CustomInteractable hit = null;
         foreach (var item in interactables)
         {
             if (item == null || !item.isActiveAndEnabled || item.GetRect() == null) continue;
-            // World map modal takes precedence over the underlying HUD/buttons.
-            if (worldMapUI != null && worldMapUI.IsOpen &&
-                !item.transform.IsChildOf(worldMapUI.Root)) continue;
-            if (gm != null && gm.HasPendingConfirmation &&
-                (gm.confirmationPopup == null || !item.transform.IsChildOf(gm.confirmationPopup.transform))) continue;
-            // The full-screen opening owns input while its menu is visible.
-            // Never allow HUD/MenuArea controls below it to steal a menu click.
-            if (gm != null && gm.preGameUI != null && gm.preGameUI.activeInHierarchy &&
-                !item.transform.IsChildOf(gm.preGameUI.transform) &&
-                (gm.confirmationPopup == null || !item.transform.IsChildOf(gm.confirmationPopup.transform))) continue;
-            if (devUI != null && devUI.IsOpen && !item.transform.IsChildOf(devUI.Root)) continue;
-            if (inventoryUI != null && inventoryUI.IsOpen &&
-                !item.transform.IsChildOf(inventoryUI.Root)) continue;
-            // Forge is an exclusive modal. Without this guard the old
-            // Inventory buttons registered first win overlapping hitboxes,
-            // so the visible Forge_Close can never receive its click.
-            if (inventoryUI != null && inventoryUI.IsForgeOpen &&
-                !item.transform.IsChildOf(inventoryUI.ForgeRoot)) continue;
-            if (damagePanel != null && damagePanel.activeSelf && (gm == null || !gm.HasPendingConfirmation) && !item.transform.IsChildOf(damagePanel.transform)) continue;
+            // Confirmation owns input even if another panel remains open below.
+            if (confirmation)
+            {
+                if (gm.confirmationPopup == null || !item.transform.IsChildOf(gm.confirmationPopup.transform)) continue;
+            }
+            else
+            {
+                // World map modal takes precedence over the underlying HUD/buttons.
+                if (worldMapUI != null && worldMapUI.IsOpen &&
+                    !item.transform.IsChildOf(worldMapUI.Root)) continue;
+                // The full-screen opening owns input while its menu is visible.
+                // Never allow HUD/MenuArea controls below it to steal a menu click.
+                if (gm != null && gm.preGameUI != null && gm.preGameUI.activeInHierarchy &&
+                    !item.transform.IsChildOf(gm.preGameUI.transform) &&
+                    (gm.confirmationPopup == null || !item.transform.IsChildOf(gm.confirmationPopup.transform))) continue;
+                if (devUI != null && devUI.IsOpen && !item.transform.IsChildOf(devUI.Root)) continue;
+                if (inventoryUI != null && inventoryUI.IsOpen &&
+                    !item.transform.IsChildOf(inventoryUI.Root)) continue;
+                // Forge is an exclusive modal. Without this guard the old
+                // Inventory buttons registered first win overlapping hitboxes,
+                // so the visible Forge_Close can never receive its click.
+                if (inventoryUI != null && inventoryUI.IsForgeOpen &&
+                    !item.transform.IsChildOf(inventoryUI.ForgeRoot)) continue;
+                if (damagePanel != null && damagePanel.activeSelf && (gm == null || !gm.HasPendingConfirmation) && !item.transform.IsChildOf(damagePanel.transform)) continue;
+                if (systemMenu != null && systemMenu.activeInHierarchy &&
+                    !item.transform.IsChildOf(systemMenu.transform)) continue;
+            }
             if (!RectTransformUtility.RectangleContainsScreenPoint(item.GetRect(), mousePos, null)) continue;
             if (hit == null || item.transform.IsChildOf(hit.transform)) hit = item;
         }
@@ -267,11 +276,13 @@ public class UIManager : MonoBehaviour
         });
         MakeMenuButton(mainPage, "WindowSize", "Kích thước cửa sổ", 4, () => ShowPage(sizePage));
         MakeMenuButton(mainPage, "ReturnTitle", "Quay lại màn hình chính", 5, ReturnToTitle);
+        MakeMenuButton(mainPage, "Close", "Đóng", 6, CloseSystemMenu);
         MakeMenuButton(savePage, "Save1", "Lưu vào ô 1", 0, () => SaveToSlot(SaveSlot.ManualSave1));
         MakeMenuButton(savePage, "Save2", "Lưu vào ô 2", 1, () => SaveToSlot(SaveSlot.ManualSave2));
         MakeMenuButton(savePage, "SaveBack", "Quay lại", 2, () => ShowPage(mainPage));
         MakeMenuButton(overwritePage, "OverwriteYes", "Xác nhận ghi đè", 0, ConfirmManualOverwrite);
         MakeMenuButton(overwritePage, "OverwriteNo", "Hủy", 1, OpenManualSaveMenu);
+        MakeMenuButton(overwritePage, "OverwriteBack", "Quay lại", 2, () => ShowPage(mainPage));
         MakeMenuButton(loadPage, "LoadSave1", "Save 1", 0, () => LoadSlot(SaveSlot.ManualSave1));
         MakeMenuButton(loadPage, "LoadSave2", "Save 2", 1, () => LoadSlot(SaveSlot.ManualSave2));
         MakeMenuButton(loadPage, "LoadAuto", "Auto", 2, () => LoadSlot(SaveSlot.AutoSave));
@@ -281,6 +292,8 @@ public class UIManager : MonoBehaviour
         MakeMenuButton(sizePage, "Size1150", "Lớn · 1150", 2, () => ExecuteScale(1150));
         MakeMenuButton(sizePage, "SizeBack", "Quay lại", 3, () => ShowPage(mainPage));
         ShowPage(mainPage);
+        LayoutSystemMenu(ManagementWindowLayout.CombatPixels(Screen.width),
+            ManagementWindowLayout.CombatHeight(Screen.height));
         // Scene lists can omit this trigger. Discover and register it explicitly.
         foreach (var rect in Object.FindObjectsByType<RectTransform>(FindObjectsInactive.Include, FindObjectsSortMode.None))
         {
@@ -921,28 +934,7 @@ public class UIManager : MonoBehaviour
             new Vector2(6,-139),new Vector2(Mathf.Min(146,leftWidth-12f),26f));
         foreach(var rect in Object.FindObjectsByType<RectTransform>(FindObjectsInactive.Include,FindObjectsSortMode.None))
             if (rect.gameObject.name == "MenuArea") PlaceUI(rect,new Vector2(1,0),new Vector2(1,0),new Vector2(-4,4),new Vector2(64,24));
-        if (systemMenu != null) {
-            float mw = Mathf.Min(340,w-12), mh = Mathf.Min(320,h-12);
-            PlaceUI((RectTransform)systemMenu.transform,new Vector2(1,0),new Vector2(1,0),new Vector2(-6,6),new Vector2(mw,mh));
-            foreach(var page in new[]{mainPage,savePage,overwritePage,loadPage,sizePage}) if (page != null) {
-                int buttonCount = 0;
-                foreach(Transform child in page.transform)
-                    if (child.GetComponent<CustomInteractable>() != null) buttonCount++;
-                float row = (mh-28)/Mathf.Max(1,buttonCount);
-                int index = 0;
-                foreach(Transform child in page.transform) {
-                    var rect = child as RectTransform; if (rect == null) continue;
-                    if (child.GetComponent<CustomInteractable>() == null)
-                        PlaceUI(rect,new Vector2(0,1),new Vector2(.5f,.5f),
-                            new Vector2(mw/2,-12),new Vector2(mw-12,22));
-                    else {
-                        PlaceUI(rect,new Vector2(0,1),new Vector2(.5f,.5f),
-                            new Vector2(mw/2,-28-row*(index+.5f)),new Vector2(mw-12,row-3));
-                        index++;
-                    }
-                }
-            }
-        }
+        LayoutSystemMenu(w,h);
         if (gm != null && gm.eventLog != null) {
             var log = (RectTransform)gm.eventLog.transform;
             PlaceUI(log,new Vector2(0,1),new Vector2(0,1),new Vector2(6,-32),new Vector2(leftWidth,Mathf.Min(66,h*.19f)));
@@ -1013,6 +1005,35 @@ public class UIManager : MonoBehaviour
     private RectTransform FindNamedRect(string name)
     {
         foreach(var rt in Object.FindObjectsByType<RectTransform>(FindObjectsInactive.Include,FindObjectsSortMode.None)) if (rt.gameObject.name == name && rt.IsChildOf(hudCanvas)) return rt; return null;
+    }
+    private void LayoutSystemMenu(float w,float h)
+    {
+        if (systemMenu == null) return;
+        float mw = Mathf.Min(340,w-12), mh = Mathf.Min(320,h-12);
+        PlaceUI((RectTransform)systemMenu.transform,new Vector2(1,0),new Vector2(1,0),new Vector2(-6,6),new Vector2(mw,mh));
+        foreach(var page in new[]{mainPage,savePage,overwritePage,loadPage,sizePage}) if (page != null) {
+            int buttonCount = 0;
+            foreach(Transform child in page.transform)
+                if (child.GetComponent<CustomInteractable>() != null) buttonCount++;
+            float row = (mh-28)/Mathf.Max(1,buttonCount);
+            int index = 0;
+            foreach(Transform child in page.transform) {
+                var rect = child as RectTransform; if (rect == null) continue;
+                if (child.GetComponent<CustomInteractable>() == null)
+                    PlaceUI(rect,new Vector2(0,1),new Vector2(.5f,.5f),
+                        new Vector2(mw/2,-12),new Vector2(mw-12,22));
+                else {
+                    PlaceUI(rect,new Vector2(0,1),new Vector2(.5f,.5f),
+                        new Vector2(mw/2,-28-row*(index+.5f)),new Vector2(mw-12,row-3));
+                    foreach(var label in child.GetComponentsInChildren<TMPro.TextMeshProUGUI>(true)) {
+                        PlaceUI((RectTransform)label.transform,new Vector2(.5f,.5f),new Vector2(.5f,.5f),
+                            Vector2.zero,new Vector2(mw-20,row-7));
+                        ReadableText(label,14);
+                    }
+                    index++;
+                }
+            }
+        }
     }
     private void LayoutStartMenu(Transform root,float w,float h,bool confirmation)
     {

@@ -93,9 +93,18 @@ partial class MotionRegression
 
     static void Main(string[] args)
     {
+        if (args.Length == 1 && args[0] == "--desktop-ui") {
+            DesktopMenuHotfixTests();DesktopMenuTests();ManualSaveMenuTests();
+            MenuDifficultyTests();ManualLoadUiRegressionTests();
+            // The legacy opening group scans UnityStub.Object.objects globally;
+            // dispose prior simulated scenes before checking its fresh curtain.
+            new Field();OpeningCinematicRegressionTests();Patch54cTests();
+            return;
+        }
         SpritePresentationTests();
         if (args.Length == 1 && args[0] == "--sprites") return;
         WorldMapRegressionTests();
+        DesktopMenuHotfixTests();
         ManualLoadUiRegressionTests();
         Run("six-vertex polygon uses true shape, not rectangular hitbox", () => {
             var hex = new List<Vector2> {

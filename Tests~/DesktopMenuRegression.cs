@@ -36,8 +36,8 @@ partial class MotionRegression
                 actions.Add(item.gameObject.name,item);
             }
             var expectedActions=new System.Collections.Generic.HashSet<string>(new[]{
-                "Exit","Save","Load","Reset","WindowSize","ReturnTitle"});
-            Check(expectedActions.SetEquals(actions.Keys),"exactly six named main actions");
+                "Exit","Save","Load","Reset","WindowSize","ReturnTitle","Close"});
+            Check(expectedActions.SetEquals(actions.Keys),"six original functions plus the named Close action");
             foreach(var old in oldControls)
                 Check(!old.gameObject.activeInHierarchy && System.Array.IndexOf(visible,old)<0,
                     "legacy control hidden: "+old.gameObject.name);
@@ -46,7 +46,8 @@ partial class MotionRegression
                 var callback=Get<UnityAction>(actions[name].onClickEvent,"callback");
                 Check(callback!=null && callback.GetInvocationList().Length==1,"one bound action for "+name);
                 string method=name=="Exit"?"ConfirmExit":name=="Save"?"OpenManualSaveMenu":
-                    name=="Load"?"OpenLoadMenu":name=="ReturnTitle"?"ReturnToTitle":null;
+                    name=="Load"?"OpenLoadMenu":name=="ReturnTitle"?"ReturnToTitle":
+                    name=="Close"?"CloseSystemMenu":null;
                 if(method!=null)Check(callback.Target==ui && callback.Method.Name==method,
                     name+" binds to "+method);
             }
