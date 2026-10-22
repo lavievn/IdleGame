@@ -71,12 +71,12 @@ partial class MotionRegression
             Near(f.space.Position(f.hero.heroRect).x,0,"melee stays in range");
             Check(f.hero.CurrentState==HeroState.Combat && f.hero.CurrentTarget==monster,"attacking state retained");
         });
-        Run("formation wave end holds leader and regroups without snap, overspeed or reverse oscillation",()=>{
+        Run("formation wave end slows moving leader and regroups without snap, overspeed or reverse oscillation",()=>{
             var f=new Field();f.hero.moveSpeed=450;f.space.SetPosition(f.hero.heroRect,new Vector2(-200,0));
             var bow=FormationHero(f,200,450,AttackMode.RangedPhysical);
             var mage=FormationHero(f,600,200,AttackMode.RangedMagic);
             var monster=f.Monster(-2000);FormationTick(f,0,f.hero,bow,mage);monster.MarkDead();
-            bool regrouped=false;int waiting=0;
+            bool regrouped=false;int gathering=0;
             for(int i=0;i<600;i++)
             {
                 var actors=new[]{f.hero,bow,mage};var before=new float[3];
@@ -88,9 +88,9 @@ partial class MotionRegression
                     if(j>0)Check(f.space.Position(actors[j].heroRect).x-f.space.Position(actors[j-1].heroRect).x>=95,"no overlap or overtaking");
                 }
                 if(Formation(f).CurrentPhase==HeroFormation.Phase.Marching) { regrouped=true;break; }
-                Near(f.space.Position(f.hero.heroRect).x,-200,"leader waits rather than running ahead");waiting++;
+                Check(f.hero.MovementDistanceThisFrame>0,"leader keeps moving while team gathers");gathering++;
             }
-            Check(regrouped && waiting>60,"regroup converges after actual catch-up");
+            Check(regrouped && gathering>60,"regroup converges after actual catch-up");
             Near(f.space.Position(bow.heroRect).x-f.space.Position(f.hero.heroRect).x,100,"bow slot",5f);
             Near(f.space.Position(mage.heroRect).x-f.space.Position(bow.heroRect).x,100,"mage slot",5f);
             for(int i=0;i<120;i++) {
@@ -147,7 +147,7 @@ partial class MotionRegression
             float x=f.space.Position(f.hero.heroRect).x;
             var mage=FormationHero(f,x+500,200,AttackMode.RangedMagic);
             Near(f.space.Position(f.hero.heroRect).x,x,"recruitment does not place existing actors");
-            for(int i=0;i<300;i++)FormationTick(f,1f/60f,f.hero,mage);
+            for(int i=0;i<1200 && Formation(f).CurrentPhase!=HeroFormation.Phase.Marching;i++)FormationTick(f,1f/60f,f.hero,mage);
             Near(f.space.Position(mage.heroRect).x-f.space.Position(f.hero.heroRect).x,120,"configured spacing",2f);
             Near(Formation(f).MarchSpeed,200,"new member changes march speed");
         });
@@ -217,14 +217,14 @@ partial class MotionRegression
                 for(int i=1;i<members.Count;i++)Check(f.field.space.Position(members[i].heroRect).x-f.field.space.Position(members[i-1].heroRect).x>=100,"spawn starts separated, never snapped into front slot");
             }
         });
-        Run("formation regroup follows existing soft camera pan without moving the waiting leader",()=>{
+        Run("formation regroup follows existing soft camera pan while leader keeps walking",()=>{
             var f=new Field();Time.timeScale=1;f.space.useSoftZoneCamera=true;f.hero.moveSpeed=450;
             f.space.SetPosition(f.hero.heroRect,new Vector2(-200,0));
             var mage=FormationHero(f,500,200,AttackMode.RangedMagic);bool arrived=false;float pan=0;
             for(int i=0;i<600;i++) {
                 f.Step(1f/60f);pan+=Mathf.Abs(f.space.CurrentCameraSpeed);
                 if(Formation(f).CurrentPhase==HeroFormation.Phase.Marching) { arrived=true;break; }
-                Near(f.hero.MovementDistanceThisFrame,0,"waiting leader only receives shared camera pan");
+                Check(f.hero.MovementDistanceThisFrame>0 && f.hero.MovementDistanceThisFrame<=450f/60f+.002f,"leader walks within own speed while camera pans");
                 Check(mage.MovementDistanceThisFrame<=200f/60f+.002f,"rear actor respects own speed during camera motion");
             }
             Check(arrived && pan>0,"regroup converges while soft camera actually pans");

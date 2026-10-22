@@ -93,6 +93,7 @@ partial class MotionRegression
 
     static void Main(string[] args)
     {
+        if(args.Length==1 && args[0]=="--soft-formation") { SoftFormationTests();return; }
         if(args.Length==1 && args[0]=="--camera-entry") { CameraEntryHandoffTests();return; }
         if(args.Length==1 && args[0]=="--world-trace") { WorldEntryTraceTests();return; }
         if(args.Length==1 && args[0]=="--wave-entry") { WaveEntryTests();return; }
@@ -113,6 +114,7 @@ partial class MotionRegression
         WorldEntryTraceTests();
         WaveEntryTests();
         FormationTests();
+        SoftFormationTests();
         SpawnEntryTests();
         DesktopMenuHotfixTests();
         ManualLoadUiRegressionTests();

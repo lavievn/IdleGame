@@ -46,6 +46,7 @@ public class HeroController : MonoBehaviour
     public MonsterController CurrentTarget { get; private set; }
 
     public float MovementDistanceThisFrame { get; private set; }
+    public float LastMovementSpeed { get; private set; }
     // Identity of the CURRENT deployed life, not the reusable GameObject.
     public int SpawnVersion { get; private set; }
 
@@ -96,6 +97,7 @@ public class HeroController : MonoBehaviour
     }
     void OnDisable()
     {
+        LastMovementSpeed=0f;
         MovementDistanceThisFrame = 0f;
         deployed = false;
         ActiveHeroes.Remove(this);
@@ -132,7 +134,7 @@ public class HeroController : MonoBehaviour
     public void TickMovement(EnvironmentManager space, float dt)
     {
         MovementDistanceThisFrame = 0f;
-        if (!IsDeployed) return;
+        if (!IsDeployed) { LastMovementSpeed=0f;return; }
         TracePositionFrame("TickMovement before");
         attackRange = space.AttackRange(attackMode, true);
         // Keep an in-range target during a strike; otherwise rescan the closest eligible opponent.
@@ -145,6 +147,7 @@ public class HeroController : MonoBehaviour
             CurrentState=HeroState.Returning;
             p.x=formationX;
             MovementDistanceThisFrame=Mathf.Abs(p.x-startX);
+            LastMovementSpeed=dt>0f?MovementDistanceThisFrame/dt:0f;
             space.SetPosition(heroRect,p);
             HandleAnimation(MovementDistanceThisFrame>.001f,false);
             TracePositionFrame("TickMovement after formation step");
@@ -157,6 +160,7 @@ public class HeroController : MonoBehaviour
             // Y only changes while a melee Hero approaches a selected target.
             p.x -= EffectiveMoveSpeed() * dt;
             MovementDistanceThisFrame = Mathf.Abs(p.x - startX);
+            LastMovementSpeed=dt>0f?MovementDistanceThisFrame/dt:0f;
             space.SetPosition(heroRect, p);
             HandleAnimation(true, false);
             TracePositionFrame("TickMovement after exploration step");
@@ -168,6 +172,7 @@ public class HeroController : MonoBehaviour
         if (attackMode == AttackMode.Melee && Mathf.Abs(target.x - p.x) > attackRange + .1f)
             p.y = Mathf.MoveTowards(p.y, target.y, laneSpeed * dt);
         MovementDistanceThisFrame = Mathf.Abs(p.x - startX);
+        LastMovementSpeed=dt>0f?MovementDistanceThisFrame/dt:0f;
         space.SetPosition(heroRect, p);
         RefreshCombatState(space);
         TracePositionFrame("TickMovement after approach step");
@@ -216,6 +221,7 @@ public class HeroController : MonoBehaviour
         ArmPositionTrace();
         TracePosition("SpawnHero before",true);
         SpawnVersion++;
+        LastMovementSpeed=0f;
         gameObject.SetActive(true);
         ResetFeedback();
         CurrentTarget = null;
@@ -302,6 +308,7 @@ public class HeroController : MonoBehaviour
 
     public void HideHero()
     {
+        LastMovementSpeed=0f;
         MovementDistanceThisFrame = 0f;
         deployed = false;
         CurrentTarget = null;
@@ -314,6 +321,7 @@ public class HeroController : MonoBehaviour
 
     public void Die()
     {
+        LastMovementSpeed=0f;
         MovementDistanceThisFrame = 0f;
         deployed = false;
         CurrentTarget = null;
