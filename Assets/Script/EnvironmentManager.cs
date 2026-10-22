@@ -61,6 +61,67 @@ public class EnvironmentManager : MonoBehaviour
     private bool hasPlannedPan;
     public float CameraFollowVelocity => deadzoneCamera.Velocity;
 
+    [Header("CAMERA ENTRY ONLY — normal gameplay camera is unchanged")]
+    [Min(.1f)] public float cameraEntryDuration=.8f;
+    [Min(1f)] public float cameraEntryMaxSpeed=450f;
+    [Min(1f)] public float cameraEntryAcceleration=900f;
+    [Min(.1f)] public float cameraEntryMaxStep=12f;
+    public bool IsCameraEntryHandoff { get; private set; }
+    private float entryCameraElapsed, entryCameraVelocity, entryCameraMatched, entryCameraRequestedPan;
+
+    public void BeginCameraEntryHandoff()
+    {
+        CancelCameraEntryHandoff();
+        deadzoneCamera.Reset();combatFocusSmoother.Reset();stationaryCombatVelocity=0f;
+        hasPlannedPan=false;
+        if(cameraTarget!=null && cameraTarget.IsDeployed)IsCameraEntryHandoff=true;
+    }
+    public void CancelCameraEntryHandoff()
+    {
+        if(!IsCameraEntryHandoff)return;
+        IsCameraEntryHandoff=false;
+        entryCameraElapsed=entryCameraVelocity=entryCameraMatched=0f;
+        deadzoneCamera.Reset();combatFocusSmoother.Reset();stationaryCombatVelocity=0f;
+        hasPlannedPan=false;
+    }
+    private static float EntrySetting(float value,float fallback)
+    {
+        return float.IsNaN(value)||float.IsInfinity(value)||value<=0f?fallback:value;
+    }
+    private void PlanPresentationPan(out float pan,out float background)
+    {
+        if(IsCameraEntryHandoff && (cameraTarget==null || !cameraTarget.IsDeployed))CancelCameraEntryHandoff();
+        PresentationPan(out pan,out background);
+        entryCameraRequestedPan=pan;
+        if(!IsCameraEntryHandoff || Time.timeScale==0f || Time.deltaTime<=0f)return;
+        float speed=EntrySetting(cameraEntryMaxSpeed,450f);
+        // Entry alone limits a long render frame. Never change movement deltaTime
+        // or the original camera's parameters/formula.
+        float dt=Mathf.Min(Time.deltaTime,EntrySetting(cameraEntryMaxStep,12f)/speed);
+        float wanted=Mathf.Clamp(pan/Time.deltaTime,-speed,speed);
+        entryCameraVelocity=Mathf.MoveTowards(entryCameraVelocity,wanted,
+            EntrySetting(cameraEntryAcceleration,900f)*dt);
+        entryCameraVelocity=Mathf.Clamp(entryCameraVelocity,-speed,speed);
+        float limited=entryCameraVelocity*dt;
+        entryCameraElapsed+=Time.deltaTime;
+        bool matched=Mathf.Abs(limited-pan)<.0001f;
+        if(!matched)
+        {
+            // The normal camera did not apply its requested movement: do not
+            // store that unfulfilled spring impulse for the following frame.
+            deadzoneCamera.Reset();stationaryCombatVelocity=0f;
+        }
+        entryCameraMatched=matched?entryCameraMatched+Time.deltaTime:0f;
+        pan=background=limited;
+        if(entryCameraElapsed>=EntrySetting(cameraEntryDuration,.8f) && entryCameraMatched>=.1f)
+        {
+            // Do not reset here: several consecutive original plans were applied
+            // exactly, so its current velocity is already safe to continue.
+            IsCameraEntryHandoff=false;
+            entryCameraElapsed=entryCameraVelocity=entryCameraMatched=0f;
+        }
+    }
+
     // Diagnostic bookkeeping only. Never step a camera smoother to sample it.
     private int traceUpdateFrame=-1, tracePlanFrame=-1, traceAppliedFrame=-1;
     private float traceActualPan, traceActualBackgroundPan;
@@ -77,6 +138,9 @@ public class EnvironmentManager : MonoBehaviour
             " combatOffset="+TraceNumber(combatFocusSmoother.Offset)+
             " combatVelocity="+TraceNumber(combatFocusSmoother.Velocity)+
             " stationaryVelocity="+TraceNumber(stationaryCombatVelocity)+
+            " cameraEntry="+IsCameraEntryHandoff+" entryCameraElapsed="+TraceNumber(entryCameraElapsed)+
+            " entryCameraVelocity="+TraceNumber(entryCameraVelocity)+
+            " entryRequestedPan="+TraceNumber(entryCameraRequestedPan)+
             " cameraTarget="+(cameraTarget!=null?cameraTarget.gameObject.name:"none");
     }
     private static string TraceNumber(float value)
@@ -180,6 +244,7 @@ public class EnvironmentManager : MonoBehaviour
 
     public void FollowHero(HeroController hero)
     {
+        CancelCameraEntryHandoff();
         if(hero!=null)hero.TracePosition("FollowHero before camera reset");
         cameraTarget = hero;
         deadzoneCamera.Reset(); // Start or Retry must not inherit old momentum.
@@ -202,6 +267,7 @@ public class EnvironmentManager : MonoBehaviour
     }
 
     void OnDestroy() { if (Instance == this) Instance = null; }
+    void OnDisable() { CancelCameraEntryHandoff(); }
 
     // All AI moves before CombatManager.Update. Camera presentation runs after both.
     void Update()
@@ -219,7 +285,7 @@ public class EnvironmentManager : MonoBehaviour
         foreach (var hero in HeroController.ActiveHeroes)
             if (hero != null && hero.IsDeployed) hero.TickMovement(this, dt);
         float cameraPan, backgroundPan;
-        PresentationPan(out cameraPan, out backgroundPan);
+        PlanPresentationPan(out cameraPan, out backgroundPan);
         plannedCameraPan = cameraPan;
         plannedBackgroundPan = backgroundPan;
         hasPlannedPan = true;
@@ -260,7 +326,7 @@ public class EnvironmentManager : MonoBehaviour
         }
         else
         {
-            PresentationPan(out pan, out backgroundPan);
+            PlanPresentationPan(out pan, out backgroundPan);
             tracePanSource="recomputed";
         }
         hasPlannedPan = false;

@@ -492,6 +492,8 @@ public class GameManager : MonoBehaviour
     }
     private void CancelGameplayEntry()
     {
+        var space=environmentManager!=null?environmentManager:EnvironmentManager.Instance;
+        if(space!=null)space.CancelCameraEntryHandoff();
         if(!enteringGameplay)return;
         enteringGameplay=false;openingRevealed=false;entryCompletionPending=false;
         if(entryVfx!=null)entryVfx.Finish();entryVfx=null;
@@ -507,6 +509,8 @@ public class GameManager : MonoBehaviour
         if(startMenu!=null)startMenu.EnterGameplayImmediately();
         if(hasDeployed && heroController!=null && heroController.IsDeployed)
         {
+            var space=environmentManager!=null?environmentManager:EnvironmentManager.Instance;
+            if(space!=null)space.BeginCameraEntryHandoff();
             if(UIManager.Instance!=null)UIManager.Instance.ShowMapTitle(runtimeHeroData.mapName);
             CallNextWave();
         }
@@ -1059,6 +1063,8 @@ public class GameManager : MonoBehaviour
 
     private void OnDisable()
     {
+        var space=environmentManager!=null?environmentManager:EnvironmentManager.Instance;
+        if(space!=null)space.CancelCameraEntryHandoff();
         // Restore presentation on cancellation, but never spawn a wave while
         // disabling the scene/component (including application shutdown).
         if(enteringGameplay)

@@ -139,10 +139,13 @@ partial class MotionRegression
                 }
                 Debug.LogObserver=null;
             });
-            Run("W2.2e native frame 5096 sample is reproduced by unchanged walking and deadzone pan",()=>{
+            Run("W2.2e native frame 5096 sample is reproduced by normal camera without entry handoff",()=>{
                 using(var f=new DesktopHotfixFixture(1920,true))
                 {
                     WaveEntryScene(f);WaveEntryFinish(f);var space=f.field.space;var hero=f.field.hero;
+                    // Preserve the measured baseline as a regression for the
+                    // original camera, outside the newly approved entry phase.
+                    space.CancelCameraEntryHandoff();
                     int life=hero.SpawnVersion;
                     const float nativeDelta=.0131111043f;
                     Near(space.Position(hero.heroRect).x,576,"native reveal X at 80 percent");
