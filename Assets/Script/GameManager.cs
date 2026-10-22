@@ -138,6 +138,8 @@ public class GameManager : MonoBehaviour
             actor.magicMoveSpeed=heroController.magicMoveSpeed;
             actor.tracePositionChanges=heroController.tracePositionChanges;
             actor.positionTraceFrameCount=heroController.positionTraceFrameCount;
+            actor.traceVisualPositionChanges=heroController.traceVisualPositionChanges;
+            actor.renderTraceFrameCount=heroController.renderTraceFrameCount;
             actor.attackMode = RandomUnusedTestMode();
 
             data = Instantiate(runtimeHeroData);
@@ -657,6 +659,7 @@ public class GameManager : MonoBehaviour
         foreach(var hero in HeroController.ActiveHeroes)
             if(hero!=null)hero.ArmPositionTrace();
         if(heroController!=null)heroController.TracePosition("VFX complete before gameplay release");
+        if(heroController!=null)heroController.TraceVisualPosition("Gameplay release before",12);
         CancelGameplayEntry();
         if(startMenu!=null)startMenu.EnterGameplayImmediately();
         if(hasDeployed && heroController!=null && heroController.IsDeployed)
@@ -667,6 +670,7 @@ public class GameManager : MonoBehaviour
             CallNextWave();
         }
         TraceEntryFrame("GameManager after gameplay release and first wave");
+        if(heroController!=null)heroController.TraceVisualPosition("Gameplay release after first wave",12);
     }
 
     private void CaptureSelectedStance()

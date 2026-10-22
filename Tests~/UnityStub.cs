@@ -43,6 +43,7 @@ namespace UnityEngine
     public class Coroutine { public IEnumerator routine; public bool stopped; }
     public class WaitForSeconds { public float seconds; public WaitForSeconds(float seconds) { this.seconds = seconds; } }
     public class WaitForSecondsRealtime { public float seconds; public WaitForSecondsRealtime(float seconds) { this.seconds = seconds; } }
+    public class WaitForEndOfFrame { }
     public class ScriptableObject : Object { }
     public class GameObject : Object
     {
@@ -222,7 +223,13 @@ namespace UnityEngine
         public void Create(){} public void Release(){}
     }
     public enum RenderMode { ScreenSpaceOverlay }
-    public class Canvas : Component { public RenderMode renderMode;public Camera worldCamera; public int sortingOrder,sortingLayerID,targetDisplay,additionalShaderChannels; public float scaleFactor; public static void ForceUpdateCanvases() { } }
+    public class Canvas : Component {
+      public RenderMode renderMode;public Camera worldCamera; public int sortingOrder,sortingLayerID,targetDisplay,additionalShaderChannels; public float scaleFactor;
+      public static void ForceUpdateCanvases() { }
+      // Invoked explicitly by diagnostic tests; this is NOT a native UI rebuild.
+      public static event System.Action willRenderCanvases;
+      public static void InvokeWillRenderCanvases() { if(willRenderCanvases!=null)willRenderCanvases(); }
+    }
     public static class Time { public static float deltaTime=1f/60f,unscaledDeltaTime=1f/60f,time,timeScale=1f; public static int frameCount; }
     public class AudioClip : Object { public float length = 180f; }
     public class AudioSource : MonoBehaviour
@@ -270,6 +277,8 @@ namespace UnityEngine.UI
     public class Graphic : UnityEngine.MonoBehaviour {
       public bool raycastTarget;public UnityEngine.Color color=UnityEngine.Color.white;
       public UnityEngine.RectTransform rectTransform { get { return (UnityEngine.RectTransform)transform; } }
+      // The model has no Canvas pixel rounding or native Image mesh generation.
+      public UnityEngine.Rect GetPixelAdjustedRect() { return rectTransform.rect; }
     }
     public class RawImage : MaskableGraphic { public UnityEngine.Texture texture; }
     public class Image : MaskableGraphic {

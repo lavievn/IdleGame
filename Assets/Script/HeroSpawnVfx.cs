@@ -19,6 +19,11 @@ public sealed class HeroSpawnVfx : MonoBehaviour
     private float elapsed;
     private readonly Dictionary<Graphic,bool> hiddenUI = new Dictionary<Graphic,bool>();
     private bool prepared;
+    private HeroController owner;
+    public Image EffectGraphic => effect;
+    public Image GlowGraphic => glow;
+    public float Elapsed => elapsed;
+    public int DisplayedFrame { get; private set; }=-1;
 
     public static HeroSpawnVfx Prepare(HeroController hero)
     {
@@ -26,7 +31,7 @@ public sealed class HeroSpawnVfx : MonoBehaviour
         var fx=hero.heroRect.GetComponent<HeroSpawnVfx>();
         if(fx==null)fx=hero.heroRect.gameObject.AddComponent<HeroSpawnVfx>();
         fx.Finish();
-        fx.actor=hero.heroRect;fx.heightMultiplier=hero.spawnVfxScale;
+        fx.actor=hero.heroRect;fx.heightMultiplier=hero.spawnVfxScale;fx.owner=hero;
         fx.prepared=true;
         fx.HoldForCinematic();
         return fx;
@@ -60,6 +65,7 @@ public sealed class HeroSpawnVfx : MonoBehaviour
     }
     public bool Begin()
     {
+        TraceRender("VFX Begin before",2);
         if(!isActiveAndEnabled || actor==null) { Finish();return false; }
         var sheet=sheetOverride!=null?sheetOverride:Resources.Load<Texture2D>("Spawn/Appear");
         if(sheet==null || sheet.width!=4000 || sheet.height!=2500) { Finish();return false; }
@@ -85,7 +91,8 @@ public sealed class HeroSpawnVfx : MonoBehaviour
             glow.sprite=glowSprite;
         }
         elapsed=0f;IsPlaying=true;effect.gameObject.SetActive(true);glow.gameObject.SetActive(true);
-        CultivationSpriteBridge.SetBodyOpacity(actor,0f);Advance(0f);return true;
+        CultivationSpriteBridge.SetBodyOpacity(actor,0f);Advance(0f);
+        TraceRender("VFX Begin after",2);return true;
     }
     private Image MakeImage(string name)
     {
@@ -99,9 +106,12 @@ public sealed class HeroSpawnVfx : MonoBehaviour
     {
         if(!IsPlaying)return false;
         elapsed+=Mathf.Max(0f,dt);
-        if(elapsed>=Duration || actor==null || !actor.gameObject.activeInHierarchy) { Finish();return false; }
+        if(elapsed>=Duration || actor==null || !actor.gameObject.activeInHierarchy) {
+            TraceRender("VFX terminating before Finish",2);Finish();return false;
+        }
         HideAttachedUI();
-        effect.sprite=frames[Mathf.Clamp((int)(elapsed*FramesPerSecond),0,FrameCount-1)];
+        DisplayedFrame=Mathf.Clamp((int)(elapsed*FramesPerSecond),0,FrameCount-1);
+        effect.sprite=frames[DisplayedFrame];
         float p=elapsed/Duration;
         float reveal=Mathf.Clamp01((p-.18f)/.27f);
         CultivationSpriteBridge.SetBodyOpacity(actor,reveal*reveal*(3f-2f*reveal));
@@ -114,6 +124,7 @@ public sealed class HeroSpawnVfx : MonoBehaviour
         float side=Mathf.Max(size.y*heightMultiplier/.91f,size.x*1.2f/.80f);
         Place(effect.rectTransform,new Vector2(.5f,.09f),Vector2.zero,new Vector2(side,side));
         Place(glow.rectTransform,new Vector2(.5f,.5f),new Vector2(0,size.y*.5f),size*heightMultiplier);
+        TraceRender("VFX Advance after layout",2);
         return true;
     }
     private static void Place(RectTransform rect,Vector2 pivot,Vector2 offset,Vector2 size)
@@ -123,12 +134,19 @@ public sealed class HeroSpawnVfx : MonoBehaviour
     }
     public void Finish()
     {
+        bool trace=prepared || IsPlaying;
+        if(trace)TraceRender("VFX Finish before",12);
         IsPlaying=false;prepared=false;elapsed=0f;
         CultivationSpriteBridge.SetBodyOpacity(actor!=null?actor:(RectTransform)transform,1f);
         foreach(var saved in hiddenUI)if(saved.Key!=null)saved.Key.enabled=saved.Value;
         hiddenUI.Clear();
         if(effect!=null)effect.gameObject.SetActive(false);
         if(glow!=null)glow.gameObject.SetActive(false);
+        if(trace)TraceRender("VFX Finish after",12);
+    }
+    private void TraceRender(string stage,int frames)
+    {
+        if(owner!=null)owner.TraceVisualPosition(stage,frames);
     }
     private void OnDisable() { Finish(); }
     private void OnDestroy()

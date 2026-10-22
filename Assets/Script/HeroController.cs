@@ -19,6 +19,9 @@ public class HeroController : MonoBehaviour
     [Range(1,120)] public int positionTraceFrameCount=30;
     private int positionTraceUntilFrame=-1;
     public bool IsPositionTraceFrame => tracePositionChanges && Time.frameCount<=positionTraceUntilFrame;
+    [Header("RENDER DIAGNOSTICS (off by default; no layout writes)")]
+    public bool traceVisualPositionChanges;
+    [Range(10,120)] public int renderTraceFrameCount=12;
     [Header("COMBAT STATS")]
     public AttackMode attackMode = AttackMode.Melee;
     public float attackRange = 30f;
@@ -249,6 +252,7 @@ public class HeroController : MonoBehaviour
             if (followCamera) space.FollowHero(this);
         }
         TracePosition("SpawnHero after");
+        TraceVisualPosition("SpawnHero after",12);
     }
 
     // Bounded frame logging, including paused entry frames. Only the diagnostic
@@ -271,6 +275,10 @@ public class HeroController : MonoBehaviour
     {
         if(!tracePositionChanges)return;
         Debug.Log(DescribePosition(stage)+(includeCaller?"\n"+new System.Diagnostics.StackTrace(1,true):""));
+    }
+    public void TraceVisualPosition(string stage,int minimumFrames=0)
+    {
+        if(traceVisualPositionChanges)HeroRenderProbe.Record(this,stage,minimumFrames);
     }
     public string DescribePosition(string stage)
     {

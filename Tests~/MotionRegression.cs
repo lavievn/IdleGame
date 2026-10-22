@@ -106,6 +106,7 @@ partial class MotionRegression
 
     static void Main(string[] args)
     {
+        if(args.Length==1 && args[0]=="--render-trace") { HeroRenderTraceTests();return; }
         if(args.Length==1 && args[0]=="--position-hotfix") { B2SpawnPositionTests();return; }
         if(args.Length==1 && args[0]=="--multi-zone") { MultiZoneCameraTests();return; }
         if(args.Length==1 && args[0]=="--map-entry") { UnifiedMapEntryTests();return; }
@@ -131,6 +132,7 @@ partial class MotionRegression
         UnifiedMapEntryTests();
         CameraEntryHandoffTests();
         WorldEntryTraceTests();
+        HeroRenderTraceTests();
         WaveEntryTests();
         DistanceWaveTests();
         FormationTests();
