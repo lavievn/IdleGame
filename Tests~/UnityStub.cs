@@ -338,7 +338,13 @@ namespace UnityEngine.Events {
 }
 namespace UnityEngine {
  public static class Application { public static string persistentDataPath=System.IO.Path.Combine(System.IO.Path.GetTempPath(),"idle-tests-"+Guid.NewGuid());public static string streamingAssetsPath=System.IO.Path.GetTempPath();public static void Quit(){} }
- public static class Debug { public static void Log(string s){} public static void LogWarning(string s){} public static void LogError(string s){System.Console.Error.WriteLine(s); } }
+ public static class Debug {
+     // Opt-in observation for diagnostics regressions; silent by default.
+     public static System.Action<string> LogObserver;
+     public static void Log(string s){if(LogObserver!=null)LogObserver(s);}
+     public static void LogWarning(string s){}
+     public static void LogError(string s){System.Console.Error.WriteLine(s); }
+ }
  public static class ColorUtility { public static bool TryParseHtmlString(string s,out Color c){c=new Color();return true;} }
  public static class RectTransformUtility {
   public static Vector2 WorldToScreenPoint(Camera camera,Vector3 point){if(camera!=null)throw new NotSupportedException("Only modeled screen-overlay projection is supported by UnityStub.");return (Vector2)point;}

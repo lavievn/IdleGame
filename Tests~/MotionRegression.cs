@@ -93,6 +93,7 @@ partial class MotionRegression
 
     static void Main(string[] args)
     {
+        if(args.Length==1 && args[0]=="--world-trace") { WorldEntryTraceTests();return; }
         if(args.Length==1 && args[0]=="--wave-entry") { WaveEntryTests();return; }
         if(args.Length==1 && args[0]=="--formation") { FormationTests();B2CombatRoutingTests();B2TestPartyTests();return; }
         if(args.Length==1 && args[0]=="--spawn") { SpawnEntryTests();return; }
@@ -107,6 +108,7 @@ partial class MotionRegression
         SpritePresentationTests();
         if (args.Length == 1 && args[0] == "--sprites") return;
         WorldMapRegressionTests();
+        WorldEntryTraceTests();
         WaveEntryTests();
         FormationTests();
         SpawnEntryTests();

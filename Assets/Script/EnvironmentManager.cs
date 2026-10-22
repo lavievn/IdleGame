@@ -61,6 +61,34 @@ public class EnvironmentManager : MonoBehaviour
     private bool hasPlannedPan;
     public float CameraFollowVelocity => deadzoneCamera.Velocity;
 
+    // Diagnostic bookkeeping only. Never step a camera smoother to sample it.
+    private int traceUpdateFrame=-1, tracePlanFrame=-1, traceAppliedFrame=-1;
+    private float traceActualPan, traceActualBackgroundPan;
+    private string tracePanSource="not-run";
+    public float LastAppliedCameraPan => traceActualPan;
+    public string DescribeCameraTrace()
+    {
+        return " updateFrame="+traceUpdateFrame+" planFrame="+tracePlanFrame+
+            " hasPlan="+hasPlannedPan+" plannedPan="+TraceNumber(plannedCameraPan)+
+            " plannedBackgroundPan="+TraceNumber(plannedBackgroundPan)+
+            " appliedFrame="+traceAppliedFrame+" actualPan="+TraceNumber(traceActualPan)+
+            " actualBackgroundPan="+TraceNumber(traceActualBackgroundPan)+" panSource="+tracePanSource+
+            " deadzoneVelocity="+TraceNumber(deadzoneCamera.Velocity)+
+            " combatOffset="+TraceNumber(combatFocusSmoother.Offset)+
+            " combatVelocity="+TraceNumber(combatFocusSmoother.Velocity)+
+            " stationaryVelocity="+TraceNumber(stationaryCombatVelocity)+
+            " cameraTarget="+(cameraTarget!=null?cameraTarget.gameObject.name:"none");
+    }
+    private static string TraceNumber(float value)
+    {
+        return value.ToString("R",System.Globalization.CultureInfo.InvariantCulture);
+    }
+    private static void TraceFrame(string stage)
+    {
+        foreach(var hero in HeroController.ActiveHeroes)
+            if(hero!=null)hero.TracePositionFrame(stage);
+    }
+
     private GroundPresentation groundPresentation;
     private Canvas battleCanvas;
     private float logicalWidth;
@@ -152,11 +180,13 @@ public class EnvironmentManager : MonoBehaviour
 
     public void FollowHero(HeroController hero)
     {
+        if(hero!=null)hero.TracePosition("FollowHero before camera reset");
         cameraTarget = hero;
         deadzoneCamera.Reset(); // Start or Retry must not inherit old momentum.
         combatFocusSmoother.Reset(); // New spawn/actor starts with fresh group offset.
         hasPlannedPan = false;
         stationaryCombatVelocity = 0f;
+        if(hero!=null)hero.TracePosition("FollowHero after camera reset");
     }
 
     void Awake()
@@ -176,9 +206,15 @@ public class EnvironmentManager : MonoBehaviour
     // All AI moves before CombatManager.Update. Camera presentation runs after both.
     void Update()
     {
+        TraceFrame("Environment.Update before projection/movement");
+        traceUpdateFrame=Time.frameCount;
         hasPlannedPan = false;
         SyncBattleProjection(); // Also runs when paused or before deployment.
-        if (Time.timeScale == 0f || battleArea == null || Width <= 0f) return;
+        if (Time.timeScale == 0f || battleArea == null || Width <= 0f)
+        {
+            TraceFrame("Environment.Update skipped");return;
+        }
+        TraceFrame("Environment.Update after projection before movement");
         float dt = Time.deltaTime;
         foreach (var hero in HeroController.ActiveHeroes)
             if (hero != null && hero.IsDeployed) hero.TickMovement(this, dt);
@@ -187,20 +223,30 @@ public class EnvironmentManager : MonoBehaviour
         plannedCameraPan = cameraPan;
         plannedBackgroundPan = backgroundPan;
         hasPlannedPan = true;
+        tracePlanFrame=Time.frameCount;
+        TraceFrame("Environment.Update after camera plan before monsters");
         float groundMinusCamera = backgroundPan - cameraPan;
         foreach (var monster in MonsterController.ActiveMonsters)
             if (monster != null && monster.IsAlive) monster.TickMovement(this, dt, groundMinusCamera);
         // Monsters may have entered a hero's range during this frame.
         foreach (var hero in HeroController.ActiveHeroes)
             if (hero != null && hero.IsDeployed) hero.RefreshCombatState(this);
+        TraceFrame("Environment.Update after movement/plan");
     }
 
     void LateUpdate()
     {
+        TraceFrame("Environment.LateUpdate before pan");
+        traceAppliedFrame=Time.frameCount;
+        traceActualPan=traceActualBackgroundPan=0f;
+        tracePanSource="skipped";
         IsScrolling = false;
         CurrentCameraSpeed = 0f;
         CurrentBackgroundSpeed = 0f;
-        if (Time.timeScale == 0f || battleArea == null || Width <= 0f) return;
+        if (Time.timeScale == 0f || battleArea == null || Width <= 0f)
+        {
+            TraceFrame("Environment.LateUpdate skipped");return;
+        }
         float pan, backgroundPan;
         // Update used this same pan to compute the monsters' Ground-camera
         // compensation. Advancing the soft camera again here would desync them.
@@ -210,14 +256,22 @@ public class EnvironmentManager : MonoBehaviour
         {
             pan = plannedCameraPan;
             backgroundPan = plannedBackgroundPan;
+            tracePanSource="planned";
         }
-        else PresentationPan(out pan, out backgroundPan);
+        else
+        {
+            PresentationPan(out pan, out backgroundPan);
+            tracePanSource="recomputed";
+        }
         hasPlannedPan = false;
         PanWorld(pan);
         PanEnvironment(backgroundPan);
+        traceActualPan=pan;
+        traceActualBackgroundPan=backgroundPan;
         CurrentBackgroundSpeed = Time.deltaTime > 0f ? backgroundPan / Time.deltaTime : 0f;
         CurrentCameraSpeed = Time.deltaTime > 0f ? pan / Time.deltaTime : 0f;
         IsScrolling = Mathf.Abs(pan) > 0.01f;
+        TraceFrame("Environment.LateUpdate after pan");
     }
 
     // Equal-weight center of all deployed Heroes and living, ON-SCREEN monsters.

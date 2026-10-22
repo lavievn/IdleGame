@@ -137,6 +137,7 @@ public class GameManager : MonoBehaviour
             actor.physicalMoveSpeed=heroController.physicalMoveSpeed;
             actor.magicMoveSpeed=heroController.magicMoveSpeed;
             actor.tracePositionChanges=heroController.tracePositionChanges;
+            actor.positionTraceFrameCount=heroController.positionTraceFrameCount;
             actor.attackMode = RandomUnusedTestMode();
 
             data = Instantiate(runtimeHeroData);
@@ -254,6 +255,22 @@ public class GameManager : MonoBehaviour
     private float entryElapsed;
     private HeroSpawnVfx entryVfx;
     public bool IsEnteringGameplay => enteringGameplay;
+    // Read-only snapshot for opt-in frame diagnostics; never advances entry/VFX.
+    public string DescribeGameplayEntry()
+    {
+        return " deployed="+hasDeployed+" entry="+enteringGameplay+" revealed="+openingRevealed+
+            " completionPending="+entryCompletionPending+
+            " entryElapsed="+entryElapsed.ToString("R",System.Globalization.CultureInfo.InvariantCulture)+
+            " openingEntering="+(startMenu!=null && startMenu.IsEnteringCinematic)+
+            " menuActive="+(preGameUI!=null && preGameUI.activeInHierarchy)+
+            " vfxPlaying="+(entryVfx!=null && entryVfx.IsPlaying)+
+            " waveMembers="+activeMonsters.Count+" waitingWave="+(nextWaveCoroutine!=null);
+    }
+    private static void TraceEntryFrame(string stage)
+    {
+        foreach(var hero in HeroController.ActiveHeroes)
+            if(hero!=null)hero.TracePositionFrame(stage);
+    }
     public bool IsHardMode => runtimeHeroData != null && runtimeHeroData.difficulty == 1;
     public bool HasPendingConfirmation => pendingChoice != MenuChoice.None;
     // Visible HUD only during active gameplay, never on start/confirmation/death screens.
@@ -440,6 +457,8 @@ public class GameManager : MonoBehaviour
         var space=environmentManager!=null?environmentManager:EnvironmentManager.Instance;
         if(space!=null && space.BattleArea!=null && heroController!=null && heroController.heroRect!=null)
         {
+            heroController.ArmPositionTrace();
+            heroController.TracePosition("Opening reveal before intentional 80-percent placement");
             Vector2 position=space.Position(heroController.heroRect);
             position.x=space.BattleArea.rect.xMin+space.Width*.8f;
             space.SetPosition(heroController.heroRect,position);
@@ -450,6 +469,7 @@ public class GameManager : MonoBehaviour
     }
     void Update()
     {
+        TraceEntryFrame("GameManager.Update before entry");
         if(!enteringGameplay)return;
         // Own the pause across the handoff; no actor/camera advances in a gap.
         SetEntryPaused(true);
@@ -463,6 +483,12 @@ public class GameManager : MonoBehaviour
         }
         if(enteringGameplay && openingRevealed && (entryVfx==null || !entryVfx.Advance(Time.unscaledDeltaTime)))
             entryCompletionPending=true;
+        // Re-arm at the completion request, even if the earlier reveal window
+        // has expired while the VFX played. Include the still-paused LateUpdate.
+        if(entryCompletionPending)
+            foreach(var hero in HeroController.ActiveHeroes)
+                if(hero!=null)hero.ArmPositionTrace();
+        TraceEntryFrame("GameManager.Update after entry");
     }
     private void CancelGameplayEntry()
     {
@@ -474,6 +500,8 @@ public class GameManager : MonoBehaviour
     private void CompleteGameplayEntry()
     {
         if(!enteringGameplay)return;
+        foreach(var hero in HeroController.ActiveHeroes)
+            if(hero!=null)hero.ArmPositionTrace();
         if(heroController!=null)heroController.TracePosition("VFX complete before gameplay release");
         CancelGameplayEntry();
         if(startMenu!=null)startMenu.EnterGameplayImmediately();
@@ -482,6 +510,7 @@ public class GameManager : MonoBehaviour
             if(UIManager.Instance!=null)UIManager.Instance.ShowMapTitle(runtimeHeroData.mapName);
             CallNextWave();
         }
+        TraceEntryFrame("GameManager after gameplay release and first wave");
     }
 
     private void CaptureSelectedStance()
@@ -942,6 +971,7 @@ public class GameManager : MonoBehaviour
 
     void LateUpdate()
     {
+        TraceEntryFrame("GameManager.LateUpdate before entry handoff");
         // EnvironmentManager (-200) has already finished its paused LateUpdate.
         // Release entry AFTER camera/actor steps so no camera-only half-frame
         // can run with a stale delta. The first wave still starts this frame;

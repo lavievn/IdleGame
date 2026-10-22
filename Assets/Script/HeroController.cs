@@ -16,7 +16,9 @@ public class HeroController : MonoBehaviour
     [Min(.1f)] public float spawnVfxScale = 1.4f;
     [Header("POSITION DIAGNOSTICS (off by default)")]
     public bool tracePositionChanges;
-    private int positionTraceFrames;
+    [Range(1,120)] public int positionTraceFrameCount=30;
+    private int positionTraceUntilFrame=-1;
+    public bool IsPositionTraceFrame => tracePositionChanges && Time.frameCount<=positionTraceUntilFrame;
     [Header("COMBAT STATS")]
     public AttackMode attackMode = AttackMode.Melee;
     public float attackRange = 30f;
@@ -131,7 +133,7 @@ public class HeroController : MonoBehaviour
     {
         MovementDistanceThisFrame = 0f;
         if (!IsDeployed) return;
-        if(positionTraceFrames>0)TracePosition("TickMovement before");
+        TracePositionFrame("TickMovement before");
         attackRange = space.AttackRange(attackMode, true);
         // Keep an in-range target during a strike; otherwise rescan the closest eligible opponent.
         if (CurrentTarget == null || !CanAttack(CurrentTarget, space)) CurrentTarget = FindClosestMonster(space);
@@ -145,7 +147,7 @@ public class HeroController : MonoBehaviour
             MovementDistanceThisFrame=Mathf.Abs(p.x-startX);
             space.SetPosition(heroRect,p);
             HandleAnimation(MovementDistanceThisFrame>.001f,false);
-            if(positionTraceFrames>0)TracePosition("TickMovement after formation step");
+            TracePositionFrame("TickMovement after formation step");
             return;
         }
         if (CurrentTarget == null)
@@ -157,7 +159,7 @@ public class HeroController : MonoBehaviour
             MovementDistanceThisFrame = Mathf.Abs(p.x - startX);
             space.SetPosition(heroRect, p);
             HandleAnimation(true, false);
-            if(positionTraceFrames>0)TracePosition("TickMovement after exploration step");
+            TracePositionFrame("TickMovement after exploration step");
             return;
         }
 
@@ -168,7 +170,7 @@ public class HeroController : MonoBehaviour
         MovementDistanceThisFrame = Mathf.Abs(p.x - startX);
         space.SetPosition(heroRect, p);
         RefreshCombatState(space);
-        if(positionTraceFrames>0)TracePosition("TickMovement after approach step");
+        TracePositionFrame("TickMovement after approach step");
     }
 
     public void RefreshCombatState(EnvironmentManager space)
@@ -211,7 +213,7 @@ public class HeroController : MonoBehaviour
     public void SpawnHero(bool followCamera,Vector2? initialPosition)
     {
         if (heroRect == null) return;
-        if(tracePositionChanges)positionTraceFrames=30;
+        ArmPositionTrace();
         TracePosition("SpawnHero before",true);
         SpawnVersion++;
         gameObject.SetActive(true);
@@ -234,8 +236,17 @@ public class HeroController : MonoBehaviour
         TracePosition("SpawnHero after");
     }
 
-    // Read-only diagnostics. Enable on the main HeroController before Play;
-    // capture 30 unpaused frames plus explicit spawn/entry events.
+    // Bounded frame logging, including paused entry frames. Only the diagnostic
+    // window changes here; no movement/camera/entry state is written.
+    public void ArmPositionTrace()
+    {
+        if(tracePositionChanges)
+            positionTraceUntilFrame=Time.frameCount+Mathf.Clamp(positionTraceFrameCount,1,120)-1;
+    }
+    public void TracePositionFrame(string stage)
+    {
+        if(IsPositionTraceFrame)TracePosition(stage);
+    }
     public void TracePosition(string stage,bool includeCaller=false)
     {
         if(!tracePositionChanges)return;
@@ -253,26 +264,40 @@ public class HeroController : MonoBehaviour
         Camera camera=canvas!=null && canvas.renderMode!=RenderMode.ScreenSpaceOverlay?canvas.worldCamera:null;
         var screen=RectTransformUtility.WorldToScreenPoint(camera,heroRect.position);
         var terrain=space.BattleArea.GetComponent<GroundPresentation>();
+        var manager=Object.FindFirstObjectByType<GameManager>();
         return "[HeroPosition] "+stage+" actor="+gameObject.name+" frame="+Time.frameCount+" life="+SpawnVersion+
-            " dt="+Number(Time.deltaTime)+" timeScale="+Number(Time.timeScale)+" state="+CurrentState+
+            " dt="+Number(Time.deltaTime)+" unscaledDt="+Number(Time.unscaledDeltaTime)+
+            " timeScale="+Number(Time.timeScale)+" state="+CurrentState+
             " speed="+Number(EffectiveMoveSpeed())+" walked="+Number(MovementDistanceThisFrame)+
             " anchor="+Pair(heroRect.anchoredPosition)+" battle="+Pair(space.Position(heroRect))+
+            " heroLocal="+Triple(heroRect.localPosition)+" heroWorld="+Triple(heroRect.position)+
             " HomeX="+Number(space.HomeX)+" focus="+Number(space.CurrentCameraFocusX)+
             " filteredFocus="+Number(space.CurrentCameraSmoothedFocusX)+" cameraSpeed="+Number(space.CurrentCameraSpeed)+
-            " pan="+Number(space.CurrentCameraSpeed*Time.deltaTime)+" backgroundSpeed="+Number(space.CurrentBackgroundSpeed)+
+            " pan="+Number(space.LastAppliedCameraPan)+" backgroundSpeed="+Number(space.CurrentBackgroundSpeed)+
+            space.DescribeCameraTrace()+
             " groundAnchor="+Pair(space.BattleArea.anchoredPosition)+
-            " battleWidth="+Number(space.Width)+" windowWidth="+Screen.width+
+            " groundLocal="+Triple(space.BattleArea.localPosition)+" groundWorld="+Triple(space.BattleArea.position)+
+            " groundScale="+Triple(space.BattleArea.localScale)+" groundPivot="+Pair(space.BattleArea.pivot)+
+            " battleWidth="+Number(space.Width)+" window="+Screen.width+"x"+Screen.height+
+            " windowWidth="+Screen.width+
             " canvasScale="+(canvas!=null?Number(canvas.scaleFactor):"none")+
+            " canvasWorld="+(canvas!=null?Triple(canvas.transform.position):"none")+
+            " canvasLocalScale="+(canvas!=null?Triple(canvas.transform.localScale):"none")+
+            " renderMode="+(canvas!=null?canvas.renderMode.ToString():"none")+
+            " projectionCameraWorld="+(camera!=null?Triple(camera.transform.position):"overlay")+
             " terrainPhase="+(terrain!=null?Number(terrain.TilePhase):"none")+
             " farPhase="+(terrain!=null?Number(terrain.FarPhase):"none")+
-            " distantPhase="+(terrain!=null?Number(terrain.DistantPhase):"none")+" screen="+Pair(screen);
+            " distantPhase="+(terrain!=null?Number(terrain.DistantPhase):"none")+" screen="+Pair(screen)+
+            (manager!=null?manager.DescribeGameplayEntry():" manager=none");
     }
     private static string Number(float value) { return value.ToString("R",System.Globalization.CultureInfo.InvariantCulture); }
     private static string Pair(Vector2 value) { return "("+Number(value.x)+","+Number(value.y)+")"; }
+    private static string Triple(Vector3 value) { return "("+Number(value.x)+","+Number(value.y)+","+Number(value.z)+")"; }
     void LateUpdate()
     {
-        if(!tracePositionChanges || positionTraceFrames<=0 || Time.timeScale==0f)return;
-        TracePosition("LateUpdate after camera");positionTraceFrames--;
+        // Default execution order follows EnvironmentManager (-200), but may
+        // precede GameManager (0). Stage names preserve this distinction.
+        TracePositionFrame("Hero.LateUpdate after environment");
     }
 
     public void HideHero()

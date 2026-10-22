@@ -29,6 +29,7 @@ public class StartMenuUI : MonoBehaviour
     private static readonly Color TitleInkColor = new Color(74f/255f,18f/255f,20f/255f,1f);
 
     public bool IsCinematic => cinematic != null;
+    public bool IsEnteringCinematic => cinematic != null && cinematic.IsEntering;
 
     public static StartMenuUI Install(GameManager gm)
     {
