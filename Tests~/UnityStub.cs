@@ -267,10 +267,13 @@ namespace UnityEngine
     }
     public static class PlayerPrefs
     {
+        public static int SaveCount;
         private static readonly Dictionary<string,float> floats=new Dictionary<string,float>();
         public static float GetFloat(string key,float fallback=0f) { float v;return floats.TryGetValue(key,out v)?v:fallback; }
         public static void SetFloat(string key,float value) { floats[key]=value; }
-        public static void Save() { }
+        public static void Save() {SaveCount++;}
+        public static bool HasKey(string key) {return floats.ContainsKey(key);}
+        public static void DeleteKey(string key) {floats.Remove(key);}
     }
     public class SerializeField : Attribute { }
     public class HideInInspector : Attribute { }

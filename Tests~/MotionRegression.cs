@@ -115,6 +115,7 @@ partial class MotionRegression
 
     static void Main(string[] args)
     {
+        if(args.Length==1 && args[0]=="--audio-volumes") {DualVolumeTests();MusicVolumeRegressionTests();OpeningSettingsRegressionTests();return;}
         if(args.Length==1 && args[0]=="--enemy-sprites") { EnemySpriteTests();return; }
         // Run entry/B2 contracts with sequence resources present, instead of
         // the historical one-frame SpriteResources fallback configuration.
@@ -150,6 +151,7 @@ partial class MotionRegression
         if (args.Length == 1 && args[0] == "--sprites") return;
         ArcherAnimationTests();
         EnemySpriteTests();
+        DualVolumeTests();
         HeroSfxTests();
         OpeningFontTests();
         WorldMapRegressionTests();

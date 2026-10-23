@@ -16,27 +16,25 @@ public sealed class MapBgmController : MonoBehaviour
     private float elapsed, outgoingWeight;
     private bool missingCatalogWarned;
 
-    private const string VolumePreferenceKey = "IdleGame.BgmVolume";
     public static MapBgmController Instance { get; private set; }
     [Range(0f, 1f)] public float musicVolume = .6f;
 
     // The volume is global for opening and all map playlists. Keep it outside
     // save slots so New Game / Load Game do not silently reset audio settings.
-    public static float CurrentVolume => Instance != null
-        ? Instance.musicVolume : Mathf.Clamp01(PlayerPrefs.GetFloat(VolumePreferenceKey, .6f));
+    public static float CurrentVolume => AudioVolumeSettings.Get(GameAudioChannel.Bgm);
 
     // Update continuously when the user drags, but flush preferences only
     // on release. Avoid disk I/O on every input frame.
     public static void PreviewVolume(float value)
     {
         value = Mathf.Clamp01(value);
-        PlayerPrefs.SetFloat(VolumePreferenceKey, value);
-        if (Instance != null) Instance.musicVolume = value;
+        AudioVolumeSettings.Preview(GameAudioChannel.Bgm,value);
+        if (Instance != null) Instance.musicVolume = CurrentVolume;
     }
 
     public static void SaveVolumePreference()
     {
-        PlayerPrefs.Save();
+        AudioVolumeSettings.Save();
     }
 
     public static void SetVolume(float value)
@@ -74,7 +72,7 @@ public sealed class MapBgmController : MonoBehaviour
 
     private static float CurrentVolumeFromPreferences()
     {
-        return Mathf.Clamp01(PlayerPrefs.GetFloat(VolumePreferenceKey, .6f));
+        return CurrentVolume;
     }
 
     // Audio themes are locked to a 5-map region, not each individual terrain
@@ -160,6 +158,7 @@ public sealed class MapBgmController : MonoBehaviour
 
     private void Update()
     {
+        musicVolume=CurrentVolume; // Inspector mirror, not a second settings store.
         if (catalog == null)
         {
             catalog = Resources.Load<MapBgmCatalog>("MapBgmCatalog");

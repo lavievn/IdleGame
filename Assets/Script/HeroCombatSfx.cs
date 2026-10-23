@@ -98,7 +98,7 @@ public sealed class HeroCombatSfx : MonoBehaviour
     {
         // Fixed per-voice headroom: total gain never exceeds the configured bus
         // volume, even with simultaneous B2 attacks. No per-frame normalization.
-        voice.source.volume=Mathf.Clamp01(sfxVolume)*MapBgmController.CurrentVolume*
+        voice.source.volume=Mathf.Clamp01(sfxVolume)*AudioVolumeSettings.Get(GameAudioChannel.Sfx)*
             Mathf.Clamp01(Gain(voice.mode))/VoiceCapacity;
     }
     private static void Stop(Voice voice)

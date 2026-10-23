@@ -11,6 +11,7 @@ public sealed class MusicVolumePanelUI
     private readonly TextMeshProUGUI valueText;
     private readonly TextMeshProUGUI muteText;
     private float lastAudibleVolume;
+    private readonly AudioVolumeBar bgmBar,sfxBar;
 
     private MusicVolumePanelUI(UIManager owner, Transform parent)
     {
@@ -21,27 +22,33 @@ public sealed class MusicVolumePanelUI
         root.anchorMin = root.anchorMax = new Vector2(1, 1);
         root.pivot = new Vector2(1, 1);
         root.anchoredPosition = new Vector2(-82, -32);
-        root.sizeDelta = new Vector2(226, 112);
+        root.sizeDelta = new Vector2(300, 220);
         var background = panel.GetComponent<UnityEngine.UI.Image>();
         background.color = new Color(.08f, .13f, .20f, .96f);
         background.raycastTarget = false;
 
-        var title = owner.MakeLabel(root, "ÂM LƯỢNG NHẠC", new Vector2(98, -16), new Vector2(176, 25));
+        var title = owner.MakeLabel(root, "ÂM LƯỢNG", new Vector2(150, -16), new Vector2(260, 25));
         title.fontSize = 13f;
-        valueText = owner.MakeLabel(root, "", new Vector2(113, -44), new Vector2(200, 28));
-        valueText.fontSize = 18f;
+        owner.MakeLabel(root,"Nhạc nền (BGM)",new Vector2(100,-40),new Vector2(180,25));
+        owner.MakeLabel(root,"Hiệu ứng (SFX)",new Vector2(100,-98),new Vector2(180,25));
+        valueText = owner.MakeLabel(root, "", new Vector2(255, -40), new Vector2(65, 25));
+        var sfxValue=owner.MakeLabel(root,"",new Vector2(255,-98),new Vector2(65,25));
+        bgmBar=new AudioVolumeBar("Gameplay BGM Volume Bar",root,GameAudioChannel.Bgm,valueText);
+        sfxBar=new AudioVolumeBar("Gameplay SFX Volume Bar",root,GameAudioChannel.Sfx,sfxValue);
 
         owner.SmallButton(root, "VolumeMinus", "−", new Vector2(0, 1), new Vector2(0, 1),
-            new Vector2(10, -75), new Vector2(46, 27), () => ChangeBy(-10));
+            new Vector2(40, -153), new Vector2(46, 27), () => ChangeBy(-10));
         var mute = owner.SmallButton(root, "VolumeMute", "Tắt nhạc", new Vector2(0, 1),
-            new Vector2(0, 1), new Vector2(62, -75), new Vector2(102, 27), ToggleMute);
+            new Vector2(0, 1), new Vector2(92, -153), new Vector2(116, 27), ToggleMute);
         muteText = mute.GetComponentInChildren<TextMeshProUGUI>(true);
         owner.SmallButton(root, "VolumePlus", "+", new Vector2(0, 1), new Vector2(0, 1),
-            new Vector2(170, -75), new Vector2(46, 27), () => ChangeBy(10));
+            new Vector2(214, -153), new Vector2(46, 27), () => ChangeBy(10));
+        owner.SmallButton(root,"AudioDefaults","Khôi phục mặc định",new Vector2(0,1),new Vector2(0,1),
+            new Vector2(40,-189),new Vector2(220,27),()=>{EndDrag();AudioVolumeSettings.RestoreDefaults();Refresh();});
 
         float volume = MapBgmController.CurrentVolume;
         lastAudibleVolume = volume > 0f ? volume : .6f;
-        Refresh();
+        Layout();Refresh();
         root.gameObject.SetActive(false);
     }
 
@@ -56,6 +63,7 @@ public sealed class MusicVolumePanelUI
     {
         if (root == null) return;
         bool open = !root.gameObject.activeSelf;
+        if(!open)EndDrag();
         root.gameObject.SetActive(open);
         if (open)
         {
@@ -66,6 +74,7 @@ public sealed class MusicVolumePanelUI
 
     public void Hide()
     {
+        EndDrag();
         if (root != null && root.gameObject.activeSelf) root.gameObject.SetActive(false);
     }
 
@@ -80,8 +89,28 @@ public sealed class MusicVolumePanelUI
         root.anchorMin = root.anchorMax = new Vector2(1, 1);
         root.pivot = new Vector2(1, 1);
         root.anchoredPosition = new Vector2(-82, -32);
-        root.sizeDelta = new Vector2(226, 112);
+        root.sizeDelta = new Vector2(300, 220);
+        PlaceTrack(bgmBar.Track,-65f);PlaceTrack(sfxBar.Track,-123f);
+        bgmBar.Refresh(true);sfxBar.Refresh(true);
     }
+    private static void PlaceTrack(RectTransform track,float y)
+    {
+        track.anchorMin=track.anchorMax=new Vector2(0,1);track.pivot=new Vector2(.5f,.5f);
+        track.anchoredPosition=new Vector2(150,y);track.sizeDelta=new Vector2(260,24);
+    }
+    public bool TryBeginDrag(Vector2 point)
+    {
+        if(!IsOpen)return false;
+        EndDrag();return bgmBar.TryBeginDrag(point)||sfxBar.TryBeginDrag(point);
+    }
+    public bool IsDragging => bgmBar.IsDragging||sfxBar.IsDragging;
+    public bool IsVolumeTrack(CustomInteractable item)
+    {
+        return item!=null && (item.transform==bgmBar.Track || item.transform==sfxBar.Track);
+    }
+    public void Drag(Vector2 point) {bgmBar.Drag(point);sfxBar.Drag(point);Refresh();}
+    public void EndDrag() {bgmBar.EndDrag();sfxBar.EndDrag();}
+    public void Tick() {if(IsOpen) {bgmBar.Refresh();sfxBar.Refresh();}}
 
     private void ChangeBy(int percentagePoints)
     {
@@ -112,5 +141,6 @@ public sealed class MusicVolumePanelUI
         int value = Mathf.RoundToInt(MapBgmController.CurrentVolume * 100f);
         if (valueText != null) valueText.text = value + "%";
         if (muteText != null) muteText.text = value == 0 ? "Bật nhạc" : "Tắt nhạc";
+        bgmBar.Refresh();sfxBar.Refresh();
     }
 }

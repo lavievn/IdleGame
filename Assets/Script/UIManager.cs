@@ -118,6 +118,7 @@ public class UIManager : MonoBehaviour
 
     void Update()
     {
+        if(musicVolumePanel!=null)musicVolumePanel.Tick();
 #if UNITY_STANDALONE_WIN && !UNITY_EDITOR
         // TransparentWindow owns native pointer events, including drag gestures.
         if (transparentWindow != null) return;
@@ -225,19 +226,27 @@ public class UIManager : MonoBehaviour
     {
         var menu=OpeningSettingsMenu();
         openingVolumeDragMenu=null;
-        if(menu==null || !menu.TryBeginVolumeDrag(point))return false;
-        openingVolumeDragMenu=menu;
-        return true;
+        if(menu!=null && menu.TryBeginVolumeDrag(point)) {openingVolumeDragMenu=menu;return true;}
+        var gm=Object.FindFirstObjectByType<GameManager>();
+        return gm!=null && gm.IsGameplayHUDVisible && !gm.HasPendingConfirmation &&
+            musicVolumePanel!=null && musicVolumePanel.IsVolumeTrack(HitControl(point)) && musicVolumePanel.TryBeginDrag(point);
     }
-    public bool HasOpeningVolumeDrag => openingVolumeDragMenu!=null;
+    public bool HasOpeningVolumeDrag => openingVolumeDragMenu!=null || (musicVolumePanel!=null && musicVolumePanel.IsDragging);
     private StartMenuUI openingVolumeDragMenu;
     public void DragOpeningVolume(Vector2 point)
     {
         if(openingVolumeDragMenu!=null)openingVolumeDragMenu.DragVolume(point);
+        else if(musicVolumePanel!=null)
+        {
+            var gm=Object.FindFirstObjectByType<GameManager>();
+            if(gm==null || !gm.IsGameplayHUDVisible || gm.HasPendingConfirmation) {EndOpeningVolumeDrag();return;}
+            musicVolumePanel.Drag(point);
+        }
     }
     public void EndOpeningVolumeDrag()
     {
         if(openingVolumeDragMenu!=null)openingVolumeDragMenu.EndVolumeDrag();
+        if(musicVolumePanel!=null)musicVolumePanel.EndDrag();
         openingVolumeDragMenu=null;
     }
     public bool IsTextInputAt(Vector2 point)

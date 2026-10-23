@@ -34,7 +34,7 @@ partial class MotionRegression
 
     static void HeroSfxTests()
     {
-        float oldVolume=MapBgmController.CurrentVolume;
+        float oldVolume=AudioVolumeSettings.Get(GameAudioChannel.Sfx);
         using(var resources=new SfxResources())using(var sprites=new SpriteResources())using(var frames=new ArcherFrames())
         try
         {
@@ -88,7 +88,7 @@ partial class MotionRegression
                 Check(bus.TryPlay(state,AttackMode.Melee) && Sources(f).Length==4,"reuse existing source");
             });
             Run("SFX shared settings/headroom/pause preserve position without replay",()=>{
-                var f=new Field();var bus=Bus(f);MapBgmController.PreviewVolume(.7f);
+                var f=new Field();var bus=Bus(f);AudioVolumeSettings.Preview(GameAudioChannel.Sfx,.7f);
                 for(int i=0;i<4;i++)Check(bus.TryPlay(f.combat.CurrentHeroCombatState,AttackMode.Melee),"fill pool");
                 float sum=0;foreach(var source in Sources(f))sum+=source.volume;
                 Check(sum<=bus.sfxVolume*.7f+.00001f,"bounded summed gain for simultaneous attacks");
@@ -96,11 +96,11 @@ partial class MotionRegression
                 Time.timeScale=0;Call(bus,"Update");
                 foreach(var source in sources)Check(!source.isPlaying,"pause audio");
                 Near(sources[0].time,.25f,"pause retains playhead");
-                MapBgmController.PreviewVolume(0);Time.timeScale=1;Call(bus,"Update");
+                AudioVolumeSettings.Preview(GameAudioChannel.Sfx,0);Time.timeScale=1;Call(bus,"Update");
                 foreach(var source in sources)Check(source.isPlaying && source.volume==0,"resume muted without new attack");
                 Near(sources[0].time,.25f,"resume did not Play from zero");
                 Check(bus.StartedCount==4,"resume/volume do not trigger events");
-                MapBgmController.PreviewVolume(.3f);Call(bus,"Update");
+                AudioVolumeSettings.Preview(GameAudioChannel.Sfx,.3f);Call(bus,"Update");
                 Near(sources[0].volume,bus.sfxVolume*.3f*bus.swordGain/4,"live volume follows existing setting");
             });
             foreach(string cause in new[]{"Death","Hide","Mode","Life","Spawn","Disable"})
@@ -148,7 +148,7 @@ partial class MotionRegression
                 Check(!bus.TryPlay(null,AttackMode.Melee),"null actor");
             });
         }
-        finally {MapBgmController.PreviewVolume(oldVolume);Time.timeScale=1;}
+        finally {AudioVolumeSettings.Preview(GameAudioChannel.Sfx,oldVolume);Time.timeScale=1;}
         Run("SFX missing clips leaves real combat functional",()=>{
             var f=new Field();f.hero.ChangeAttackMode(1);var enemy=f.Monster(-20);f.Battle(enemy);
             ReadySoundAttack(f,f.hero);SfxTick(f);
