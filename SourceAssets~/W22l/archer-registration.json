@@ -1,0 +1,281 @@
+[
+  {
+    "source": "Archer_Normal.png",
+    "source_size": [
+      900,
+      600
+    ],
+    "source_sha256": "8597f4742c60a0e200dacb8d8c212ab1525da86bf9fb61f307ce70f984026e0d",
+    "crop": [
+      85,
+      201,
+      450,
+      595
+    ],
+    "source_foot": [
+      300,
+      586
+    ],
+    "crown": 210,
+    "uniform_scale": 1.0,
+    "posed_height": 376,
+    "output": "Assets/Resources/CultivationSprites/Archer_Normal_1.png",
+    "canvas": [
+      900,
+      600
+    ],
+    "foot_bottom_left": [
+      300,
+      10
+    ],
+    "output_sha256": "0cfc2f05d2123f243658cc36d1dfc3eef25c29367617b49fc28584f88ba05c30"
+  },
+  {
+    "source": "Archer_Normal (2).png",
+    "source_size": [
+      1448,
+      1086
+    ],
+    "source_sha256": "344b0940cd9d5c039cecd88afe30ffabf93134ec1c5d7ef314619426353408b2",
+    "crop": [
+      261,
+      188,
+      1097,
+      1038
+    ],
+    "source_foot": [
+      780,
+      1029
+    ],
+    "crown": 197,
+    "uniform_scale": 0.4519230769230769,
+    "posed_height": 376,
+    "output": "Assets/Resources/CultivationSprites/Archer_Normal_2.png",
+    "canvas": [
+      900,
+      600
+    ],
+    "foot_bottom_left": [
+      300,
+      10
+    ],
+    "output_sha256": "45c137f00b7159513248778b1ff73147e7aa9776c9e865036afede74522f3e17"
+  },
+  {
+    "source": "Archer_Normal (3).png",
+    "source_size": [
+      1448,
+      1086
+    ],
+    "source_sha256": "3f16ec9004f7be687c8c6e217a931ebb31ecb7e5d7f71c685079f369626c6353",
+    "crop": [
+      230,
+      179,
+      1106,
+      1013
+    ],
+    "source_foot": [
+      800,
+      1004
+    ],
+    "crown": 188,
+    "uniform_scale": 0.46078431372549017,
+    "posed_height": 376,
+    "output": "Assets/Resources/CultivationSprites/Archer_Normal_3.png",
+    "canvas": [
+      900,
+      600
+    ],
+    "foot_bottom_left": [
+      300,
+      10
+    ],
+    "output_sha256": "974df48101e9c4dc08f61bd3cbb96a9d9e41fee87533e416b0630a59a1a0a096"
+  },
+  {
+    "source": "atk1.png",
+    "source_size": [
+      530,
+      407
+    ],
+    "source_sha256": "92435f3e2485fc3e5bc8db1d3d6389d08eb3210755e1aafb2aba87e1ed9a8354",
+    "crop": [
+      0,
+      0,
+      530,
+      407
+    ],
+    "source_foot": [
+      238,
+      406
+    ],
+    "crown": 2,
+    "uniform_scale": 0.9306930693069307,
+    "posed_height": 376,
+    "output": "Assets/Resources/CultivationSprites/Archer_Attack_1.png",
+    "canvas": [
+      900,
+      600
+    ],
+    "foot_bottom_left": [
+      300,
+      10
+    ],
+    "output_sha256": "27e958b81b106746a765e5e1801340a9ca15bc82025f6b778b2d9a252f42bd3f"
+  },
+  {
+    "source": "atk2.png",
+    "source_size": [
+      900,
+      600
+    ],
+    "source_sha256": "de30e671ed38f3b0a894795bf7c26419885144339e28d3263beab1c883a99dfd",
+    "crop": [
+      120,
+      213,
+      772,
+      597
+    ],
+    "source_foot": [
+      347,
+      588
+    ],
+    "crown": 222,
+    "uniform_scale": 1.0,
+    "posed_height": 366,
+    "output": "Assets/Resources/CultivationSprites/Archer_Attack_2.png",
+    "canvas": [
+      900,
+      600
+    ],
+    "foot_bottom_left": [
+      300,
+      10
+    ],
+    "output_sha256": "c4ea0f4f0f71e76aa2c056b5a8aedd89eb8cc6b51573f1c2a55c584f44e15217"
+  },
+  {
+    "source": "atk3.png",
+    "source_size": [
+      494,
+      394
+    ],
+    "source_sha256": "b75bb354cc138867e3b6a6fb744dfb2d11c43cb175e32888fc991756ffb26704",
+    "crop": [
+      0,
+      0,
+      494,
+      394
+    ],
+    "source_foot": [
+      251,
+      394
+    ],
+    "crown": 8,
+    "uniform_scale": 0.9740932642487047,
+    "posed_height": 376,
+    "output": "Assets/Resources/CultivationSprites/Archer_Attack_3.png",
+    "canvas": [
+      900,
+      600
+    ],
+    "foot_bottom_left": [
+      300,
+      10
+    ],
+    "output_sha256": "ee232df6933efbd58a9ee5b8ce9ba6079454364596e2299865bf580769de1d8e"
+  },
+  {
+    "source": "Archer_Hit.png",
+    "source_size": [
+      900,
+      600
+    ],
+    "source_sha256": "9f166663958f1ecb31e45562733aba997fe278058d19a07e6dfd8d91f65d75cb",
+    "crop": [
+      35,
+      238,
+      429,
+      595
+    ],
+    "source_foot": [
+      230,
+      586
+    ],
+    "crown": 248,
+    "uniform_scale": 1.0,
+    "posed_height": 338,
+    "output": "Assets/Resources/CultivationSprites/Archer_Hit_1.png",
+    "canvas": [
+      900,
+      600
+    ],
+    "foot_bottom_left": [
+      300,
+      10
+    ],
+    "output_sha256": "82462c8d4e71670f18beef625a0316457f14e0cd6453543918d9ecb394776764"
+  },
+  {
+    "source": "Archer_Hit (2).png",
+    "source_size": [
+      1448,
+      1086
+    ],
+    "source_sha256": "fb61469782b408194598c6ac573c497bfc123ecd26a0130400386db4be06dafc",
+    "crop": [
+      192,
+      170,
+      1140,
+      1004
+    ],
+    "source_foot": [
+      672,
+      995
+    ],
+    "crown": 179,
+    "uniform_scale": 0.4166666666666667,
+    "posed_height": 340,
+    "output": "Assets/Resources/CultivationSprites/Archer_Hit_2.png",
+    "canvas": [
+      900,
+      600
+    ],
+    "foot_bottom_left": [
+      300,
+      10
+    ],
+    "output_sha256": "b6f44d5f2cc4203c883d1e0be5d891dd9719c12ffa875dc434e26e8658c15f03"
+  },
+  {
+    "source": "Archer_Hit (3).png",
+    "source_size": [
+      1448,
+      1086
+    ],
+    "source_sha256": "170245f19167f1e59ed5d9cf1e9b612fa8802ae3492f36eb8e0281bfebb92552",
+    "crop": [
+      221,
+      202,
+      1091,
+      1009
+    ],
+    "source_foot": [
+      660,
+      1000
+    ],
+    "crown": 211,
+    "uniform_scale": 0.4309252217997465,
+    "posed_height": 340,
+    "output": "Assets/Resources/CultivationSprites/Archer_Hit_3.png",
+    "canvas": [
+      900,
+      600
+    ],
+    "foot_bottom_left": [
+      300,
+      10
+    ],
+    "output_sha256": "1d35530ac68cae672e4cea1b74668dd3f24285b969a03cc3d5da9cc8d616d9c0"
+  }
+]
