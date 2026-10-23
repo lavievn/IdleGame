@@ -1,0 +1,501 @@
+[
+  {
+    "source": "magic.mp3",
+    "source_sha256": "f3549a701e59135ef285e1fd5e3f06da9e2c2ed73c7e69ac0cf01d2296e79725",
+    "codec": "mp3",
+    "sample_rate": 48000,
+    "channels": 2,
+    "container_duration": 16.992,
+    "decoded_duration": 16.96045833333333,
+    "markers": "embedded ID3 CHAP via ffprobe",
+    "id3_chap_count": 8,
+    "group": "Magic",
+    "clips": [
+      {
+        "marker": "ch0",
+        "marker_start": 0.0,
+        "marker_end": 2.034,
+        "actual_start": 0.0,
+        "actual_end": 1.7169583333333334,
+        "duration": 1.7169583333333334,
+        "fade": [],
+        "peak_dbfs": -12.99495792388916,
+        "duplicate_of": null,
+        "pcm_sha256": "c52e313b7169a2e1bbe9a46f5f91b617a658ae5edb241bb8b961f7e41d63f0a8",
+        "output": "Assets/Resources/CombatSfx/Magic/magic_ch00.wav"
+      },
+      {
+        "marker": "ch1",
+        "marker_start": 2.034,
+        "marker_end": 4.331,
+        "actual_start": 2.034,
+        "actual_end": 3.6569583333333333,
+        "duration": 1.6229583333333333,
+        "fade": [],
+        "peak_dbfs": -11.92477798461914,
+        "duplicate_of": null,
+        "pcm_sha256": "57f44fe4e3f28b64a1ab1178044ef6ae9ba95c55838689d6b604e979b1e0216c",
+        "output": "Assets/Resources/CombatSfx/Magic/magic_ch01.wav"
+      },
+      {
+        "marker": "ch2",
+        "marker_start": 4.331,
+        "marker_end": 6.537,
+        "actual_start": 4.331,
+        "actual_end": 6.031354166666667,
+        "duration": 1.7003541666666666,
+        "fade": [],
+        "peak_dbfs": -12.759212493896484,
+        "duplicate_of": null,
+        "pcm_sha256": "d659ec012ddfbe4e019ddef7b95513e1da1aa1daaac0be08b727e11f5e81702a",
+        "output": "Assets/Resources/CombatSfx/Magic/magic_ch02.wav"
+      },
+      {
+        "marker": "ch3",
+        "marker_start": 6.537,
+        "marker_end": 8.935,
+        "actual_start": 6.537,
+        "actual_end": 8.245125,
+        "duration": 1.708125,
+        "fade": [],
+        "peak_dbfs": -11.474483489990234,
+        "duplicate_of": null,
+        "pcm_sha256": "335073037118b8629f1eac7da467592f5e68344b156f098b18b64e80798de84f",
+        "output": "Assets/Resources/CombatSfx/Magic/magic_ch03.wav"
+      },
+      {
+        "marker": "ch4",
+        "marker_start": 8.935,
+        "marker_end": 11.099,
+        "actual_start": 8.935,
+        "actual_end": 10.66775,
+        "duration": 1.73275,
+        "fade": [],
+        "peak_dbfs": -12.59941577911377,
+        "duplicate_of": null,
+        "pcm_sha256": "f277dfb3c7648c2a5f780b571f5d9d17ba2c4889c5f39adac711ee0afb8d49f8",
+        "output": "Assets/Resources/CombatSfx/Magic/magic_ch04.wav"
+      },
+      {
+        "marker": "ch5",
+        "marker_start": 11.099,
+        "marker_end": 13.429,
+        "actual_start": 11.099,
+        "actual_end": 12.862375,
+        "duration": 1.763375,
+        "fade": [],
+        "peak_dbfs": -11.430977821350098,
+        "duplicate_of": null,
+        "pcm_sha256": "617a562328c319433fbc3b7f5c874a0ea697d631197f5910edded4a4c4405e48",
+        "output": "Assets/Resources/CombatSfx/Magic/magic_ch05.wav"
+      },
+      {
+        "marker": "ch6",
+        "marker_start": 13.429,
+        "marker_end": 15.662,
+        "actual_start": 13.429,
+        "actual_end": 15.189833333333333,
+        "duration": 1.7608333333333333,
+        "fade": [],
+        "peak_dbfs": -11.701388359069824,
+        "duplicate_of": null,
+        "pcm_sha256": "20c2cce888ba6c55fb01d7d2ccc69f4808cdb5170981ad47440903f7d227f40b",
+        "output": "Assets/Resources/CombatSfx/Magic/magic_ch06.wav"
+      },
+      {
+        "marker": "ch7",
+        "marker_start": 15.662,
+        "marker_end": 16.96,
+        "actual_start": 15.662,
+        "actual_end": 16.96,
+        "duration": 1.298,
+        "fade": [],
+        "peak_dbfs": -11.855307579040527,
+        "duplicate_of": null,
+        "pcm_sha256": "638bd86d0df56505d79cee72051c4c7ceb22452732573c05b6197ffd96bbe84b",
+        "output": "Assets/Resources/CombatSfx/Magic/magic_ch07.wav"
+      }
+    ]
+  },
+  {
+    "source": "shoot1.mp3",
+    "source_sha256": "f529914f598040ed92456b5a70fb2167dbf16a97900b4311281c4ec78a5347d3",
+    "codec": "mp3",
+    "sample_rate": 48000,
+    "channels": 2,
+    "container_duration": 1.109333,
+    "decoded_duration": 1.104,
+    "markers": "none; standalone sound",
+    "id3_chap_count": 0,
+    "group": "Shoot",
+    "clips": [
+      {
+        "marker": "single",
+        "marker_start": 0.0,
+        "marker_end": 1.104,
+        "actual_start": 0.065625,
+        "actual_end": 0.9200625,
+        "duration": 0.8544375,
+        "fade": [],
+        "peak_dbfs": -15.671953201293945,
+        "duplicate_of": null,
+        "pcm_sha256": "3efe7c79c3dd18b5c1fa67649070b426845208b4bc866118fecf18cf0efe6d5b",
+        "output": "Assets/Resources/CombatSfx/Shoot/shoot1.wav"
+      }
+    ]
+  },
+  {
+    "source": "shoot2.mp3",
+    "source_sha256": "4e574a9cb64aa8fc63c503aa5f78bcf2187c774017a84f02ce2f2cfa353cf491",
+    "codec": "mp3",
+    "sample_rate": 48000,
+    "channels": 2,
+    "container_duration": 1.157333,
+    "decoded_duration": 1.152,
+    "markers": "none; standalone sound",
+    "id3_chap_count": 0,
+    "group": "Shoot",
+    "clips": [
+      {
+        "marker": "single",
+        "marker_start": 0.0,
+        "marker_end": 1.152,
+        "actual_start": 0.10852083333333333,
+        "actual_end": 1.0641666666666667,
+        "duration": 0.9556458333333333,
+        "fade": [],
+        "peak_dbfs": -15.870437622070312,
+        "duplicate_of": null,
+        "pcm_sha256": "a7ad96181296df029d4e2a8bd57f4da928fb427d301e993d7cf2b10fd4175ef4",
+        "output": "Assets/Resources/CombatSfx/Shoot/shoot2.wav"
+      }
+    ]
+  },
+  {
+    "source": "shoot3.mp3",
+    "source_sha256": "c9e980359e4933b0d91050509c05dac2f76438a5d38d75781b217ee4c2088882",
+    "codec": "mp3",
+    "sample_rate": 48000,
+    "channels": 2,
+    "container_duration": 0.989333,
+    "decoded_duration": 0.984,
+    "markers": "none; standalone sound",
+    "id3_chap_count": 0,
+    "group": "Shoot",
+    "clips": [
+      {
+        "marker": "single",
+        "marker_start": 0.0,
+        "marker_end": 0.984,
+        "actual_start": 0.13689583333333333,
+        "actual_end": 0.984,
+        "duration": 0.8471041666666667,
+        "fade": [],
+        "peak_dbfs": -16.46044158935547,
+        "duplicate_of": null,
+        "pcm_sha256": "2b53bf9130b8fc5f316e2a22b8227773e3cf607db5ff08f75d3c84bdbf4cfde4",
+        "output": "Assets/Resources/CombatSfx/Shoot/shoot3.wav"
+      }
+    ]
+  },
+  {
+    "source": "sword.mp3",
+    "source_sha256": "7e265a4b989142f6c7d327edea6be7c2e034d7c3268237d6fd1d9f2a7ad7fe6f",
+    "codec": "mp3",
+    "sample_rate": 48000,
+    "channels": 2,
+    "container_duration": 18.96,
+    "decoded_duration": 18.934604166666666,
+    "markers": "embedded ID3 CHAP via ffprobe",
+    "id3_chap_count": 10,
+    "group": "Sword",
+    "clips": [
+      {
+        "marker": "ch0",
+        "marker_start": 0.0,
+        "marker_end": 1.969,
+        "actual_start": 0.0,
+        "actual_end": 0.7017291666666666,
+        "duration": 0.7017291666666666,
+        "fade": [],
+        "peak_dbfs": -4.308381080627441,
+        "duplicate_of": null,
+        "pcm_sha256": "cdf0b908250e9c575aa8c746dd16ca59a8cf0344f7f23c53a935d4515c0d54e0",
+        "output": "Assets/Resources/CombatSfx/Sword/sword_ch00.wav"
+      },
+      {
+        "marker": "ch1",
+        "marker_start": 1.969,
+        "marker_end": 3.985,
+        "actual_start": 1.969,
+        "actual_end": 2.8195,
+        "duration": 0.8505,
+        "fade": [],
+        "peak_dbfs": -3.8992488384246826,
+        "duplicate_of": null,
+        "pcm_sha256": "95f555303e55c2afcd32217bc018ba6f9a05d008bf53b937a2fca191e0fe59e5",
+        "output": "Assets/Resources/CombatSfx/Sword/sword_ch01.wav"
+      },
+      {
+        "marker": "ch2",
+        "marker_start": 3.985,
+        "marker_end": 6.005,
+        "actual_start": 3.985,
+        "actual_end": 6.005,
+        "duration": 2.02,
+        "fade": [
+          "end:1ms"
+        ],
+        "peak_dbfs": -3.860041856765747,
+        "duplicate_of": null,
+        "pcm_sha256": "bad5a5a8adf44589ebbba39369e9dbe140fd3329c8e368f581620bb27554951a",
+        "output": "Assets/Resources/CombatSfx/Sword/sword_ch02.wav"
+      },
+      {
+        "marker": "ch3",
+        "marker_start": 6.005,
+        "marker_end": 8.017,
+        "actual_start": 6.005,
+        "actual_end": 8.017,
+        "duration": 2.012,
+        "fade": [
+          "start:1ms",
+          "end:1ms"
+        ],
+        "peak_dbfs": -2.554212808609009,
+        "duplicate_of": null,
+        "pcm_sha256": "682f8d5c29ce30e9b30c489cda4e9bd1694faaa434e1a112409b9e2cf7403e78",
+        "output": "Assets/Resources/CombatSfx/Sword/sword_ch03.wav"
+      },
+      {
+        "marker": "ch4",
+        "marker_start": 8.017,
+        "marker_end": 10.021,
+        "actual_start": 8.017,
+        "actual_end": 10.021,
+        "duration": 2.004,
+        "fade": [
+          "start:1ms",
+          "end:1ms"
+        ],
+        "peak_dbfs": -3.136033773422241,
+        "duplicate_of": null,
+        "pcm_sha256": "453e815bbd0f99763e0d3565cf3cc235fae5d67367375bdc0ba05d1eec57cd19",
+        "output": "Assets/Resources/CombatSfx/Sword/sword_ch04.wav"
+      },
+      {
+        "marker": "ch5",
+        "marker_start": 10.021,
+        "marker_end": 12.01,
+        "actual_start": 10.021,
+        "actual_end": 12.01,
+        "duration": 1.989,
+        "fade": [
+          "start:1ms",
+          "end:1ms"
+        ],
+        "peak_dbfs": -3.6423587799072266,
+        "duplicate_of": null,
+        "pcm_sha256": "a24759f0c669b6899d16541ef19c601074faa222aaf68df0ea7c63055f9ba6b6",
+        "output": "Assets/Resources/CombatSfx/Sword/sword_ch05.wav"
+      },
+      {
+        "marker": "ch6",
+        "marker_start": 12.01,
+        "marker_end": 14.023,
+        "actual_start": 12.01,
+        "actual_end": 14.023,
+        "duration": 2.013,
+        "fade": [
+          "start:1ms"
+        ],
+        "peak_dbfs": -3.247971534729004,
+        "duplicate_of": null,
+        "pcm_sha256": "04c025939beddc38b27c9ad0f9f73ccd80f6af3b7e2cf888d9ed8fec86bc8a98",
+        "output": "Assets/Resources/CombatSfx/Sword/sword_ch06.wav"
+      },
+      {
+        "marker": "ch7",
+        "marker_start": 14.023,
+        "marker_end": 16.008,
+        "actual_start": 14.023,
+        "actual_end": 16.008,
+        "duration": 1.985,
+        "fade": [
+          "end:1ms"
+        ],
+        "peak_dbfs": -5.031723976135254,
+        "duplicate_of": null,
+        "pcm_sha256": "5d35db62fb8170328df6c6f624993c5dc67cf03913450f66a7d2f32eda1c74ba",
+        "output": "Assets/Resources/CombatSfx/Sword/sword_ch07.wav"
+      },
+      {
+        "marker": "ch8",
+        "marker_start": 16.008,
+        "marker_end": 17.997,
+        "actual_start": 16.008,
+        "actual_end": 17.997,
+        "duration": 1.989,
+        "fade": [
+          "start:1ms"
+        ],
+        "peak_dbfs": -3.637284278869629,
+        "duplicate_of": null,
+        "pcm_sha256": "74727012c84a46b07ef2359bc82991e3b89ffc29b1ef27e55ea1aa5f6276d3e4",
+        "output": "Assets/Resources/CombatSfx/Sword/sword_ch08.wav"
+      },
+      {
+        "marker": "ch9",
+        "marker_start": 17.997,
+        "marker_end": 18.935,
+        "actual_start": 17.997,
+        "actual_end": 18.8858125,
+        "duration": 0.8888125,
+        "fade": [],
+        "peak_dbfs": -3.076205253601074,
+        "duplicate_of": null,
+        "pcm_sha256": "0715d9275ba25ae271863267893a3d01bc1fb1ed84888e01bd6cd4b68b49d074",
+        "output": "Assets/Resources/CombatSfx/Sword/sword_ch09.wav"
+      }
+    ]
+  },
+  {
+    "source": "sword2.mp3",
+    "source_sha256": "85278296369a9c3cec719ed8df517b1e4d50b2a5bc7d0b3c7c2c22cc502f326d",
+    "codec": "mp3",
+    "sample_rate": 48000,
+    "channels": 2,
+    "container_duration": 15.432,
+    "decoded_duration": 15.386041666666667,
+    "markers": "embedded ID3 CHAP via ffprobe",
+    "id3_chap_count": 8,
+    "group": "Sword",
+    "clips": [
+      {
+        "marker": "ch0",
+        "marker_start": 0.0,
+        "marker_end": 1.673,
+        "actual_start": 0.0017916666666666667,
+        "actual_end": 1.673,
+        "duration": 1.6712083333333334,
+        "fade": [
+          "end:1ms"
+        ],
+        "peak_dbfs": -2.4642982482910156,
+        "duplicate_of": null,
+        "pcm_sha256": "27d38014f1044d18725fa1bb7d91e525755db08ad5057ffdf62710ba107db12c",
+        "output": "Assets/Resources/CombatSfx/Sword/sword2_ch00.wav"
+      },
+      {
+        "marker": "ch1",
+        "marker_start": 1.673,
+        "marker_end": 3.822,
+        "actual_start": 1.673,
+        "actual_end": 3.822,
+        "duration": 2.149,
+        "fade": [
+          "start:1ms",
+          "end:1ms"
+        ],
+        "peak_dbfs": -1.976949691772461,
+        "duplicate_of": null,
+        "pcm_sha256": "6d293596a915f0c21eef86c93acc3ab4865a91211f04557a38aaae7d8431fae9",
+        "output": "Assets/Resources/CombatSfx/Sword/sword2_ch01.wav"
+      },
+      {
+        "marker": "ch2",
+        "marker_start": 3.822,
+        "marker_end": 5.381,
+        "actual_start": 3.822,
+        "actual_end": 5.381,
+        "duration": 1.559,
+        "fade": [
+          "start:1ms",
+          "end:1ms"
+        ],
+        "peak_dbfs": -1.4655365943908691,
+        "duplicate_of": null,
+        "pcm_sha256": "f9e4aeb729ddbcf0e254ba1d20bf16739522cae52369c0f196ea732909a8a2cb",
+        "output": "Assets/Resources/CombatSfx/Sword/sword2_ch02.wav"
+      },
+      {
+        "marker": "ch3",
+        "marker_start": 5.381,
+        "marker_end": 7.489,
+        "actual_start": 5.381,
+        "actual_end": 7.489,
+        "duration": 2.108,
+        "fade": [
+          "start:1ms",
+          "end:1ms"
+        ],
+        "peak_dbfs": -3.2802176475524902,
+        "duplicate_of": null,
+        "pcm_sha256": "5e1b48b959dc6cedab4ccc8f8a8a052b0e8c88c0d3a8ed0af85e6f307d16cf90",
+        "output": "Assets/Resources/CombatSfx/Sword/sword2_ch03.wav"
+      },
+      {
+        "marker": "ch4",
+        "marker_start": 7.489,
+        "marker_end": 9.49,
+        "actual_start": 7.489,
+        "actual_end": 9.49,
+        "duration": 2.001,
+        "fade": [
+          "end:1ms"
+        ],
+        "peak_dbfs": -2.1378531455993652,
+        "duplicate_of": null,
+        "pcm_sha256": "bef6fde06813931bd051542983c0b297f06bb9c8ddaefcd1659fafb28c9b7b63",
+        "output": "Assets/Resources/CombatSfx/Sword/sword2_ch04.wav"
+      },
+      {
+        "marker": "ch5",
+        "marker_start": 9.49,
+        "marker_end": 11.937,
+        "actual_start": 9.49,
+        "actual_end": 11.937,
+        "duration": 2.447,
+        "fade": [
+          "start:1ms",
+          "end:1ms"
+        ],
+        "peak_dbfs": -2.674630880355835,
+        "duplicate_of": null,
+        "pcm_sha256": "b7a79a698011e83223e3fe132aaf8ebd99eeb86c1c0d9ebf429824e6c5ce6e31",
+        "output": "Assets/Resources/CombatSfx/Sword/sword2_ch05.wav"
+      },
+      {
+        "marker": "ch6",
+        "marker_start": 11.937,
+        "marker_end": 14.318,
+        "actual_start": 11.937,
+        "actual_end": 14.318,
+        "duration": 2.381,
+        "fade": [
+          "start:1ms",
+          "end:1ms"
+        ],
+        "peak_dbfs": -2.2070348262786865,
+        "duplicate_of": null,
+        "pcm_sha256": "5cd726ef0b404ce1b7b6ad8d6d1a402e47c9e4830f509f462c8e756cd8aa9e72",
+        "output": "Assets/Resources/CombatSfx/Sword/sword2_ch06.wav"
+      },
+      {
+        "marker": "ch7",
+        "marker_start": 14.318,
+        "marker_end": 15.386,
+        "actual_start": 14.318,
+        "actual_end": 15.304979166666667,
+        "duration": 0.9869791666666666,
+        "fade": [
+          "start:1ms"
+        ],
+        "peak_dbfs": -2.07442307472229,
+        "duplicate_of": null,
+        "pcm_sha256": "8499c8149110e77c3f97a50c5dccd0b77fa978db0f88859c8da9b3676287726e",
+        "output": "Assets/Resources/CombatSfx/Sword/sword2_ch07.wav"
+      }
+    ]
+  }
+]
