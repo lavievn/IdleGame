@@ -119,6 +119,16 @@ public class UIManager : MonoBehaviour
     void Update()
     {
         if(musicVolumePanel!=null)musicVolumePanel.Tick();
+        // Read scroll before native pointer early-return so map zoom also works
+        // in transparent Windows Player, not only in Unity Editor.
+        var mapMouse=UnityEngine.InputSystem.Mouse.current;
+        if(worldMapUI!=null && worldMapUI.IsOpen && mapMouse!=null)
+        {
+            Vector2 mapPointer;
+            if(transparentWindow==null || !transparentWindow.TryGetPointerPosition(out mapPointer))
+                mapPointer=mapMouse.position.ReadValue();
+            worldMapUI.HandleScroll(mapPointer,mapMouse.scroll.ReadValue().y / 120f);
+        }
 #if UNITY_STANDALONE_WIN && !UNITY_EDITOR
         // TransparentWindow owns native pointer events, including drag gestures.
         if (transparentWindow != null) return;
