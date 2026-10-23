@@ -24,6 +24,46 @@ MonoBehaviour:
   farMountainsReferenceSize: {x: 944, y: 279}
   nearMountainsReferenceSize: {x: 992, y: 153}
   backCloudsReferenceSize: {x: 960, y: 198}
-  leftCloudsReferenceSize: {x: 536, y: 409.5}
-  rightCloudsReferenceSize: {x: 536, y: 409.5}
+  leftCloudsReferenceSize: {x: 727.73834, y: 265.46237}
+  rightCloudsReferenceSize: {x: 578.0889, y: 265.46237}
+  playModeLayouts:
+  - key: sky
+    position: {x: 10.3125, y: 18.75}
+    size: {x: 880, y: 504}
+  - key: farMountains
+    position: {x: 16.6875, y: 78.76875}
+    size: {x: 944, y: 279}
+  - key: nearMountains
+    position: {x: -7.3125076, y: -156.75}
+    size: {x: 992, y: 153}
+  - key: backClouds
+    position: {x: 48.12689, y: 27}
+    size: {x: 960, y: 198}
+  - key: leftClouds
+    position: {x: 14.73255, y: 66.544586}
+    size: {x: 727.73834, y: 265.46237}
+  - key: rightClouds
+    position: {x: 1.3028717, y: -82.16419}
+    size: {x: 578.0889, y: 265.46237}
+  - key: splashLeft
+    position: {x: -294.9094, y: -49.5}
+    size: {x: 210.17984, y: 351}
+  - key: splashRight
+    position: {x: 297.60938, y: -55.684376}
+    size: {x: 204.77959, y: 363.3698}
+  - key: gameTitle
+    position: {x: 0, y: 113.4375}
+    size: {x: 350, y: 71.875}
+  - key: continueButton
+    position: {x: 0, y: 12.5}
+    size: {x: 65, y: 11.875}
+  - key: newGameButton
+    position: {x: 0, y: -1.875}
+    size: {x: 65, y: 11.875}
+  - key: settingsButton
+    position: {x: 0, y: -16.25}
+    size: {x: 65, y: 11.875}
+  - key: quitButton
+    position: {x: 0, y: -30.625}
+    size: {x: 65, y: 11.875}
   edgeFeatherPixels: 65.4
