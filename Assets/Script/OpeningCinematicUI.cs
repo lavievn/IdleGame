@@ -366,7 +366,7 @@ public sealed class OpeningCinematicUI : MonoBehaviour
             var img=layer.GetComponent<Image>();
             img.sprite=sprite;img.color=Color.white;img.preserveAspect=false;
             var feather=layer.GetComponent<OpeningEdgeFeather>();
-            if(feather!=null)feather.enabled=false;
+            if(feather!=null){feather.enabled=false;img.material=null;}
             foreach(var t in layer.GetComponentsInChildren<TextMeshProUGUI>(true))
                 if(t.gameObject.name.StartsWith("PLACEHOLDER"))t.gameObject.SetActive(false);
             newScenery.Add(layer);
@@ -531,14 +531,17 @@ public sealed class OpeningCinematicUI : MonoBehaviour
         // Drift AROUND saved centers instead of hard-coded positions.
         backCloud.anchoredPosition=backCloudBase+
             new Vector2(Mathf.Sin(elapsed*.09f)*w*.035f,0f);
-        cloudLeft.anchoredPosition=cloudLeftBase+
-            new Vector2(Mathf.Sin(elapsed*.12f)*w*.035f,
-                Mathf.Sin(elapsed*.19f)*h*.014f);
-        cloudRight.anchoredPosition=cloudRightBase+
-            new Vector2(Mathf.Sin(elapsed*.11f+1.9f)*w*.032f,
-                Mathf.Sin(elapsed*.16f)*h*.017f);
-        far.localScale=new Vector3(1f+Mathf.Sin(elapsed*.13f)*.008f,
-            1f+Mathf.Sin(elapsed*.13f)*.008f,1f);
+        if(!newScenery.Contains(cloudLeft))
+            cloudLeft.anchoredPosition=cloudLeftBase+
+                new Vector2(Mathf.Sin(elapsed*.12f)*w*.035f,
+                    Mathf.Sin(elapsed*.19f)*h*.014f);
+        if(!newScenery.Contains(cloudRight))
+            cloudRight.anchoredPosition=cloudRightBase+
+                new Vector2(Mathf.Sin(elapsed*.11f+1.9f)*w*.032f,
+                    Mathf.Sin(elapsed*.16f)*h*.017f);
+        if(!newScenery.Contains(far))
+            far.localScale=new Vector3(1f+Mathf.Sin(elapsed*.13f)*.008f,
+                1f+Mathf.Sin(elapsed*.13f)*.008f,1f);
         // Independent left/right media selections, with only one initial fade each.
         if(splashLeft!=null)splashLeft.Tick(elapsed,null);
         if(splashRight!=null)splashRight.Tick(elapsed,splashLeft!=null?splashLeft.CurrentPath:null);
