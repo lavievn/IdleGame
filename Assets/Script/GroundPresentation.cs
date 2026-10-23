@@ -21,6 +21,17 @@ public class GroundPresentation : MonoBehaviour
     private readonly List<RectTransform> previousDepthOrder = new List<RectTransform>();
     private float phase, farPhase, distantPhase, previousWidth, previousHeight, grassHeight, grassY;
     private Color terrainTint;
+    private readonly List<RectTransform> skyTiles = new List<RectTransform>();
+    private Sprite plainsGround, plainsNear, plainsFar, plainsSky;
+    private Sprite legacyGround, legacyNear, legacyFar;
+    private bool plainsArtwork;
+    public bool UsesPlainsArtwork => plainsArtwork;
+
+    [Header("ĐỒNG BẰNG — SKY (chỉ hiển thị)")]
+    [Tooltip("1 = ảnh rộng bằng BattleArea; 2.5 = 250%. Giữ tỷ lệ PNG, lặp ngang, đứng yên theo viewport.")]
+    [Min(1f)] public float skyScale = 2.5f;
+    [Tooltip("Độ lệch từ góc trên trái viewport, tính bằng đơn vị BattleArea.")]
+    public Vector2 skyOffset = Vector2.zero;
 
     [Header("NỀN XA - THỊ SAI (CHỈ HIỂN THỊ)")]
     [Range(0f, 1f)] public float farParallaxSpeed = .3f;
@@ -119,6 +130,14 @@ public class GroundPresentation : MonoBehaviour
             ? Color.white : FixedTint;
         if (sky == null) sky = source.sprite;
         if (mountain == null) mountain = source.sprite;
+        presentation.legacyGround = source.sprite;
+        presentation.legacyNear = mountain;
+        presentation.legacyFar = sky;
+        // Load once, never decode/allocate textures in the scrolling loop.
+        presentation.plainsGround = Resources.Load<Sprite>("Environment/Plains/Ground");
+        presentation.plainsNear = Resources.Load<Sprite>("Environment/Plains/Ground2");
+        presentation.plainsFar = Resources.Load<Sprite>("Environment/Plains/Ground3");
+        presentation.plainsSky = Resources.Load<Sprite>("Environment/Plains/sky");
         for (int i = 0; i < 3; i++)
         {
             var distant = presentation.CreateImage("Ground Sky Parallax " + (i + 1),
@@ -155,6 +174,17 @@ public class GroundPresentation : MonoBehaviour
         foreach (var d in area.GetComponentsInChildren<RectTransform>(true))
             if (d.parent == area && d.gameObject.name != null && d.gameObject.name.StartsWith("Grass"))
                 presentation.AddDecoration(d, main, decorationSprite, seen);
+        if (presentation.plainsSky != null)
+            for (int i = 0; i < 3; i++)
+            {
+                var rect = presentation.CreateImage(i == 1 ? "Sky" : "Sky Loop " + i,
+                    presentation.plainsSky, Color.white);
+                rect.pivot = new Vector2(0f, 1f);
+                rect.SetSiblingIndex(i);
+                rect.gameObject.SetActive(false);
+                presentation.skyTiles.Add(rect);
+            }
+        presentation.RefreshTerrain();
         presentation.Reflow(true);
         return presentation;
     }
@@ -256,14 +286,15 @@ public class GroundPresentation : MonoBehaviour
     public void SetTerrainTint(Color color)
     {
         terrainTint = color;
-        foreach (var rect in tiles) rect.GetComponent<Image>().color = color;
+        foreach (var rect in tiles) rect.GetComponent<Image>().color = plainsArtwork ? Color.white : color;
         foreach (var far in farTiles)
-            if (far != null) far.GetComponent<Image>().color = farTint;
+            if (far != null) far.GetComponent<Image>().color = plainsArtwork ? Color.white : farTint;
         foreach (var distant in distantTiles)
-            if (distant != null) distant.GetComponent<Image>().color = distantTint;
+            if (distant != null) distant.GetComponent<Image>().color = plainsArtwork ? Color.white : distantTint;
     }
     public void Scroll(float amount)
     {
+        RefreshTerrain();
         Reflow(false); // Also reacts to window resize while no hero is active.
         float width = space.Width;
         if (width <= 0f) return;
@@ -276,6 +307,7 @@ public class GroundPresentation : MonoBehaviour
         LayoutTiles();
         LayoutFarTiles();
         LayoutDistantTiles();
+        LayoutSky();
         for (int i = 0; i < decorations.Count; i++)
         {
             var d = decorations[i]; if (d == null) continue;
@@ -317,6 +349,62 @@ public class GroundPresentation : MonoBehaviour
         LayoutTiles();
         LayoutFarTiles();
         LayoutDistantTiles();
+        LayoutSky();
+    }
+
+    private void RefreshTerrain()
+    {
+        // SetupHeroInfo installs the authoritative primary Hero data before map
+        // entry. Reading it also covers Travel/Load/Retry without new gameplay hooks.
+        var combat = CombatManager.Instance;
+        var state = combat != null ? combat.CurrentHeroCombatState : null;
+        bool use = state != null && state.Data != null &&
+            state.Data.mapTerrain == TuTienCore.TerrainType.DongBang &&
+            plainsGround != null && plainsNear != null && plainsFar != null && plainsSky != null;
+        if (use == plainsArtwork) return;
+        plainsArtwork = use;
+        SetLayerSprite(tiles, use ? plainsGround : legacyGround, use ? Color.white : terrainTint);
+        SetLayerSprite(farTiles, use ? plainsNear : legacyNear, use ? Color.white : farTint);
+        SetLayerSprite(distantTiles, use ? plainsFar : legacyFar, use ? Color.white : distantTint);
+        foreach (var rect in skyTiles) rect.gameObject.SetActive(use);
+        // The old small grass props belong to the preview set, not the PNG art.
+        foreach (var rect in decorations) if (rect != null) rect.gameObject.SetActive(!use);
+        previousDepthOrder.Clear();
+        // Switching artwork must not reroll decoration positions/consume the
+        // gameplay random stream. The normal resize reflow stays unchanged.
+        LayoutTiles();
+        LayoutFarTiles();
+        LayoutDistantTiles();
+        LayoutSky();
+    }
+    private static void SetLayerSprite(List<RectTransform> layer, Sprite sprite, Color color)
+    {
+        foreach (var rect in layer)
+        {
+            var image = rect.GetComponent<Image>();
+            image.sprite = sprite;
+            image.color = color;
+        }
+    }
+    private static float AspectHeight(Sprite sprite, float width)
+    {
+        return width * sprite.rect.height / Mathf.Max(1f, sprite.rect.width);
+    }
+    private void LayoutSky()
+    {
+        if (!plainsArtwork) return;
+        // BattleArea is the 100-unit FLOOR, not the visible viewport. Convert
+        // the compact gameplay pixel height through its stable width projection.
+        float viewportHeight = space.Width * ManagementWindowLayout.CombatHeight(Screen.height) /
+            Mathf.Max(1, ManagementWindowLayout.CombatPixels(Screen.width));
+        float width = space.Width * Mathf.Max(1f, skyScale);
+        for (int i = 0; i < skyTiles.Count; i++)
+        {
+            var rect = skyTiles[i];
+            rect.sizeDelta = new Vector2(width + 1f, AspectHeight(plainsSky, width + 1f));
+            rect.anchoredPosition = new Vector2(space.BattleArea.rect.xMin + (i - 1) * width + skyOffset.x,
+                space.BattleArea.rect.yMin + viewportHeight + skyOffset.y);
+        }
     }
     private void LayoutFarTiles() { LayoutParallaxTiles(farTiles, farPhase, farLayerScale); }
     private void LayoutDistantTiles() { LayoutParallaxTiles(distantTiles, distantPhase, distantLayerScale); }
@@ -330,7 +418,8 @@ public class GroundPresentation : MonoBehaviour
         {
             RectTransform tile = layer[i];
             if (tile == null) continue;
-            tile.sizeDelta = new Vector2(width + 1f, height);
+            tile.sizeDelta = new Vector2(width + 1f, plainsArtwork
+                ? AspectHeight(tile.GetComponent<Image>().sprite, width + 1f) : height);
             // Place the *visible* bottom of each silhouette near the back edge
             // of the main Grass strip. This stays independent of logic/world Y.
             float baselineY = grassY + grassHeight * parallaxBaseHeightRatio;
@@ -344,9 +433,13 @@ public class GroundPresentation : MonoBehaviour
         for (int i = 0; i < tiles.Count; i++)
         {
             // Adjacent tiles overlap by one Ground unit to avoid subpixel cracks.
-            tiles[i].sizeDelta = new Vector2(width + 1f, grassHeight);
-            tiles[i].anchoredPosition = new Vector2(space.BattleArea.rect.xMin + phase + (i - 1) * width, grassY);
-            tiles[i].GetComponent<Image>().color = terrainTint;
+            float height = plainsArtwork ? AspectHeight(plainsGround, width + 1f) : grassHeight;
+            tiles[i].sizeDelta = new Vector2(width + 1f, height);
+            // Preserve the old floor bottom rather than centering a taller PNG
+            // through the logical walking band. Never move/resize BattleArea.
+            tiles[i].anchoredPosition = new Vector2(space.BattleArea.rect.xMin + phase + (i - 1) * width,
+                plainsArtwork ? grassY - grassHeight * .5f + height * .5f : grassY);
+            tiles[i].GetComponent<Image>().color = plainsArtwork ? Color.white : terrainTint;
         }
     }
     private void AddDepth(RectTransform rect)
@@ -375,7 +468,7 @@ public class GroundPresentation : MonoBehaviour
                 if (previousDepthOrder[i] != depthVisuals[i].Rect) { changed = true; break; }
         if (!changed) return;
 
-        int firstActorIndex = distantTiles.Count + farTiles.Count + tiles.Count;
+        int firstActorIndex = skyTiles.Count + distantTiles.Count + farTiles.Count + tiles.Count;
         for (int i = 0; i < depthVisuals.Count; i++)
             depthVisuals[i].Rect.SetSiblingIndex(firstActorIndex + i);
         previousDepthOrder.Clear();
@@ -397,6 +490,8 @@ public class GroundPresentation : MonoBehaviour
             if (far != null) Destroy(far.gameObject);
         foreach (var distant in distantTiles)
             if (distant != null) Destroy(distant.gameObject);
+        foreach (var sky in skyTiles)
+            if (sky != null) Destroy(sky.gameObject);
         foreach (var t in tiles)
             if (t != null && t != originalGrass) Destroy(t.gameObject);
         if (generatedTreeSprite != null) Destroy(generatedTreeSprite);

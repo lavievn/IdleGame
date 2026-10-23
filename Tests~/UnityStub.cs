@@ -72,12 +72,23 @@ namespace UnityEngine
     public class Transform : Component, IEnumerable
     {
         public Transform parent;
+        private int siblingOrder=int.MaxValue;
         public bool IsChildOf(Transform other) { for(var t=this;t!=null;t=t.parent)if(t==other)return true;return false; }
-        public IEnumerator GetEnumerator() { var list=new List<Transform>();foreach(var o in Object.objects) { var t=o as Transform;if(t!=null&&t.parent==this)list.Add(t); }return list.GetEnumerator(); }
+        private List<Transform> Children() {
+            var list=new List<Transform>();foreach(var o in Object.objects) {var t=o as Transform;if(t!=null&&t.parent==this)list.Add(t);}
+            list.Sort((a,b)=>a.siblingOrder!=b.siblingOrder?a.siblingOrder.CompareTo(b.siblingOrder):Object.objects.IndexOf(a).CompareTo(Object.objects.IndexOf(b)));
+            return list;
+        }
+        public IEnumerator GetEnumerator() { return Children().GetEnumerator(); }
         public void SetParent(Transform value, bool worldPositionStays) { parent = value; }
-        public void SetAsLastSibling() { }
-        public void SetAsFirstSibling() { }
-        public void SetSiblingIndex(int index) { }
+        public void SetAsLastSibling() { SetSiblingIndex(int.MaxValue); }
+        public void SetAsFirstSibling() { SetSiblingIndex(0); }
+        public void SetSiblingIndex(int index) {
+            if(parent==null)return;var list=parent.Children();list.Remove(this);
+            list.Insert(Math.Max(0,Math.Min(index,list.Count)),this);
+            for(int i=0;i<list.Count;i++)list[i].siblingOrder=i;
+        }
+        public int GetSiblingIndex() { return parent==null?0:parent.Children().IndexOf(this); }
         private Vector3 local;
         public virtual Vector3 localPosition { get { return local; } set { local = value; } }
         public Vector3 localScale = Vector3.one;
