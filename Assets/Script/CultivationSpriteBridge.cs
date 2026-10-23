@@ -238,11 +238,11 @@ public sealed class CultivationSpriteBridge : MonoBehaviour
     }
     private void ReleaseSprites()
     {
-        if(normalFrames!=null)foreach(var frame in normalFrames)if(frame!=null)Destroy(frame);
+        if(normalFrames!=null) { foreach(var frame in normalFrames) if(frame!=null)Destroy(frame); }
         else if(normal!=null)Destroy(normal);
-        if(attackFrames!=null)foreach(var frame in attackFrames)if(frame!=null)Destroy(frame);
+        if(attackFrames!=null) { foreach(var frame in attackFrames) if(frame!=null)Destroy(frame); }
         else if(attack!=null)Destroy(attack);
-        if(hitFrames!=null)foreach(var frame in hitFrames)if(frame!=null)Destroy(frame);
+        if(hitFrames!=null) { foreach(var frame in hitFrames) if(frame!=null)Destroy(frame); }
         else if(hit!=null)Destroy(hit);
         normalFrames=attackFrames=hitFrames=null;
         normal=attack=hit=null;
