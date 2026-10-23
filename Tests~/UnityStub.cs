@@ -149,6 +149,7 @@ namespace UnityEngine
         public static float Min(float a,float b) { return Math.Min(a,b); }
         public static int Min(int a,int b) { return Math.Min(a,b); }
         public static float Sqrt(float x) { return (float)Math.Sqrt(x); }
+        public static float Pow(float value,float power) { return (float)Math.Pow(value,power); }
         public static float Clamp01(float a) { return Math.Max(0f,Math.Min(1f,a)); }
         public static int Max(int a,int b) { return Math.Max(a,b); }
         public static float Clamp(float value,float min,float max) { return Math.Max(min,Math.Min(max,value)); }
@@ -469,7 +470,7 @@ namespace UnityEngine {
    else if(f.FieldType.IsEnum)f.SetValue(value,Enum.ToObject(f.FieldType,int.Parse(m.Groups[1].Value))); } }
  }
 }
-namespace UnityEngine.InputSystem { public class Mouse { public static Mouse current;public Control leftButton=new Control(),position=new Control(); public class Control {public bool wasPressedThisFrame,wasReleasedThisFrame,isPressed;public UnityEngine.Vector2 value;public UnityEngine.Vector2 ReadValue(){return value;}} } }
+namespace UnityEngine.InputSystem { public class Mouse { public static Mouse current;public Control leftButton=new Control(),position=new Control(),scroll=new Control(); public class Control {public bool wasPressedThisFrame,wasReleasedThisFrame,isPressed;public UnityEngine.Vector2 value;public UnityEngine.Vector2 ReadValue(){return value;}} } }
 
 namespace UnityEngine {
  public enum FindObjectsInactive { Include }

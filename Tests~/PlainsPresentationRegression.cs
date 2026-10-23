@@ -79,33 +79,33 @@ partial class MotionRegression
                 Near(f.space.Position(m.Rect).x,mp.x,"Monster X");Near(f.space.Position(m.Rect).y,mp.y,"Monster Y");
                 Check(f.ground.sizeDelta.Equals(groundSize),"logical floor unchanged");Near(f.space.HomeX,home,"HomeX unchanged");
             });
-            Run("Plains parallax keeps original 30/10 percent rates with stationary sky and complete tile bounds",()=>{
+            Run("Plains parallax keeps approved 9/3 percent rates with stationary sky and complete tile bounds",()=>{
                 var f=new Field();RectTransform[] decor;var t=TerrainField(f,out decor);
                 var sky=Get<List<RectTransform>>(t,"skyTiles")[1];var before=sky.anchoredPosition;
                 foreach(float amount in new[]{100f,-13f,10000f,-25000f,999.25f}) {
                     float old=t.TilePhase,near=t.FarPhase,far=t.DistantPhase;
                     t.Scroll(amount);
                     Near(t.TilePhase,BattleMotion.Wrap(old+amount,0,f.space.Width),"ground period");
-                    Near(t.FarPhase,BattleMotion.Wrap(near+amount*.3f,0,f.space.Width*1.3f),"near parallax");
-                    Near(t.DistantPhase,BattleMotion.Wrap(far+amount*.1f,0,f.space.Width*1.69f),"far parallax");
+                    Near(t.FarPhase,BattleMotion.Wrap(near+amount*.09f,0,f.space.Width*1.3f),"near parallax");
+                    Near(t.DistantPhase,BattleMotion.Wrap(far+amount*.03f,0,f.space.Width*1.69f),"far parallax");
                     PlainsCoverage(t,f,"tiles",530f/2172);PlainsCoverage(t,f,"farTiles",724f/2172);
                     PlainsCoverage(t,f,"distantTiles",724f/2172);PlainsCoverage(t,f,"skyTiles",274f/2172);
                     Near(sky.anchoredPosition.x,before.x,"sky ignores camera pan");Near(sky.anchoredPosition.y,before.y,"sky top stable");
                 }
             });
             foreach(int width in new[]{600,800,1150})
-            Run("Sky 250 percent reference width follows viewport top at "+width,()=>{
+            Run("Sky 300 percent reference width follows viewport top at "+width,()=>{
                 int ow=Screen.width,oh=Screen.height;
                 try {
                     Screen.width=width;Screen.height=(int)(width*9f/16);ManagementWindowLayout.SetCompact(Screen.width,Screen.height);
-                    var f=new Field();RectTransform[] decor;var t=TerrainField(f,out decor);Near(t.skyScale,2.5f,"default scale");
+                    var f=new Field();RectTransform[] decor;var t=TerrainField(f,out decor);Near(t.skyScale,3f,"approved default scale");
                     var p=f.space.Position(f.hero.heroRect);
                     var sky=Get<List<RectTransform>>(t,"skyTiles")[1];
-                    Near(sky.rect.width,f.space.Width*2.5f+1,"250 percent plus one-unit overlap");
+                    Near(sky.rect.width,f.space.Width*3f,"300 percent without overlap");
                     float top=f.ground.rect.yMin+f.space.Width*Screen.height/Screen.width;
                     Near(sky.anchoredPosition.y,top,"top at gameplay viewport, not 100-unit floor");
-                    t.skyOffset=new Vector2(12,-7);t.skyScale=3;t.Scroll(0);
-                    Near(sky.anchoredPosition.y,top-7,"Inspector offset");Near(sky.rect.width,f.space.Width*3+1,"Inspector scale");
+                    t.skyOffset=new Vector2(12,-7);t.skyScale=4;t.Scroll(0);
+                    Near(sky.anchoredPosition.y,top-7,"Inspector offset");Near(sky.rect.width,f.space.Width*4,"Inspector scale");
                     Screen.height+=81;t.Scroll(0);
                     Near(sky.anchoredPosition.y,f.ground.rect.yMin+f.space.Width*Screen.height/Screen.width-7,"height-only resize recalculates sky");
                     Near(f.space.Position(f.hero.heroRect).x,p.x,"resize leaves Hero X");Near(f.space.Position(f.hero.heroRect).y,p.y,"resize leaves Hero Y");

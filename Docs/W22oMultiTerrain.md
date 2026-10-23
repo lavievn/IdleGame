@@ -1,5 +1,8 @@
 # W2.2o — Đồng Bằng, Rừng và Núi/Đồi
 
+Ghi nhận lịch sử W2.2o. Thông số tốc độ/Sky mới và cơ chế nối mép hiện tại xem
+[TerrainSeamHotfix.md](TerrainSeamHotfix.md); không còn overlap bù 1 đơn vị.
+
 ## Nguồn và mapping đủ 12 PNG
 
 Nhánh `feature/w2-combat-presentation`, nền đầu lượt `1873dcb` (`update map j_m`).

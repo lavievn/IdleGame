@@ -43,3 +43,14 @@ Kiểm tra single/full-rect sprite, kích thước nguồn, mesh, mipmap, Clamp 
 readability. Dùng TestCase/Assert.That cơ bản. Chưa compile/chạy bằng Unity Editor
 trong Cloud. Không kiểm chứng alpha sampling, đường nối tile hay chuyển cảnh;
 xem `Docs/W22oMultiTerrain.md` để nghiệm thu trong Unity/Windows Player.
+
+## Hotfix seam background2/background3
+
+`TerrainSeamNativeTests` thêm 6 ca Canvas/RectTransform native, không truy cập save.
+Scene phải không có manager/actor gameplay; fixture chỉ tạo Canvas/ảnh của mình,
+EnvironmentManager inactive trước AddComponent và không bao giờ chạy Awake.
+Kiểm tra mép render, scale ngang, pan/recycle hai chiều và resize; không tạo Hero,
+GameManager hoặc SaveManager. Ba projection mô phỏng bằng Canvas scale, không đổi
+kích thước cửa sổ Windows. Chưa chạy/compile bằng Unity thật trong Cloud; các ca
+hình học không thay nghiệm thu rasterization/alpha trong Player.
+Xem `Docs/TerrainSeamHotfix.md` để bật log Editor và nghiệm thu hình ảnh.

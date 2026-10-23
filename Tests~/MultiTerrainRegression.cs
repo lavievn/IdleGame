@@ -115,12 +115,12 @@ partial class MotionRegression
                     t.groundDropPixels=20;t.Scroll(0);float projection=ManagementWindowLayout.BattleCanvasScale(width,f.space.Width);
                     for(int i=0;i<ground.Count;i++)Near((ground[i].anchoredPosition.y-before[i].y)*projection,-20,"20px not 20 world units");
                     Check(near.anchoredPosition.Equals(np) && far.anchoredPosition.Equals(fp) && sky.anchoredPosition.Equals(sp),"only Ground shifted");
-                    Near(sky.anchoredPosition.y,f.ground.rect.yMin+f.space.Width*Screen.height/Screen.width,"viewport top");Near(sky.rect.width,f.space.Width*2.5f+1,"250 percent");
+                    Near(sky.anchoredPosition.y,f.ground.rect.yMin+f.space.Width*Screen.height/Screen.width,"viewport top");Near(sky.rect.width,f.space.Width*3f,"approved 300 percent, no overlap");
                     foreach(float amount in new[]{200f,-140f,10000f,-25000f}) {
                         float gp=t.TilePhase,nearPhase=t.FarPhase,farPhase=t.DistantPhase;t.Scroll(amount);
                         Near(t.TilePhase,BattleMotion.Wrap(gp+amount,0,f.space.Width),"Ground loop");
-                        Near(t.FarPhase,BattleMotion.Wrap(nearPhase+amount*.3f,0,f.space.Width*1.3f),"30 percent");
-                        Near(t.DistantPhase,BattleMotion.Wrap(farPhase+amount*.1f,0,f.space.Width*1.69f),"10 percent");
+                        Near(t.FarPhase,BattleMotion.Wrap(nearPhase+amount*.09f,0,f.space.Width*1.3f),"9 percent");
+                        Near(t.DistantPhase,BattleMotion.Wrap(farPhase+amount*.03f,0,f.space.Width*1.69f),"3 percent");
                         Check(sky.anchoredPosition.Equals(sp),"Sky stationary");
                         var art=resources.Art[ExpectedTerrain(type)];string[] layers={"tiles","farTiles","distantTiles","skyTiles"};
                         for(int i=0;i<layers.Length;i++)PlainsCoverage(t,f,layers[i],art[i].rect.height/art[i].rect.width);

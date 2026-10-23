@@ -22,6 +22,18 @@ public class GroundPresentation : MonoBehaviour
     private float phase, farPhase, distantPhase, previousWidth, previousHeight, grassHeight, grassY;
     private Color terrainTint;
     private readonly List<RectTransform> skyTiles = new List<RectTransform>();
+    private sealed class TileLoop
+    {
+        public bool Ready;
+        public float Width, Span, Left;
+    }
+    private readonly TileLoop groundLoop = new TileLoop(), nearLoop = new TileLoop(),
+        distantLoop = new TileLoop(), skyLoop = new TileLoop();
+    private float skyPhase;
+#if UNITY_EDITOR
+    [Header("EDITOR — chẩn đoán mép tile (tạm thời)")]
+    public bool traceTileSeams = true;
+#endif
     public enum ArtworkGroup { Legacy, Plains, Forest, Mountain }
     private sealed class TerrainArtwork
     {
@@ -325,15 +337,9 @@ public class GroundPresentation : MonoBehaviour
         Reflow(false); // Also reacts to window resize while no hero is active.
         float width = space.Width;
         if (width <= 0f) return;
-        phase = BattleMotion.Wrap(phase + amount, 0f, width);
-        float farWidth = width * Mathf.Max(1f, farLayerScale);
-        farPhase = BattleMotion.Wrap(farPhase + amount * Mathf.Clamp01(farParallaxSpeed), 0f, farWidth);
-        float distantWidth = width * Mathf.Max(1f, distantLayerScale);
-        distantPhase = BattleMotion.Wrap(
-            distantPhase + amount * Mathf.Clamp01(distantParallaxSpeed), 0f, distantWidth);
-        LayoutTiles();
-        LayoutFarTiles();
-        LayoutDistantTiles();
+        LayoutTiles(amount);
+        LayoutFarTiles(amount * Mathf.Clamp01(farParallaxSpeed));
+        LayoutDistantTiles(amount * Mathf.Clamp01(distantParallaxSpeed));
         LayoutSky();
         for (int i = 0; i < decorations.Count; i++)
         {
@@ -357,12 +363,6 @@ public class GroundPresentation : MonoBehaviour
         if (width <= 0f || (!force &&
             Mathf.Abs(previousWidth - width) < .01f &&
             Mathf.Abs(previousHeight - height) < .01f)) return;
-        if (previousWidth > 0f)
-        {
-            phase = phase / previousWidth * width;
-            farPhase = farPhase / previousWidth * width;
-            distantPhase = distantPhase / previousWidth * width;
-        }
         previousWidth = width;
         previousHeight = height;
         for (int i = 0; i < decorations.Count; i++)
@@ -445,49 +445,154 @@ public class GroundPresentation : MonoBehaviour
         for (int i = 0; i < skyTiles.Count; i++)
         {
             var rect = skyTiles[i];
-            rect.sizeDelta = new Vector2(width + 1f, AspectHeight(activeArtwork.Sky, width + 1f));
-            rect.anchoredPosition = new Vector2(space.BattleArea.rect.xMin + (i - 1) * width + skyOffset.x,
-                space.BattleArea.rect.yMin + viewportHeight + skyOffset.y);
+            rect.sizeDelta = new Vector2(width, AspectHeight(activeArtwork.Sky, width));
+            var position = rect.anchoredPosition;
+            position.y = space.BattleArea.rect.yMin + viewportHeight + skyOffset.y;
+            rect.anchoredPosition = position;
         }
+        PlaceLoop(skyTiles, skyLoop, ref skyPhase, space.BattleArea.rect.xMin + skyOffset.x, 0f, "Sky");
     }
-    private void LayoutFarTiles() { LayoutParallaxTiles(farTiles, farPhase, farLayerScale); }
-    private void LayoutDistantTiles() { LayoutParallaxTiles(distantTiles, distantPhase, distantLayerScale); }
+    private void LayoutFarTiles(float amount = 0f) { LayoutParallaxTiles(farTiles, nearLoop, ref farPhase, farLayerScale, amount, "Background2"); }
+    private void LayoutDistantTiles(float amount = 0f) { LayoutParallaxTiles(distantTiles, distantLoop, ref distantPhase, distantLayerScale, amount, "Background3"); }
 
-    private void LayoutParallaxTiles(List<RectTransform> layer, float layerPhase, float scale)
+    private void LayoutParallaxTiles(List<RectTransform> layer, TileLoop loop, ref float layerPhase, float scale, float amount, string label)
     {
         float width = space.Width * Mathf.Max(1f, scale);
         float height = space.BattleArea.rect.height * Mathf.Max(1f, scale);
-        float left = space.BattleArea.rect.xMin;
         for (int i = 0; i < layer.Count; i++)
         {
             RectTransform tile = layer[i];
             if (tile == null) continue;
-            // Exact butt joint: the previous +1 unit deliberately overlapped adjacent
-            // parallax PNGs, visibly doubling seamless artwork at tile joins.
             tile.sizeDelta = new Vector2(width, UsesTerrainArtwork
                 ? AspectHeight(tile.GetComponent<Image>().sprite, width) : height);
             // Place the *visible* bottom of each silhouette near the back edge
             // of the main Grass strip. This stays independent of logic/world Y.
             float baselineY = grassY + grassHeight * parallaxBaseHeightRatio;
-            tile.anchoredPosition = new Vector2(
-                left + layerPhase + (i - 1) * width, baselineY);
+            var position = tile.anchoredPosition;
+            position.y = baselineY;
+            tile.anchoredPosition = position;
         }
+        PlaceLoop(layer, loop, ref layerPhase, space.BattleArea.rect.xMin, amount, label);
     }
-    private void LayoutTiles()
+    private void LayoutTiles(float amount = 0f)
     {
         float width = space.Width;
         for (int i = 0; i < tiles.Count; i++)
         {
-            // Adjacent tiles overlap by one Ground unit to avoid subpixel cracks.
-            float height = UsesTerrainArtwork ? AspectHeight(activeArtwork.Ground, width + 1f) : grassHeight;
-            tiles[i].sizeDelta = new Vector2(width + 1f, height);
+            float height = UsesTerrainArtwork ? AspectHeight(activeArtwork.Ground, width) : grassHeight;
+            tiles[i].sizeDelta = new Vector2(width, height);
             // Preserve the old floor bottom rather than centering a taller PNG
             // through the logical walking band. Never move/resize BattleArea.
-            tiles[i].anchoredPosition = new Vector2(space.BattleArea.rect.xMin + phase + (i - 1) * width,
-                UsesTerrainArtwork ? grassY - grassHeight * .5f + height * .5f - GroundDropUnits() : grassY);
+            var position = tiles[i].anchoredPosition;
+            position.y = UsesTerrainArtwork ? grassY - grassHeight * .5f + height * .5f - GroundDropUnits() : grassY;
+            tiles[i].anchoredPosition = position;
             tiles[i].GetComponent<Image>().color = UsesTerrainArtwork ? Color.white : terrainTint;
         }
+        PlaceLoop(tiles, groundLoop, ref phase, space.BattleArea.rect.xMin, amount, "Ground");
     }
+
+    // Every installed tile is a direct child of BattleArea, uses Simple Image,
+    // full-rect sprites and preserveAspect=false. Measure the displayed UI rect
+    // in that common parent space, including the tile's horizontal scale.
+    private static Rect DisplayRect(RectTransform tile)
+    {
+        return tile.GetComponent<Image>().GetPixelAdjustedRect();
+    }
+    private static float RenderedWidth(RectTransform tile)
+    {
+        return DisplayRect(tile).width * Mathf.Abs(tile.localScale.x);
+    }
+    private static Vector2 TileEdges(RectTransform tile)
+    {
+        Rect rect = DisplayRect(tile);
+        float a = tile.localPosition.x + rect.xMin * tile.localScale.x;
+        float b = tile.localPosition.x + rect.xMax * tile.localScale.x;
+        return new Vector2(Mathf.Min(a, b), Mathf.Max(a, b));
+    }
+    private static void SetTileEdge(RectTransform tile, float edge, bool right)
+    {
+        Rect rect = DisplayRect(tile);
+        float a = rect.xMin * tile.localScale.x, b = rect.xMax * tile.localScale.x;
+        var position = tile.localPosition;
+        position.x = edge - (right ? Mathf.Max(a, b) : Mathf.Min(a, b));
+        tile.localPosition = position;
+    }
+    private static void JoinTiles(List<RectTransform> layer, float left)
+    {
+        for (int i = 0; i < layer.Count; i++)
+        {
+            SetTileEdge(layer[i], left, false);
+            left = TileEdges(layer[i]).y;
+        }
+    }
+    private void PlaceLoop(List<RectTransform> layer, TileLoop loop, ref float layerPhase,
+        float left, float amount, string label)
+    {
+        if (layer.Count == 0) return;
+        float width = RenderedWidth(layer[0]), span = 0f;
+        foreach (var tile in layer) span += RenderedWidth(tile);
+        if (width <= 0f || span <= 0f) return;
+        if (!loop.Ready || loop.Width != width || loop.Span != span || loop.Left != left)
+        {
+            if (loop.Ready) layerPhase = layerPhase / loop.Width * width;
+            layerPhase = BattleMotion.Wrap(layerPhase, 0f, width);
+            JoinTiles(layer, left + layerPhase - width);
+            loop.Ready = true;
+            loop.Width = width;
+            loop.Span = span;
+            loop.Left = left;
+        }
+        if (amount == 0f) return;
+        layerPhase = BattleMotion.Wrap(layerPhase + amount, 0f, width);
+        // A complete ring of identical images is visually periodic. Discard
+        // whole rings for large pans, then recycle only fully offscreen tiles.
+        float movement = amount % span;
+        JoinTiles(layer, TileEdges(layer[0]).x + movement);
+        if (movement < 0f)
+        {
+            while (TileEdges(layer[0]).y <= space.BattleArea.rect.xMin)
+            {
+                var recycled = layer[0];
+                var neighbor = layer[layer.Count - 1];
+                SetTileEdge(recycled, TileEdges(neighbor).y, false);
+                layer.RemoveAt(0);
+                layer.Add(recycled);
+#if UNITY_EDITOR
+                TraceTileRecycle(label, recycled, neighbor, true);
+#endif
+            }
+        }
+        else if (movement > 0f)
+        {
+            while (TileEdges(layer[layer.Count - 1]).x >= space.BattleArea.rect.xMax)
+            {
+                int last = layer.Count - 1;
+                var recycled = layer[last];
+                var neighbor = layer[0];
+                SetTileEdge(recycled, TileEdges(neighbor).x, true);
+                layer.RemoveAt(last);
+                layer.Insert(0, recycled);
+                // Subtracting a width to prepend may round in float arithmetic.
+                // Rejoin left-to-right from the actual new edge, never an epsilon.
+                JoinTiles(layer, TileEdges(recycled).x);
+#if UNITY_EDITOR
+                TraceTileRecycle(label, recycled, neighbor, false);
+#endif
+            }
+        }
+    }
+#if UNITY_EDITOR
+    private void TraceTileRecycle(string label, RectTransform tile, RectTransform neighbor, bool after)
+    {
+        if (!traceTileSeams) return;
+        var bounds = TileEdges(tile);
+        var adjacent = TileEdges(neighbor);
+        Debug.LogFormat(LogType.Log, LogOption.NoStacktrace, this,
+            "[TerrainSeam] {0} tile={1} xMin={2:R} xMax={3:R} renderedWidth={4:R} neighbor={5} neighborXMin={6:R} neighborXMax={7:R} join={8}",
+            label, tile.gameObject.name, bounds.x, bounds.y, RenderedWidth(tile),
+            neighbor.gameObject.name, adjacent.x, adjacent.y, after ? "after" : "before");
+    }
+#endif
     private float GroundDropUnits()
     {
         // Stable Battle Canvas maps logical width onto compact gameplay pixels.
