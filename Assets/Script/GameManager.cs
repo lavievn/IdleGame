@@ -396,6 +396,7 @@ public class GameManager : MonoBehaviour
         // Do not load or overwrite a save until the player confirms a choice.
         startMenu = StartMenuUI.Install(this);
         ConfigureEventLog();
+        ExplorationProgressHUD.Install(this);
         SetupPreGameUI();
         MapBgmController.Install(this);
         StartCoroutine(AutoSaveRoutine());
