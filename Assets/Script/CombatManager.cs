@@ -27,6 +27,7 @@ public class CombatManager : MonoBehaviour
         public HeroCombatState hero; // Shooter if fromHero, target if monster-fired.
         public int heroLife, heroSpawn;
         public int monsterLife, monsterSpawn;
+        public int battleVersion,stepTick;
         public bool fromHero, magic;
         public Vector2 start, end;
         public float elapsed, duration, arc;
@@ -36,7 +37,19 @@ public class CombatManager : MonoBehaviour
         public BattleEffects.Bolt visual;
     }
     private readonly List<Projectile> projectiles = new List<Projectile>();
+    // Visual-only tails hold no actor/data/target reference and can never hit.
+    private struct MagicFlight
+    {
+        public Vector2 start,end;
+        public float elapsed,duration,arc;
+        public int stepTick;
+        public BattleEffects.Bolt visual;
+    }
+    private readonly List<MagicFlight> magicFlights=new List<MagicFlight>();
+    private int battleVersion,projectileTick;
+    private const float MaxDetachedMagicSeconds=10f;
     public int PendingProjectileCount => projectiles.Count;
+    public int DetachedMagicVisualCount => magicFlights.Count;
     private GameManager gameManager;
     // B1: ONE authoritative object owns this Hero's transient HP/data/timer.
     // These forwarding properties preserve the .54g combat call sites while
@@ -188,7 +201,7 @@ public class CombatManager : MonoBehaviour
 
     public void StartBattle(List<GameObject> monsters, EntityDataSO baseMonsterData)
     {
-        ClearBattle(true);
+        ClearBattle(true,true); // Wave change retires old damage, not Magic visuals.
         foreach (var m in monsters)
         {
             if (m == null) continue;
@@ -255,7 +268,7 @@ public class CombatManager : MonoBehaviour
     public void ApplyDevBalance(bool monster)
     {
         // Changing balance cancels in-flight old power/cooldowns, not the wave or identity.
-        ClearProjectiles(); ResetAllHeroAttacks();
+        DiscardCombatProjectiles(true,true); ResetAllHeroAttacks();
         if (!monster && runtimeHeroData != null)
         {
             float healthRatio = maxHeroHP > 0 ? (float)currentHeroHP / maxHeroHP : 1f;
@@ -336,17 +349,25 @@ public class CombatManager : MonoBehaviour
     void Update()
     {
         if (Time.timeScale == 0f) return;
+        projectileTick++;
         var space = EnvironmentManager.Instance;
         float dt = Time.deltaTime;
         if (effects != null) effects.Advance(dt);
-        if (space == null || !AnyFightingHero())
+        if (space == null || space.BattleArea==null)
         {
-            if (projectiles.Count > 0) ClearProjectiles();
+            if (projectiles.Count>0 || magicFlights.Count>0) ClearProjectiles();
+            return;
+        }
+        if(!AnyFightingHero())
+        {
+            DiscardCombatProjectiles(true,false);
+            TickMagicFlights(dt);
             return;
         }
         if (effects == null && space.BattleArea != null) effects = BattleEffects.Create(space.BattleArea);
         // Older projectiles always advance before a new strike.
         TickProjectiles(space,dt);
+        TickMagicFlights(dt);
         if (!AnyFightingHero()) return;
         foreach (var state in heroStates.Values)
             if (state.CanFight)
@@ -645,7 +666,7 @@ public class CombatManager : MonoBehaviour
         hero.Die();
         // Do not GameOver or clear projectiles when teammates remain alive.
         if (AnyFightingHero()) return;
-        ForceClearAllMonsters();
+        ClearBattle(false,true); // Game Over cancels combat; existing Magic finishes visually.
         if (gameManager!=null) gameManager.OnHeroDied();
     }
 
@@ -664,6 +685,7 @@ public class CombatManager : MonoBehaviour
         Vector2 end=BodyPosition(fromHero?monster.controller.Rect:actor.Controller.heroRect,space);
         var shot=new Projectile {
             monster=monster,monsterLife=monster.lifeId,
+            battleVersion=battleVersion,stepTick=projectileTick,
             monsterSpawn=monster.controller.SpawnVersion,
             hero=actor,heroLife=actor.LifeVersion,
             heroSpawn=actor.Controller.SpawnVersion,
@@ -710,8 +732,10 @@ public class CombatManager : MonoBehaviour
             // A resurrected Hero and a pooled monster are NEW lifetimes. Physical
             // shots require the original target; Hero magic still explodes at
             // its stored endpoint even if the original monster has died.
-            if (!validHero || ((!shot.fromHero || !shot.magic) && !validMonster))
-            { RemoveProjectile(i); continue; }
+            if (shot.battleVersion!=battleVersion || !validHero ||
+                ((!shot.fromHero || !shot.magic) && !validMonster))
+            { RetireProjectile(i); continue; }
+            shot.stepTick=projectileTick;
             shot.elapsed+=dt;
             float t=shot.duration>0f?Mathf.Clamp01(shot.elapsed/shot.duration):1f;
             Vector2 end=shot.end;
@@ -769,7 +793,7 @@ public class CombatManager : MonoBehaviour
                                           ": đòn cung hụt, sát thương 0.");
                 gameManager.UpdateEventLog(miss);gameManager.RecordDamage(miss);
             }
-            if (!isBattling) { ClearProjectiles(false); return; }
+            if (!isBattling) { DiscardCombatProjectiles(true,false); return; }
         }
     }
 
@@ -782,14 +806,61 @@ public class CombatManager : MonoBehaviour
         if (effects != null && projectiles[index].visual != null) effects.RemoveBolt(projectiles[index].visual);
         projectiles.RemoveAt(index);
     }
+    private void RetireProjectile(int index)
+    {
+        var shot=projectiles[index];
+        if(!shot.magic) {RemoveProjectile(index);return;}
+        float duration=float.IsNaN(shot.duration)||float.IsInfinity(shot.duration)
+            ?MaxDetachedMagicSeconds:Mathf.Clamp(shot.duration,.001f,MaxDetachedMagicSeconds);
+        magicFlights.Add(new MagicFlight {start=shot.start,end=shot.end,arc=shot.arc,
+            elapsed=float.IsNaN(shot.elapsed)||float.IsInfinity(shot.elapsed)?0f:Mathf.Max(0f,shot.elapsed),
+            duration=duration,stepTick=shot.stepTick,visual=shot.visual});
+        projectiles.RemoveAt(index); // Transfer bolt ownership; do not remove its graphic.
+    }
+    private void TickMagicFlights(float dt)
+    {
+        for(int i=magicFlights.Count-1;i>=0;i--)
+        {
+            var flight=magicFlights[i];
+            // A callback may retire a flight already stepped this Update.
+            // Use the combat tick, not Time.frameCount (headless slices can share it).
+            if(flight.stepTick!=projectileTick)flight.elapsed+=Mathf.Max(0f,dt);
+            flight.stepTick=projectileTick;
+            float t=Mathf.Clamp01(flight.elapsed/flight.duration);
+            var position=new Vector2(flight.start.x+(flight.end.x-flight.start.x)*t,
+                flight.start.y+(flight.end.y-flight.start.y)*t+4f*flight.arc*t*(1f-t));
+            if(flight.visual!=null)
+            {
+                flight.visual.direction=position-flight.visual.position;flight.visual.position=position;
+            }
+            if(t>=1f)
+            {
+                if(effects!=null)effects.RemoveBolt(flight.visual);
+                magicFlights.RemoveAt(i);Impact(flight.end,true);
+            }
+            else magicFlights[i]=flight;
+        }
+    }
+    private void DiscardCombatProjectiles(bool keepMagicVisuals,bool clearParticles)
+    {
+        for(int i=projectiles.Count-1;i>=0;i--)
+            if(keepMagicVisuals)RetireProjectile(i);else RemoveProjectile(i);
+        if(clearParticles && effects!=null)effects.ClearParticles();
+    }
     private void ClearProjectiles(bool clearParticles = true)
     {
         for (int i = projectiles.Count - 1; i >= 0; i--) RemoveProjectile(i);
+        if(effects!=null)foreach(var flight in magicFlights)effects.RemoveBolt(flight.visual);
+        magicFlights.Clear();
         if (clearParticles && effects != null) effects.Clear();
     }
     public void PanEffects(float amount)
     {
         foreach (var shot in projectiles) { shot.start.x += amount; shot.end.x += amount; }
+        for(int i=0;i<magicFlights.Count;i++)
+        {
+            var flight=magicFlights[i];flight.start.x+=amount;flight.end.x+=amount;magicFlights[i]=flight;
+        }
         if (effects != null) effects.Pan(amount);
     }
     void OnDisable() { if(heroSfx!=null)heroSfx.StopAll();ClearProjectiles(); ResetAllHeroAttacks(); }
@@ -800,11 +871,14 @@ public class CombatManager : MonoBehaviour
     }
 
     public void ForceClearAllMonsters() { ClearBattle(false); }
-    private void ClearBattle(bool preserveHeroAttack)
+    public void ClearWaveKeepingMagicVisuals() {ClearBattle(false,true);}
+    private void ClearBattle(bool preserveHeroAttack,bool keepMagicVisuals=false)
     {
+        battleVersion++;
         isBattling = false;
         if (!preserveHeroAttack) ResetAllHeroAttacks();
-        ClearProjectiles();
+        if(keepMagicVisuals)DiscardCombatProjectiles(true,true);
+        else ClearProjectiles(); // Load/Retry/Travel/New Game/menu/disable are hard boundaries.
         foreach (var info in activeMonsters)
         {
             if (info.controller != null) info.controller.MarkDead();

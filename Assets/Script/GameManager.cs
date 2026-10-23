@@ -1153,7 +1153,7 @@ public class GameManager : MonoBehaviour
     private void RecoverEscapedWave()
     {
         CancelNextWave();
-        if (combatManager != null) combatManager.ForceClearAllMonsters();
+        if (combatManager != null) combatManager.ClearWaveKeepingMagicVisuals();
         activeMonsters.Clear();
         // Keep HP/EXP/map progress. Cancel old life identities and aim points,
         // then replay the unfinished wave after the normal delay.

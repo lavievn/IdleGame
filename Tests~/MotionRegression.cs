@@ -115,6 +115,7 @@ partial class MotionRegression
 
     static void Main(string[] args)
     {
+        if(args.Length==1 && args[0]=="--magic-persistence") {MagicPersistenceTests();return;}
         if(args.Length==1 && args[0]=="--audio-volumes") {DualVolumeTests();MusicVolumeRegressionTests();OpeningSettingsRegressionTests();return;}
         if(args.Length==1 && args[0]=="--enemy-sprites") { EnemySpriteTests();return; }
         // Run entry/B2 contracts with sequence resources present, instead of
@@ -152,6 +153,7 @@ partial class MotionRegression
         ArcherAnimationTests();
         EnemySpriteTests();
         DualVolumeTests();
+        MagicPersistenceTests();
         HeroSfxTests();
         OpeningFontTests();
         WorldMapRegressionTests();

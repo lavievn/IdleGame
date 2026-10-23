@@ -82,6 +82,7 @@ public class BattleEffects : MaskableGraphic
         SetVerticesDirty();
     }
     public void Clear() { bolts.Clear(); sparks.Clear(); SetVerticesDirty(); }
+    public void ClearParticles() { sparks.Clear();SetVerticesDirty(); }
 
     protected override void OnPopulateMesh(VertexHelper vh)
     {
