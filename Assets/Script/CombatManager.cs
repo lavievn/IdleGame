@@ -20,6 +20,7 @@ public class CombatManager : MonoBehaviour
     public CombatResistanceSettings resistanceSettings = new CombatResistanceSettings();
     [SerializeField] private MonsterSpawner monsterSpawner;
     private BattleEffects effects;
+    private HeroCombatSfx heroSfx;
     private class Projectile
     {
         public ActiveMonsterInfo monster;
@@ -154,6 +155,7 @@ public class CombatManager : MonoBehaviour
 
     void Start()
     {
+        heroSfx=HeroCombatSfx.Install(this);
         Instance = this;
         gameManager = GetComponent<GameManager>();
         heroController = Object.FindFirstObjectByType<HeroController>();
@@ -483,6 +485,7 @@ public class CombatManager : MonoBehaviour
         var trace=RollDamageTrace(actor.Data,target.data,actor.WindupMode);
         if (mode==AttackMode.Melee)
         {
+            if(heroSfx!=null)heroSfx.TryPlay(actor,mode);
             Impact(BodyPosition(target.controller.Rect,space),false);
             DealDamageToMonsterFromHero(target,trace,actor,null,mode);
         }
@@ -504,6 +507,7 @@ public class CombatManager : MonoBehaviour
     private void ResetHeroAttack() { ResetRegisteredAttack(primaryHeroState); }
     private void ResetRegisteredAttack(HeroCombatState actor)
     {
+        if(heroSfx!=null)heroSfx.StopHero(actor.Controller);
         actor.ResetAttack();
         if (actor.Controller != null) actor.Controller.UpdateChargeBar(false,0f);
     }
@@ -676,6 +680,9 @@ public class CombatManager : MonoBehaviour
             shot.visual.direction=shot.end-shot.start;
         }
         projectiles.Add(shot);
+        // Shoot/Magic belong to the actual release, never drawing, sprite
+        // frame changes or projectile impact. Monster launches stay unchanged.
+        if(fromHero && heroSfx!=null)heroSfx.TryPlay(actor,mode);
     }
 
     private static bool WithinImpact(Vector2 a, Vector2 b, float radius)
@@ -785,7 +792,7 @@ public class CombatManager : MonoBehaviour
         foreach (var shot in projectiles) { shot.start.x += amount; shot.end.x += amount; }
         if (effects != null) effects.Pan(amount);
     }
-    void OnDisable() { ClearProjectiles(); ResetAllHeroAttacks(); }
+    void OnDisable() { if(heroSfx!=null)heroSfx.StopAll();ClearProjectiles(); ResetAllHeroAttacks(); }
     void OnDestroy()
     {
         if (Instance == this) Instance = null;

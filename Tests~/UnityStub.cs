@@ -234,21 +234,33 @@ namespace UnityEngine
       public static void InvokeWillRenderCanvases() { if(willRenderCanvases!=null)willRenderCanvases(); }
     }
     public static class Time { public static float deltaTime=1f/60f,unscaledDeltaTime=1f/60f,time,timeScale=1f; public static int frameCount; }
-    public class AudioClip : Object { public float length = 180f; }
+    public class AudioClip : Object { public string name;public float length = 180f; }
     public class AudioSource : MonoBehaviour
     {
         public bool playOnAwake,loop,isPlaying;
-        public float spatialBlend,volume,time;
+        public float spatialBlend,volume,time,pitch=1f;
         public AudioClip clip;
-        public void Play() { isPlaying = clip != null; time = 0f; }
-        public void Stop() { isPlaying = false; }
+        public void Play() { isPlaying = clip != null; time = 0f; paused=false; }
+        public void Stop() { isPlaying = false; paused=false; }
+        private bool paused;
+        public void Pause() {paused=isPlaying;isPlaying=false;}
+        public void UnPause() {if(paused && clip!=null)isPlaying=true;paused=false;}
     }
     public static class Resources
     {
+        public static int LoadCallCount,LoadAllCallCount;
         private static readonly Dictionary<string,Object> entries=new Dictionary<string,Object>();
         public static T Load<T>(string path) where T : Object
         {
+            LoadCallCount++;
             Object value; return entries.TryGetValue(path,out value)?value as T:null;
+        }
+        public static T[] LoadAll<T>(string path) where T:Object
+        {
+            LoadAllCallCount++;
+            var result=new List<T>();
+            foreach(var pair in entries)if(pair.Key.StartsWith(path+"/") && pair.Value is T)result.Add((T)pair.Value);
+            return result.ToArray();
         }
         public static void Register(string path,Object value) {entries[path]=value;}
         public static void Unregister(string path){entries.Remove(path);}

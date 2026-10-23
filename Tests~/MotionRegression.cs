@@ -115,6 +115,13 @@ partial class MotionRegression
 
     static void Main(string[] args)
     {
+        // Run entry/B2 contracts with sequence resources present, instead of
+        // the historical one-frame SpriteResources fallback configuration.
+        if(args.Length==1 && args[0]=="--archer-entry") {
+            using(var frames=new ArcherFrames()) {RangedLaneTests();B2SpawnPositionTests();}
+            return;
+        }
+        if(args.Length==1 && args[0]=="--hero-sfx") { HeroSfxTests();return; }
         if(args.Length==1 && args[0]=="--archer-animation") { ArcherAnimationTests();return; }
         if(args.Length==1 && args[0]=="--ranged-lanes") { RangedLaneTests();return; }
         if(args.Length==1 && args[0]=="--opening-font") { OpeningFontTests();return; }
@@ -141,6 +148,7 @@ partial class MotionRegression
         SpritePresentationTests();
         if (args.Length == 1 && args[0] == "--sprites") return;
         ArcherAnimationTests();
+        HeroSfxTests();
         OpeningFontTests();
         WorldMapRegressionTests();
         MultiZoneCameraTests();
