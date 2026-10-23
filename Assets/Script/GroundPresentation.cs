@@ -48,7 +48,7 @@ public class GroundPresentation : MonoBehaviour
 
     [Header("ARTWORK ĐỊA HÌNH — SKY (chỉ hiển thị)")]
     [Tooltip("1 = ảnh rộng bằng BattleArea; 2.5 = 250%. Giữ tỷ lệ PNG, lặp ngang, đứng yên theo viewport.")]
-    [Min(1f)] public float skyScale = 2.5f;
+    [Min(1f)] public float skyScale = 3.0f;
     [Tooltip("Độ lệch từ góc trên trái viewport, tính bằng đơn vị BattleArea.")]
     public Vector2 skyOffset = Vector2.zero;
 
@@ -57,9 +57,9 @@ public class GroundPresentation : MonoBehaviour
     [Min(0f)] public float groundDropPixels = 20f;
 
     [Header("NỀN XA - THỊ SAI (CHỈ HIỂN THỊ)")]
-    [Range(0f, 1f)] public float farParallaxSpeed = .3f;
+    [Range(0f, 1f)] public float farParallaxSpeed = .09f;
     [Min(1f)] public float farLayerScale = 1.3f; // trees: 130% of Ground
-    [Range(0f, 1f)] public float distantParallaxSpeed = .1f;
+    [Range(0f, 1f)] public float distantParallaxSpeed = .03f;
     [Min(1f)] public float distantLayerScale = 1.69f; // mountains: 130% x 130%
 
     [Header("VỊ TRÍ CHÂN CỦA HAI LỚP XA")]
@@ -462,8 +462,10 @@ public class GroundPresentation : MonoBehaviour
         {
             RectTransform tile = layer[i];
             if (tile == null) continue;
-            tile.sizeDelta = new Vector2(width + 1f, UsesTerrainArtwork
-                ? AspectHeight(tile.GetComponent<Image>().sprite, width + 1f) : height);
+            // Exact butt joint: the previous +1 unit deliberately overlapped adjacent
+            // parallax PNGs, visibly doubling seamless artwork at tile joins.
+            tile.sizeDelta = new Vector2(width, UsesTerrainArtwork
+                ? AspectHeight(tile.GetComponent<Image>().sprite, width) : height);
             // Place the *visible* bottom of each silhouette near the back edge
             // of the main Grass strip. This stays independent of logic/world Y.
             float baselineY = grassY + grassHeight * parallaxBaseHeightRatio;
