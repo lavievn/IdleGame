@@ -33,6 +33,10 @@ public class GroundPresentation : MonoBehaviour
     [Tooltip("Độ lệch từ góc trên trái viewport, tính bằng đơn vị BattleArea.")]
     public Vector2 skyOffset = Vector2.zero;
 
+    [Header("ARTWORK GROUND — chỉ dịch phần hình, không dịch sàn logic")]
+    [Tooltip("Số pixel màn hình hạ Ground. Quy đổi qua canvas gameplay khi resize; không áp dụng cho nền thử nghiệm cũ.")]
+    [Min(0f)] public float groundDropPixels = 20f;
+
     [Header("NỀN XA - THỊ SAI (CHỈ HIỂN THỊ)")]
     [Range(0f, 1f)] public float farParallaxSpeed = .3f;
     [Min(1f)] public float farLayerScale = 1.3f; // trees: 130% of Ground
@@ -438,9 +442,16 @@ public class GroundPresentation : MonoBehaviour
             // Preserve the old floor bottom rather than centering a taller PNG
             // through the logical walking band. Never move/resize BattleArea.
             tiles[i].anchoredPosition = new Vector2(space.BattleArea.rect.xMin + phase + (i - 1) * width,
-                plainsArtwork ? grassY - grassHeight * .5f + height * .5f : grassY);
+                plainsArtwork ? grassY - grassHeight * .5f + height * .5f - GroundDropUnits() : grassY);
             tiles[i].GetComponent<Image>().color = plainsArtwork ? Color.white : terrainTint;
         }
+    }
+    private float GroundDropUnits()
+    {
+        // Stable Battle Canvas maps logical width onto compact gameplay pixels.
+        // At 600px / 1920 units, a 20px drop is 64 units, not 20 world units.
+        return Mathf.Max(0f, groundDropPixels) / Mathf.Max(.0001f,
+            ManagementWindowLayout.BattleCanvasScale(Screen.width, space.Width));
     }
     private void AddDepth(RectTransform rect)
     {

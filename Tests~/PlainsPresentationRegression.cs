@@ -122,6 +122,28 @@ partial class MotionRegression
                 try {var f=new Field();RectTransform[] decor;var t=TerrainField(f,out decor);Check(!t.UsesPlainsArtwork,"complete set required");}
                 finally {Resources.Register("Environment/Plains/Ground2",art.Art[1]);}
             });
+            foreach(int width in new[]{600,800,1150})
+            Run("Ground-only drop remains 20 screen pixels through resize / "+width,()=>{
+                int ow=Screen.width,oh=Screen.height;
+                try {
+                    var f=new Field();RectTransform[] decor;var t=TerrainField(f,out decor);
+                    var hp=f.space.Position(f.hero.heroRect);var floor=f.ground.sizeDelta;
+                    var other=new List<RectTransform>();
+                    foreach(string layer in new[]{"farTiles","distantTiles","skyTiles"})other.AddRange(Get<List<RectTransform>>(t,layer));
+                    Screen.width=width;Screen.height=(int)(width*9f/16);ManagementWindowLayout.SetCompact(Screen.width,Screen.height);
+                    t.groundDropPixels=0;t.Scroll(0);
+                    var original=new List<Vector2>();foreach(var rect in other)original.Add(rect.anchoredPosition);
+                    var tiles=Get<List<RectTransform>>(t,"tiles");var before=new List<Vector2>();foreach(var rect in tiles)before.Add(rect.anchoredPosition);
+                    t.groundDropPixels=20;t.Scroll(0);
+                    float scale=ManagementWindowLayout.BattleCanvasScale(width,f.space.Width);
+                    for(int i=0;i<tiles.Count;i++) {
+                        Near((tiles[i].anchoredPosition.y-before[i].y)*scale,-20,"every tile drops exactly 20 screen pixels");
+                        Near(tiles[i].anchoredPosition.x,before[i].x,"no X shift");
+                    }
+                    for(int i=0;i<other.Count;i++)Check(other[i].anchoredPosition.Equals(original[i]),"other layers do not drop");
+                    Near(f.space.Position(f.hero.heroRect).y,hp.y,"Hero feet unchanged");Check(f.ground.sizeDelta.Equals(floor),"logical floor unchanged");
+                } finally {Screen.width=ow;Screen.height=oh;ManagementWindowLayout.SetCompact(ow,oh);}
+            });
         }
     }
 }
