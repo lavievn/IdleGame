@@ -32,6 +32,8 @@ public sealed class CultivationSpriteBridge : MonoBehaviour
     private Pose pose = Pose.Normal;
     private float returnAt;
     private Sprite normal, attack, hit;
+    private Sprite[] normalFrames, attackFrames, hitFrames;
+    private float poseStartedAt;
     private float bodyOpacity = 1f;
     public Image BodyGraphic => image != null && normal != null ? image : GetComponent<Image>();
     // Read-only diagnostic reference, not a measurement of opaque shoe pixels.
@@ -110,6 +112,17 @@ public sealed class CultivationSpriteBridge : MonoBehaviour
             normal = LoadFrame(path + "_Normal");
             attack = LoadFrame(path + "_Attack");
             hit = LoadFrame(path + "_Hit");
+            // Three-frame Archer animations. Other roles keep the existing
+            // single-frame presentation without any behavior change.
+            if(!enemy && type=="Archer")
+            {
+                normalFrames=LoadSequence(path+"_Normal");
+                attackFrames=LoadSequence(path+"_Attack");
+                hitFrames=LoadSequence(path+"_Hit");
+                if(normalFrames!=null)normal=normalFrames[0];
+                if(attackFrames!=null)attack=attackFrames[0];
+                if(hitFrames!=null)hit=hitFrames[0];
+            }
         }
         if (normal == null)
         {
@@ -142,6 +155,20 @@ public sealed class CultivationSpriteBridge : MonoBehaviour
         return Sprite.Create(texture, new Rect(0f, 0f, texture.width, texture.height),
             new Vector2(.5f, .5f), 100f, 0, SpriteMeshType.FullRect);
     }
+    private static Sprite[] LoadSequence(string path)
+    {
+        var frames=new Sprite[3];
+        for(int i=0;i<3;i++)
+        {
+            frames[i]=LoadFrame(path+"_"+(i+1));
+            if(frames[i]==null)
+            {
+                for(int j=0;j<=i;j++)if(frames[j]!=null)Destroy(frames[j]);
+                return null;
+            }
+        }
+        return frames;
+    }
     private void Show(Pose requested, float duration)
     {
         if (image == null || !isActiveAndEnabled) return;
@@ -149,12 +176,14 @@ public sealed class CultivationSpriteBridge : MonoBehaviour
         // Only a NEW attack callback can start a new Attack display window.
         if (pose == Pose.Attack && requested == Pose.Hit && Time.time < returnAt) return;
         pose = requested;
+        poseStartedAt = Time.time;
         returnAt = Time.time + duration;
         Apply();
     }
     private void ResetPose()
     {
         pose = Pose.Normal;
+        poseStartedAt = Time.time;
         returnAt = 0f;
         Apply();
     }
@@ -170,12 +199,24 @@ public sealed class CultivationSpriteBridge : MonoBehaviour
             pose = Pose.Normal;
             Apply();
         }
-        ApplyLayout();
+        if(normalFrames!=null)Apply();
+        else ApplyLayout();
     }
     private void Apply()
     {
         if (image == null || normal == null) return;
-        image.sprite = pose == Pose.Hit && hit != null ? hit :
+        var frames=pose==Pose.Hit?hitFrames:pose==Pose.Attack?attackFrames:normalFrames;
+        if(frames!=null)
+        {
+            float duration=pose==Pose.Hit?HitDisplayDuration:
+                pose==Pose.Attack?AttackDisplayDuration:.42f;
+            int index=pose==Pose.Normal
+                ? Mathf.FloorToInt(Mathf.Max(0f,Time.time-poseStartedAt)/(.42f/3f))%3
+                : Mathf.Clamp(Mathf.FloorToInt((Time.time-poseStartedAt)/
+                    (duration/3f)),0,2);
+            image.sprite=frames[index];
+        }
+        else image.sprite = pose == Pose.Hit && hit != null ? hit :
                        pose == Pose.Attack && attack != null ? attack : normal;
         image.color = Color.white; // Enemy tint is already baked into PNG.
         var tint=image.color;tint.a=bodyOpacity;image.color=tint;
@@ -197,10 +238,14 @@ public sealed class CultivationSpriteBridge : MonoBehaviour
     }
     private void ReleaseSprites()
     {
-        if (normal != null) Destroy(normal);
-        if (attack != null) Destroy(attack);
-        if (hit != null) Destroy(hit);
-        normal = attack = hit = null;
+        if(normalFrames!=null)foreach(var frame in normalFrames)if(frame!=null)Destroy(frame);
+        else if(normal!=null)Destroy(normal);
+        if(attackFrames!=null)foreach(var frame in attackFrames)if(frame!=null)Destroy(frame);
+        else if(attack!=null)Destroy(attack);
+        if(hitFrames!=null)foreach(var frame in hitFrames)if(frame!=null)Destroy(frame);
+        else if(hit!=null)Destroy(hit);
+        normalFrames=attackFrames=hitFrames=null;
+        normal=attack=hit=null;
     }
     private void OnDestroy()
     {
