@@ -23,6 +23,16 @@ public class MonsterController : MonoBehaviour
     public int SpawnVersion { get; private set; }
 
     private RectTransform rect;
+    public string SpriteIdentityKey { get; private set; }
+    private static System.Random appearanceRandom=new System.Random();
+    private bool spriteIdentityChosen;
+    private AttackMode spriteIdentityMode;
+    public void RefreshSpriteIdentity()
+    {
+        if(spriteIdentityChosen && spriteIdentityMode==attackMode)return;
+        spriteIdentityChosen=true;spriteIdentityMode=attackMode;
+        SpriteIdentityKey=attackMode==AttackMode.Melee && appearanceRandom.Next(2)==0?"Wolf":null;
+    }
     private Coroutine attackFeedbackCoroutine;
     private MagicChargeBar chargeBar;
     private Coroutine fadeDmgCoroutine;
@@ -57,6 +67,7 @@ public class MonsterController : MonoBehaviour
     }
     void OnEnable()
     {
+        SpriteIdentityKey=null;spriteIdentityChosen=false;
         SpawnVersion++;
         if (rect == null) rect = GetComponent<RectTransform>();
         ResetFeedback();
@@ -177,6 +188,7 @@ public class MonsterController : MonoBehaviour
     public void SetIdentityVisual(EntityDataSO data)
     {
         if (Rect == null || data == null) return;
+        CultivationSpriteBridge.AttachMonster(this);
         Image image = Rect.GetComponent<Image>();
         if (image == null) return;
         if (!hasBodyColor) { originalBodyColor = image.color; hasBodyColor = true; }

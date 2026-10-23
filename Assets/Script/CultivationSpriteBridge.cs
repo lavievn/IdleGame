@@ -29,6 +29,11 @@ public sealed class CultivationSpriteBridge : MonoBehaviour
     [SerializeField, HideInInspector] private Image image;
     private bool enemy;
     private string classKey;
+    private string fallbackClass;
+    private bool normalTint,attackTint,hitTint;
+    private Vector2 normalFoot=SourceFeet,attackFoot=SourceFeet,hitFoot=SourceFeet;
+    private Vector2 FrameFoot => pose==Pose.Hit && hit!=null?hitFoot:
+        pose==Pose.Attack && attack!=null?attackFoot:normalFoot;
     private Pose pose = Pose.Normal;
     private float returnAt;
     private Sprite normal, attack, hit;
@@ -39,7 +44,7 @@ public sealed class CultivationSpriteBridge : MonoBehaviour
     // Read-only diagnostic reference, not a measurement of opaque shoe pixels.
     // This is the same source registration used by ApplyLayout for every pose.
     public Vector2 BodyReferenceFootUV => image != null && normal != null && image.sprite != null
-        ? new Vector2(SourceFeet.x/image.sprite.rect.width,SourceFeet.y/image.sprite.rect.height)
+        ? new Vector2(FrameFoot.x/image.sprite.rect.width,FrameFoot.y/image.sprite.rect.height)
         : new Vector2(.5f,0f);
     public Pose CurrentPose => pose;
     public Vector2 VisibleBodySize => image != null && normal != null
@@ -65,9 +70,10 @@ public sealed class CultivationSpriteBridge : MonoBehaviour
     public static void AttachMonster(MonsterController controller)
     {
         if (controller == null || controller.Rect == null) return;
+        controller.RefreshSpriteIdentity();
         var bridge = controller.Rect.GetComponent<CultivationSpriteBridge>();
         if (bridge == null) bridge = controller.Rect.gameObject.AddComponent<CultivationSpriteBridge>();
-        bridge.Init(true, ToClass(controller.attackMode));
+        bridge.Init(true,controller.SpriteIdentityKey??ToClass(controller.attackMode),ToClass(controller.attackMode));
     }
     public static void Attack(RectTransform rect)
     {
@@ -92,19 +98,21 @@ public sealed class CultivationSpriteBridge : MonoBehaviour
         return mode == AttackMode.RangedPhysical ? "Archer" :
             mode == AttackMode.RangedMagic ? "Mage" : "Swordsman";
     }
-    private void Init(bool isEnemy, string type)
+    private void Init(bool isEnemy, string type,string fallback=null)
     {
+        fallback=fallback??type;
         if (sourceImage == null)
         {
             sourceImage = GetComponent<Image>();
             if (sourceImage == null) return;
             sourceWasEnabled = sourceImage.enabled;
         }
-        if (enemy != isEnemy || classKey != type || normal == null)
+        if (enemy != isEnemy || classKey != type || fallbackClass!=fallback || normal == null)
         {
             ReleaseSprites();
             enemy = isEnemy;
             classKey = type;
+            fallbackClass=fallback;
             // Enemy PNGs are the same class/pose artwork with a baked 30% dark
             // red overlay. Keep white Image tint so that it is not applied twice.
             string prefix = enemy ? "Enemy_" : "";
@@ -119,9 +127,20 @@ public sealed class CultivationSpriteBridge : MonoBehaviour
             }
             // Load each fallback only if its complete sequence is unavailable.
             // Loading it first leaked a created Sprite when frame[0] replaced it.
-            normal=normalFrames!=null?normalFrames[0]:LoadFrame(path+"_Normal");
-            attack=attackFrames!=null?attackFrames[0]:LoadFrame(path+"_Attack");
-            hit=hitFrames!=null?hitFrames[0]:LoadFrame(path+"_Hit");
+            normalFoot=attackFoot=hitFoot=SourceFeet;
+            normalTint=attackTint=hitTint=false;
+            if(enemy)
+            {
+                normal=LoadEnemyFrame(type,fallback,"Normal",out normalTint,out normalFoot);
+                attack=LoadEnemyFrame(type,fallback,"Attack",out attackTint,out attackFoot);
+                hit=LoadEnemyFrame(type,fallback,"Hit",out hitTint,out hitFoot);
+            }
+            else
+            {
+                normal=normalFrames!=null?normalFrames[0]:LoadFrame(path+"_Normal");
+                attack=attackFrames!=null?attackFrames[0]:LoadFrame(path+"_Attack");
+                hit=hitFrames!=null?hitFrames[0]:LoadFrame(path+"_Hit");
+            }
         }
         if (normal == null)
         {
@@ -153,6 +172,32 @@ public sealed class CultivationSpriteBridge : MonoBehaviour
         if (texture == null) return null;
         return Sprite.Create(texture, new Rect(0f, 0f, texture.width, texture.height),
             new Vector2(.5f, .5f), 100f, 0, SpriteMeshType.FullRect);
+    }
+    private static Sprite LoadEnemyFrame(string identity,string role,string poseName,out bool tint,out Vector2 foot)
+    {
+        tint=false;foot=SourceFeet;
+        var frame=LoadFrame("CultivationSprites/Enemy_"+identity+"_"+poseName);
+        if(frame!=null)
+        {
+            // Existing Wolf PNG soles are at source row 565/566 of 600,
+            // unlike the Hero registration. Only the body child pivot changes.
+            if(identity=="Wolf")foot=new Vector2(300f,34f);
+            return frame;
+        }
+        if(identity!=role)frame=LoadFrame("CultivationSprites/Enemy_"+role+"_"+poseName);
+        if(frame!=null)return frame; // Authored/baked enemy color: never tint twice.
+        if(identity!=role)
+        {
+            frame=LoadFrame("CultivationSprites/"+identity+"_"+poseName);
+            if(frame!=null)
+            {
+                tint=true;if(identity=="Wolf")foot=new Vector2(300f,34f);
+                return frame;
+            }
+        }
+        frame=LoadFrame("CultivationSprites/"+role+"_"+poseName);
+        tint=frame!=null;
+        return frame;
     }
     private static Sprite[] LoadSequence(string path)
     {
@@ -221,7 +266,8 @@ public sealed class CultivationSpriteBridge : MonoBehaviour
         }
         else image.sprite = pose == Pose.Hit && hit != null ? hit :
                        pose == Pose.Attack && attack != null ? attack : normal;
-        image.color = Color.white; // Enemy tint is already baked into PNG.
+        bool fallbackTint=pose==Pose.Hit && hit!=null?hitTint:pose==Pose.Attack && attack!=null?attackTint:normalTint;
+        image.color=fallbackTint?new Color(.8f,.7f,.7f,1f):Color.white;
         var tint=image.color;tint.a=bodyOpacity;image.color=tint;
         image.preserveAspect = false; // rect uses the full frame's exact aspect ratio.
         ApplyLayout();
@@ -232,7 +278,7 @@ public sealed class CultivationSpriteBridge : MonoBehaviour
         Rect frame = image.sprite.rect;
         var body = image.rectTransform;
         body.anchorMin = body.anchorMax = new Vector2(.5f, 0f);
-        body.pivot = new Vector2(SourceFeet.x / frame.width, SourceFeet.y / frame.height);
+        body.pivot = new Vector2(FrameFoot.x / frame.width, FrameFoot.y / frame.height);
         body.anchoredPosition = Vector2.zero;
         body.sizeDelta = new Vector2(frame.width / SourcePixelsPerUnit, frame.height / SourcePixelsPerUnit);
         float scale = Mathf.Max(.01f, enemy ? monsterScale : heroScale);
