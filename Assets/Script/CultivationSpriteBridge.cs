@@ -109,9 +109,6 @@ public sealed class CultivationSpriteBridge : MonoBehaviour
             // red overlay. Keep white Image tint so that it is not applied twice.
             string prefix = enemy ? "Enemy_" : "";
             string path = "CultivationSprites/" + prefix + type;
-            normal = LoadFrame(path + "_Normal");
-            attack = LoadFrame(path + "_Attack");
-            hit = LoadFrame(path + "_Hit");
             // Three-frame Archer animations. Other roles keep the existing
             // single-frame presentation without any behavior change.
             if(!enemy && type=="Archer")
@@ -119,10 +116,12 @@ public sealed class CultivationSpriteBridge : MonoBehaviour
                 normalFrames=LoadSequence(path+"_Normal");
                 attackFrames=LoadSequence(path+"_Attack");
                 hitFrames=LoadSequence(path+"_Hit");
-                if(normalFrames!=null)normal=normalFrames[0];
-                if(attackFrames!=null)attack=attackFrames[0];
-                if(hitFrames!=null)hit=hitFrames[0];
             }
+            // Load each fallback only if its complete sequence is unavailable.
+            // Loading it first leaked a created Sprite when frame[0] replaced it.
+            normal=normalFrames!=null?normalFrames[0]:LoadFrame(path+"_Normal");
+            attack=attackFrames!=null?attackFrames[0]:LoadFrame(path+"_Attack");
+            hit=hitFrames!=null?hitFrames[0]:LoadFrame(path+"_Hit");
         }
         if (normal == null)
         {
@@ -175,6 +174,9 @@ public sealed class CultivationSpriteBridge : MonoBehaviour
         // Ignore (do not queue) ordinary hits throughout an Attack display.
         // Only a NEW attack callback can start a new Attack display window.
         if (pose == Pose.Attack && requested == Pose.Hit && Time.time < returnAt) return;
+        // Very fast, valid attacks still deal damage/fire normally, but do not
+        // keep rewinding the Archer to frame 1 or extend this visual window.
+        if(attackFrames!=null && requested==Pose.Attack && pose==Pose.Attack && Time.time<returnAt)return;
         pose = requested;
         poseStartedAt = Time.time;
         returnAt = Time.time + duration;
@@ -197,6 +199,7 @@ public sealed class CultivationSpriteBridge : MonoBehaviour
         if (pose != Pose.Normal && Time.time >= returnAt)
         {
             pose = Pose.Normal;
+            poseStartedAt = returnAt;
             Apply();
         }
         if(normalFrames!=null)Apply();

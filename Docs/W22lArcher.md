@@ -22,3 +22,12 @@ không khẳng định hình dáng các ảnh AI riêng lẻ giống nhau tuyệ
 TextureImporter: single sprite, alpha transparency, no mipmap, no compression,
 NPOT giữ nguyên, clamp/bilinear. Bridge vẫn tạo full-frame Sprite từ Texture2D,
 không phụ thuộc slicing tự động. Mage/Swordsman/Enemy PNG cũ không đổi.
+
+Normal: 3 frame / 0.42s, khoảng 7.14 FPS lặp; Attack: 3 / 0.16s, 18.75 FPS;
+Hit: 3 / 0.20s, 15 FPS, không lặp. Đây là thời gian trình bày, không phải tốc
+đánh. Archer Attack mới trong cửa sổ đang phát không rewind hoặc gia hạn;
+Hit vẫn bị bỏ khi Attack đang được bảo vệ, không đưa vào hàng đợi. Attack
+mới ngoài cửa sổ bắt đầu lại; death/hide/disable/đổi mode reset như trước.
+Normal bắt đầu clock mới sau transient. Sửa thêm leak Sprite fallback bị
+thay bởi sequence[0] trong commit 7cf4002; sequence thiếu frame dùng fallback
+riêng pose đó, không che nhân vật. Không đổi thời điểm damage/projectile.

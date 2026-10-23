@@ -115,6 +115,7 @@ partial class MotionRegression
 
     static void Main(string[] args)
     {
+        if(args.Length==1 && args[0]=="--archer-animation") { ArcherAnimationTests();return; }
         if(args.Length==1 && args[0]=="--ranged-lanes") { RangedLaneTests();return; }
         if(args.Length==1 && args[0]=="--opening-font") { OpeningFontTests();return; }
         if(args.Length==1 && args[0]=="--movement-spike") { HeroMovementSpikeTests();return; }
@@ -139,6 +140,7 @@ partial class MotionRegression
         }
         SpritePresentationTests();
         if (args.Length == 1 && args[0] == "--sprites") return;
+        ArcherAnimationTests();
         OpeningFontTests();
         WorldMapRegressionTests();
         MultiZoneCameraTests();
