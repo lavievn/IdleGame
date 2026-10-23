@@ -105,6 +105,9 @@ namespace IdleGame.Tests.Presentation.PlayMode
                     rect.sizeDelta=new Vector2(50,100);
                     var rig=Root("B2 native test primary controller");rig.SetActive(false);
                     Primary=rig.AddComponent(Runtime("HeroController"));Set(Primary,"heroRect",rect);
+                    // Legacy full-frame containment reference. New foot-lane
+                    // cases below opt into the production movement policy.
+                    Set(Primary,"enableRangedLaneMotion",false);
                     rig.SetActive(true); // Native deferred Awake, not a reflection imitation.
                     Call(Primary,"SpawnHero",true,(Vector2?)new Vector2(576,0));
 
@@ -222,6 +225,63 @@ namespace IdleGame.Tests.Presentation.PlayMode
             var bounds=rect.rect;
             return RectTransformUtility.WorldToScreenPoint(null,rect.TransformPoint(
                 new Vector3(bounds.xMin+bounds.width*uv.x,bounds.yMin+bounds.height*uv.y,0)));
+        }
+
+        [TestCase(1,600f)]
+        [TestCase(1,800f)]
+        [TestCase(1,1150f)]
+        [TestCase(2,600f)]
+        [TestCase(2,800f)]
+        [TestCase(2,1150f)]
+        public void NativeRangedFootLanes_ResetContinuously_AndRecruitIndependentBodies(int mode,float projectionWidth)
+        {
+            // Native transforms and imported art; injected simulation steps do
+            // not constitute a rendered multi-map/Windows acceptance test.
+            using(var f=new Fixture(projectionWidth))
+            {
+                Set(f.Primary,"enableRangedLaneMotion",true);
+                Call(f.Primary,"ChangeAttackMode",mode);
+                var rect=(RectTransform)Get(f.Primary,"heroRect");
+                float low=f.Area.rect.yMin+12f,high=f.Area.rect.yMax-12f;
+                for(int life=0;life<3;life++)
+                {
+                    Call(f.Primary,"SpawnHero",false,(Vector2?)new Vector2(576,0));
+                    Assert.That(Position(f.Space,rect).y,Is.EqualTo(50f).Within(.002f),"Reset before reveal, independent of previous lane.");
+                    Assert.That((float)Get(f.Primary,"RangedLaneHoldRemaining"),Is.EqualTo(0f));
+                    float min=50f,max=50f;
+                    for(int i=0;i<960;i++)
+                    {
+                        var before=Position(f.Space,rect);
+                        Call(f.Primary,"TickMovement",f.Space,1f/60f);
+                        var after=Position(f.Space,rect);
+                        Assert.That(after.y,Is.InRange(low-.002f,high+.002f));
+                        Assert.That(Mathf.Abs(after.y-before.y),Is.LessThanOrEqualTo(8f/60f+.002f));
+                        Assert.That((float)Get(f.Primary,"UnexpectedLaneDeltaY"),Is.EqualTo(0f).Within(.002f));
+                        min=Mathf.Min(min,after.y);max=Mathf.Max(max,after.y);
+                    }
+                    Assert.That(max-min,Is.GreaterThan(15f),"Stable held targets actually traverse the floor.");
+                }
+                var paused=Position(f.Space,rect);
+                Call(f.Primary,"TickMovement",f.Space,0f);
+                Assert.That(Position(f.Space,rect),Is.EqualTo(paused),"Zero movement dt cannot change lane.");
+                Call(f.Primary,"SpawnHero",false,(Vector2?)new Vector2(576,0));
+                var focus=Get(f.Space,"CurrentCameraSmoothedFocusX");
+                Call(f.Manager,"CycleTestCompanions");Call(f.Manager,"CycleTestCompanions");
+                Assert.That(f.Heroes.Count,Is.EqualTo(3));
+                var images=new HashSet<Component>();
+                foreach(Component hero in f.Heroes)
+                {
+                    var root=(RectTransform)Get(hero,"heroRect");
+                    var bridge=root.GetComponent(Runtime("CultivationSpriteBridge"));
+                    Assert.That(images.Add((Component)Get(bridge,"BodyGraphic")),Is.True);
+                    if(!(bool)Get(hero,"UsesRangedLanes"))continue;
+                    Assert.That(Position(f.Space,root).y,Is.InRange(low-.002f,high+.002f));
+                    Canvas.ForceUpdateCanvases();
+                    var foot=RectTransformUtility.WorldToScreenPoint(null,root.position);
+                    Assert.That(Vector2.Distance(NativeFootScreen(hero),foot),Is.LessThanOrEqualTo(.01f));
+                }
+                Assert.That(Get(f.Space,"CurrentCameraSmoothedFocusX"),Is.EqualTo(focus),"Recruiting does not retarget camera.");
+            }
         }
 
         [TestCase(0,450f)]

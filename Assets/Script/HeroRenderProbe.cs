@@ -109,6 +109,7 @@ public sealed class HeroRenderProbe : MonoBehaviour
             .Append(" movementInputDt=").Append(N(hero.MovementInputDeltaThisFrame))
             .Append(" movementDt=").Append(N(hero.MovementDeltaThisFrame))
             .Append(" discardedMovementDt=").Append(N(hero.MovementInputDeltaThisFrame-hero.MovementDeltaThisFrame))
+            .Append(hero.DescribeLaneTrace())
             .Append(" mode=").Append(hero.attackMode).Append(" pose=").Append(bridge!=null?bridge.CurrentPose.ToString():"fallback")
             .Append(" window=").Append(Screen.width).Append('x').Append(Screen.height)
             .Append(" canvasPath=").Append(canvas!=null?Path(canvas.transform):"none")

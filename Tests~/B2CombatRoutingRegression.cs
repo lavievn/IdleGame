@@ -9,6 +9,7 @@ partial class MotionRegression
     static HeroController B2Hero(Field f,float x,AttackMode mode)
     {
         var hero=new GameObject().AddComponent<HeroController>();
+        hero.enableRangedLaneMotion=f.hero.enableRangedLaneMotion;
         hero.heroRect=(RectTransform)new GameObject(true).transform;
         hero.heroRect.parent=f.ground;
         Call(hero,"Awake");

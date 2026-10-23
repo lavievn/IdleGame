@@ -140,6 +140,11 @@ public class GameManager : MonoBehaviour
             actor.positionTraceFrameCount=heroController.positionTraceFrameCount;
             actor.traceVisualPositionChanges=heroController.traceVisualPositionChanges;
             actor.renderTraceFrameCount=heroController.renderTraceFrameCount;
+            actor.enableRangedLaneMotion=heroController.enableRangedLaneMotion;
+            actor.rangedFootMargin=heroController.rangedFootMargin;
+            actor.rangedLaneAmplitude=heroController.rangedLaneAmplitude;
+            actor.rangedLaneSpeed=heroController.rangedLaneSpeed;
+            actor.rangedLaneHoldSeconds=heroController.rangedLaneHoldSeconds;
             actor.attackMode = RandomUnusedTestMode();
 
             data = Instantiate(runtimeHeroData);
@@ -232,7 +237,11 @@ public class GameManager : MonoBehaviour
         var body=TestCompanionBodyBounds(actor);
         var offset=new Rect(body.xMin-feet.x,body.yMin-feet.y,body.width,body.height);
         float left=area.xMin-offset.xMin,right=area.xMax-offset.xMax;
-        float bottom=area.yMin-offset.yMin,top=area.yMax-offset.yMax;
+        // Y is a foot lane, like Melee's existing lane movement. Keep the full
+        // body bound on X, but do not force an alpha-padded 100-high frame into
+        // the 100-high floor when ranged lanes are enabled.
+        float bottom=actor.enableRangedLaneMotion?area.yMin:area.yMin-offset.yMin;
+        float top=actor.enableRangedLaneMotion?area.yMax:area.yMax-offset.yMax;
         // World -> Canvas -> BattleArea round trips can differ by a few float
         // ULPs even when a 100-unit frame exactly fits the 100-unit Ground.
         const float conversionEpsilon=.001f;
@@ -241,6 +250,7 @@ public class GameManager : MonoBehaviour
         if(bottom>top)bottom=top=(bottom+top)*.5f;
         var origin=environmentManager.Position(heroController.heroRect);
         float y=Mathf.Clamp(origin.y,bottom,top);
+        y=actor.InitialFootY(environmentManager,y);
         var formation=environmentManager.GetComponent<HeroFormation>();
         float gap=formation!=null?Mathf.Max(1f,formation.spacing):100f;
         var peers=new List<Rect>();

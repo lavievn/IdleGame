@@ -32,6 +32,12 @@ public class HeroController : MonoBehaviour
     [Min(0f)] public float meleeMoveSpeed=450f;
     [Min(0f)] public float physicalMoveSpeed=450f;
     [Min(0f)] public float magicMoveSpeed=200f;
+    [Header("RANGED FOOT LANES — BattleArea units; not saved")]
+    public bool enableRangedLaneMotion=true;
+    [Min(0f)] public float rangedFootMargin=12f;
+    [Min(0f)] public float rangedLaneAmplitude=10f;
+    [Min(0f)] public float rangedLaneSpeed=8f;
+    [Min(.1f)] public float rangedLaneHoldSeconds=4f;
     [Header("UI ELEMENTS")]
     public Image hpFillImage;
     public TextMeshProUGUI dmgTextPrototype;
@@ -63,6 +69,57 @@ public class HeroController : MonoBehaviour
     private Coroutine attackFeedbackCoroutine;
     private MagicChargeBar chargeBar;
     private RectTransform damageTextRect;
+    private readonly HeroLaneMotion rangedLane=new HeroLaneMotion();
+    private bool hasExpectedLaneY;
+    private float laneInputY,laneExpectedY,laneUnexpectedY;
+    private int laneFrame=-1;
+    public bool UsesRangedLanes => enableRangedLaneMotion && attackMode!=AttackMode.Melee;
+    public float RangedLaneTargetY => rangedLane.TargetY;
+    public float RangedLaneHoldRemaining => rangedLane.HoldRemaining;
+    public float UnexpectedLaneDeltaY => laneUnexpectedY;
+
+    public void RangedFootBounds(EnvironmentManager space,out float low,out float high)
+    {
+        var area=space.BattleArea.rect;
+        float margin=FiniteLaneSetting(rangedFootMargin,12f);
+        margin=Mathf.Min(margin,Mathf.Max(0f,area.height)*.45f);
+        low=area.yMin+margin;high=area.yMax-margin;
+    }
+    public float InitialFootY(EnvironmentManager space,float requested)
+    {
+        if(!UsesRangedLanes)return requested;
+        float low,high;RangedFootBounds(space,out low,out high);
+        return HeroLaneMotion.SpawnY(requested,low,high);
+    }
+    private static float FiniteLaneSetting(float value,float fallback)
+    {
+        return float.IsNaN(value)||float.IsInfinity(value)?fallback:Mathf.Max(0f,value);
+    }
+    private void ResetLaneMotion()
+    {
+        rangedLane.Reset(attackMode==AttackMode.RangedMagic);
+        hasExpectedLaneY=false;laneFrame=-1;laneInputY=laneExpectedY=laneUnexpectedY=0f;
+    }
+    private void WriteWalkingPosition(EnvironmentManager space,Vector2 p,float dt,bool exploring)
+    {
+        if(UsesRangedLanes)
+        {
+            float low,high;RangedFootBounds(space,out low,out high);
+            p.y=rangedLane.Step(p.y,low,high,exploring,EffectiveMoveSpeed()>0f?dt:0f,
+                Time.timeScale>0f?MovementInputDeltaThisFrame:0f,
+                FiniteLaneSetting(rangedLaneAmplitude,10f),FiniteLaneSetting(rangedLaneSpeed,8f),
+                FiniteLaneSetting(rangedLaneHoldSeconds,4f));
+        }
+        space.SetPosition(heroRect,p);
+        laneExpectedY=p.y;hasExpectedLaneY=true;laneFrame=Time.frameCount;
+    }
+    public string DescribeLaneTrace()
+    {
+        return " rangedLanes="+UsesRangedLanes+" laneFrame="+laneFrame+
+            " laneInputY="+Number(laneInputY)+" laneExpectedY="+Number(laneExpectedY)+
+            " laneUnexpectedY="+Number(laneUnexpectedY)+" laneTargetY="+Number(rangedLane.TargetY)+
+            " laneHold="+Number(rangedLane.HoldRemaining);
+    }
 
     void Awake()
     {
@@ -119,6 +176,7 @@ public class HeroController : MonoBehaviour
         if (modeIndex < 0 || modeIndex > 2) return;
         HeroSpawnVfx.Cancel(heroRect);
         attackMode = (AttackMode)modeIndex;
+        ResetLaneMotion();
         UpdateChargeBar(false, 0f);
         CultivationSpriteBridge.AttachHero(this);
         if (!IsDead) CurrentState = HeroState.Idle;
@@ -150,11 +208,13 @@ public class HeroController : MonoBehaviour
         dt=space.HeroMovementDeltaTime(dt);
         MovementDeltaThisFrame=dt;
         MovementBudgetThisFrame=EffectiveMoveSpeed()*dt;
+        Vector2 p = space.Position(heroRect);
+        laneInputY=p.y;laneUnexpectedY=hasExpectedLaneY?p.y-laneExpectedY:0f;
+        if(Mathf.Abs(laneUnexpectedY)>.01f)TracePositionFrame("Unexpected Y before movement: inspect external writer/parent");
         TracePositionFrame("TickMovement before");
         attackRange = space.AttackRange(attackMode, true);
         // Keep an in-range target during a strike; otherwise rescan the closest eligible opponent.
         if (CurrentTarget == null || !CanAttack(CurrentTarget, space)) CurrentTarget = FindClosestMonster(space);
-        Vector2 p = space.Position(heroRect);
         float startX = p.x;
         float formationX;
         if(HeroFormation.TryStep(this,space,dt,out formationX))
@@ -164,7 +224,7 @@ public class HeroController : MonoBehaviour
             p.x=formationX;
             MovementDistanceThisFrame=Mathf.Abs(p.x-startX);
             LastMovementSpeed=dt>0f?MovementDistanceThisFrame/dt:0f;
-            space.SetPosition(heroRect,p);
+            WriteWalkingPosition(space,p,dt,true);
             HandleAnimation(MovementDistanceThisFrame>.001f,false);
             TracePositionFrame("TickMovement after formation step");
             return;
@@ -173,12 +233,12 @@ public class HeroController : MonoBehaviour
         {
             IsExplorationMovement=true;
             CurrentState = HeroState.Returning;
-            // No current enemy: explore straight left at the current Y.
-            // Y only changes while a melee Hero approaches a selected target.
+            // X exploration is unchanged. Ranged foot lanes are an independent
+            // bounded Y step and never enter MovementDistanceThisFrame.
             p.x -= EffectiveMoveSpeed() * dt;
             MovementDistanceThisFrame = Mathf.Abs(p.x - startX);
             LastMovementSpeed=dt>0f?MovementDistanceThisFrame/dt:0f;
-            space.SetPosition(heroRect, p);
+            WriteWalkingPosition(space,p,dt,true);
             HandleAnimation(true, false);
             TracePositionFrame("TickMovement after exploration step");
             return;
@@ -190,7 +250,7 @@ public class HeroController : MonoBehaviour
             p.y = Mathf.MoveTowards(p.y, target.y, laneSpeed * dt);
         MovementDistanceThisFrame = Mathf.Abs(p.x - startX);
         LastMovementSpeed=dt>0f?MovementDistanceThisFrame/dt:0f;
-        space.SetPosition(heroRect, p);
+        WriteWalkingPosition(space,p,dt,false);
         RefreshCombatState(space);
         TracePositionFrame("TickMovement after approach step");
     }
@@ -254,7 +314,10 @@ public class HeroController : MonoBehaviour
         var space = EnvironmentManager.Instance;
         if (space != null && space.BattleArea != null)
         {
-            space.SetPosition(heroRect, initialPosition ?? new Vector2(space.HomeX, 0f));
+            var spawn=initialPosition ?? new Vector2(space.HomeX,0f);
+            spawn.y=InitialFootY(space,spawn.y);
+            space.SetPosition(heroRect,spawn);
+            laneInputY=laneExpectedY=spawn.y;hasExpectedLaneY=true;laneFrame=Time.frameCount;
             if (followCamera) space.FollowHero(this);
         }
         TracePosition("SpawnHero after");
@@ -306,6 +369,7 @@ public class HeroController : MonoBehaviour
             " movementFrame="+MovementFrame+" movementInputDt="+Number(MovementInputDeltaThisFrame)+
             " movementDt="+Number(MovementDeltaThisFrame)+
             " discardedMovementDt="+Number(MovementInputDeltaThisFrame-MovementDeltaThisFrame)+
+            DescribeLaneTrace()+
             " anchor="+Pair(heroRect.anchoredPosition)+" battle="+Pair(space.Position(heroRect))+
             " heroLocal="+Triple(heroRect.localPosition)+" heroWorld="+Triple(heroRect.position)+
             " heroParent="+(heroRect.parent!=null?heroRect.parent.gameObject.name:"none")+
@@ -371,6 +435,7 @@ public class HeroController : MonoBehaviour
 
     private void ResetFeedback()
     {
+        ResetLaneMotion();
         MovementInputDeltaThisFrame=MovementDeltaThisFrame=0f;
         HeroSpawnVfx.Cancel(heroRect);
         CultivationSpriteBridge.ResetPose(heroRect);

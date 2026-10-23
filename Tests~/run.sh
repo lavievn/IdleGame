@@ -10,6 +10,7 @@ mcs -define:UNITY_EDITOR -out:"$build_dir/MotionRegression.exe" \
   Assets/Script/HeroSpawnVfx.cs \
   Assets/Script/HeroRenderProbe.cs \
   Assets/Script/HeroFormation.cs \
+  Assets/Script/HeroLaneMotion.cs \
   Assets/Script/ExplorationProgressHUD.cs \
   Assets/DataScript/EntityDataSO.cs
 mono "$build_dir/MotionRegression.exe" "$@"

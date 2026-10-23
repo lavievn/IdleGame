@@ -89,7 +89,11 @@ partial class MotionRegression
             // Keep that reference available; new tests exercise soft chasing.
             space.useSoftZoneCamera=false;
             space.speedZoneInset=0;Set(space,"battleArea",ground);Set(space,"groundDetails",new[]{grass});Call(space,"Awake");
-            hero=new GameObject().AddComponent<HeroController>();hero.heroRect=(RectTransform)new GameObject(true).transform;hero.heroRect.parent=ground;hero.heroRect.anchorMin=hero.heroRect.anchorMax=new Vector2(1,0);hero.heroRect.pivot=new Vector2(1,0);Call(hero,"Awake");hero.SpawnHero();
+            hero=new GameObject().AddComponent<HeroController>();
+            // Historical motion references keep their constant-Y contract.
+            // Dedicated lane cases enable the production setting explicitly.
+            hero.enableRangedLaneMotion=false;
+            hero.heroRect=(RectTransform)new GameObject(true).transform;hero.heroRect.parent=ground;hero.heroRect.anchorMin=hero.heroRect.anchorMax=new Vector2(1,0);hero.heroRect.pivot=new Vector2(1,0);Call(hero,"Awake");hero.SpawnHero();
             spawner=new GameObject().AddComponent<MonsterSpawner>();Set(spawner,"monsterPool",new ObjectPool<GameObject>(()=>new GameObject(),m=>{},m=>m.SetActive(false),m=>{},5,20));
             combat=new GameObject().AddComponent<CombatManager>();Call(combat,"Start");combat.SetupHeroInfo(new EntityDataSO { baseHealth=10000,baseDamage=10,expToNextLevel=1000000 });
         }
@@ -111,6 +115,7 @@ partial class MotionRegression
 
     static void Main(string[] args)
     {
+        if(args.Length==1 && args[0]=="--ranged-lanes") { RangedLaneTests();return; }
         if(args.Length==1 && args[0]=="--opening-font") { OpeningFontTests();return; }
         if(args.Length==1 && args[0]=="--movement-spike") { HeroMovementSpikeTests();return; }
         if(args.Length==1 && args[0]=="--render-trace") { HeroRenderTraceTests();return; }
@@ -142,6 +147,7 @@ partial class MotionRegression
         WorldEntryTraceTests();
         HeroRenderTraceTests();
         HeroMovementSpikeTests();
+        RangedLaneTests();
         WaveEntryTests();
         DistanceWaveTests();
         FormationTests();
