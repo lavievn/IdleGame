@@ -96,6 +96,7 @@ public class StartMenuUI : MonoBehaviour
         popRect.SetParent(menu.root.parent,false);
         popRect.anchorMin=Vector2.zero; popRect.anchorMax=Vector2.one;
         popRect.offsetMin=Vector2.zero; popRect.offsetMax=Vector2.zero;
+        popRect.sizeDelta=Vector2.zero;popRect.anchoredPosition=Vector2.zero;
         popup.GetComponent<Image>().color=new Color(.04f,.07f,.12f,.91f);
         popup.GetComponent<Image>().raycastTarget = false;
         menu.message=menu.Label(textTemplate,popRect,"",
@@ -160,6 +161,7 @@ public class StartMenuUI : MonoBehaviour
         label.text=title;label.color=new Color(1,1,1,1);
         label.alignment=TextAlignmentOptions.Center; label.raycastTarget=false;
         UIManager.ReadableText(label,fontSize);
+        label.margin=new Vector4(0,0,0,0);
         return label;
     }
     private Button MakeButton(Button template,Transform parent,string title,Vector2 p,UnityAction action,
@@ -173,9 +175,7 @@ public class StartMenuUI : MonoBehaviour
         if(text!=null)
         {
             text.text=title;
-            UIManager.ReadableText(text,16);
-            text.alignment=TextAlignmentOptions.Center;
-            text.color=Color.white;
+            FitButtonText(button);
         }
         var background=go.GetComponent<Image>();
         if(background != null) { background.color=new Color(.06f,.18f,.24f,.94f);background.raycastTarget=false; }
@@ -202,6 +202,109 @@ public class StartMenuUI : MonoBehaviour
         var window=Object.FindFirstObjectByType<TransparentWindow>();
         if(window!=null)window.RegisterClickable(go.GetComponent<RectTransform>());
         return button;
+    }
+
+    // Only StartMenuUI owns these labels, including the sibling confirmation
+    // used from gameplay. HUD-wide typography must not overwrite this layout.
+    public bool OwnsText(TextMeshProUGUI text)
+    {
+        return text!=null && ((root!=null && text.transform.IsChildOf(root)) ||
+            (manager!=null && manager.confirmationPopup!=null &&
+             text.transform.IsChildOf(manager.confirmationPopup.transform)));
+    }
+    private static void FitButtonText(Button button)
+    {
+        if(button==null)return;
+        var rect=(RectTransform)button.transform;
+        foreach(var text in button.GetComponentsInChildren<TextMeshProUGUI>(true))
+        {
+            var label=(RectTransform)text.transform;
+            label.anchorMin=Vector2.zero;label.anchorMax=Vector2.one;
+            label.pivot=new Vector2(.5f,.5f);label.anchoredPosition=Vector2.zero;
+            label.sizeDelta=new Vector2(-16f,-8f);label.localScale=Vector3.one;
+            float font=Mathf.Clamp(rect.rect.height*.46f,14f,20f);
+            UIManager.ReadableText(text,font);
+            text.enableAutoSizing=true;text.fontSizeMin=14f;text.fontSizeMax=font;
+            text.enableWordWrapping=false;text.overflowMode=TextOverflowModes.Overflow;
+            text.margin=new Vector4(0,0,0,0);
+            text.alignment=TextAlignmentOptions.Center;text.color=Color.white;
+            text.raycastTarget=false;
+        }
+    }
+    private void LayoutConfirmation(float w,float h)
+    {
+        if(manager==null || manager.confirmationPopup==null)return;
+        var popup=(RectTransform)manager.confirmationPopup.transform;
+        popup.anchorMin=Vector2.zero;popup.anchorMax=Vector2.one;
+        popup.offsetMin=popup.offsetMax=Vector2.zero;
+        popup.sizeDelta=Vector2.zero;popup.anchoredPosition=Vector2.zero;
+        var buttons=popup.GetComponentsInChildren<Button>(true);
+        float width=Mathf.Min(200f,(w-48f)/2f);
+        for(int i=0;i<buttons.Length;i++)
+        {
+            Place((RectTransform)buttons[i].transform,new Vector2((i%2==0?-1:1)*(width*.5f+8f),-h*.3f),new Vector2(width,36f));
+            FitButtonText(buttons[i]);
+        }
+        if(message!=null)
+        {
+            Place((RectTransform)message.transform,new Vector2(0,h*.10f),new Vector2(Mathf.Min(440f,w-40f),h*.56f));
+            UIManager.ReadableText(message,18f);
+            message.enableAutoSizing=true;message.fontSizeMin=16f;message.fontSizeMax=18f;
+            message.margin=new Vector4(4,4,4,4);message.overflowMode=TextOverflowModes.Overflow;
+        }
+    }
+
+    private void FitMainButtonGroup(float w,float h)
+    {
+        // Saved centers are preferred anchors. Only repair an unreadably small
+        // or overlapping group, never write the theme or touch scenery/logo.
+        var rects=new RectTransform[menuButtons.Length];
+        float center=0f;bool repair=false;
+        float minWidth=Mathf.Clamp(w*.24f,152f,208f);
+        float minHeight=Mathf.Clamp(h*.08f,34f,42f);
+        const float gap=6f;
+        for(int i=0;i<rects.Length;i++)
+        {
+            var r=rects[i]=(RectTransform)menuButtons[i].transform;center+=r.anchoredPosition.y;
+            var size=new Vector2(Mathf.Clamp(r.rect.width,minWidth,w-24f),Mathf.Max(r.rect.height,minHeight));
+            if(size.x!=r.rect.width || size.y!=r.rect.height)repair=true;
+            r.sizeDelta=size;
+        }
+        center/=rects.Length;
+        // Preserve the saved vertical order (stable for coincident centers).
+        for(int i=1;i<rects.Length;i++)
+        {
+            var item=rects[i];int j=i-1;
+            while(j>=0 && rects[j].anchoredPosition.y<item.anchoredPosition.y)
+            { rects[j+1]=rects[j];j--; }
+            rects[j+1]=item;
+        }
+        for(int i=1;i<rects.Length;i++)
+            if(rects[i-1].anchoredPosition.y-rects[i-1].rect.height*.5f-
+               (rects[i].anchoredPosition.y+rects[i].rect.height*.5f)<gap)repair=true;
+        if(!repair)return;
+        var offsets=new float[rects.Length];float mean=0f;
+        for(int i=1;i<rects.Length;i++)
+        {
+            offsets[i]=offsets[i-1]-(rects[i-1].rect.height+rects[i].rect.height)*.5f-gap;
+            mean+=offsets[i];
+        }
+        mean/=rects.Length;
+        float top=offsets[0]-mean+rects[0].rect.height*.5f;
+        float bottom=offsets[rects.Length-1]-mean-rects[rects.Length-1].rect.height*.5f;
+        float upper=h*.5f-8f;
+        if(logoRoot!=null)
+            upper=Mathf.Min(upper,logoRoot.anchoredPosition.y-logoRoot.rect.height*.5f-gap);
+        // Keep the preferred group center whenever there is room. At 600px,
+        // the authored tiny group would otherwise grow into the fixed logo.
+        float lower=-h*.5f+8f-bottom;
+        center=Mathf.Max(lower,Mathf.Min(center,upper-top));
+        for(int i=0;i<rects.Length;i++)
+        {
+            var p=rects[i].anchoredPosition;
+            p.x=Mathf.Clamp(p.x,-w*.5f+rects[i].rect.width*.5f+8f,w*.5f-rects[i].rect.width*.5f-8f);
+            p.y=center+offsets[i]-mean;rects[i].anchoredPosition=p;
+        }
     }
 
     // Stable order shared with OpeningCinematicUI.LayoutKeys.
@@ -242,6 +345,7 @@ public class StartMenuUI : MonoBehaviour
     public void Layout(float w,float h)
     {
         if(root==null)return;
+        LayoutConfirmation(w,h);
         // While dragging in Scene View, UIManager resize/layout passes must
         // not snap the live controls back to their authored positions.
         if(cinematic!=null&&cinematic.IsLayoutEditing&&!editorForceLayout)return;
@@ -259,7 +363,7 @@ public class StartMenuUI : MonoBehaviour
         }
         float spacing=Mathf.Clamp(h*.11f,32f,46f);
         float bw=Mathf.Clamp(w*.31f,140f,208f);
-        float bh=Mathf.Clamp(h*.092f,26f,38f);
+        float bh=Mathf.Clamp(h*.092f,34f,42f);
         for(int i=0;i<4;i++)
         {
             // Move the buttons down slightly to make room for a 2x title.
@@ -286,6 +390,17 @@ public class StartMenuUI : MonoBehaviour
         for(int i=0;i<editable.Length;i++)
             OpeningCinematicUI.ApplySavedRect(titleTheme,
                 OpeningCinematicUI.LayoutKeys[i+8],editable[i],w,h);
+        FitMainButtonGroup(w,h);
+        if(logoFallback!=null && logoRoot!=null)
+        {
+            // The fallback title follows its own saved logo box as well.
+            var size=logoRoot.rect.size;
+            Place((RectTransform)logoFallback.transform,Vector2.zero,size);
+            UIManager.ReadableText(logoFallback,Mathf.Clamp(size.y*.65f,22f,62f));
+            logoFallback.enableAutoSizing=true;logoFallback.fontSizeMin=20f;
+            logoFallback.fontSizeMax=logoFallback.fontSize;
+            logoFallback.enableWordWrapping=false;logoFallback.margin=new Vector4(0,0,0,0);
+        }
 
         // Settings use a centered two-column grid, not the main menu's vertical list.
         // The bar is a custom hit target to work in native Windows overlay mode.
@@ -323,6 +438,8 @@ public class StartMenuUI : MonoBehaviour
             actionIndex++;
         }
         UpdateSettingVisuals();
+        foreach(var page in new[]{menuPage,settingsPage})
+            foreach(var button in page.GetComponentsInChildren<Button>(true))FitButtonText(button);
         // Only the menu is moved on resize. Art layer sizes are independent.
         if(cinematic!=null)cinematic.Layout();
     }

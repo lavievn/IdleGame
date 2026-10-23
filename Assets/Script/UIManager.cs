@@ -967,13 +967,13 @@ public class UIManager : MonoBehaviour
         }
         if (gm != null && gm.preGameUI != null) {
             var titleUI = gm.GetComponent<StartMenuUI>();
-            if (titleUI != null && titleUI.IsCinematic)
+            if (titleUI != null)
                 titleUI.Layout(w,h);
             else {
                 PlaceUI((RectTransform)gm.preGameUI.transform,new Vector2(.5f,.5f),new Vector2(.5f,.5f),Vector2.zero,new Vector2(Mathf.Min(460,w-12),Mathf.Min(300,h-12)));
                 LayoutStartMenu(gm.preGameUI.transform,w,h,false);
             }
-            if (gm.confirmationPopup != null) LayoutStartMenu(gm.confirmationPopup.transform,w,h,true);
+            if (gm.confirmationPopup != null && titleUI==null) LayoutStartMenu(gm.confirmationPopup.transform,w,h,true);
         }
         // Text/button content stretches inside its resized parent at a fixed
         // readable pixel font, rather than shrinking a 1920px canvas to 250px.
@@ -981,10 +981,8 @@ public class UIManager : MonoBehaviour
             if (!text.transform.IsChildOf(hudCanvas)) continue;
             // Opening owns its button/placeholder sizing; the HUD's global
             // text pass must never overwrite the cinematic layout.
-            if (gm != null && gm.preGameUI != null &&
-                gm.GetComponent<StartMenuUI>() != null &&
-                gm.GetComponent<StartMenuUI>().IsCinematic &&
-                text.transform.IsChildOf(gm.preGameUI.transform)) continue;
+            if (gm != null && gm.GetComponent<StartMenuUI>() != null &&
+                gm.GetComponent<StartMenuUI>().OwnsText(text)) continue;
             if (text.transform.parent != null &&
                 text.transform.parent.gameObject.name.StartsWith("Opening Cinematic")) continue;
             // The inventory has independent font hierarchy and sizes; the

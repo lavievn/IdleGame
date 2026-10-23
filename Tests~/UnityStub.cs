@@ -85,6 +85,7 @@ namespace UnityEngine
         public Vector3 TransformPoint(Vector3 p) { p = localPosition + Vector3.Scale(p, localScale); return parent == null ? p : parent.TransformPoint(p); }
         public Vector3 InverseTransformPoint(Vector3 p) { if (parent != null) p = parent.InverseTransformPoint(p); p -= localPosition; return new Vector3(p.x/localScale.x,p.y/localScale.y,p.z/localScale.z); }
         public Vector3 TransformVector(Vector3 v) { v = Vector3.Scale(v, localScale); return parent == null ? v : parent.TransformVector(v); }
+        public Transform Find(string name) { foreach(Transform child in this)if(child.gameObject.name==name)return child;return null; }
     }
     public class RectTransform : Transform
     {
@@ -144,6 +145,8 @@ namespace UnityEngine
         public static float MoveTowards(float a,float b,float d) { return a+Math.Sign(b-a)*Math.Min(Math.Abs(b-a),d); }
         public static float Lerp(float a,float b,float t) { return a+(b-a)*Clamp01(t); }
         public static int RoundToInt(float a) { return (int)Math.Round(a); }
+        public static int FloorToInt(float a) { return (int)Math.Floor(a); }
+        public static int CeilToInt(float a) { return (int)Math.Ceiling(a); }
     }
     public static class Random
     {
@@ -328,7 +331,7 @@ namespace TMPro {
   public void ActivateInputField(){isFocused=true;}
  }
  public enum TextAlignmentOptions { Center, TopLeft, Left, BottomRight, TopRight, MidlineLeft }
- public class TextMeshProUGUI : UnityEngine.UI.MaskableGraphic { public TMP_FontAsset font=new TMP_FontAsset(); public object fontSharedMaterial; public FontStyles fontStyle; public FontWeight fontWeight;public TextOverflowModes overflowMode;public bool enableWordWrapping; public string text; public float alpha,fontSize,fontSizeMin,fontSizeMax; public bool enableAutoSizing; public TextAlignmentOptions alignment; }
+ public class TextMeshProUGUI : UnityEngine.UI.MaskableGraphic { public TMP_FontAsset font=new TMP_FontAsset(); public object fontSharedMaterial; public FontStyles fontStyle; public FontWeight fontWeight;public TextOverflowModes overflowMode;public bool enableWordWrapping; public string text; public float alpha,fontSize,fontSizeMin,fontSizeMax; public bool enableAutoSizing; public TextAlignmentOptions alignment; public UnityEngine.Vector4 margin; }
 }
 namespace UnityEngine.Pool
 {
