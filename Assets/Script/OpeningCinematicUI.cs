@@ -1,4 +1,6 @@
 using UnityEngine;
+using System.IO;
+using System.Collections.Generic;
 using UnityEngine.UI;
 using TMPro;
 
@@ -38,6 +40,9 @@ public sealed class OpeningCinematicUI : MonoBehaviour
     private OpeningArtTheme theme;
     private OpeningBackgroundVideo videoBackground;
     private OpeningHeroSplashVideo splashLeft, splashRight;
+    private readonly List<Texture2D> sceneryTextures=new List<Texture2D>();
+    private readonly List<Sprite> scenerySprites=new List<Sprite>();
+    private readonly HashSet<RectTransform> newScenery=new HashSet<RectTransform>();
     private float elapsed, enterElapsed, menuAlphaBeforeEntry;
     private bool entering, finished, orderFixed, layoutEditing;
     private Vector2 backCloudBase, cloudLeftBase, cloudRightBase;
@@ -323,9 +328,88 @@ public sealed class OpeningCinematicUI : MonoBehaviour
             art!=null?art.leftClouds:null,font,"MÂY TRƯỚC / LEFT",out ignored);
         cloudRight=MakeLayer("06 FRONT CLOUDS RIGHT",new Color(.86f,.96f,1f,.84f),
             art!=null?art.rightClouds:null,font,"MÂY TRƯỚC / RIGHT",out ignored);
+        LoadNewScenery();
         splashLeft=OpeningHeroSplashVideo.Install(backdrop,font,true);
         splashRight=OpeningHeroSplashVideo.Install(backdrop,font,false);
         // No duplicate game title here: logo is part of StartMenuUI instead.
+    }
+
+
+    // Four static layers, distinct from the randomized L*/R* hero splash art.
+    // Keep files in StreamingAssets/OpeningSplashArt for standalone Windows builds.
+    private void LoadNewScenery()
+    {
+        LoadScenery("mid.png",far);
+        LoadScenery("bottom.png",near);
+        LoadScenery("CL.png",cloudLeft);
+        LoadScenery("CR.png",cloudRight);
+        if(newScenery.Count==4)
+        {
+            sky.gameObject.SetActive(false);
+            backCloud.gameObject.SetActive(false);
+        }
+        else Debug.LogWarning("[Opening] Custom scenery incomplete; original background fallback remains.");
+    }
+    private void LoadScenery(string file,RectTransform layer)
+    {
+        string path=Path.Combine(Application.streamingAssetsPath,"OpeningSplashArt",file);
+        if(!File.Exists(path)){Debug.LogWarning("[Opening] Missing scenery: "+path);return;}
+        Texture2D texture=null;
+        try
+        {
+            texture=new Texture2D(2,2,TextureFormat.RGBA32,false);
+            if(!ImageConversion.LoadImage(texture,File.ReadAllBytes(path),false))
+            {Destroy(texture);Debug.LogWarning("[Opening] Invalid scenery: "+path);return;}
+            var sprite=Sprite.Create(texture,new Rect(0,0,texture.width,texture.height),
+                new Vector2(.5f,.5f),100f,0,SpriteMeshType.FullRect);
+            sceneryTextures.Add(texture);scenerySprites.Add(sprite);
+            var img=layer.GetComponent<Image>();
+            img.sprite=sprite;img.color=Color.white;img.preserveAspect=false;
+            var feather=layer.GetComponent<OpeningEdgeFeather>();
+            if(feather!=null)feather.enabled=false;
+            foreach(var t in layer.GetComponentsInChildren<TextMeshProUGUI>(true))
+                if(t.gameObject.name.StartsWith("PLACEHOLDER"))t.gameObject.SetActive(false);
+            newScenery.Add(layer);
+        }
+        catch(System.Exception ex)
+        {
+            if(texture!=null && !sceneryTextures.Contains(texture))Destroy(texture);
+            Debug.LogWarning("[Opening] Cannot load "+path+": "+ex.Message);
+        }
+    }
+    private static Vector2 FitScenery(Sprite sprite,float maxWidth,float maxHeight)
+    {
+        float w=Mathf.Max(1f,sprite.rect.width),h=Mathf.Max(1f,sprite.rect.height);
+        float scale=Mathf.Min(maxWidth/w,maxHeight/h);
+        return new Vector2(w*scale,h*scale);
+    }
+    private void PlaceNewScenery(float w,float h)
+    {
+        if(newScenery.Contains(far))
+        {
+            Vector2 sz=FitScenery(far.GetComponent<Image>().sprite,w,h);
+            Place(far,Vector2.zero,sz); // mid: screen centre
+        }
+        if(newScenery.Contains(near))
+        {
+            Vector2 sz=FitScenery(near.GetComponent<Image>().sprite,w,h);
+            Place(near,new Vector2(0f,-h*.5f+sz.y*.5f),sz); // bottom edge
+        }
+        if(newScenery.Contains(cloudLeft))
+        {
+            Vector2 sz=FitScenery(cloudLeft.GetComponent<Image>().sprite,w*.48f,h);
+            Place(cloudLeft,new Vector2(-w*.5f+sz.x*.5f,0f),sz); // left edge
+        }
+        if(newScenery.Contains(cloudRight))
+        {
+            Vector2 sz=FitScenery(cloudRight.GetComponent<Image>().sprite,w*.48f,h);
+            Place(cloudRight,new Vector2(w*.5f-sz.x*.5f,0f),sz); // right edge
+        }
+    }
+    private void OnDestroy()
+    {
+        foreach(var sprite in scenerySprites)if(sprite!=null)Destroy(sprite);
+        foreach(var texture in sceneryTextures)if(texture!=null)Destroy(texture);
     }
 
     // Sibling of the opening and menu (not a cloud child): the curtain
@@ -384,7 +468,9 @@ public sealed class OpeningCinematicUI : MonoBehaviour
         // Only scenery and splash are owned here; StartMenuUI handles
         // its logo/buttons after its own normal layout.
         for(int i=0;i<8;i++)
-            ApplySavedRect(theme,LayoutKeys[i],rects[i],w,h);
+            if(!newScenery.Contains(rects[i]))
+                ApplySavedRect(theme,LayoutKeys[i],rects[i],w,h);
+        PlaceNewScenery(w,h);
         backCloudBase=backCloud.anchoredPosition;
         cloudLeftBase=cloudLeft.anchoredPosition;
         cloudRightBase=cloudRight.anchoredPosition;
