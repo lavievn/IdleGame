@@ -34,3 +34,12 @@ không chạy vòng entry đầy đủ hoặc camera nhiều frame. Vẫn cần 
 New/Continue/Load/Travel/Retry/Reset, camera sau VFX và Windows Player; xem
 `Tests~/HeroMovementSpike.md`. Chỉ dùng TestCase/Assert.That đã có trong fixture,
 không dùng các API NUnit từng không tương thích ở W1.6.
+
+## W2.2n/o — import artwork môi trường
+
+`PlainsPngImportTests` (4 ca) và `TerrainPngImportTests` (8 ca Forest/Mountain)
+chỉ đọc Resources; không tạo manager, hook, truy cập save hoặc đổi scene.
+Kiểm tra single/full-rect sprite, kích thước nguồn, mesh, mipmap, Clamp và CPU
+readability. Dùng TestCase/Assert.That cơ bản. Chưa compile/chạy bằng Unity Editor
+trong Cloud. Không kiểm chứng alpha sampling, đường nối tile hay chuyển cảnh;
+xem `Docs/W22oMultiTerrain.md` để nghiệm thu trong Unity/Windows Player.

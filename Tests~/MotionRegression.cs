@@ -116,6 +116,7 @@ partial class MotionRegression
     static void Main(string[] args)
     {
         if(args.Length==1 && args[0]=="--plains") {PlainsPresentationTests();return;}
+        if(args.Length==1 && args[0]=="--terrain-art") {MultiTerrainTests();return;}
         if(args.Length==1 && args[0]=="--magic-persistence") {MagicPersistenceTests();return;}
         if(args.Length==1 && args[0]=="--audio-volumes") {DualVolumeTests();MusicVolumeRegressionTests();OpeningSettingsRegressionTests();return;}
         if(args.Length==1 && args[0]=="--enemy-sprites") { EnemySpriteTests();return; }
@@ -452,6 +453,7 @@ partial class MotionRegression
         Version0050RegressionTests();
         Version0051StatsTests();
         PlainsPresentationTests();
+        MultiTerrainTests();
         TerrainTests();
         MenuDifficultyTests();
         ManualSaveMenuTests();

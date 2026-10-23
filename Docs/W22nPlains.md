@@ -1,5 +1,8 @@
 # W2.2n — Artwork Đồng Bằng
 
+Ghi nhận lịch sử W2.2n. W2.2o mở rộng ba nhóm, thêm Ground drop và cập nhật
+alpha importer; cấu hình hiện tại xem [W22oMultiTerrain.md](W22oMultiTerrain.md).
+
 ## Nguồn và phạm vi
 
 HEAD artwork: `8cfdc93` (`add art bg`). Bốn ảnh thực tế ở
