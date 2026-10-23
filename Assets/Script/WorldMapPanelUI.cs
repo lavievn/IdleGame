@@ -26,6 +26,10 @@ public sealed class WorldMapPanelUI
     private Texture2D fogTexture;
     private bool previousPause;
     private int page;
+    private const float MapOpenZoom = 1.35f;
+    private const float MinZoom = 1f;
+    private const float MaxZoom = 2.5f;
+    private float mapZoom = MapOpenZoom;
     private readonly RectTransform navigation;
     private const int FogWidth = 160;
     private const int FogHeight = 92;
@@ -159,6 +163,14 @@ public sealed class WorldMapPanelUI
     }
 
     public bool IsOpen => root != null && root.gameObject.activeSelf;
+    // Zoom only the artwork subtree. Fog/hex masks/country labels share the
+    // transformed coordinate space, so polygon hit testing remains aligned.
+    public void HandleScroll(Vector2 mousePoint, float scroll)
+    {
+        if(!IsOpen || artwork==null || Mathf.Abs(scroll)<.001f || !HitMapSurface(mousePoint))return;
+        mapZoom=Mathf.Clamp(mapZoom*Mathf.Pow(1.12f,scroll),MinZoom,MaxZoom);
+        ((RectTransform)artwork.transform).localScale=new Vector3(mapZoom,mapZoom,1f);
+    }
     public RectTransform Root => root;
     public bool HitMapSurface(Vector2 screenPoint) =>
         IsOpen && artwork != null &&
@@ -215,6 +227,8 @@ public sealed class WorldMapPanelUI
         owner.SetPaused(true);
         page=0;
         selectedMapId = host.HeroData.worldMapId;
+        mapZoom=MapOpenZoom;
+        ((RectTransform)artwork.transform).localScale=new Vector3(mapZoom,mapZoom,1f);
         Resize();
         root.gameObject.SetActive(true);
         root.SetAsLastSibling();
