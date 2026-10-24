@@ -34,7 +34,7 @@ public class GroundPresentation : MonoBehaviour
     [Header("EDITOR — chẩn đoán mép tile (tạm thời)")]
     public bool traceTileSeams = true;
 #endif
-    public enum ArtworkGroup { Legacy, Plains, Forest, Mountain, Desert, Swamp, Snow, Steppe }
+    public enum ArtworkGroup { Legacy, Plains, Forest, Mountain, Desert, Swamp, Snow, Steppe, Lake, Sea }
     private sealed class TerrainArtwork
     {
         public readonly ArtworkGroup Group;
@@ -49,7 +49,7 @@ public class GroundPresentation : MonoBehaviour
             Sky = Resources.Load<Sprite>(folder + sky);
         }
     }
-    private TerrainArtwork plains, forest, mountain, desert, swamp, snow, steppe, activeArtwork;
+    private TerrainArtwork plains, forest, mountain, desert, swamp, snow, steppe, lake, sea, activeArtwork;
     private string previousMapId;
     private EntityDataSO previousTerrainData;
     private TuTienCore.TerrainType previousTerrain;
@@ -186,6 +186,10 @@ public class GroundPresentation : MonoBehaviour
             "ground_i", "ground_i2", "ground_i3", "sky_i");
         presentation.steppe = new TerrainArtwork(ArtworkGroup.Steppe, "Environment/Steppe/",
             "ground_t", "ground_t2", "ground_t3", "sky_t");
+        presentation.lake = new TerrainArtwork(ArtworkGroup.Lake, "Environment/Lake/",
+            "ground_l", "ground_l2", "ground_l3", "sky_l");
+        presentation.sea = new TerrainArtwork(ArtworkGroup.Sea, "Environment/Sea/",
+            "ground_b", "ground_b2", "ground_b3", "sky_b");
         for (int i = 0; i < 3; i++)
         {
             var distant = presentation.CreateImage("Ground Sky Parallax " + (i + 1),
@@ -417,9 +421,8 @@ public class GroundPresentation : MonoBehaviour
                 case TuTienCore.TerrainType.CaoNguyen: next = mountain; break;
                 case TuTienCore.TerrainType.SaMac: next = desert; break;
                 case TuTienCore.TerrainType.DamLay: next = swamp; break;
-                // Temporary visual fallback until coastal/lake artwork exists.
-                case TuTienCore.TerrainType.HoNuoc: next = swamp; break;
-                case TuTienCore.TerrainType.Bien: next = plains; break;
+                case TuTienCore.TerrainType.HoNuoc: next = lake; break;
+                case TuTienCore.TerrainType.Bien: next = sea; break;
             }
         // Explicit cold-region art without rewriting existing terrain labels,
         // world-map travel graphs or combat terrain modifiers.
