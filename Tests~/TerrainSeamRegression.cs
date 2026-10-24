@@ -32,7 +32,7 @@ partial class MotionRegression
     static void TerrainSeamTests()
     {
         using(var art=new MultiTerrainResources()) {
-            foreach(var type in new[]{TerrainType.DongBang,TerrainType.RungRam,TerrainType.DoiNui,TerrainType.SaMac})
+            foreach(var type in new[]{TerrainType.DongBang,TerrainType.RungRam,TerrainType.DoiNui,TerrainType.SaMac,TerrainType.DamLay,TerrainType.HoNuoc})
             foreach(int window in new[]{600,800,1150})foreach(float scale in new[]{1.37f,1f,.83f})
             Run("exact rendered seams before/after recycle and resize / "+type+"/"+window+"/"+scale,()=>{
                 int ow=Screen.width,oh=Screen.height;

@@ -15,6 +15,14 @@ namespace IdleGame.Tests.Presentation.PlayMode
         [TestCase("Mountain","ground_m1")]
         [TestCase("Mountain","ground_m2")]
         [TestCase("Mountain","sky_m")]
+        [TestCase("Desert","ground_d")]
+        [TestCase("Desert","ground_d2")]
+        [TestCase("Desert","ground_d3")]
+        [TestCase("Desert","sky_d")]
+        [TestCase("Swamp","ground_s")]
+        [TestCase("Swamp","Ground_s2")]
+        [TestCase("Swamp","ground_s3")]
+        [TestCase("Swamp","sky_s")]
         public void Terrain_ImportKeepsFullSourceCanvas(string group,string name)
         {
             var sprites=Resources.LoadAll<Sprite>("Environment/"+group+"/"+name);

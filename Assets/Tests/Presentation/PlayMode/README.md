@@ -37,12 +37,16 @@ không dùng các API NUnit từng không tương thích ở W1.6.
 
 ## W2.2n/o — import artwork môi trường
 
-`PlainsPngImportTests` (4 ca) và `TerrainPngImportTests` (8 ca Forest/Mountain)
+`PlainsPngImportTests` (4 ca) và `TerrainPngImportTests` (16 ca Forest/Mountain/Desert/Swamp)
 chỉ đọc Resources; không tạo manager, hook, truy cập save hoặc đổi scene.
 Kiểm tra single/full-rect sprite, kích thước nguồn, mesh, mipmap, Clamp và CPU
 readability. Dùng TestCase/Assert.That cơ bản. Chưa compile/chạy bằng Unity Editor
 trong Cloud. Không kiểm chứng alpha sampling, đường nối tile hay chuyển cảnh;
 xem `Docs/W22oMultiTerrain.md` để nghiệm thu trong Unity/Windows Player.
+
+Desert/Swamp dùng đúng tên file nguồn, kể cả `Swamp/Ground_s2` viết hoa chữ G.
+Tám ca import mới giữ nguyên assertion của Forest/Mountain, chưa chạy bằng Unity.
+Mapping, map thật và giới hạn artwork xem `Docs/DesertSwampIntegration.md`.
 
 ## Hotfix seam background2/background3
 

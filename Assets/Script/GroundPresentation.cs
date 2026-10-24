@@ -34,7 +34,7 @@ public class GroundPresentation : MonoBehaviour
     [Header("EDITOR — chẩn đoán mép tile (tạm thời)")]
     public bool traceTileSeams = true;
 #endif
-    public enum ArtworkGroup { Legacy, Plains, Forest, Mountain }
+    public enum ArtworkGroup { Legacy, Plains, Forest, Mountain, Desert, Swamp }
     private sealed class TerrainArtwork
     {
         public readonly ArtworkGroup Group;
@@ -49,7 +49,7 @@ public class GroundPresentation : MonoBehaviour
             Sky = Resources.Load<Sprite>(folder + sky);
         }
     }
-    private TerrainArtwork plains, forest, mountain, activeArtwork;
+    private TerrainArtwork plains, forest, mountain, desert, swamp, activeArtwork;
     private EntityDataSO previousTerrainData;
     private TuTienCore.TerrainType previousTerrain;
     private bool terrainChecked;
@@ -175,6 +175,10 @@ public class GroundPresentation : MonoBehaviour
             "ground_j", "ground_j1", "ground_j2", "sky_j");
         presentation.mountain = new TerrainArtwork(ArtworkGroup.Mountain, "Environment/Mountain/",
             "ground_m", "ground_m1", "ground_m2", "sky_m");
+        presentation.desert = new TerrainArtwork(ArtworkGroup.Desert, "Environment/Desert/",
+            "ground_d", "ground_d2", "ground_d3", "sky_d");
+        presentation.swamp = new TerrainArtwork(ArtworkGroup.Swamp, "Environment/Swamp/",
+            "ground_s", "Ground_s2", "ground_s3", "sky_s");
         for (int i = 0; i < 3; i++)
         {
             var distant = presentation.CreateImage("Ground Sky Parallax " + (i + 1),
@@ -212,7 +216,9 @@ public class GroundPresentation : MonoBehaviour
             if (d.parent == area && d.gameObject.name != null && d.gameObject.name.StartsWith("Grass"))
                 presentation.AddDecoration(d, main, decorationSprite, seen);
         Sprite skySprite = presentation.plains.Sky != null ? presentation.plains.Sky :
-            (presentation.forest.Sky != null ? presentation.forest.Sky : presentation.mountain.Sky);
+            (presentation.forest.Sky != null ? presentation.forest.Sky :
+            (presentation.mountain.Sky != null ? presentation.mountain.Sky :
+            (presentation.desert.Sky != null ? presentation.desert.Sky : presentation.swamp.Sky)));
         if (skySprite != null)
             for (int i = 0; i < 3; i++)
             {
@@ -399,6 +405,8 @@ public class GroundPresentation : MonoBehaviour
                 case TuTienCore.TerrainType.RungRam: next = forest; break;
                 case TuTienCore.TerrainType.DoiNui:
                 case TuTienCore.TerrainType.CaoNguyen: next = mountain; break;
+                case TuTienCore.TerrainType.SaMac: next = desert; break;
+                case TuTienCore.TerrainType.DamLay: next = swamp; break;
             }
         // All four images change together; an incomplete set uses the existing
         // legacy fallback, never stale images from the previous terrain.

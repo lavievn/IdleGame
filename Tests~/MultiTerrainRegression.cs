@@ -7,6 +7,17 @@ using TuTienCore;
 
 partial class MotionRegression
 {
+    static string[] TerrainResourceNames(GroundPresentation.ArtworkGroup group)
+    {
+        switch(group) {
+            case GroundPresentation.ArtworkGroup.Plains:return new[]{"Ground","Ground2","Ground3","sky"};
+            case GroundPresentation.ArtworkGroup.Forest:return new[]{"ground_j","ground_j1","ground_j2","sky_j"};
+            case GroundPresentation.ArtworkGroup.Mountain:return new[]{"ground_m","ground_m1","ground_m2","sky_m"};
+            case GroundPresentation.ArtworkGroup.Desert:return new[]{"ground_d","ground_d2","ground_d3","sky_d"};
+            case GroundPresentation.ArtworkGroup.Swamp:return new[]{"ground_s","Ground_s2","ground_s3","sky_s"};
+            default:throw new ArgumentException("Not an authored terrain: "+group);
+        }
+    }
     sealed class MultiTerrainResources : IDisposable
     {
         readonly PlainsResources plains=new PlainsResources();
@@ -15,10 +26,10 @@ partial class MotionRegression
         public MultiTerrainResources()
         {
             Art[GroundPresentation.ArtworkGroup.Plains]=plains.Art;
-            foreach(string group in new[]{"Forest","Mountain"}) {
-                string suffix=group=="Forest"?"j":"m";
-                string[] names={"ground_"+suffix,"ground_"+suffix+"1","ground_"+suffix+"2","sky_"+suffix};
-                var sprites=new Sprite[4];Art[group=="Forest"?GroundPresentation.ArtworkGroup.Forest:GroundPresentation.ArtworkGroup.Mountain]=sprites;
+            foreach(var group in new[]{GroundPresentation.ArtworkGroup.Forest,GroundPresentation.ArtworkGroup.Mountain,
+                GroundPresentation.ArtworkGroup.Desert,GroundPresentation.ArtworkGroup.Swamp}) {
+                string[] names=TerrainResourceNames(group);
+                var sprites=new Sprite[4];Art[group]=sprites;
                 for(int i=0;i<4;i++) {
                     string path="Environment/"+group+"/"+names[i];paths.Add(path);
                     sprites[i]=Sprite.Create(new Texture2D(2172,724,TextureFormat.RGBA32,false),new Rect(0,0,2172,724),new Vector2(.5f,.5f),100);
@@ -34,6 +45,8 @@ partial class MotionRegression
             case TerrainType.DongBang:return GroundPresentation.ArtworkGroup.Plains;
             case TerrainType.RungRam:return GroundPresentation.ArtworkGroup.Forest;
             case TerrainType.DoiNui:case TerrainType.CaoNguyen:return GroundPresentation.ArtworkGroup.Mountain;
+            case TerrainType.SaMac:return GroundPresentation.ArtworkGroup.Desert;
+            case TerrainType.DamLay:return GroundPresentation.ArtworkGroup.Swamp;
             default:return GroundPresentation.ArtworkGroup.Legacy;
         }
     }
@@ -77,21 +90,26 @@ partial class MotionRegression
             Run("all 133 catalog nodes use their existing terrain types, not names or IDs",()=>{
                 var f=new Field();RectTransform[] props;var t=TerrainField(f,out props);var data=f.combat.CurrentHeroCombatState.Data;
                 Check(WorldMapCatalog.All.Count==133,"real catalog loaded");
-                var families=new HashSet<GroundPresentation.ArtworkGroup>();
+                var families=new HashSet<GroundPresentation.ArtworkGroup>();int desert=0,swamp=0;
                 foreach(var node in WorldMapCatalog.All) {
-                    data.mapTerrain=node.Terrain;data.mapName=node.Name;data.worldMapId=node.Id;
+                    data.worldMapVersion=1;data.worldMapId=node.Id;WorldMapCatalog.Normalize(data);
+                    Check(data.mapTerrain==node.Terrain && data.mapName==node.Name,"existing catalog-to-Hero binding");
                     t.Scroll(0);CheckTerrainArt(t,resources,node.Terrain);families.Add(t.CurrentArtworkGroup);
+                    if(node.Terrain==TerrainType.SaMac)desert++;
+                    if(node.Terrain==TerrainType.DamLay)swamp++;
                 }
-                Check(families.Count==4,"catalog exercises three new families plus legacy fallback");
+                Check(families.Count==6,"catalog exercises five artwork families plus legacy fallback");
+                Check(desert==12 && swamp==4,"all existing Desert and Swamp maps bound without catalog edits");
             });
-            Run("repeated three-family swaps change all layers atomically without actors, camera, phase or RNG changes",()=>{
+            Run("repeated five-family swaps change all layers atomically without actors, camera, phase or RNG changes",()=>{
                 var f=new Field();var m=f.Monster(-130,AttackMode.RangedMagic,40);RectTransform[] props;var t=TerrainField(f,out props);
                 t.Scroll(70);var hero=f.space.Position(f.hero.heroRect);var monster=f.space.Position(m.Rect);
                 var size=f.ground.sizeDelta;var groundPosition=f.ground.position;float home=f.space.HomeX;
                 var target=Get<HeroController>(f.space,"cameraTarget");float focus=f.space.CurrentCameraSmoothedFocusX,velocity=f.space.CameraFollowVelocity;
                 float phase=t.TilePhase,far=t.FarPhase,distant=t.DistantPhase;
                 UnityEngine.Random.InitState(761);int next=UnityEngine.Random.Range(0,10000);UnityEngine.Random.InitState(761);
-                for(int i=0;i<60;i++)foreach(var type in new[]{TerrainType.RungRam,TerrainType.DoiNui,TerrainType.DongBang,TerrainType.SaMac,TerrainType.CaoNguyen}) {
+                for(int i=0;i<60;i++)foreach(var type in new[]{TerrainType.RungRam,TerrainType.DoiNui,TerrainType.DongBang,
+                    TerrainType.SaMac,TerrainType.DamLay,TerrainType.CaoNguyen,TerrainType.HoNuoc}) {
                     f.combat.CurrentHeroCombatState.Data.mapTerrain=type;t.Scroll(0);CheckTerrainArt(t,resources,type);
                 }
                 Check(UnityEngine.Random.Range(0,10000)==next,"visual swaps consume no RNG");
@@ -102,7 +120,7 @@ partial class MotionRegression
                 Near(f.space.HomeX,home,"HomeX");Check(Get<HeroController>(f.space,"cameraTarget")==target,"camera subject");
                 Near(f.space.CurrentCameraSmoothedFocusX,focus,"camera focus");Near(f.space.CameraFollowVelocity,velocity,"camera velocity");
             });
-            foreach(var type in new[]{TerrainType.DongBang,TerrainType.RungRam,TerrainType.DoiNui})foreach(int width in new[]{600,800,1150})
+            foreach(var type in new[]{TerrainType.DongBang,TerrainType.RungRam,TerrainType.DoiNui,TerrainType.SaMac,TerrainType.DamLay})foreach(int width in new[]{600,800,1150})
             Run("terrain resize keeps 20px Ground-only offset, top Sky and fixed parallax / "+type+"/"+width,()=>{
                 int ow=Screen.width,oh=Screen.height;
                 try {
@@ -127,10 +145,9 @@ partial class MotionRegression
                     }
                 } finally {Screen.width=ow;Screen.height=oh;ManagementWindowLayout.SetCompact(ow,oh);}
             });
-            foreach(var type in new[]{TerrainType.DongBang,TerrainType.RungRam,TerrainType.DoiNui})for(int layer=0;layer<4;layer++) {
+            foreach(var type in new[]{TerrainType.DongBang,TerrainType.RungRam,TerrainType.DoiNui,TerrainType.SaMac,TerrainType.DamLay})for(int layer=0;layer<4;layer++) {
                 int missing=layer;var group=ExpectedTerrain(type);string folder=group.ToString();
-                string[] names=group==GroundPresentation.ArtworkGroup.Plains?new[]{"Ground","Ground2","Ground3","sky"}:
-                    group==GroundPresentation.ArtworkGroup.Forest?new[]{"ground_j","ground_j1","ground_j2","sky_j"}:new[]{"ground_m","ground_m1","ground_m2","sky_m"};
+                string[] names=TerrainResourceNames(group);
                 string path="Environment/"+folder+"/"+names[layer];
                 Run("missing terrain layer replaces previous family with complete legacy fallback / "+group+"/"+missing,()=>{
                     Resources.Unregister(path);
@@ -146,15 +163,31 @@ partial class MotionRegression
                     } finally {Resources.Register(path,resources.Art[group][missing]);}
                 });
             }
+            foreach(var type in new[]{TerrainType.SaMac,TerrainType.DamLay})
+            Run("new terrain initializes its own Sky even when all other families are absent / "+type,()=>{
+                var wanted=ExpectedTerrain(type);var removed=new Dictionary<string,Sprite>();
+                foreach(var pair in resources.Art)if(pair.Key!=wanted) {
+                    var names=TerrainResourceNames(pair.Key);
+                    for(int i=0;i<names.Length;i++) {
+                        string path="Environment/"+pair.Key+"/"+names[i];removed[path]=pair.Value[i];Resources.Unregister(path);
+                    }
+                }
+                try {
+                    var f=new Field();f.combat.CurrentHeroCombatState.Data.mapTerrain=type;
+                    RectTransform[] props;var t=TerrainField(f,out props);CheckTerrainArt(t,resources,type);
+                    Check(Get<List<RectTransform>>(t,"skyTiles").Count==3,"own Sky creates the shared sky layer");
+                } finally {foreach(var pair in removed)Resources.Register(pair.Key,pair.Value);}
+            });
             Run("artwork cache survives repeated load-style Hero data replacements without reloading or creating objects",()=>{
                 var f=new Field();RectTransform[] props;var t=TerrainField(f,out props);
-                var data=new[]{new EntityDataSO{mapTerrain=TerrainType.RungRam},new EntityDataSO{mapTerrain=TerrainType.CaoNguyen},new EntityDataSO{mapTerrain=TerrainType.DongBang}};
+                var data=new[]{new EntityDataSO{mapTerrain=TerrainType.RungRam},new EntityDataSO{mapTerrain=TerrainType.CaoNguyen},
+                    new EntityDataSO{mapTerrain=TerrainType.DongBang},new EntityDataSO{mapTerrain=TerrainType.SaMac},new EntityDataSO{mapTerrain=TerrainType.DamLay}};
                 int loads=Resources.LoadCallCount,objects=UnityEngine.Object.objects.Count;
                 for(int i=0;i<120;i++) {
-                    var next=data[i%3];f.combat.SetupHeroInfo(next);t.Scroll(0);CheckTerrainArt(t,resources,next.mapTerrain);
+                    var next=data[i%data.Length];f.combat.SetupHeroInfo(next);t.Scroll(0);CheckTerrainArt(t,resources,next.mapTerrain);
                     Call(t,"LateUpdate");
                 }
-                Check(Resources.LoadCallCount==loads,"twelve sprites loaded only at Install");Check(UnityEngine.Object.objects.Count==objects,"no leaked scene objects or textures during swaps");
+                Check(Resources.LoadCallCount==loads,"twenty sprites loaded only at Install");Check(UnityEngine.Object.objects.Count==objects,"no leaked scene objects or textures during swaps");
                 f.combat.CurrentHeroCombatState.Data.mapTerrain=(TerrainType)999;t.Scroll(0);
                 Check(t.CurrentArtworkGroup==GroundPresentation.ArtworkGroup.Legacy,"unknown future terrain uses legacy renderer");
             });
