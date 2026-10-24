@@ -67,6 +67,8 @@ public class GroundPresentation : MonoBehaviour
     [Header("ARTWORK GROUND — chỉ dịch phần hình, không dịch sàn logic")]
     [Tooltip("Số pixel màn hình hạ Ground. Quy đổi qua canvas gameplay khi resize; không áp dụng cho nền thử nghiệm cũ.")]
     [Min(0f)] public float groundDropPixels = 20f;
+    [Tooltip("Hạ thêm riêng Ground Sa mạc và Đầm lầy (pixel hiển thị). Không ảnh hưởng sàn logic hoặc các layer nền.")]
+    [Min(0f)] public float desertSwampExtraGroundDropPixels = 20f;
 
     [Header("NỀN XA - THỊ SAI (CHỈ HIỂN THỊ)")]
     [Range(0f, 1f)] public float farParallaxSpeed = .09f;
@@ -605,7 +607,9 @@ public class GroundPresentation : MonoBehaviour
     {
         // Stable Battle Canvas maps logical width onto compact gameplay pixels.
         // At 600px / 1920 units, a 20px drop is 64 units, not 20 world units.
-        return Mathf.Max(0f, groundDropPixels) / Mathf.Max(.0001f,
+        float extra = CurrentArtworkGroup == ArtworkGroup.Desert || CurrentArtworkGroup == ArtworkGroup.Swamp
+            ? Mathf.Max(0f, desertSwampExtraGroundDropPixels) : 0f;
+        return (Mathf.Max(0f, groundDropPixels) + extra) / Mathf.Max(.0001f,
             ManagementWindowLayout.BattleCanvasScale(Screen.width, space.Width));
     }
     private void AddDepth(RectTransform rect)
