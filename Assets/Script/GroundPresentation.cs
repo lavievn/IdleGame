@@ -34,7 +34,7 @@ public class GroundPresentation : MonoBehaviour
     [Header("EDITOR — chẩn đoán mép tile (tạm thời)")]
     public bool traceTileSeams = true;
 #endif
-    public enum ArtworkGroup { Legacy, Plains, Forest, Mountain, Desert, Swamp, Snow }
+    public enum ArtworkGroup { Legacy, Plains, Forest, Mountain, Desert, Swamp, Snow, Steppe }
     private sealed class TerrainArtwork
     {
         public readonly ArtworkGroup Group;
@@ -49,7 +49,7 @@ public class GroundPresentation : MonoBehaviour
             Sky = Resources.Load<Sprite>(folder + sky);
         }
     }
-    private TerrainArtwork plains, forest, mountain, desert, swamp, snow, activeArtwork;
+    private TerrainArtwork plains, forest, mountain, desert, swamp, snow, steppe, activeArtwork;
     private string previousMapId;
     private EntityDataSO previousTerrainData;
     private TuTienCore.TerrainType previousTerrain;
@@ -184,6 +184,8 @@ public class GroundPresentation : MonoBehaviour
             "ground_s", "Ground_s2", "ground_s3", "sky_s");
         presentation.snow = new TerrainArtwork(ArtworkGroup.Snow, "Environment/Snow/",
             "ground_i", "ground_i2", "ground_i3", "sky_i");
+        presentation.steppe = new TerrainArtwork(ArtworkGroup.Steppe, "Environment/Steppe/",
+            "ground_t", "ground_t2", "ground_t3", "sky_t");
         for (int i = 0; i < 3; i++)
         {
             var distant = presentation.CreateImage("Ground Sky Parallax " + (i + 1),
@@ -423,6 +425,9 @@ public class GroundPresentation : MonoBehaviour
         // world-map travel graphs or combat terrain modifiers.
         if (data != null && (mapId == "TL-01" || mapId == "TL-03" || mapId == "TL-04"))
             next = snow;
+        // Thao nguyen is represented by DongBang in the combat terrain enum;
+        // select its distinct visual set by the authored map ID only.
+        if (data != null && mapId == "TL-25") next = steppe;
         // All four images change together; an incomplete set uses the existing
         // legacy fallback, never stale images from the previous terrain.
         if (next != null && !next.Complete) next = null;
