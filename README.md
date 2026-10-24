@@ -5,9 +5,9 @@ Dự án game tu tiên 2D idle, phát triển bằng Unity. Nhân vật tự kh�
 > **Trạng thái (25/10/2026): ĐANG PHÁT TRIỂN / KIỂM THỬ NỘI BỘ — CHƯA PHẢI BẢN ALPHA.** Những mốc có chữ “Alpha Accepted” trong trao đổi trước chỉ biểu thị **nghiệm thu tạm thời một hạng mục**, không phải cấp độ phát hành của toàn bộ trò chơi.
 
 ## Nhánh và mốc an toàn
-- `feature/0.0.54`: mốc ổn định trước giai đoạn hoàn thiện hình ảnh, không tự ý merge.
-- `feature/w2-combat-presentation`: nhánh đang phát triển, tích hợp asset, chiến đấu và môi trường.
-- `main`: không tự động đồng bộ từ các nhánh thử nghiệm.
+- **`main`: nhánh phát triển chính từ 25/10/2026**, đã fast-forward từ `feature/w2-combat-presentation` tại commit `292baa18`. Dự án vẫn là bản phát triển/kiểm thử, **chưa phải Alpha**.
+- `feature/0.0.54`: mốc kiểm thử ổn định cũ để đối chiếu hoặc hoàn tác khi cần.
+- `feature/w2-combat-presentation`: nhánh lịch sử giai đoạn W2, không cần tiếp tục phát triển riêng; mọi công việc W3 mới thực hiện trên `main` trừ khi chủ động tách nhánh.
 
 ## Trạng thái hệ thống (tổng kết 24–25/10/2026)
 | Phần | Hiện trạng |
