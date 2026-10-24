@@ -34,7 +34,7 @@ public class GroundPresentation : MonoBehaviour
     [Header("EDITOR — chẩn đoán mép tile (tạm thời)")]
     public bool traceTileSeams = true;
 #endif
-    public enum ArtworkGroup { Legacy, Plains, Forest, Mountain, Desert, Swamp }
+    public enum ArtworkGroup { Legacy, Plains, Forest, Mountain, Desert, Swamp, Snow }
     private sealed class TerrainArtwork
     {
         public readonly ArtworkGroup Group;
@@ -49,7 +49,8 @@ public class GroundPresentation : MonoBehaviour
             Sky = Resources.Load<Sprite>(folder + sky);
         }
     }
-    private TerrainArtwork plains, forest, mountain, desert, swamp, activeArtwork;
+    private TerrainArtwork plains, forest, mountain, desert, swamp, snow, activeArtwork;
+    private string previousMapId;
     private EntityDataSO previousTerrainData;
     private TuTienCore.TerrainType previousTerrain;
     private bool terrainChecked;
@@ -181,6 +182,8 @@ public class GroundPresentation : MonoBehaviour
             "ground_d", "ground_d2", "ground_d3", "sky_d");
         presentation.swamp = new TerrainArtwork(ArtworkGroup.Swamp, "Environment/Swamp/",
             "ground_s", "Ground_s2", "ground_s3", "sky_s");
+        presentation.snow = new TerrainArtwork(ArtworkGroup.Snow, "Environment/Snow/",
+            "ground_i", "ground_i2", "ground_i3", "sky_i");
         for (int i = 0; i < 3; i++)
         {
             var distant = presentation.CreateImage("Ground Sky Parallax " + (i + 1),
@@ -395,10 +398,13 @@ public class GroundPresentation : MonoBehaviour
         var state = combat != null ? combat.CurrentHeroCombatState : null;
         var data = state != null ? state.Data : null;
         var terrain = data != null ? data.mapTerrain : default(TuTienCore.TerrainType);
-        if (terrainChecked && data == previousTerrainData && terrain == previousTerrain) return;
+        string mapId = data != null ? data.worldMapId : null;
+        if (terrainChecked && data == previousTerrainData && terrain == previousTerrain &&
+            string.Equals(mapId, previousMapId, System.StringComparison.Ordinal)) return;
         terrainChecked = true;
         previousTerrainData = data;
         previousTerrain = terrain;
+        previousMapId = mapId;
         TerrainArtwork next = null;
         if (data != null)
             switch (terrain)
@@ -409,7 +415,14 @@ public class GroundPresentation : MonoBehaviour
                 case TuTienCore.TerrainType.CaoNguyen: next = mountain; break;
                 case TuTienCore.TerrainType.SaMac: next = desert; break;
                 case TuTienCore.TerrainType.DamLay: next = swamp; break;
+                // Temporary visual fallback until coastal/lake artwork exists.
+                case TuTienCore.TerrainType.HoNuoc: next = swamp; break;
+                case TuTienCore.TerrainType.Bien: next = plains; break;
             }
+        // Explicit cold-region art without rewriting existing terrain labels,
+        // world-map travel graphs or combat terrain modifiers.
+        if (data != null && (mapId == "TL-01" || mapId == "TL-03" || mapId == "TL-04"))
+            next = snow;
         // All four images change together; an incomplete set uses the existing
         // legacy fallback, never stale images from the previous terrain.
         if (next != null && !next.Complete) next = null;
