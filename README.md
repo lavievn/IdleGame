@@ -4,6 +4,12 @@ Dự án game tu tiên 2D idle, phát triển bằng Unity. Nhân vật tự kh�
 
 > **Trạng thái (25/10/2026): ĐANG PHÁT TRIỂN / KIỂM THỬ NỘI BỘ — CHƯA PHẢI BẢN ALPHA.** Những mốc có chữ “Alpha Accepted” trong trao đổi trước chỉ biểu thị **nghiệm thu tạm thời một hạng mục**, không phải cấp độ phát hành của toàn bộ trò chơi.
 
+## Định hướng core gameplay (bản làm việc, có thể thay đổi)
+
+**Người chơi định hướng — nhân vật tự khám phá, chiến đấu và trưởng thành — kết quả tạo ra lựa chọn mới.** Trọng tâm gần là hoàn thiện chuỗi **chuẩn bị → khám phá → chiến đấu → nhận kết quả → điều chỉnh hướng phát triển**, trước khi mở rộng NPC, sự kiện và tiến triển offline.
+
+Xem [Định hướng Core Gameplay Loop — 25/10/2026](Docs/CORE_GAMEPLAY_LOOP_DIRECTION_2026-10-25.md) để biết các ưu tiên, vòng kiểm chứng hai map và danh sách vấn đề **chưa chốt**. Đây là tài liệu định hướng, **không tự động phê duyệt triển khai tính năng mới**.
+
 ## Nhánh và mốc an toàn
 - **`main`: nhánh phát triển chính từ 25/10/2026**, đã fast-forward từ `feature/w2-combat-presentation` tại commit `292baa18`. Dự án vẫn là bản phát triển/kiểm thử, **chưa phải Alpha**.
 - `feature/0.0.54`: mốc kiểm thử ổn định cũ để đối chiếu hoặc hoàn tác khi cần.
