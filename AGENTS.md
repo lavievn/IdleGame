@@ -8,6 +8,16 @@ và [trạng thái 25/10/2026](Docs/PROGRESS_2026-10-25.md) khi cần bối cả
 lịch sử không phải quy tắc runtime hiện tại. Mã hiện tại và yêu cầu mới của người
 dùng phải được đối chiếu trước khi suy diễn. Dự án chưa phải Alpha.
 
+## Định hướng gameplay đang phát triển (không phải đặc tả tính năng)
+
+Khi lập kế hoạch **core loop, progression, reward, balancing, map/wave, nhật ký hành trình
+hoặc sự kiện NPC**, đọc [định hướng Core Gameplay Loop ngày 25/10/2026](Docs/CORE_GAMEPLAY_LOOP_DIRECTION_2026-10-25.md).
+Đây là **tài liệu làm việc có thể sửa đổi**, chứa cả định hướng đã chốt và đề xuất
+chưa chốt. Không tự code/đổi gameplay, checkpoint, party, offline progress hay
+sự kiện chỉ vì được mô tả trong tài liệu. Luôn đối chiếu mã hiện tại và xin yêu cầu
+cụ thể trước khi triển khai. Tham khảo trạng thái đã có/chưa có trong README,
+PROGRESS và skill dự án; tài liệu thiết kế không ghi đè hành vi runtime hiện tại.
+
 ## Nạp skill theo tác vụ
 
 | Tác vụ | SKILL.md cần đọc ngoài quy tắc dự án |
