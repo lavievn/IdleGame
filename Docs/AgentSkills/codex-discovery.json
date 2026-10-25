@@ -1,0 +1,38 @@
+{
+  "checked_on": "2026-10-25",
+  "codex_cli": "0.159.2",
+  "native_discovery_verified": false,
+  "automatic_activation_verified": false,
+  "model_turn_started": false,
+  "project_skill_files_present": 5,
+  "executor_catalog": {
+    "skills": [],
+    "warnings": []
+  },
+  "attempts": [
+    {
+      "method": "app-server skills/list",
+      "status": "blocked-before-initialize",
+      "error": "failed to initialize sqlite state runtime under /run/codex-environment/codex-home: failed to initialize state runtime at /run/codex-environment/codex-home",
+      "context": "read-only system state directory"
+    },
+    {
+      "method": "app-server skills/list with command-local sqlite_home/log_dir in /tmp",
+      "status": "blocked-before-initialize",
+      "error": "Read-only file system (os error 30)"
+    },
+    {
+      "method": "debug prompt-input",
+      "status": "blocked",
+      "error": "Read-only file system (os error 30)",
+      "rendered_prompt_bytes": 0
+    }
+  ],
+  "fallback": {
+    "entrypoint": "AGENTS.md",
+    "mechanism": "read idle-game-project-rules/SKILL.md first, then explicit task-to-file routing to installed local skills",
+    "validation": "filesystem reads and Tools/verify_agent_skills.py; not native auto-trigger"
+  },
+  "global_configuration_modified": false,
+  "credentials_or_state_files_copied": false
+}

@@ -1,0 +1,25 @@
+{
+  "ok": true,
+  "assets": [
+    {
+      "path": "Assets/Resources/Environment/Plains/Ground2.png",
+      "format": "PNG",
+      "mode": "RGBA",
+      "width": 2172,
+      "height": 724,
+      "bytes": 1347592,
+      "color_count": ">65535",
+      "has_alpha": true,
+      "alpha_min": 0,
+      "alpha_max": 255,
+      "transparent_pixels": 930991,
+      "content_bounds": [
+        0,
+        287,
+        2172,
+        724
+      ],
+      "problems": []
+    }
+  ]
+}

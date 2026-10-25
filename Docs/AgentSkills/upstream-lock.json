@@ -1,0 +1,68 @@
+{
+  "schema": 1,
+  "repository": "https://github.com/gamedev-skills/awesome-gamedev-agent-skills",
+  "commit": "184b72be02884f782a0058f2eeae2ce4277453e4",
+  "integrated_on": "2026-10-25",
+  "update_policy": "manual-review-only",
+  "license": "Apache-2.0",
+  "skills": [
+    {
+      "name": "unity-csharp-scripting",
+      "source_path": "skills/unity/unity-csharp-scripting",
+      "local_path": ".agents/skills/unity-csharp-scripting",
+      "files": {
+        "SKILL.md": "e49d3fed5f65c2d126600ea5d80b859ecb4be241726ae022aa3acd65caf10df4",
+        "references/lifecycle-and-coroutines.md": "c9b1dc7779fc7c840dd4f461fce78f61dfc23638d2ff37bb7010c42d8f5fd9ae",
+        "scripts/check_unity_project.py": "ab26d4e5eabd54524a53c12bf1d03cc9fbe496a509acdd5f5de9165c5c30c724"
+      }
+    },
+    {
+      "name": "save-systems",
+      "source_path": "skills/disciplines/save-systems",
+      "local_path": ".agents/skills/save-systems",
+      "files": {
+        "SKILL.md": "17a7e580cdb8ee2fe654fe1b2d9ba3066c57ef1ea6a8cd9cc69141ebaea16224",
+        "references/versioning-and-migration.md": "a95ee265936b5bb332934ae19a90c02c70f927adb3898e5a95ce1877abe9873c"
+      }
+    },
+    {
+      "name": "unity-build-pipeline",
+      "source_path": "skills/unity/unity-build-pipeline",
+      "local_path": ".agents/skills/unity-build-pipeline",
+      "files": {
+        "SKILL.md": "96975bb7573a6a8b6672fac1ea8090178631d6c7dda4c455cb80e4205acefe9d",
+        "references/ci-build-script.md": "3290166f3eaee3080ff73c3c44583a71414dbe7ff8e57e885be7eb25875e9eb0"
+      }
+    },
+    {
+      "name": "create-game-assets",
+      "source_path": "skills/disciplines/create-game-assets",
+      "local_path": ".agents/skills/create-game-assets",
+      "files": {
+        "SKILL.md": "36cd246a434fefe1e36feff066597a6268d9f63364bee387ee65a22f03838b5d",
+        "agents/openai.yaml": "b5ff9e75ab8a845324d28745aa97af0a3cd4fccc56067a6494947e12e40f1990",
+        "assets/art-direction-brief.md": "6d5dc4f9f5fcb24300bab9ce7dbd56d5c948ba41da3cca2d3b3d235fee5fb72c",
+        "assets/asset-manifest.json": "6cce05638c11b80eb5c8f776cf187f479a2579f1a1729b0970b1cc8e5fab4c8e",
+        "references/art-direction.md": "19b2ccb827eae0c6c4cd3648ab7febb82e44706bef8515f2e8912de23dec0a5c",
+        "references/provenance.md": "098d3cf915cd66e8ff0ad3a639964167edf2280f9e23efbae3ea6242d5bea3db",
+        "references/raster-pipeline.md": "d7a5714628fd8f4b66d03e060488e353b163b811112b164af218beb2b6450a02",
+        "references/three-d-pipeline.md": "ee6ed7c373e15ffeb8e6b275618482f028279a8146f01b6cfe6a8411cb8a3db4",
+        "scripts/asset_report.py": "99f4b38f9c4fe036f97ab1d4effd7f6931b62d24a90330a5a2f5ae71e7d1a77c",
+        "scripts/build_preview_sheet.py": "002a550a7b5fac6d8815078a72afc249dd828c40d975b2323223fc770118c64b",
+        "scripts/requirements.txt": "bbced595a25debee9232fbb784d35ee4f04967d3dbc528e8c3073d3e9adbe2ca"
+      }
+    }
+  ],
+  "legal_files": [
+    {
+      "source_path": "LICENSE",
+      "local_path": "Docs/AgentSkills/upstream/LICENSE",
+      "sha256": "6f82dcfeb95a1c0a0452180a3b16f21bf82111780018fed59d95a052b5b75f6c"
+    },
+    {
+      "source_path": "NOTICE",
+      "local_path": "Docs/AgentSkills/upstream/NOTICE",
+      "sha256": "2dcb65b1c5be24e5ba11e937f3996100f4e980d8cf8ac5b30ba1d70dae6c40f8"
+    }
+  ]
+}

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Bach Luyen Tien Do Project Rules"
+  short_description: "Preserve verified IdleGame architecture and scope"
+  default_prompt: "Use $idle-game-project-rules before changing or auditing this Unity project."

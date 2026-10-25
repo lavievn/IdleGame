@@ -1,0 +1,446 @@
+{
+  "tool": "check_unity_project",
+  "schema": 1,
+  "root": "/workspace/IdleGame",
+  "files_checked": 727,
+  "error_count": 0,
+  "warning_count": 62,
+  "errors": [],
+  "warnings": [
+    {
+      "code": "missing-script",
+      "file": "Assets/DefaultVolumeProfile.asset",
+      "line": 12,
+      "message": "script reference points to GUID 3eb4b772797da9440885e8bd939e9560, which no .meta in the project has (unconfirmed: could not read packages com.unity.2d.animation, com.unity.2d.aseprite, com.unity.2d.common, com.unity.2d.psdimporter, com.unity.2d.sprite, ... (Library/PackageCache is missing))",
+      "fix": "open the project in Unity once so the packages are downloaded, then run this again; if the .cs file was moved or renamed, put its original .meta (guid: 3eb4b772797da9440885e8bd939e9560) back next to it; otherwise restore the script, or remove the missing component in the Unity Editor"
+    },
+    {
+      "code": "missing-script",
+      "file": "Assets/DefaultVolumeProfile.asset",
+      "line": 201,
+      "message": "script reference points to GUID 29fa0085f50d5e54f8144f766051a691, which no .meta in the project has (unconfirmed: could not read packages com.unity.2d.animation, com.unity.2d.aseprite, com.unity.2d.common, com.unity.2d.psdimporter, com.unity.2d.sprite, ... (Library/PackageCache is missing))",
+      "fix": "open the project in Unity once so the packages are downloaded, then run this again; if the .cs file was moved or renamed, put its original .meta (guid: 29fa0085f50d5e54f8144f766051a691) back next to it; otherwise restore the script, or remove the missing component in the Unity Editor"
+    },
+    {
+      "code": "missing-script",
+      "file": "Assets/DefaultVolumeProfile.asset",
+      "line": 226,
+      "message": "script reference points to GUID 558a8e2b6826cf840aae193990ba9f2e, which no .meta in the project has (unconfirmed: could not read packages com.unity.2d.animation, com.unity.2d.aseprite, com.unity.2d.common, com.unity.2d.psdimporter, com.unity.2d.sprite, ... (Library/PackageCache is missing))",
+      "fix": "open the project in Unity once so the packages are downloaded, then run this again; if the .cs file was moved or renamed, put its original .meta (guid: 558a8e2b6826cf840aae193990ba9f2e) back next to it; otherwise restore the script, or remove the missing component in the Unity Editor"
+    },
+    {
+      "code": "missing-script",
+      "file": "Assets/DefaultVolumeProfile.asset",
+      "line": 260,
+      "message": "script reference points to GUID cdfbdbb87d3286943a057f7791b43141, which no .meta in the project has (unconfirmed: could not read packages com.unity.2d.animation, com.unity.2d.aseprite, com.unity.2d.common, com.unity.2d.psdimporter, com.unity.2d.sprite, ... (Library/PackageCache is missing))",
+      "fix": "open the project in Unity once so the packages are downloaded, then run this again; if the .cs file was moved or renamed, put its original .meta (guid: cdfbdbb87d3286943a057f7791b43141) back next to it; otherwise restore the script, or remove the missing component in the Unity Editor"
+    },
+    {
+      "code": "missing-script",
+      "file": "Assets/DefaultVolumeProfile.asset",
+      "line": 300,
+      "message": "script reference points to GUID 0b2db86121404754db890f4c8dfe81b2, which no .meta in the project has (unconfirmed: could not read packages com.unity.2d.animation, com.unity.2d.aseprite, com.unity.2d.common, com.unity.2d.psdimporter, com.unity.2d.sprite, ... (Library/PackageCache is missing))",
+      "fix": "open the project in Unity once so the packages are downloaded, then run this again; if the .cs file was moved or renamed, put its original .meta (guid: 0b2db86121404754db890f4c8dfe81b2) back next to it; otherwise restore the script, or remove the missing component in the Unity Editor"
+    },
+    {
+      "code": "missing-script",
+      "file": "Assets/DefaultVolumeProfile.asset",
+      "line": 350,
+      "message": "script reference points to GUID 70afe9e12c7a7ed47911bb608a23a8ff, which no .meta in the project has (unconfirmed: could not read packages com.unity.2d.animation, com.unity.2d.aseprite, com.unity.2d.common, com.unity.2d.psdimporter, com.unity.2d.sprite, ... (Library/PackageCache is missing))",
+      "fix": "open the project in Unity once so the packages are downloaded, then run this again; if the .cs file was moved or renamed, put its original .meta (guid: 70afe9e12c7a7ed47911bb608a23a8ff) back next to it; otherwise restore the script, or remove the missing component in the Unity Editor"
+    },
+    {
+      "code": "missing-script",
+      "file": "Assets/DefaultVolumeProfile.asset",
+      "line": 372,
+      "message": "script reference points to GUID c01700fd266d6914ababb731e09af2eb, which no .meta in the project has (unconfirmed: could not read packages com.unity.2d.animation, com.unity.2d.aseprite, com.unity.2d.common, com.unity.2d.psdimporter, com.unity.2d.sprite, ... (Library/PackageCache is missing))",
+      "fix": "open the project in Unity once so the packages are downloaded, then run this again; if the .cs file was moved or renamed, put its original .meta (guid: c01700fd266d6914ababb731e09af2eb) back next to it; otherwise restore the script, or remove the missing component in the Unity Editor"
+    },
+    {
+      "code": "missing-script",
+      "file": "Assets/DefaultVolumeProfile.asset",
+      "line": 418,
+      "message": "script reference points to GUID 6bd486065ce11414fa40e631affc4900, which no .meta in the project has (unconfirmed: could not read packages com.unity.2d.animation, com.unity.2d.aseprite, com.unity.2d.common, com.unity.2d.psdimporter, com.unity.2d.sprite, ... (Library/PackageCache is missing))",
+      "fix": "open the project in Unity once so the packages are downloaded, then run this again; if the .cs file was moved or renamed, put its original .meta (guid: 6bd486065ce11414fa40e631affc4900) back next to it; otherwise restore the script, or remove the missing component in the Unity Editor"
+    },
+    {
+      "code": "missing-script",
+      "file": "Assets/DefaultVolumeProfile.asset",
+      "line": 464,
+      "message": "script reference points to GUID ccf1aba9553839d41ae37dd52e9ebcce, which no .meta in the project has (unconfirmed: could not read packages com.unity.2d.animation, com.unity.2d.aseprite, com.unity.2d.common, com.unity.2d.psdimporter, com.unity.2d.sprite, ... (Library/PackageCache is missing))",
+      "fix": "open the project in Unity once so the packages are downloaded, then run this again; if the .cs file was moved or renamed, put its original .meta (guid: ccf1aba9553839d41ae37dd52e9ebcce) back next to it; otherwise restore the script, or remove the missing component in the Unity Editor"
+    },
+    {
+      "code": "missing-script",
+      "file": "Assets/DefaultVolumeProfile.asset",
+      "line": 489,
+      "message": "script reference points to GUID d7fd9488000d3734a9e00ee676215985, which no .meta in the project has (unconfirmed: could not read packages com.unity.2d.animation, com.unity.2d.aseprite, com.unity.2d.common, com.unity.2d.psdimporter, com.unity.2d.sprite, ... (Library/PackageCache is missing))",
+      "fix": "open the project in Unity once so the packages are downloaded, then run this again; if the .cs file was moved or renamed, put its original .meta (guid: d7fd9488000d3734a9e00ee676215985) back next to it; otherwise restore the script, or remove the missing component in the Unity Editor"
+    },
+    {
+      "code": "missing-script",
+      "file": "Assets/DefaultVolumeProfile.asset",
+      "line": 521,
+      "message": "script reference points to GUID 5485954d14dfb9a4c8ead8edb0ded5b1, which no .meta in the project has (unconfirmed: could not read packages com.unity.2d.animation, com.unity.2d.aseprite, com.unity.2d.common, com.unity.2d.psdimporter, com.unity.2d.sprite, ... (Library/PackageCache is missing))",
+      "fix": "open the project in Unity once so the packages are downloaded, then run this again; if the .cs file was moved or renamed, put its original .meta (guid: 5485954d14dfb9a4c8ead8edb0ded5b1) back next to it; otherwise restore the script, or remove the missing component in the Unity Editor"
+    },
+    {
+      "code": "missing-script",
+      "file": "Assets/DefaultVolumeProfile.asset",
+      "line": 543,
+      "message": "script reference points to GUID 97c23e3b12dc18c42a140437e53d3951, which no .meta in the project has (unconfirmed: could not read packages com.unity.2d.animation, com.unity.2d.aseprite, com.unity.2d.common, com.unity.2d.psdimporter, com.unity.2d.sprite, ... (Library/PackageCache is missing))",
+      "fix": "open the project in Unity once so the packages are downloaded, then run this again; if the .cs file was moved or renamed, put its original .meta (guid: 97c23e3b12dc18c42a140437e53d3951) back next to it; otherwise restore the script, or remove the missing component in the Unity Editor"
+    },
+    {
+      "code": "missing-script",
+      "file": "Assets/DefaultVolumeProfile.asset",
+      "line": 583,
+      "message": "script reference points to GUID e021b4c809a781e468c2988c016ebbea, which no .meta in the project has (unconfirmed: could not read packages com.unity.2d.animation, com.unity.2d.aseprite, com.unity.2d.common, com.unity.2d.psdimporter, com.unity.2d.sprite, ... (Library/PackageCache is missing))",
+      "fix": "open the project in Unity once so the packages are downloaded, then run this again; if the .cs file was moved or renamed, put its original .meta (guid: e021b4c809a781e468c2988c016ebbea) back next to it; otherwise restore the script, or remove the missing component in the Unity Editor"
+    },
+    {
+      "code": "missing-script",
+      "file": "Assets/DefaultVolumeProfile.asset",
+      "line": 603,
+      "message": "script reference points to GUID c5e1dc532bcb41949b58bc4f2abfbb7e, which no .meta in the project has (unconfirmed: could not read packages com.unity.2d.animation, com.unity.2d.aseprite, com.unity.2d.common, com.unity.2d.psdimporter, com.unity.2d.sprite, ... (Library/PackageCache is missing))",
+      "fix": "open the project in Unity once so the packages are downloaded, then run this again; if the .cs file was moved or renamed, put its original .meta (guid: c5e1dc532bcb41949b58bc4f2abfbb7e) back next to it; otherwise restore the script, or remove the missing component in the Unity Editor"
+    },
+    {
+      "code": "missing-script",
+      "file": "Assets/DefaultVolumeProfile.asset",
+      "line": 631,
+      "message": "script reference points to GUID 221518ef91623a7438a71fef23660601, which no .meta in the project has (unconfirmed: could not read packages com.unity.2d.animation, com.unity.2d.aseprite, com.unity.2d.common, com.unity.2d.psdimporter, com.unity.2d.sprite, ... (Library/PackageCache is missing))",
+      "fix": "open the project in Unity once so the packages are downloaded, then run this again; if the .cs file was moved or renamed, put its original .meta (guid: 221518ef91623a7438a71fef23660601) back next to it; otherwise restore the script, or remove the missing component in the Unity Editor"
+    },
+    {
+      "code": "missing-script",
+      "file": "Assets/DefaultVolumeProfile.asset",
+      "line": 650,
+      "message": "script reference points to GUID 81180773991d8724ab7f2d216912b564, which no .meta in the project has (unconfirmed: could not read packages com.unity.2d.animation, com.unity.2d.aseprite, com.unity.2d.common, com.unity.2d.psdimporter, com.unity.2d.sprite, ... (Library/PackageCache is missing))",
+      "fix": "open the project in Unity once so the packages are downloaded, then run this again; if the .cs file was moved or renamed, put its original .meta (guid: 81180773991d8724ab7f2d216912b564) back next to it; otherwise restore the script, or remove the missing component in the Unity Editor"
+    },
+    {
+      "code": "missing-script",
+      "file": "Assets/DefaultVolumeProfile.asset",
+      "line": 666,
+      "message": "script reference points to GUID 06437c1ff663d574d9447842ba0a72e4, which no .meta in the project has (unconfirmed: could not read packages com.unity.2d.animation, com.unity.2d.aseprite, com.unity.2d.common, com.unity.2d.psdimporter, com.unity.2d.sprite, ... (Library/PackageCache is missing))",
+      "fix": "open the project in Unity once so the packages are downloaded, then run this again; if the .cs file was moved or renamed, put its original .meta (guid: 06437c1ff663d574d9447842ba0a72e4) back next to it; otherwise restore the script, or remove the missing component in the Unity Editor"
+    },
+    {
+      "code": "missing-script",
+      "file": "Assets/DefaultVolumeProfile.asset",
+      "line": 733,
+      "message": "script reference points to GUID 66f335fb1ffd8684294ad653bf1c7564, which no .meta in the project has (unconfirmed: could not read packages com.unity.2d.animation, com.unity.2d.aseprite, com.unity.2d.common, com.unity.2d.psdimporter, com.unity.2d.sprite, ... (Library/PackageCache is missing))",
+      "fix": "open the project in Unity once so the packages are downloaded, then run this again; if the .cs file was moved or renamed, put its original .meta (guid: 66f335fb1ffd8684294ad653bf1c7564) back next to it; otherwise restore the script, or remove the missing component in the Unity Editor"
+    },
+    {
+      "code": "missing-script",
+      "file": "Assets/DefaultVolumeProfile.asset",
+      "line": 761,
+      "message": "script reference points to GUID 899c54efeace73346a0a16faa3afe726, which no .meta in the project has (unconfirmed: could not read packages com.unity.2d.animation, com.unity.2d.aseprite, com.unity.2d.common, com.unity.2d.psdimporter, com.unity.2d.sprite, ... (Library/PackageCache is missing))",
+      "fix": "open the project in Unity once so the packages are downloaded, then run this again; if the .cs file was moved or renamed, put its original .meta (guid: 899c54efeace73346a0a16faa3afe726) back next to it; otherwise restore the script, or remove the missing component in the Unity Editor"
+    },
+    {
+      "code": "missing-script",
+      "file": "Assets/DefaultVolumeProfile.asset",
+      "line": 789,
+      "message": "script reference points to GUID fb60a22f311433c4c962b888d1393f88, which no .meta in the project has (unconfirmed: could not read packages com.unity.2d.animation, com.unity.2d.aseprite, com.unity.2d.common, com.unity.2d.psdimporter, com.unity.2d.sprite, ... (Library/PackageCache is missing))",
+      "fix": "open the project in Unity once so the packages are downloaded, then run this again; if the .cs file was moved or renamed, put its original .meta (guid: fb60a22f311433c4c962b888d1393f88) back next to it; otherwise restore the script, or remove the missing component in the Unity Editor"
+    },
+    {
+      "code": "missing-script",
+      "file": "Assets/Prefabs/Monster.prefab",
+      "line": 59,
+      "message": "script reference on 'Monster', 'Monster_Hp_Fill' (2 components) points to GUID fe87c0e1cc204ed48ad3b37840f39efc, which no .meta in the project has (unconfirmed: could not read packages com.unity.2d.animation, com.unity.2d.aseprite, com.unity.2d.common, com.unity.2d.psdimporter, com.unity.2d.sprite, ... (Library/PackageCache is missing))",
+      "fix": "open the project in Unity once so the packages are downloaded, then run this again; if the .cs file was moved or renamed, put its original .meta (guid: fe87c0e1cc204ed48ad3b37840f39efc) back next to it; otherwise restore the script, or remove the missing component in the Unity Editor"
+    },
+    {
+      "code": "missing-script",
+      "file": "Assets/Prefabs/Monster.prefab",
+      "line": 226,
+      "message": "script reference on 'Monster_DMG_Text' points to GUID f4688fdb7df04437aeb418b961361dc5, which no .meta in the project has (unconfirmed: could not read packages com.unity.2d.animation, com.unity.2d.aseprite, com.unity.2d.common, com.unity.2d.psdimporter, com.unity.2d.sprite, ... (Library/PackageCache is missing))",
+      "fix": "open the project in Unity once so the packages are downloaded, then run this again; if the .cs file was moved or renamed, put its original .meta (guid: f4688fdb7df04437aeb418b961361dc5) back next to it; otherwise restore the script, or remove the missing component in the Unity Editor"
+    },
+    {
+      "code": "missing-meta",
+      "file": "Assets/Resources/Environment/Lake",
+      "line": null,
+      "message": "folder has no .meta yet (4 files inside); this is normal for a new folder, Unity creates the .meta files on the next import",
+      "fix": "nothing to do for a new folder; if it was moved or renamed, move its old .meta next to it instead"
+    },
+    {
+      "code": "missing-meta",
+      "file": "Assets/Resources/Environment/Sea",
+      "line": null,
+      "message": "folder has no .meta yet (4 files inside); this is normal for a new folder, Unity creates the .meta files on the next import",
+      "fix": "nothing to do for a new folder; if it was moved or renamed, move its old .meta next to it instead"
+    },
+    {
+      "code": "missing-meta",
+      "file": "Assets/Resources/Environment/Steppe",
+      "line": null,
+      "message": "folder has no .meta yet (4 files inside); this is normal for a new folder, Unity creates the .meta files on the next import",
+      "fix": "nothing to do for a new folder; if it was moved or renamed, move its old .meta next to it instead"
+    },
+    {
+      "code": "orphan-meta",
+      "file": "Assets/Resources/OpeningBackground.meta",
+      "line": null,
+      "message": "folder 'Assets/Resources/OpeningBackground' is gone but its .meta remains; Unity will recreate the folder empty",
+      "fix": "if you deleted the folder on purpose, delete this .meta too; if you moved or renamed it, move this .meta next to the folder and rename it to match"
+    },
+    {
+      "code": "missing-script",
+      "file": "Assets/Scenes/MainGame.unity",
+      "line": 197,
+      "message": "script reference on 'BuffIcon', 'ConfirmationPopup', 'Cung' (39 components) points to GUID fe87c0e1cc204ed48ad3b37840f39efc, which no .meta in the project has (unconfirmed: could not read packages com.unity.2d.animation, com.unity.2d.aseprite, com.unity.2d.common, com.unity.2d.psdimporter, com.unity.2d.sprite, ... (Library/PackageCache is missing))",
+      "fix": "open the project in Unity once so the packages are downloaded, then run this again; if the .cs file was moved or renamed, put its original .meta (guid: fe87c0e1cc204ed48ad3b37840f39efc) back next to it; otherwise restore the script, or remove the missing component in the Unity Editor"
+    },
+    {
+      "code": "missing-script",
+      "file": "Assets/Scenes/MainGame.unity",
+      "line": 376,
+      "message": "script reference on 'BattleLog_Text', 'Btn_Exit', 'Btn_Scale1000' (32 components) points to GUID f4688fdb7df04437aeb418b961361dc5, which no .meta in the project has (unconfirmed: could not read packages com.unity.2d.animation, com.unity.2d.aseprite, com.unity.2d.common, com.unity.2d.psdimporter, com.unity.2d.sprite, ... (Library/PackageCache is missing))",
+      "fix": "open the project in Unity once so the packages are downloaded, then run this again; if the .cs file was moved or renamed, put its original .meta (guid: f4688fdb7df04437aeb418b961361dc5) back next to it; otherwise restore the script, or remove the missing component in the Unity Editor"
+    },
+    {
+      "code": "missing-script",
+      "file": "Assets/Scenes/MainGame.unity",
+      "line": 1154,
+      "message": "script reference on 'EventSystem' points to GUID 01614664b831546d2ae94a42149d80ac, which no .meta in the project has (unconfirmed: could not read packages com.unity.2d.animation, com.unity.2d.aseprite, com.unity.2d.common, com.unity.2d.psdimporter, com.unity.2d.sprite, ... (Library/PackageCache is missing))",
+      "fix": "open the project in Unity once so the packages are downloaded, then run this again; if the .cs file was moved or renamed, put its original .meta (guid: 01614664b831546d2ae94a42149d80ac) back next to it; otherwise restore the script, or remove the missing component in the Unity Editor"
+    },
+    {
+      "code": "missing-script",
+      "file": "Assets/Scenes/MainGame.unity",
+      "line": 1185,
+      "message": "script reference on 'EventSystem' points to GUID 76c392e42b5098c458856cdf6ecaaaa1, which no .meta in the project has (unconfirmed: could not read packages com.unity.2d.animation, com.unity.2d.aseprite, com.unity.2d.common, com.unity.2d.psdimporter, com.unity.2d.sprite, ... (Library/PackageCache is missing))",
+      "fix": "open the project in Unity once so the packages are downloaded, then run this again; if the .cs file was moved or renamed, put its original .meta (guid: 76c392e42b5098c458856cdf6ecaaaa1) back next to it; otherwise restore the script, or remove the missing component in the Unity Editor"
+    },
+    {
+      "code": "missing-script",
+      "file": "Assets/Scenes/MainGame.unity",
+      "line": 1253,
+      "message": "script reference on 'Canvas' (3 components) points to GUID dc42784cf147c0c48a680349fa168899, which no .meta in the project has (unconfirmed: could not read packages com.unity.2d.animation, com.unity.2d.aseprite, com.unity.2d.common, com.unity.2d.psdimporter, com.unity.2d.sprite, ... (Library/PackageCache is missing))",
+      "fix": "open the project in Unity once so the packages are downloaded, then run this again; if the .cs file was moved or renamed, put its original .meta (guid: dc42784cf147c0c48a680349fa168899) back next to it; otherwise restore the script, or remove the missing component in the Unity Editor"
+    },
+    {
+      "code": "missing-script",
+      "file": "Assets/Scenes/MainGame.unity",
+      "line": 1270,
+      "message": "script reference on 'Canvas' (3 components) points to GUID 0cd44c1031e13a943bb63640046fad76, which no .meta in the project has (unconfirmed: could not read packages com.unity.2d.animation, com.unity.2d.aseprite, com.unity.2d.common, com.unity.2d.psdimporter, com.unity.2d.sprite, ... (Library/PackageCache is missing))",
+      "fix": "open the project in Unity once so the packages are downloaded, then run this again; if the .cs file was moved or renamed, put its original .meta (guid: 0cd44c1031e13a943bb63640046fad76) back next to it; otherwise restore the script, or remove the missing component in the Unity Editor"
+    },
+    {
+      "code": "missing-script",
+      "file": "Assets/Scenes/MainGame.unity",
+      "line": 2818,
+      "message": "script reference on 'DeplyButton', 'Load', 'MapIcon' (9 components) points to GUID 4e29b1a8efbd4b44bb3f3716e73f07ff, which no .meta in the project has (unconfirmed: could not read packages com.unity.2d.animation, com.unity.2d.aseprite, com.unity.2d.common, com.unity.2d.psdimporter, com.unity.2d.sprite, ... (Library/PackageCache is missing))",
+      "fix": "open the project in Unity once so the packages are downloaded, then run this again; if the .cs file was moved or renamed, put its original .meta (guid: 4e29b1a8efbd4b44bb3f3716e73f07ff) back next to it; otherwise restore the script, or remove the missing component in the Unity Editor"
+    },
+    {
+      "code": "missing-script",
+      "file": "Assets/Scenes/MainGame.unity",
+      "line": 3018,
+      "message": "script reference on 'Main Camera' points to GUID a79441f348de89743a2939f4d699eac1, which no .meta in the project has (unconfirmed: could not read packages com.unity.2d.animation, com.unity.2d.aseprite, com.unity.2d.common, com.unity.2d.psdimporter, com.unity.2d.sprite, ... (Library/PackageCache is missing))",
+      "fix": "open the project in Unity once so the packages are downloaded, then run this again; if the .cs file was moved or renamed, put its original .meta (guid: a79441f348de89743a2939f4d699eac1) back next to it; otherwise restore the script, or remove the missing component in the Unity Editor"
+    },
+    {
+      "code": "missing-script",
+      "file": "Assets/Scenes/MainGame.unity",
+      "line": 3694,
+      "message": "script reference on 'Global Light 2D' points to GUID 073797afb82c5a1438f328866b10b3f0, which no .meta in the project has (unconfirmed: could not read packages com.unity.2d.animation, com.unity.2d.aseprite, com.unity.2d.common, com.unity.2d.psdimporter, com.unity.2d.sprite, ... (Library/PackageCache is missing))",
+      "fix": "open the project in Unity once so the packages are downloaded, then run this again; if the .cs file was moved or renamed, put its original .meta (guid: 073797afb82c5a1438f328866b10b3f0) back next to it; otherwise restore the script, or remove the missing component in the Unity Editor"
+    },
+    {
+      "code": "missing-script",
+      "file": "Assets/Scenes/SampleScene.unity",
+      "line": 168,
+      "message": "script reference on 'BattleLog_Text', 'Btn_Exit', 'Btn_Scale1000' (20 components) points to GUID f4688fdb7df04437aeb418b961361dc5, which no .meta in the project has (unconfirmed: could not read packages com.unity.2d.animation, com.unity.2d.aseprite, com.unity.2d.common, com.unity.2d.psdimporter, com.unity.2d.sprite, ... (Library/PackageCache is missing))",
+      "fix": "open the project in Unity once so the packages are downloaded, then run this again; if the .cs file was moved or renamed, put its original .meta (guid: f4688fdb7df04437aeb418b961361dc5) back next to it; otherwise restore the script, or remove the missing component in the Unity Editor"
+    },
+    {
+      "code": "missing-script",
+      "file": "Assets/Scenes/SampleScene.unity",
+      "line": 480,
+      "message": "script reference on 'EventSystem' points to GUID 01614664b831546d2ae94a42149d80ac, which no .meta in the project has (unconfirmed: could not read packages com.unity.2d.animation, com.unity.2d.aseprite, com.unity.2d.common, com.unity.2d.psdimporter, com.unity.2d.sprite, ... (Library/PackageCache is missing))",
+      "fix": "open the project in Unity once so the packages are downloaded, then run this again; if the .cs file was moved or renamed, put its original .meta (guid: 01614664b831546d2ae94a42149d80ac) back next to it; otherwise restore the script, or remove the missing component in the Unity Editor"
+    },
+    {
+      "code": "missing-script",
+      "file": "Assets/Scenes/SampleScene.unity",
+      "line": 511,
+      "message": "script reference on 'EventSystem' points to GUID 76c392e42b5098c458856cdf6ecaaaa1, which no .meta in the project has (unconfirmed: could not read packages com.unity.2d.animation, com.unity.2d.aseprite, com.unity.2d.common, com.unity.2d.psdimporter, com.unity.2d.sprite, ... (Library/PackageCache is missing))",
+      "fix": "open the project in Unity once so the packages are downloaded, then run this again; if the .cs file was moved or renamed, put its original .meta (guid: 76c392e42b5098c458856cdf6ecaaaa1) back next to it; otherwise restore the script, or remove the missing component in the Unity Editor"
+    },
+    {
+      "code": "missing-script",
+      "file": "Assets/Scenes/SampleScene.unity",
+      "line": 579,
+      "message": "script reference on 'Canvas' (2 components) points to GUID dc42784cf147c0c48a680349fa168899, which no .meta in the project has (unconfirmed: could not read packages com.unity.2d.animation, com.unity.2d.aseprite, com.unity.2d.common, com.unity.2d.psdimporter, com.unity.2d.sprite, ... (Library/PackageCache is missing))",
+      "fix": "open the project in Unity once so the packages are downloaded, then run this again; if the .cs file was moved or renamed, put its original .meta (guid: dc42784cf147c0c48a680349fa168899) back next to it; otherwise restore the script, or remove the missing component in the Unity Editor"
+    },
+    {
+      "code": "missing-script",
+      "file": "Assets/Scenes/SampleScene.unity",
+      "line": 596,
+      "message": "script reference on 'Canvas' (2 components) points to GUID 0cd44c1031e13a943bb63640046fad76, which no .meta in the project has (unconfirmed: could not read packages com.unity.2d.animation, com.unity.2d.aseprite, com.unity.2d.common, com.unity.2d.psdimporter, com.unity.2d.sprite, ... (Library/PackageCache is missing))",
+      "fix": "open the project in Unity once so the packages are downloaded, then run this again; if the .cs file was moved or renamed, put its original .meta (guid: 0cd44c1031e13a943bb63640046fad76) back next to it; otherwise restore the script, or remove the missing component in the Unity Editor"
+    },
+    {
+      "code": "missing-script",
+      "file": "Assets/Scenes/SampleScene.unity",
+      "line": 680,
+      "message": "script reference on 'BuffIcon', 'ConfirmationPopup', 'Cung' (28 components) points to GUID fe87c0e1cc204ed48ad3b37840f39efc, which no .meta in the project has (unconfirmed: could not read packages com.unity.2d.animation, com.unity.2d.aseprite, com.unity.2d.common, com.unity.2d.psdimporter, com.unity.2d.sprite, ... (Library/PackageCache is missing))",
+      "fix": "open the project in Unity once so the packages are downloaded, then run this again; if the .cs file was moved or renamed, put its original .meta (guid: fe87c0e1cc204ed48ad3b37840f39efc) back next to it; otherwise restore the script, or remove the missing component in the Unity Editor"
+    },
+    {
+      "code": "missing-script",
+      "file": "Assets/Scenes/SampleScene.unity",
+      "line": 1765,
+      "message": "script reference on 'DeplyButton', 'MapIcon', 'MenuArea' (8 components) points to GUID 4e29b1a8efbd4b44bb3f3716e73f07ff, which no .meta in the project has (unconfirmed: could not read packages com.unity.2d.animation, com.unity.2d.aseprite, com.unity.2d.common, com.unity.2d.psdimporter, com.unity.2d.sprite, ... (Library/PackageCache is missing))",
+      "fix": "open the project in Unity once so the packages are downloaded, then run this again; if the .cs file was moved or renamed, put its original .meta (guid: 4e29b1a8efbd4b44bb3f3716e73f07ff) back next to it; otherwise restore the script, or remove the missing component in the Unity Editor"
+    },
+    {
+      "code": "missing-script",
+      "file": "Assets/Scenes/SampleScene.unity",
+      "line": 1965,
+      "message": "script reference on 'Main Camera' points to GUID a79441f348de89743a2939f4d699eac1, which no .meta in the project has (unconfirmed: could not read packages com.unity.2d.animation, com.unity.2d.aseprite, com.unity.2d.common, com.unity.2d.psdimporter, com.unity.2d.sprite, ... (Library/PackageCache is missing))",
+      "fix": "open the project in Unity once so the packages are downloaded, then run this again; if the .cs file was moved or renamed, put its original .meta (guid: a79441f348de89743a2939f4d699eac1) back next to it; otherwise restore the script, or remove the missing component in the Unity Editor"
+    },
+    {
+      "code": "missing-script",
+      "file": "Assets/Scenes/SampleScene.unity",
+      "line": 2113,
+      "message": "script reference on 'Global Light 2D' points to GUID 073797afb82c5a1438f328866b10b3f0, which no .meta in the project has (unconfirmed: could not read packages com.unity.2d.animation, com.unity.2d.aseprite, com.unity.2d.common, com.unity.2d.psdimporter, com.unity.2d.sprite, ... (Library/PackageCache is missing))",
+      "fix": "open the project in Unity once so the packages are downloaded, then run this again; if the .cs file was moved or renamed, put its original .meta (guid: 073797afb82c5a1438f328866b10b3f0) back next to it; otherwise restore the script, or remove the missing component in the Unity Editor"
+    },
+    {
+      "code": "missing-script",
+      "file": "Assets/Settings/Renderer2D.asset",
+      "line": 12,
+      "message": "script reference points to GUID 11145981673336645838492a2d98e247, which no .meta in the project has (unconfirmed: could not read packages com.unity.2d.animation, com.unity.2d.aseprite, com.unity.2d.common, com.unity.2d.psdimporter, com.unity.2d.sprite, ... (Library/PackageCache is missing))",
+      "fix": "open the project in Unity once so the packages are downloaded, then run this again; if the .cs file was moved or renamed, put its original .meta (guid: 11145981673336645838492a2d98e247) back next to it; otherwise restore the script, or remove the missing component in the Unity Editor"
+    },
+    {
+      "code": "missing-script",
+      "file": "Assets/Settings/Scenes/URP2DSceneTemplate.unity",
+      "line": 162,
+      "message": "script reference on 'Main Camera' points to GUID a79441f348de89743a2939f4d699eac1, which no .meta in the project has (unconfirmed: could not read packages com.unity.2d.animation, com.unity.2d.aseprite, com.unity.2d.common, com.unity.2d.psdimporter, com.unity.2d.sprite, ... (Library/PackageCache is missing))",
+      "fix": "open the project in Unity once so the packages are downloaded, then run this again; if the .cs file was moved or renamed, put its original .meta (guid: a79441f348de89743a2939f4d699eac1) back next to it; otherwise restore the script, or remove the missing component in the Unity Editor"
+    },
+    {
+      "code": "missing-script",
+      "file": "Assets/Settings/Scenes/URP2DSceneTemplate.unity",
+      "line": 268,
+      "message": "script reference on 'Global Light 2D' points to GUID 073797afb82c5a1438f328866b10b3f0, which no .meta in the project has (unconfirmed: could not read packages com.unity.2d.animation, com.unity.2d.aseprite, com.unity.2d.common, com.unity.2d.psdimporter, com.unity.2d.sprite, ... (Library/PackageCache is missing))",
+      "fix": "open the project in Unity once so the packages are downloaded, then run this again; if the .cs file was moved or renamed, put its original .meta (guid: 073797afb82c5a1438f328866b10b3f0) back next to it; otherwise restore the script, or remove the missing component in the Unity Editor"
+    },
+    {
+      "code": "missing-script",
+      "file": "Assets/Settings/UniversalRP.asset",
+      "line": 12,
+      "message": "script reference points to GUID bf2edee5c58d82540a51f03df9d42094, which no .meta in the project has (unconfirmed: could not read packages com.unity.2d.animation, com.unity.2d.aseprite, com.unity.2d.common, com.unity.2d.psdimporter, com.unity.2d.sprite, ... (Library/PackageCache is missing))",
+      "fix": "open the project in Unity once so the packages are downloaded, then run this again; if the .cs file was moved or renamed, put its original .meta (guid: bf2edee5c58d82540a51f03df9d42094) back next to it; otherwise restore the script, or remove the missing component in the Unity Editor"
+    },
+    {
+      "code": "missing-script",
+      "file": "Assets/TextMesh Pro/Resources/Fonts & Materials/LiberationSans SDF - Fallback.asset",
+      "line": 167,
+      "message": "script reference points to GUID 71c1514a6bd24e1e882cebbe1904ce04, which no .meta in the project has (unconfirmed: could not read packages com.unity.2d.animation, com.unity.2d.aseprite, com.unity.2d.common, com.unity.2d.psdimporter, com.unity.2d.sprite, ... (Library/PackageCache is missing))",
+      "fix": "open the project in Unity once so the packages are downloaded, then run this again; if the .cs file was moved or renamed, put its original .meta (guid: 71c1514a6bd24e1e882cebbe1904ce04) back next to it; otherwise restore the script, or remove the missing component in the Unity Editor"
+    },
+    {
+      "code": "missing-script",
+      "file": "Assets/TextMesh Pro/Resources/Fonts & Materials/LiberationSans SDF.asset",
+      "line": 79,
+      "message": "script reference points to GUID 71c1514a6bd24e1e882cebbe1904ce04, which no .meta in the project has (unconfirmed: could not read packages com.unity.2d.animation, com.unity.2d.aseprite, com.unity.2d.common, com.unity.2d.psdimporter, com.unity.2d.sprite, ... (Library/PackageCache is missing))",
+      "fix": "open the project in Unity once so the packages are downloaded, then run this again; if the .cs file was moved or renamed, put its original .meta (guid: 71c1514a6bd24e1e882cebbe1904ce04) back next to it; otherwise restore the script, or remove the missing component in the Unity Editor"
+    },
+    {
+      "code": "missing-script",
+      "file": "Assets/TextMesh Pro/Resources/Style Sheets/Default Style Sheet.asset",
+      "line": 12,
+      "message": "script reference points to GUID ab2114bdc8544297b417dfefe9f1e410, which no .meta in the project has (unconfirmed: could not read packages com.unity.2d.animation, com.unity.2d.aseprite, com.unity.2d.common, com.unity.2d.psdimporter, com.unity.2d.sprite, ... (Library/PackageCache is missing))",
+      "fix": "open the project in Unity once so the packages are downloaded, then run this again; if the .cs file was moved or renamed, put its original .meta (guid: ab2114bdc8544297b417dfefe9f1e410) back next to it; otherwise restore the script, or remove the missing component in the Unity Editor"
+    },
+    {
+      "code": "missing-script",
+      "file": "Assets/TextMesh Pro/Resources/TMP Settings.asset",
+      "line": 12,
+      "message": "script reference points to GUID 2705215ac5b84b70bacc50632be6e391, which no .meta in the project has (unconfirmed: could not read packages com.unity.2d.animation, com.unity.2d.aseprite, com.unity.2d.common, com.unity.2d.psdimporter, com.unity.2d.sprite, ... (Library/PackageCache is missing))",
+      "fix": "open the project in Unity once so the packages are downloaded, then run this again; if the .cs file was moved or renamed, put its original .meta (guid: 2705215ac5b84b70bacc50632be6e391) back next to it; otherwise restore the script, or remove the missing component in the Unity Editor"
+    },
+    {
+      "code": "missing-script",
+      "file": "Assets/UniversalRenderPipelineGlobalSettings.asset",
+      "line": 12,
+      "message": "script reference points to GUID 2ec995e51a6e251468d2a3fd8a686257, which no .meta in the project has (unconfirmed: could not read packages com.unity.2d.animation, com.unity.2d.aseprite, com.unity.2d.common, com.unity.2d.psdimporter, com.unity.2d.sprite, ... (Library/PackageCache is missing))",
+      "fix": "open the project in Unity once so the packages are downloaded, then run this again; if the .cs file was moved or renamed, put its original .meta (guid: 2ec995e51a6e251468d2a3fd8a686257) back next to it; otherwise restore the script, or remove the missing component in the Unity Editor"
+    },
+    {
+      "code": "missing-script",
+      "file": "Assets/_Recovery/0.unity",
+      "line": 149,
+      "message": "script reference on 'EventSystem' points to GUID 01614664b831546d2ae94a42149d80ac, which no .meta in the project has (unconfirmed: could not read packages com.unity.2d.animation, com.unity.2d.aseprite, com.unity.2d.common, com.unity.2d.psdimporter, com.unity.2d.sprite, ... (Library/PackageCache is missing))",
+      "fix": "open the project in Unity once so the packages are downloaded, then run this again; if the .cs file was moved or renamed, put its original .meta (guid: 01614664b831546d2ae94a42149d80ac) back next to it; otherwise restore the script, or remove the missing component in the Unity Editor"
+    },
+    {
+      "code": "missing-script",
+      "file": "Assets/_Recovery/0.unity",
+      "line": 180,
+      "message": "script reference on 'EventSystem' points to GUID 76c392e42b5098c458856cdf6ecaaaa1, which no .meta in the project has (unconfirmed: could not read packages com.unity.2d.animation, com.unity.2d.aseprite, com.unity.2d.common, com.unity.2d.psdimporter, com.unity.2d.sprite, ... (Library/PackageCache is missing))",
+      "fix": "open the project in Unity once so the packages are downloaded, then run this again; if the .cs file was moved or renamed, put its original .meta (guid: 76c392e42b5098c458856cdf6ecaaaa1) back next to it; otherwise restore the script, or remove the missing component in the Unity Editor"
+    },
+    {
+      "code": "missing-script",
+      "file": "Assets/_Recovery/0.unity",
+      "line": 247,
+      "message": "script reference on 'BuffIcon', 'EventLog', 'Grass1' (18 components) points to GUID fe87c0e1cc204ed48ad3b37840f39efc, which no .meta in the project has (unconfirmed: could not read packages com.unity.2d.animation, com.unity.2d.aseprite, com.unity.2d.common, com.unity.2d.psdimporter, com.unity.2d.sprite, ... (Library/PackageCache is missing))",
+      "fix": "open the project in Unity once so the packages are downloaded, then run this again; if the .cs file was moved or renamed, put its original .meta (guid: fe87c0e1cc204ed48ad3b37840f39efc) back next to it; otherwise restore the script, or remove the missing component in the Unity Editor"
+    },
+    {
+      "code": "missing-script",
+      "file": "Assets/_Recovery/0.unity",
+      "line": 323,
+      "message": "script reference on 'Btn_Exit', 'Btn_Scale1000', 'Btn_Scale200' (13 components) points to GUID 4e29b1a8efbd4b44bb3f3716e73f07ff, which no .meta in the project has (unconfirmed: could not read packages com.unity.2d.animation, com.unity.2d.aseprite, com.unity.2d.common, com.unity.2d.psdimporter, com.unity.2d.sprite, ... (Library/PackageCache is missing))",
+      "fix": "open the project in Unity once so the packages are downloaded, then run this again; if the .cs file was moved or renamed, put its original .meta (guid: 4e29b1a8efbd4b44bb3f3716e73f07ff) back next to it; otherwise restore the script, or remove the missing component in the Unity Editor"
+    },
+    {
+      "code": "missing-script",
+      "file": "Assets/_Recovery/0.unity",
+      "line": 379,
+      "message": "script reference on 'Btn_Exit', 'Btn_Scale1000', 'Btn_Scale200' (9 components) points to GUID f4688fdb7df04437aeb418b961361dc5, which no .meta in the project has (unconfirmed: could not read packages com.unity.2d.animation, com.unity.2d.aseprite, com.unity.2d.common, com.unity.2d.psdimporter, com.unity.2d.sprite, ... (Library/PackageCache is missing))",
+      "fix": "open the project in Unity once so the packages are downloaded, then run this again; if the .cs file was moved or renamed, put its original .meta (guid: f4688fdb7df04437aeb418b961361dc5) back next to it; otherwise restore the script, or remove the missing component in the Unity Editor"
+    },
+    {
+      "code": "missing-script",
+      "file": "Assets/_Recovery/0.unity",
+      "line": 1249,
+      "message": "script reference on 'Main Camera' points to GUID a79441f348de89743a2939f4d699eac1, which no .meta in the project has (unconfirmed: could not read packages com.unity.2d.animation, com.unity.2d.aseprite, com.unity.2d.common, com.unity.2d.psdimporter, com.unity.2d.sprite, ... (Library/PackageCache is missing))",
+      "fix": "open the project in Unity once so the packages are downloaded, then run this again; if the .cs file was moved or renamed, put its original .meta (guid: a79441f348de89743a2939f4d699eac1) back next to it; otherwise restore the script, or remove the missing component in the Unity Editor"
+    },
+    {
+      "code": "missing-script",
+      "file": "Assets/_Recovery/0.unity",
+      "line": 1397,
+      "message": "script reference on 'Global Light 2D' points to GUID 073797afb82c5a1438f328866b10b3f0, which no .meta in the project has (unconfirmed: could not read packages com.unity.2d.animation, com.unity.2d.aseprite, com.unity.2d.common, com.unity.2d.psdimporter, com.unity.2d.sprite, ... (Library/PackageCache is missing))",
+      "fix": "open the project in Unity once so the packages are downloaded, then run this again; if the .cs file was moved or renamed, put its original .meta (guid: 073797afb82c5a1438f328866b10b3f0) back next to it; otherwise restore the script, or remove the missing component in the Unity Editor"
+    },
+    {
+      "code": "missing-script",
+      "file": "Assets/_Recovery/0.unity",
+      "line": 2833,
+      "message": "script reference on 'Canvas' points to GUID dc42784cf147c0c48a680349fa168899, which no .meta in the project has (unconfirmed: could not read packages com.unity.2d.animation, com.unity.2d.aseprite, com.unity.2d.common, com.unity.2d.psdimporter, com.unity.2d.sprite, ... (Library/PackageCache is missing))",
+      "fix": "open the project in Unity once so the packages are downloaded, then run this again; if the .cs file was moved or renamed, put its original .meta (guid: dc42784cf147c0c48a680349fa168899) back next to it; otherwise restore the script, or remove the missing component in the Unity Editor"
+    },
+    {
+      "code": "missing-script",
+      "file": "Assets/_Recovery/0.unity",
+      "line": 2850,
+      "message": "script reference on 'Canvas' points to GUID 0cd44c1031e13a943bb63640046fad76, which no .meta in the project has (unconfirmed: could not read packages com.unity.2d.animation, com.unity.2d.aseprite, com.unity.2d.common, com.unity.2d.psdimporter, com.unity.2d.sprite, ... (Library/PackageCache is missing))",
+      "fix": "open the project in Unity once so the packages are downloaded, then run this again; if the .cs file was moved or renamed, put its original .meta (guid: 0cd44c1031e13a943bb63640046fad76) back next to it; otherwise restore the script, or remove the missing component in the Unity Editor"
+    }
+  ],
+  "truncated": false
+}

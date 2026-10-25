@@ -1,0 +1,19 @@
+{
+  "ok": true,
+  "skills": [
+    "create-game-assets",
+    "idle-game-project-rules",
+    "save-systems",
+    "unity-build-pipeline",
+    "unity-csharp-scripting"
+  ],
+  "upstream_commit": "184b72be02884f782a0058f2eeae2ce4277453e4",
+  "checks": [
+    "pinned upstream: 18 files plus LICENSE/NOTICE",
+    "portable frontmatter and optional UI metadata: 5 skills",
+    "AGENTS.md routing, bundled resources and 25 local Markdown links",
+    "bundled JSON and Python syntax; no tools executed"
+  ],
+  "errors": [],
+  "native_codex_auto_activation_verified": false
+}
