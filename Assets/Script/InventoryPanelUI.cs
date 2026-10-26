@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
+using TuTienCore;
 
 // 0.0.52: docked Xianxia inventory: ink/jade/brass-inspired temporary
 // vector surfaces, not pixel art. Final book/jade ornament sprites can
@@ -50,6 +51,13 @@ public sealed class InventoryPanelUI : MonoBehaviour
     private string selectedKey = "";
     private int lastWidth,lastHeight;
     private bool overlayFallback;
+    private int bagPageSize=20, detailPage;
+    private bool showComparison=true;
+    private float refreshElapsed;
+    private string detailIdentity="";
+    private readonly List<string> detailPages=new List<string>();
+    private RectTransform detailInfoButton, detailCompareButton, detailPrevious, detailNext;
+    private TextMeshProUGUI detailPageLabel;
 
     // Visual-only guides on UI work branch. Cached per RectTransform to avoid
     // rebuilding GameObjects whenever inventory tabs or window sizes change.
@@ -199,6 +207,11 @@ public sealed class InventoryPanelUI : MonoBehaviour
             panel.bagTexts[i]=ButtonText(panel.bagButtons[i]);
         }
 
+        panel.detailInfoButton=panel.MakeButton("InventoryDetailInfo","Chi tiết",()=>panel.SetDetailView(false));
+        panel.detailCompareButton=panel.MakeButton("InventoryDetailCompare","So sánh",()=>panel.SetDetailView(true));
+        panel.detailPrevious=panel.MakeButton("InventoryDetailPrevious","◀",()=>panel.ChangeDetailPage(-1));
+        panel.detailNext=panel.MakeButton("InventoryDetailNext","▶",()=>panel.ChangeDetailPage(1));
+        panel.detailPageLabel=panel.MakeText("InventoryDetailPage","");
         panel.MakeButton("InventoryPrev","◀",panel.PreviousPage);
         panel.MakeButton("InventoryNext","▶",panel.NextPage);
         panel.MakeButton("InventoryGrantCharms","Hộ phù mẫu",panel.GrantCharms);
@@ -276,6 +289,7 @@ public sealed class InventoryPanelUI : MonoBehaviour
         var gm=Manager();
         if(gm==null || !gm.IsGameplayHUDVisible)return;
         selectedKey="";
+        detailPage=0;showComparison=true;
         page=0;
         root.gameObject.SetActive(true);
         root.SetAsLastSibling();
@@ -344,7 +358,7 @@ public sealed class InventoryPanelUI : MonoBehaviour
             return new Entry {
                 key=selectedKey,id=gear.instanceId,name=LabelForGear(gear),
                 gear=gear,equipped=gear.isEquipped,
-                slot=gear.equippedSlot==EquipmentSlot.RingRight ?
+                slot=gear.isEquipped && gear.equippedSlot==EquipmentSlot.RingRight ?
                     EquipmentSlot.RingRight :
                     (template==null?EquipmentSlot.Weapon:template.slot)
             };
@@ -375,8 +389,8 @@ public sealed class InventoryPanelUI : MonoBehaviour
     }
     private void SelectBagCell(int index)
     {
-        var offset=page*bagButtons.Length+index;
-        if(offset<0 || offset>=entries.Count)return;
+        var offset=page*bagPageSize+index;
+        if(index<0 || index>=bagPageSize || offset<0 || offset>=entries.Count)return;
         selectedKey=entries[offset].key;
         Refresh();
     }
@@ -389,12 +403,12 @@ public sealed class InventoryPanelUI : MonoBehaviour
     }
     private void NextPage()
     {
-        if((page+1)*bagButtons.Length<entries.Count)page++;
+        if((page+1)*bagPageSize<entries.Count) {page++;selectedKey="";}
         Refresh();
     }
     private void PreviousPage()
     {
-        if(page>0)page--;
+        if(page>0) {page--;selectedKey="";}
         Refresh();
     }
     private void GrantCharms()
@@ -422,11 +436,7 @@ public sealed class InventoryPanelUI : MonoBehaviour
         if(gm==null || entry==null || entry.equipped)return;
         if(entry.gear!=null)
         {
-            var slot=entry.slot;
-            if(slot==EquipmentSlot.RingLeft &&
-                EquipmentRuntime.Equipped(gm.HeroData,EquipmentSlot.RingLeft)!=null &&
-                EquipmentRuntime.Equipped(gm.HeroData,EquipmentSlot.RingRight)==null)
-                slot=EquipmentSlot.RingRight;
+            var slot=EquipDestination(gm.HeroData,entry.gear);
             gm.EquipGear(entry.id,slot);
         }
         else if(entry.legacy)gm.EquipInventoryItem(entry.id);
@@ -612,6 +622,162 @@ public sealed class InventoryPanelUI : MonoBehaviour
             "/"+EquipmentRefinement.RequiredAttempts(item.rarity)+")";
     }
 
+    private static EquipmentSlot EquipDestination(EntityDataSO hero,EquipmentInstance item)
+    {
+        var template=EquipmentFoundation.FindTemplate(item.templateId);
+        var slot=template==null?EquipmentSlot.Weapon:template.slot;
+        if(slot==EquipmentSlot.RingLeft &&
+            EquipmentRuntime.Equipped(hero,EquipmentSlot.RingLeft)!=null &&
+            EquipmentRuntime.Equipped(hero,EquipmentSlot.RingRight)==null)
+            return EquipmentSlot.RingRight;
+        return slot;
+    }
+
+    // UI action eligibility, not a second stat calculator. All numbers below
+    // come exclusively from EquipmentStatPreview; never normalize/mutate here.
+    private static bool TryComparison(EntityDataSO hero,string key,bool right,
+        out EquipmentStatComparison comparison,out string reason)
+    {
+        comparison=null;reason="Vật phẩm không còn hợp lệ hoặc không có trong kho.";
+        if(hero==null || string.IsNullOrEmpty(key))return false;
+        bool ok;
+        if(key.StartsWith("gear:",StringComparison.Ordinal))
+        {
+            var item=EquipmentRuntime.Find(hero,key.Substring(5));
+            if(!EquipmentFoundation.IsValid(item))return false;
+            var slot=item.isEquipped?item.equippedSlot:
+                right?EquipmentSlot.RingRight:EquipDestination(hero,item);
+            if(!EquipmentFoundation.IsSlotAllowed(item,slot))
+            {reason="Không thể trang bị vào ô này.";return false;}
+            if(item.isEquipped)
+            {
+                if(EquipmentRuntime.Equipped(hero,slot)!=item)return false;
+                ok=EquipmentStatPreview.TryUnequip(hero,slot,hero.savedAttackMode,out comparison);
+            }
+            else
+            {
+                if(slot==EquipmentSlot.Artifact && !string.IsNullOrEmpty(hero.equippedItemId))
+                {reason="Cần tháo hộ phù đang mặc trước khi dùng Pháp bảo.";return false;}
+                ok=EquipmentStatPreview.TryEquip(hero,item.instanceId,slot,hero.savedAttackMode,out comparison);
+            }
+        }
+        else
+        {
+            bool worn=key.StartsWith("worn:",StringComparison.Ordinal);
+            if(!worn && !key.StartsWith("stack:",StringComparison.Ordinal))return false;
+            string id=key.Substring(worn?5:6);
+            if(EquipmentCatalog.Find(id)==null)
+            {reason="Vật phẩm này không thể trang bị.";return false;}
+            if(worn)
+            {
+                if(hero.equippedItemId!=id)return false;
+            }
+            else
+            {
+                if(EquipmentInventory.Count(hero,id)<=0)return false;
+                if(hero.equippedItemId==id)
+                {reason="Hộ phù này đã được trang bị.";return false;}
+                if(EquipmentRuntime.Equipped(hero,EquipmentSlot.Artifact)!=null)
+                {reason="Cần tháo Pháp bảo đang mặc trước khi dùng hộ phù.";return false;}
+            }
+            // Legacy operations must return the old stack to the bag first.
+            if(!string.IsNullOrEmpty(hero.equippedItemId) &&
+                EquipmentInventory.Count(hero,hero.equippedItemId)>=EquipmentInventory.MaxQuantity)
+            {reason="Kho đã đầy loại hộ phù cần trả về; chưa thể thay hoặc tháo.";return false;}
+            ok=worn?EquipmentStatPreview.TryUnequip(hero,EquipmentSlot.Artifact,
+                hero.savedAttackMode,out comparison):
+                EquipmentStatPreview.TryEquipLegacy(hero,id,hero.savedAttackMode,out comparison);
+        }
+        if(ok)reason="";
+        return ok;
+    }
+
+    private static string ComparisonValue(CombatStatId stat,float value)
+    {
+        bool ratio=stat==CombatStatId.ElementResistance || stat==CombatStatId.ElementDamagePercent ||
+            stat==CombatStatId.PhysicalDamagePercent || stat==CombatStatId.MagicalDamagePercent ||
+            stat==CombatStatId.CooldownReductionPercent;
+        return (ratio?value*100f:value).ToString("0.###",
+            System.Globalization.CultureInfo.InvariantCulture)+(ratio?"%":"");
+    }
+    private static string ComparisonName(CombatStatId stat)
+    {
+        switch(stat)
+        {
+            case CombatStatId.MaxHealth:return "HP tối đa";
+            case CombatStatId.Attack:return "ATK";
+            case CombatStatId.Armor:return "Giáp";
+            case CombatStatId.MagicResistance:return "Kháng phép";
+            case CombatStatId.ElementResistance:return "Kháng nguyên tố";
+            case CombatStatId.PhysicalDamagePercent:return "Sát thương vật lý";
+            case CombatStatId.MagicalDamagePercent:return "Sát thương phép";
+            case CombatStatId.ElementDamagePercent:return "Sát thương nguyên tố";
+            case CombatStatId.AttackSpeed:return "Tốc đánh (chỉ số)";
+            case CombatStatId.MovementSpeed:return "Di chuyển (bonus)";
+            case CombatStatId.CastSpeed:return "Tốc thi triển (bonus)";
+            case CombatStatId.CooldownReductionPercent:return "Giảm hồi chiêu";
+            case CombatStatId.HealthRegeneration:return "Hồi HP/giây";
+            case CombatStatId.ManaRegeneration:return "Hồi Mana (bonus)";
+            default:return "Hồi HP khi hạ quái";
+        }
+    }
+    private void AddComparisonPages(EntityDataSO hero,bool right)
+    {
+        EquipmentStatComparison comparison;string reason;
+        if(!TryComparison(hero,selectedKey,right,out comparison,out reason))
+        {detailPages.Add(reason);return;}
+        string action=(comparison.isUnequip?"Tháo":right?"Nút Nhẫn phải":"Trang bị")+
+            " · "+SlotNames[Array.IndexOf(Slots,comparison.slot)];
+        int changed=0;
+        foreach(var line in comparison.lines)
+        {
+            if(Math.Abs(line.difference)<.00001f)continue;
+            changed++;
+            string name=ComparisonName(line.stat)+(line.element==ElementType.Vo?"":" · "+line.element);
+            // One affected stat per page keeps even the compact fallback readable.
+            detailPages.Add(action+"\n"+name+"\nCurrent: "+ComparisonValue(line.stat,line.current)+
+                " → Preview: "+ComparisonValue(line.stat,line.preview)+
+                "\nDelta: <color="+(line.difference>0f?"#75DF93":"#FF9292")+">"+
+                (line.difference>0f?"+":"")+ComparisonValue(line.stat,line.difference)+"</color>");
+        }
+        if(changed==0)detailPages.Add(action+"\n<color=#C3CCC7>Current = Preview · Delta: 0"+
+            "\nKhông đổi chỉ số trong thế hiện tại.</color>");
+    }
+    private void RefreshDetail(EntityDataSO hero,Entry selected)
+    {
+        string identity=selectedKey+":"+showComparison;
+        if(identity!=detailIdentity) {detailIdentity=identity;detailPage=0;}
+        detailPages.Clear();
+        if(selected==null)
+        {
+            selectedKey="";
+            detailPages.Add("Chọn vật phẩm để xem chi tiết / so sánh.");
+        }
+        else if(showComparison)
+        {
+            AddComparisonPages(hero,false);
+            if(selected.gear!=null && !selected.equipped &&
+                EquipmentFoundation.IsSlotAllowed(selected.gear,EquipmentSlot.RingRight) &&
+                EquipDestination(hero,selected.gear)!=EquipmentSlot.RingRight)
+                AddComparisonPages(hero,true);
+        }
+        else
+        {
+            // Paginate plain item prose, never cut TMP rich-text tags in half.
+            string prose=detail.text.Replace("<color=#8A9A9D>","").Replace("</color>","");
+            detailPages.AddRange(UIManager.ReadablePages(prose,detail.rectTransform.rect.width,
+                detail.rectTransform.rect.height));
+        }
+        detailPage=Math.Max(0,Math.Min(detailPage,detailPages.Count-1));
+        detail.text=detailPages[detailPage];
+        detailPageLabel.text=(detailPage+1)+"/"+detailPages.Count;
+    }
+    private void SetDetailView(bool compare) {showComparison=compare;detailPage=0;Refresh();}
+    private void ChangeDetailPage(int step)
+    {
+        detailPage=Math.Max(0,Math.Min(detailPage+step,detailPages.Count-1));Refresh();
+    }
+
     private string StatLine(EquipmentInstance item,ItemStatLine stat)
     {
         if(stat==null)return "";
@@ -637,7 +803,7 @@ public sealed class InventoryPanelUI : MonoBehaviour
         if(root==null)return;
         var hero=Hero();
         RebuildEntries(hero);
-        page=Math.Max(0,Math.Min(page,(Math.Max(1,entries.Count)-1)/bagButtons.Length));
+        page=Math.Max(0,Math.Min(page,(Math.Max(1,entries.Count)-1)/bagPageSize));
         var selected=FindSelected();
 
         for(int i=0;i<Slots.Length;i++)
@@ -659,8 +825,9 @@ public sealed class InventoryPanelUI : MonoBehaviour
         }
         for(int i=0;i<bagButtons.Length;i++)
         {
-            int absolute=page*bagButtons.Length+i;
-            bool has=absolute<entries.Count;
+            int absolute=page*bagPageSize+i;
+            bagButtons[i].gameObject.SetActive(i<bagPageSize);
+            bool has=i<bagPageSize && absolute<entries.Count;
             var entry=has?entries[absolute]:null;
             bagTexts[i].text=entry==null?"·":ShortName(entry.name)+
                 (entry.quantity>1?"\nx"+entry.quantity :
@@ -689,6 +856,8 @@ public sealed class InventoryPanelUI : MonoBehaviour
                 " · Trang bị: "+CountWorn(hero)+"/8";
             if(selected==null)
                 detail.text="Chọn một ô trang bị hoặc vật phẩm để xem chi tiết.";
+            else if(selected.gear!=null && !EquipmentFoundation.IsValid(selected.gear))
+                detail.text="Vật phẩm không hợp lệ hoặc chưa được hỗ trợ.";
             else if(selected.gear!=null)
             {
                 var item=selected.gear;
@@ -720,7 +889,8 @@ public sealed class InventoryPanelUI : MonoBehaviour
                     (charm!=null?"\n"+EquipmentCatalog.StatLabel(charm):"\nNguyên liệu / vật phẩm cộng dồn");
             }
         }
-        int pages=Math.Max(1,(entries.Count+bagButtons.Length-1)/bagButtons.Length);
+        RefreshDetail(hero,selected);
+        int pages=Math.Max(1,(entries.Count+bagPageSize-1)/bagPageSize);
         bagStatus.text="TÚI ĐỒ · "+entries.Count+" món  ["+(page+1)+"/"+pages+"]";
         if(bannerText!=null)
             bannerText.text=hero==null?
@@ -829,16 +999,27 @@ public sealed class InventoryPanelUI : MonoBehaviour
         Place(FindButton("InventoryGrantSword"),9f,h-63f,left-8f,26f);
         Place(FindButton("InventoryGrantMaterials"),9f,h-33f,left-8f,26f);
 
-        const int cols=5, rows=4;
+        const int cols=5;
+        int rows=h<540f?2:4;
+        bagPageSize=cols*rows;
         float cellW=(gridW-12f)/cols;
-        float cellH=Mathf.Max(25f,Mathf.Min(58f,(h-250f)/rows));
+        float cellH=Mathf.Max(25f,Mathf.Min(58f,(h-300f)/rows));
         float bagY=96f;
         for(int i=0;i<bagButtons.Length;i++)
             Place(bagButtons[i],gridX+(i%cols)*(cellW+2f),
                 bagY+(i/cols)*(cellH+3f),cellW-2f,cellH);
         float detailY=bagY+rows*(cellH+3f)+4f;
         float actionY=h-39f;
-        Place((RectTransform)detail.transform,gridX,detailY,gridW,Mathf.Max(18f,actionY-detailY-3f));
+        // Reserve dedicated rows for detail navigation and Forge, above the actions.
+        float detailControlsY=actionY-55f;
+        Place((RectTransform)detail.transform,gridX,detailY,gridW,
+            Mathf.Max(18f,detailControlsY-detailY-3f));
+        float viewW=Mathf.Max(50f,(gridW-116f)*.5f);
+        Place(detailInfoButton,gridX,detailControlsY,viewW,23f);
+        Place(detailCompareButton,gridX+viewW+3f,detailControlsY,viewW,23f);
+        Place(detailPrevious,gridX+gridW-108f,detailControlsY,24f,23f);
+        Place((RectTransform)detailPageLabel.transform,gridX+gridW-81f,detailControlsY+3f,52f,20f);
+        Place(detailNext,gridX+gridW-26f,detailControlsY,24f,23f);
         Place(detailBacking,gridX-4f,detailY-4f,gridW+8f,
             Mathf.Max(24f,actionY-detailY+2f));
         float actionW=(gridW-8f)/3f;
@@ -850,6 +1031,7 @@ public sealed class InventoryPanelUI : MonoBehaviour
         LayoutForge(w,h);
         ApplyTheme();
         UpdateLayoutDebug();
+        Refresh();
     }
     // Apply all Sprite references by name, never by scene hierarchy search.
     // Sprite fields stay on UIManager via its persistent ScriptableObject
@@ -920,7 +1102,7 @@ public sealed class InventoryPanelUI : MonoBehaviour
         }
         for(int i=0;i<bagButtons.Length;i++)
         {
-            int absolute=page*bagButtons.Length+i;
+            int absolute=page*bagPageSize+i;
             bool selected=absolute<entries.Count && entries[absolute].key==selectedKey;
             Sprite sprite=art==null?null:
                 (selected && art.selectedBagSlot!=null ? art.selectedBagSlot : art.bagSlot);
@@ -1154,6 +1336,12 @@ public sealed class InventoryPanelUI : MonoBehaviour
 
     private void LateUpdate()
     {
+        // Unscaled polling also sees external gear/stat changes while Inventory pauses play.
+        if(IsOpen)
+        {
+            refreshElapsed+=Time.unscaledDeltaTime;
+            if(refreshElapsed>=.2f) {refreshElapsed=0f;Refresh();}
+        }
         if(ui!=null && lastLayoutDebugEnabled!=ui.inventoryLayoutDebug)
             UpdateLayoutDebug();
     }

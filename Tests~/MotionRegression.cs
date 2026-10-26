@@ -115,6 +115,10 @@ partial class MotionRegression
 
     static void Main(string[] args)
     {
+        if(args.Length==1 && args[0]=="--inventory-compare") {
+            EquipmentStatPreviewRegressionTests();InventoryComparisonTests();
+            ManagementWindowRegressionTests();InventoryArtThemeRegressionTests();return;
+        }
         if(args.Length==1 && args[0]=="--plains") {PlainsPresentationTests();return;}
         if(args.Length==1 && args[0]=="--terrain-art") {MultiTerrainTests();return;}
         if(args.Length==1 && args[0]=="--terrain-seams") {TerrainSeamTests();return;}
