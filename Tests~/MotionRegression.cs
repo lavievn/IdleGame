@@ -96,6 +96,9 @@ partial class MotionRegression
             hero.heroRect=(RectTransform)new GameObject(true).transform;hero.heroRect.parent=ground;hero.heroRect.anchorMin=hero.heroRect.anchorMax=new Vector2(1,0);hero.heroRect.pivot=new Vector2(1,0);Call(hero,"Awake");hero.SpawnHero();
             spawner=new GameObject().AddComponent<MonsterSpawner>();Set(spawner,"monsterPool",new ObjectPool<GameObject>(()=>new GameObject(),m=>{},m=>m.SetActive(false),m=>{},5,20));
             combat=new GameObject().AddComponent<CombatManager>();Call(combat,"Start");combat.SetupHeroInfo(new EntityDataSO { baseHealth=10000,baseDamage=10,expToNextLevel=1000000 });
+            // Historical attack-mode cases exercise the explicit temporary-B2 fallback.
+            // Weapon regressions rebind through SetupHeroInfo to exercise the primary path.
+            hero.BindBasicAttackData(combat.CurrentHeroCombatState.Data,true);
         }
         public MonsterController Monster(float x,AttackMode mode=AttackMode.Melee,float y=0)
         {
@@ -115,6 +118,7 @@ partial class MotionRegression
 
     static void Main(string[] args)
     {
+        if(args.Length==1 && args[0]=="--weapon-basic") {WeaponBasicAttackTests();return;}
         if(args.Length==1 && args[0]=="--combat-loot") {
             CombatLootTests();BalanceTests();Patch54bTests();return;
         }

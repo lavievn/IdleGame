@@ -14,7 +14,9 @@ partial class MotionRegression
         EquipmentInventory.InitializeNewRun(primary);EquipmentRuntime.InitializeNewRun(primary);
         Set(gm,"runtimeHeroData",primary);Set(gm,"controlledLootTest",enabled);Set(gm,"hasDeployed",true);
         Set(gm,"heroController",f.hero);Set(gm,"combatManager",f.combat);Set(gm,"environmentManager",f.space);
-        Set(f.combat,"gameManager",gm);f.combat.SetupHeroInfo(primary);return f;
+        Set(f.combat,"gameManager",gm);f.combat.SetupHeroInfo(primary);
+        // Retain legacy/B2 AoE coverage; primary Staff is single-target in weapon tests.
+        f.hero.BindBasicAttackData(primary,true);return f;
     }
     static void LootBattle(Field f,GameManager gm,params MonsterController[] monsters)
     {

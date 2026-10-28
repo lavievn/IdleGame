@@ -79,7 +79,7 @@ partial class MotionRegression
                 hero.GetCalculatedDamage(AttackMode.Melee),"ring preview equals real result");
         });
 
-        Run("0.0.52 preview supports stance restrictions and elemental affixes",()=>{
+        Run("0.0.52 preview resolves equipped weapon over manual stance input and respects elemental affixes",()=>{
             var hero=HeroAt(1);
             EquipmentRuntime.InitializeNewRun(hero);
             var sword=EquipmentFoundation.CreateDemoSword();
@@ -97,12 +97,12 @@ partial class MotionRegression
                 EquipmentSlot.Weapon,AttackMode.RangedPhysical,out bow),"bow preview");
             Near(melee.Find(CombatStatId.Attack).difference,10f,
                 "melee sword buff applies");
-            Near(bow.Find(CombatStatId.Attack).difference,0f,
-                "bow stance does not gain melee attack");
+            Near(bow.Find(CombatStatId.Attack).difference,10f,
+                "manual stance input cannot override predicted Sword mode");
             Near(melee.Find(CombatStatId.ElementDamagePercent,ElementType.Hoa)
                 .difference,.08f,"Fire bonus applies to melee stance");
             Near(bow.Find(CombatStatId.ElementDamagePercent,ElementType.Hoa)
-                .difference,0f,"Fire affix blocked outside stance");
+                .difference,.08f,"Sword future mode activates its known melee affix");
             Near(melee.Find(CombatStatId.ElementDamagePercent,ElementType.Thuy)
                 .difference,0f,"Fire does not apply to Water");
         });

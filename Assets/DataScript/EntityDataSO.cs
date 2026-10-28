@@ -71,8 +71,8 @@ public class EntityDataSO : ScriptableObject
     public int addedHealth = 0;
     public int addedDamage = 0;
 
-    // Persist the primary Hero's selected stance independently of its
-    // long-term weapon/martial-arts aptitudes (future character generation).
+    // Legacy serialized compatibility only. Primary basic attacks resolve from
+    // equipped template family; this cached mode is never load/combat authority.
     public AttackMode savedAttackMode = AttackMode.Melee;
     public void SetSavedAttackMode(AttackMode mode)
     {

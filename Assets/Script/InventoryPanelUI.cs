@@ -652,13 +652,13 @@ public sealed class InventoryPanelUI : MonoBehaviour
             if(item.isEquipped)
             {
                 if(EquipmentRuntime.Equipped(hero,slot)!=item)return false;
-                ok=EquipmentStatPreview.TryUnequip(hero,slot,hero.savedAttackMode,out comparison);
+                ok=EquipmentStatPreview.TryUnequip(hero,slot,WeaponBasicAttack.Resolve(hero),out comparison);
             }
             else
             {
                 if(slot==EquipmentSlot.Artifact && !string.IsNullOrEmpty(hero.equippedItemId))
                 {reason="Cần tháo hộ phù đang mặc trước khi dùng Pháp bảo.";return false;}
-                ok=EquipmentStatPreview.TryEquip(hero,item.instanceId,slot,hero.savedAttackMode,out comparison);
+                ok=EquipmentStatPreview.TryEquip(hero,item.instanceId,slot,WeaponBasicAttack.Resolve(hero),out comparison);
             }
         }
         else
@@ -685,8 +685,8 @@ public sealed class InventoryPanelUI : MonoBehaviour
                 EquipmentInventory.Count(hero,hero.equippedItemId)>=EquipmentInventory.MaxQuantity)
             {reason="Kho đã đầy loại hộ phù cần trả về; chưa thể thay hoặc tháo.";return false;}
             ok=worn?EquipmentStatPreview.TryUnequip(hero,EquipmentSlot.Artifact,
-                hero.savedAttackMode,out comparison):
-                EquipmentStatPreview.TryEquipLegacy(hero,id,hero.savedAttackMode,out comparison);
+                WeaponBasicAttack.Resolve(hero),out comparison):
+                EquipmentStatPreview.TryEquipLegacy(hero,id,WeaponBasicAttack.Resolve(hero),out comparison);
         }
         if(ok)reason="";
         return ok;
@@ -705,7 +705,8 @@ public sealed class InventoryPanelUI : MonoBehaviour
         switch(stat)
         {
             case CombatStatId.MaxHealth:return "HP tối đa";
-            case CombatStatId.Attack:return "ATK";
+            case CombatStatId.Attack:return "Physical Attack";
+            case CombatStatId.MagicalAttack:return "Magical Attack";
             case CombatStatId.Armor:return "Giáp";
             case CombatStatId.MagicResistance:return "Kháng phép";
             case CombatStatId.ElementResistance:return "Kháng nguyên tố";
@@ -728,6 +729,9 @@ public sealed class InventoryPanelUI : MonoBehaviour
         {detailPages.Add(reason);return;}
         string action=(comparison.isUnequip?"Tháo":right?"Nút Nhẫn phải":"Trang bị")+
             " · "+SlotNames[Array.IndexOf(Slots,comparison.slot)];
+        if(comparison.currentMode!=comparison.mode)
+            detailPages.Add(action+"\nĐánh thường\nCurrent: "+comparison.currentMode+
+                "\nPreview: "+comparison.mode);
         int changed=0;
         foreach(var line in comparison.lines)
         {
@@ -796,7 +800,8 @@ public sealed class InventoryPanelUI : MonoBehaviour
         if(stat.stat==CombatStatId.ElementDamagePercent ||
             stat.stat==CombatStatId.ElementResistance)
             value+=" ("+stat.element+")";
-        return stat.stat+": "+value;
+        return (stat.stat==CombatStatId.Attack || stat.stat==CombatStatId.MagicalAttack?
+            ComparisonName(stat.stat):stat.stat.ToString())+": "+value;
     }
     public void Refresh()
     {
@@ -850,8 +855,8 @@ public sealed class InventoryPanelUI : MonoBehaviour
             summary.text=lastHeight<440 ?
                 "Cấp "+hero.currentLevel+" · Đã mặc "+CountWorn(hero)+"/8" :
                 "Cấp "+hero.currentLevel+" · Vàng "+hero.gold+
-                "\nHP "+hero.GetCalculatedHealth(hero.savedAttackMode)+
-                " · ATK "+hero.GetCalculatedDamage(hero.savedAttackMode)+
+                "\nHP "+hero.GetCalculatedHealth(WeaponBasicAttack.Resolve(hero))+
+                " · Physical "+WeaponBasicAttack.Physical(hero)+" · Magical "+WeaponBasicAttack.Magical(hero)+
                 "\nĐồ trong kho: "+entries.Count+
                 " · Trang bị: "+CountWorn(hero)+"/8";
             if(selected==null)

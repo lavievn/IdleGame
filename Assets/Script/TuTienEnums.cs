@@ -133,16 +133,28 @@ namespace TuTienCore
         }
         public static DamageTrace EvaluateDamage(EntityDataSO attacker, EntityDataSO defender, AttackMode mode, float roll, float physicalFactor = .8f)
         {
-            attacker.NormalizeRoots();
-            int attack = Mathf.Max(1, attacker.GetCalculatedDamage(mode));
-            roll = Mathf.Clamp(roll, .85f, 1f);
-            var snapshot = new DamageTrace { attacker = IdentityDisplay.Describe(attacker),
-                attackRaw = attacker.baseDamage, attackAdded = attacker.addedDamage, attackBase = attack,
-                modeMultiplier = CombatBalance.ModeMultiplier(mode, physicalFactor), roll = roll,
-                rolledDamage = CombatBalance.Damage(attack, mode, roll, physicalFactor),
-                sourceRoots = new List<ElementType>(attacker.spiritRoots), sourceTiers = new List<int>(attacker.rootTiers),
-                sourceWeights = new List<float>(attacker.rootWeights) };
-            return EvaluateSnapshot(snapshot, defender);
+            return EvaluateCore(attacker,defender,mode,roll,physicalFactor,
+                Mathf.Max(1,attacker.GetCalculatedDamage(mode)),false);
+        }
+        public static DamageTrace EvaluateBasicDamage(EntityDataSO attacker,EntityDataSO defender,AttackMode mode,float roll)
+        {
+            return EvaluateCore(attacker,defender,mode,roll,.7f,WeaponBasicAttack.DamageSource(attacker),true);
+        }
+        private static DamageTrace EvaluateCore(EntityDataSO attacker,EntityDataSO defender,AttackMode mode,
+            float roll,float physicalFactor,int attack,bool basic)
+        {
+            attacker.NormalizeRoots();roll=Mathf.Clamp(roll,.85f,1f);
+            float multiplier=basic && mode==AttackMode.RangedMagic?1f:CombatBalance.ModeMultiplier(mode,physicalFactor);
+            var snapshot=new DamageTrace {attacker=IdentityDisplay.Describe(attacker),
+                attackRaw=basic && mode==AttackMode.RangedMagic?0:attacker.baseDamage,
+                attackAdded=basic && mode==AttackMode.RangedMagic?0:attacker.addedDamage,attackBase=attack,
+                modeMultiplier=multiplier,roll=roll,weaponBasic=basic,
+                basicBoost=basic?CombatDamage.CaptureBasicBoost(attacker,mode):0f,
+                rolledDamage=basic?Mathf.Max(0,Mathf.RoundToInt(attack*multiplier*roll)):
+                    CombatBalance.Damage(attack,mode,roll,physicalFactor),
+                sourceRoots=new List<ElementType>(attacker.spiritRoots),sourceTiers=new List<int>(attacker.rootTiers),
+                sourceWeights=new List<float>(attacker.rootWeights)};
+            return EvaluateSnapshot(snapshot,defender);
         }
         public static DamageTrace EvaluateSnapshot(DamageTrace snapshot, EntityDataSO defender)
         {
@@ -166,7 +178,8 @@ namespace TuTienCore
                 pairs = parts.Count == 0 ? "Không có cặp linh căn: ×1" : string.Join("\n", parts.ToArray()),
                 attackRaw = snapshot.attackRaw, attackAdded = snapshot.attackAdded, attackBase = snapshot.attackBase,
                 modeMultiplier = snapshot.modeMultiplier, roll = snapshot.roll, rolledDamage = snapshot.rolledDamage,
-                elementMultiplier = element, elementDamage = Mathf.Max(1, Mathf.RoundToInt(snapshot.rolledDamage * element)),
+                elementMultiplier = element, elementDamage = Mathf.Max(snapshot.weaponBasic?0:1, Mathf.RoundToInt(snapshot.rolledDamage * element)),
+                weaponBasic=snapshot.weaponBasic,basicBoost=snapshot.basicBoost,
                 sourceRoots = snapshot.sourceRoots, sourceTiers = snapshot.sourceTiers, sourceWeights = snapshot.sourceWeights };
         }
         public static int Damage(EntityDataSO attacker, EntityDataSO defender, AttackMode mode, float roll, int mapMultiplier = 1)
@@ -178,6 +191,8 @@ namespace TuTienCore
     public sealed class DamageTrace
     {
         public string attacker, defender, pairs;
+        public bool weaponBasic;
+        public float basicBoost;
         public List<ElementType> sourceRoots;
         public List<int> sourceTiers;
         public List<float> sourceWeights;
@@ -191,7 +206,7 @@ namespace TuTienCore
                 "Sát thương nền = làm tròn(" + attackBase + " × " + F(modeMultiplier) + " × " + F(roll) + ") = " + rolledDamage + "\n" +
                 pairs + "\nTổng hệ số linh căn = " + F(elementMultiplier) +
                 "; sau linh căn = làm tròn(" + rolledDamage + " × " + F(elementMultiplier) + ") = " + elementDamage + "\n" +
-                "Kết quả = tối thiểu 1, làm tròn(" + elementDamage + " × map " + F(mapScale) + " × khó " + hardScale + ") = " + finalDamage;
+                "Kết quả = tối thiểu "+(weaponBasic?"0":"1")+", làm tròn(" + elementDamage + " × map " + F(mapScale) + " × khó " + hardScale + ") = " + finalDamage;
         }
     }
 

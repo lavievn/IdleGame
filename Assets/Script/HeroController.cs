@@ -23,7 +23,34 @@ public class HeroController : MonoBehaviour
     public bool traceVisualPositionChanges;
     [Range(10,120)] public int renderTraceFrameCount=12;
     [Header("COMBAT STATS")]
-    public AttackMode attackMode = AttackMode.Melee;
+    public AttackMode attackMode = AttackMode.Melee; // serialized legacy/internal presentation value
+    private EntityDataSO basicAttackData;
+    private bool legacyCompanionAttack;
+    public bool UsesWeaponBasicAttack => basicAttackData!=null && !legacyCompanionAttack;
+    internal void BindBasicAttackData(EntityDataSO data,bool temporaryCompanion)
+    {
+        basicAttackData=data;legacyCompanionAttack=temporaryCompanion;
+        if(UsesWeaponBasicAttack)RefreshWeaponPresentation();
+    }
+    internal void SyncWeaponMode()
+    {
+        if(!UsesWeaponBasicAttack)return;
+        var resolved=WeaponBasicAttack.Resolve(basicAttackData);
+        if(attackMode!=resolved)ApplyAttackMode(resolved);
+    }
+    internal void RefreshWeaponPresentation()
+    {
+        if(UsesWeaponBasicAttack) {ApplyAttackMode(WeaponBasicAttack.Resolve(basicAttackData));CultivationSpriteBridge.ResetPose(heroRect);}
+    }
+    private void ApplyAttackMode(AttackMode mode)
+    {
+        attackMode=mode;CurrentTarget=null;
+        ResetLaneMotion();UpdateChargeBar(false,0f);
+        CultivationSpriteBridge.AttachHero(this);
+        var space=EnvironmentManager.Instance;
+        if(space!=null && space.BattleArea!=null)attackRange=space.AttackRange(mode,true);
+        if(!IsDead)CurrentState=HeroState.Idle;
+    }
     public float attackRange = 30f;
     [Min(0f)] public float moveSpeed = 150f;
     [Min(0f)] public float laneSpeed = 150f;
@@ -173,13 +200,11 @@ public class HeroController : MonoBehaviour
 
     public void ChangeAttackMode(int modeIndex)
     {
+        if(UsesWeaponBasicAttack) {SyncWeaponMode();return;}
+        // Explicit unbound/temporary-B2 compatibility, never a primary weapon override.
         if (modeIndex < 0 || modeIndex > 2) return;
         HeroSpawnVfx.Cancel(heroRect);
-        attackMode = (AttackMode)modeIndex;
-        ResetLaneMotion();
-        UpdateChargeBar(false, 0f);
-        CultivationSpriteBridge.AttachHero(this);
-        if (!IsDead) CurrentState = HeroState.Idle;
+        ApplyAttackMode((AttackMode)modeIndex);
     }
 
     public float EffectiveMoveSpeed()
@@ -199,6 +224,7 @@ public class HeroController : MonoBehaviour
 
     public void TickMovement(EnvironmentManager space, float dt)
     {
+        SyncWeaponMode();
         MovementFrame=Time.frameCount;IsExplorationMovement=false;
         MovementBudgetThisFrame=0f;
         MovementInputDeltaThisFrame=MovementDeltaThisFrame=0f;
@@ -470,7 +496,7 @@ public class HeroController : MonoBehaviour
     }
     public void UpdateChargeBar(bool visible, float progress)
     {
-        visible = visible && IsDeployed && attackMode == AttackMode.RangedMagic;
+        visible = visible && !UsesWeaponBasicAttack && IsDeployed && attackMode == AttackMode.RangedMagic;
         if (chargeBar == null && visible && heroRect != null)
             chargeBar = MagicChargeBar.Create(heroRect, hpFillImage);
         if (chargeBar != null) chargeBar.Set(visible, progress);
@@ -501,15 +527,19 @@ public class HeroController : MonoBehaviour
         var lines = new List<string> { "Cấp: " + data.currentLevel + " · " + (attackMode == AttackMode.Melee ? "Cận chiến" : attackMode == AttackMode.RangedPhysical ? "Cung" : "Phép"),
             "HP: " + currentHP + "/" + maxHP,
             "EXP: " + data.currentExp + "/" + data.expToNextLevel,
+            UsesWeaponBasicAttack ? "Đánh thường: "+WeaponBasicAttack.Family(WeaponBasicAttack.Equipped(data))+
+                " · Physical Attack: "+WeaponBasicAttack.Physical(data)+
+                " · Magical Attack: "+WeaponBasicAttack.Magical(data) :
             "ATK: " + data.baseDamage + " + " + data.addedDamage +
             " (đặc tính ±) = " + data.GetCalculatedDamage(attackMode) };
         for (int i = 0; i < data.spiritRoots.Count; i++)
             lines.Add("ATK " + IdentityDisplay.Element(data.spiritRoots[i]) + ": " +
-                (data.GetCalculatedDamage(attackMode) * data.rootWeights[i]).ToString("0.##") + " (" +
+                ((UsesWeaponBasicAttack?WeaponBasicAttack.DamageSource(data):data.GetCalculatedDamage(attackMode)) * data.rootWeights[i]).ToString("0.##") + " (" +
                 IdentityDisplay.Tier(data.rootTiers[i]) + ", " + data.rootWeights[i].ToString("P0") + ")");
         float effectiveSpeed = CombatStats.Get(data,CombatStatId.AttackSpeed,
             data.baseAttackSpeed,ElementType.Vo,new [] { CombatStats.StanceTag(attackMode) });
-        float interval = CombatBalance.AttackInterval(attackMode,effectiveSpeed,CombatBalance.HeroDev != null);
+        float interval = UsesWeaponBasicAttack?WeaponBasicAttack.Interval(attackMode,effectiveSpeed):
+            CombatBalance.AttackInterval(attackMode,effectiveSpeed,CombatBalance.HeroDev != null);
         lines.Add("Di chuyển: " + EffectiveMoveSpeed().ToString("0.##") + " đơn vị/giây");
         lines.Add("Giáp: " + CombatStats.Get(data,CombatStatId.Armor).ToString("0.##") +
             " · Kháng phép: " + CombatStats.Get(data,CombatStatId.MagicResistance).ToString("0.##"));

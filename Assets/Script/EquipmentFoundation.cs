@@ -171,8 +171,10 @@ public sealed class EquipmentTemplate
     public readonly string name;
     public readonly EquipmentSlot slot;
     public readonly CombatStatId mainStat;
-    public EquipmentTemplate(string id,string name,EquipmentSlot slot,CombatStatId stat)
-    { this.id=id;this.name=name;this.slot=slot;mainStat=stat; }
+    public readonly WeaponFamily weaponFamily;
+    public EquipmentTemplate(string id,string name,EquipmentSlot slot,CombatStatId stat,
+        WeaponFamily family=WeaponFamily.Unarmed)
+    { this.id=id;this.name=name;this.slot=slot;mainStat=stat;weaponFamily=family; }
 }
 
 public static class EquipmentFoundation
@@ -182,6 +184,8 @@ public static class EquipmentFoundation
     public const int MaximumAffixLines = 6; // storage safety cap, NOT rarity balance
     public const string SourcePrefix = "equipment:instance:";
     public const string DemoSword = "sample:iron_sword";
+    public const string DemoBow = "sample:basic_bow";
+    public const string DemoStaff = "sample:basic_staff";
 
     // Ratios are true probabilities, NOT percentage values. 0.005% =
     // 0.00005 chance, 0.001% = 0.00001 chance.
@@ -268,7 +272,9 @@ public static class EquipmentFoundation
     // Extend via catalog data later; these initial templates establish
     // real slot compatibility, but no other gear is generated/dropped yet.
     private static readonly EquipmentTemplate[] templates = {
-        new EquipmentTemplate(DemoSword,"Thiết Kiếm",EquipmentSlot.Weapon,CombatStatId.Attack),
+        new EquipmentTemplate(DemoSword,"Thiết Kiếm",EquipmentSlot.Weapon,CombatStatId.Attack,WeaponFamily.Sword),
+        new EquipmentTemplate(DemoBow,"Cung mẫu",EquipmentSlot.Weapon,CombatStatId.Attack,WeaponFamily.Bow),
+        new EquipmentTemplate(DemoStaff,"Pháp trượng mẫu",EquipmentSlot.Weapon,CombatStatId.MagicalAttack,WeaponFamily.Staff),
         new EquipmentTemplate("base:head","Mũ vải",EquipmentSlot.Head,CombatStatId.Armor),
         new EquipmentTemplate("base:chest","Áo vải",EquipmentSlot.Chest,CombatStatId.Armor),
         new EquipmentTemplate("base:boots","Giày vải",EquipmentSlot.Boots,CombatStatId.MovementSpeed),
@@ -290,7 +296,7 @@ public static class EquipmentFoundation
             float.IsNaN(baseStat) || float.IsInfinity(baseStat)) return null;
         var main=new ItemStatLine {stat=template.mainStat,flat=baseStat};
         if(template.slot==EquipmentSlot.Weapon)
-            main.requiredTags.Add("stance:melee");
+            main.requiredTags.Add(CombatStats.StanceTag(WeaponBasicAttack.Mode(template.weaponFamily)));
         return new EquipmentInstance {
             instanceId=Guid.NewGuid().ToString("N"),
             templateId=templateId,level=level,
@@ -327,6 +333,9 @@ public static class EquipmentFoundation
     {
         return CreateCommon(DemoSword,1,10f);
     }
+
+    public static EquipmentInstance CreateDemoBow() {return CreateCommon(DemoBow,1,10f);}
+    public static EquipmentInstance CreateDemoStaff() {return CreateCommon(DemoStaff,1,10f);}
 
     // Pure-data validation; never silently fabricate random stats on load.
     public static bool IsValid(EquipmentInstance item)

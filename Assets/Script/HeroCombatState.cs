@@ -11,6 +11,7 @@ public sealed class HeroCombatState
     public int MaxHP { get; set; }
     // Mutable field is intentional: legacy AdvanceCycle(ref timer) stays exact.
     public float AttackTimer;
+    internal string WeaponIdentity;
     // Fractional health regeneration carries across frames, not respawns.
     public float HealthRegenRemainder;
     public AttackMode WindupMode { get; set; }

@@ -88,6 +88,24 @@ public static class CombatDamage
         return result;
     }
 
+    public static float CaptureBasicBoost(EntityDataSO attacker,AttackMode mode)
+    {
+        var school=mode==AttackMode.RangedMagic?DamageSchool.Magical:DamageSchool.Physical;
+        var tags=CombatStats.AttackTags(mode,school,ElementType.Vo);
+        return CombatStats.Get(attacker,school==DamageSchool.Magical?CombatStatId.MagicalDamagePercent:
+            CombatStatId.PhysicalDamagePercent,0f,ElementType.Vo,tags)+
+            CombatStats.Get(attacker,CombatStatId.ElementDamagePercent,0f,ElementType.Vo,tags);
+    }
+    public static int ResolveBasicSnapshot(int rolled,float boost,EntityDataSO defender,
+        AttackMode mode,CombatResistanceSettings settings)
+    {
+        // Offensive stats were frozen at release. Reuse the existing defense evaluator.
+        return Resolve(null,defender,mode,new[]{new CombatDamagePart {
+            school=mode==AttackMode.RangedMagic?DamageSchool.Magical:DamageSchool.Physical,
+            fixedDamage=Math.Max(0f,rolled)*Math.Max(0f,1f+boost)
+        }},settings).totalDamage;
+    }
+
     public static int ResolveLegacy(int alreadyRolled, EntityDataSO attacker,
         EntityDataSO defender, AttackMode mode, CombatResistanceSettings settings)
     {

@@ -33,9 +33,10 @@ namespace IdleGame.Tests.Presentation.PlayMode
         }
         static object Call(object target,string name,params object[] args)
         {
-            foreach(var method in target.GetType().GetMethods(Members))
+            var type=target as Type ?? target.GetType();
+            foreach(var method in type.GetMethods(Members|BindingFlags.Static))
                 if(method.Name==name && method.GetParameters().Length==args.Length)
-                    return method.Invoke(target,args);
+                    return method.Invoke(target is Type?null:target,args);
             throw new MissingMethodException(target.GetType().Name,name);
         }
         static Vector2 Position(Component space,RectTransform rect)
@@ -227,6 +228,19 @@ namespace IdleGame.Tests.Presentation.PlayMode
                 new Vector3(bounds.xMin+bounds.width*uv.x,bounds.yMin+bounds.height*uv.y,0)));
         }
 
+        static void EquipPrimaryWeapon(Fixture f,int mode)
+        {
+            var hero=Get(f.Manager,"HeroData");
+            var factory=Runtime("EquipmentFoundation");
+            Call(Runtime("EquipmentRuntime"),"InitializeNewRun",hero);
+            if(mode!=0) {
+                var item=Call(factory,mode==1?"CreateDemoBow":"CreateDemoStaff");
+                Assert.That(Call(Runtime("EquipmentRuntime"),"AddInstance",hero,item),Is.True);
+                Assert.That(Call(Runtime("EquipmentRuntime"),"Equip",hero,Get(item,"instanceId"),
+                    Enum.Parse(Runtime("EquipmentSlot"),"Weapon")),Is.True);
+            }
+            Call(Get(f.Manager,"combatManager"),"RefreshWeaponAttack",f.Primary);
+        }
         [TestCase(1,600f)]
         [TestCase(1,800f)]
         [TestCase(1,1150f)]
@@ -240,7 +254,7 @@ namespace IdleGame.Tests.Presentation.PlayMode
             using(var f=new Fixture(projectionWidth))
             {
                 Set(f.Primary,"enableRangedLaneMotion",true);
-                Call(f.Primary,"ChangeAttackMode",mode);
+                EquipPrimaryWeapon(f,mode);
                 var rect=(RectTransform)Get(f.Primary,"heroRect");
                 float low=f.Area.rect.yMin+12f,high=f.Area.rect.yMax-12f;
                 for(int life=0;life<3;life++)
@@ -296,7 +310,7 @@ namespace IdleGame.Tests.Presentation.PlayMode
                 Assert.That((float)Get(f.Space,"maxHeroMovementDeltaTime"),Is.EqualTo(1f/30f));
                 Set(f.Primary,"useStanceMoveSpeeds",true);
                 Set(f.Primary,"meleeMoveSpeed",450f);Set(f.Primary,"physicalMoveSpeed",450f);Set(f.Primary,"magicMoveSpeed",200f);
-                Call(f.Primary,"ChangeAttackMode",mode);
+                EquipPrimaryWeapon(f,mode);
                 var rect=(RectTransform)Get(f.Primary,"heroRect");
                 Call(f.Space,"SetPosition",rect,new Vector2(576,0));
                 var fx=(Component)Runtime("HeroSpawnVfx").GetMethod("Prepare",BindingFlags.Public|BindingFlags.Static)

@@ -4,6 +4,16 @@ Dự án game tu tiên 2D idle, phát triển bằng Unity. Nhân vật tự kh�
 
 > **Trạng thái (25/10/2026): ĐANG PHÁT TRIỂN / KIỂM THỬ NỘI BỘ — CHƯA PHẢI BẢN ALPHA.** Những mốc có chữ “Alpha Accepted” trong trao đổi trước chỉ biểu thị **nghiệm thu tạm thời một hạng mục**, không phải cấp độ phát hành của toàn bộ trò chơi.
 
+## Cập nhật W3.2.4 — 28/10/2026
+
+Hero chính đánh thường theo Weapon: Unarmed/Sword → Melee, Bow → Physical,
+Staff → Magical đơn mục tiêu, không vận chiêu/AoE/×2.5. Bỏ ba nút chọn thế tay;
+Physical/Magical Attack và Compare dùng cùng CombatStats. ControlledLootTest A
+vẫn cấp Sword Common, Bow/Staff có đường grant dev riêng. Xem
+[implementation, migration và smoke test](Docs/W3_2_4_WEAPON_BASIC_ATTACK.md).
+Đã chạy regression Mono/UnityStub; **chưa nghiệm thu Unity/Windows**. Bảng
+24–25/10 và lịch sử bên dưới cần đọc theo thời điểm snapshot.
+
 ## Định hướng core gameplay (bản làm việc, có thể thay đổi)
 
 **Người chơi định hướng — nhân vật tự khám phá, chiến đấu và trưởng thành — kết quả tạo ra lựa chọn mới.** Trọng tâm gần là hoàn thiện chuỗi **chuẩn bị → khám phá → chiến đấu → nhận kết quả → điều chỉnh hướng phát triển**, trước khi mở rộng NPC, sự kiện và tiến triển offline.

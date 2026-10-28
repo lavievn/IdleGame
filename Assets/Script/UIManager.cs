@@ -384,7 +384,6 @@ public class UIManager : MonoBehaviour
     private TMPro.TextMeshProUGUI pauseText, damageText;
     private GameObject damagePanel;
     private HeroController heroForUI;
-    private readonly RectTransform[] attackButtons = new RectTransform[3];
     private RectTransform testSummonButton;
     private TMPro.TextMeshProUGUI testSummonText;
     private string[] displayedDamage = new string[0];
@@ -461,7 +460,7 @@ public class UIManager : MonoBehaviour
         inventoryUI = InventoryPanelUI.Install(this,hudCanvas);
         devUI = new DevBalanceUI(this, combatUIRoot);
         heroForUI = hero;
-        InstallAttackModeButtons();
+        HideLegacyAttackModeButtons();
         // Only a B2 test control. Future permanent companions are a separate feature.
         testSummonButton = SmallButton(canvas, "B2TestSummon", "[B2] Gọi +1 (0/2)",
             new Vector2(0,1), new Vector2(0,1), new Vector2(6,-139),
@@ -543,48 +542,16 @@ public class UIManager : MonoBehaviour
             gm != null && TuTienCore.WorldMapCatalog.Enabled(gm.HeroData));
         if (musicVolumePanel != null) musicVolumePanel.SetVisibleInGameplay(shown);
         if (statsPanel != null) statsPanel.gameObject.SetActive(shown && Screen.height >= 290);
-        for (int i=0;i<attackButtons.Length;i++)
-            if (attackButtons[i] != null) attackButtons[i].gameObject.SetActive(shown);
         if (testSummonButton != null) testSummonButton.gameObject.SetActive(shown);
         if (gm != null && gm.eventLog != null) gm.eventLog.gameObject.SetActive(shown);
         if (mapTitleRect != null) mapTitleRect.gameObject.SetActive(shown && !string.IsNullOrEmpty(mapTitleName));
     }
-    private void InstallAttackModeButtons()
+    private void HideLegacyAttackModeButtons()
     {
-        string[] names = { "Kiếm", "Cung", "Phép" };
-        string[] captions = { "Cận chiến", "Cung", "Phép" };
-        foreach (var rect in Object.FindObjectsByType<RectTransform>(FindObjectsInactive.Include, FindObjectsSortMode.None))
-            for (int i=0;i<3;i++)
-                if (rect.gameObject.name == names[i] && attackButtons[i] == null)
-                {
-                    // Old scene controls have x~1760; preserve original UnityEvent callbacks.
-                    rect.SetParent(hudCanvas,false);
-                    rect.gameObject.SetActive(true);
-                    var click = rect.GetComponent<CustomInteractable>();
-                    if (click != null) RegisterInteractable(click);
-                    if (transparentWindow != null) transparentWindow.RegisterClickable(rect);
-                    var caption=rect.GetComponentInChildren<TMPro.TextMeshProUGUI>(true);
-                    if (caption != null)
-                    {
-                        caption.gameObject.SetActive(true); caption.text=captions[i];
-                        caption.alignment=TMPro.TextAlignmentOptions.Center;
-                        var rt=(RectTransform)caption.transform;
-                        rt.anchorMin=Vector2.zero;rt.anchorMax=Vector2.one;rt.pivot=new Vector2(.5f,.5f);
-                        rt.anchoredPosition=Vector2.zero;rt.sizeDelta=new Vector2(-4,-2);ReadableText(caption,14);
-                    }
-                    attackButtons[i]=rect;
-                }
-    }
-    private void RefreshAttackModeSelection()
-    {
-        if (heroForUI==null) return;
-        for(int i=0;i<attackButtons.Length;i++)
-        {
-            if (attackButtons[i]==null) continue;
-            var bg=attackButtons[i].GetComponent<Image>();
-            if (bg!=null) bg.color=(int)heroForUI.attackMode==i
-                ? new Color(.55f,.34f,.08f,.96f) : new Color(.14f,.24f,.34f,.95f);
-        }
+        // Keep scene data/GUIDs, remove these legacy controls from gameplay and input.
+        foreach(var rect in Object.FindObjectsByType<RectTransform>(FindObjectsInactive.Include,FindObjectsSortMode.None))
+            if(rect.gameObject.name=="Kiếm" || rect.gameObject.name=="Cung" || rect.gameObject.name=="Phép")
+                rect.gameObject.SetActive(false);
     }
     public void OpenDamageInfo()
     {
@@ -909,7 +876,6 @@ public class UIManager : MonoBehaviour
         if (controlsChanged || Screen.width != layoutWidth || Screen.height != layoutHeight || lines != layoutStatLines)
             LayoutReadableUI();
         RefreshCombatHUDVisibility();
-        RefreshAttackModeSelection();
         var gm = Object.FindFirstObjectByType<GameManager>();
         if (testSummonText != null && gm != null)
             testSummonText.text = gm.TestCompanionCount >= GameManager.TestCompanionLimit
@@ -950,10 +916,7 @@ public class UIManager : MonoBehaviour
         // Full stats sit below the 3 top-right tools. Combat log takes the left column.
         float rightWidth = StatsColumnWidth(w);
         float leftWidth = Mathf.Max(150f,w-rightWidth-18f);
-        float buttonWidth = Mathf.Min(116f,(leftWidth-8f)/3f-4f);
-        for(int i=0;i<3;i++) PlaceUI(attackButtons[i],new Vector2(0,1),new Vector2(0,1),
-            new Vector2(6+i*(buttonWidth+4f),-104f),new Vector2(buttonWidth,28f));
-        // Stay below attack modes, at the LEFT of the centered map label.
+        // Keep the B2 tool at its existing position, left of the map label.
         PlaceUI(testSummonButton,new Vector2(0,1),new Vector2(0,1),
             new Vector2(6,-139),new Vector2(Mathf.Min(146,leftWidth-12f),26f));
         foreach(var rect in Object.FindObjectsByType<RectTransform>(FindObjectsInactive.Include,FindObjectsSortMode.None))

@@ -34,6 +34,7 @@ public class CombatManager : MonoBehaviour
         public string source;
         public DamageTrace trace;
         public AttackMode attackMode;
+        public bool staffBasic;
         public BattleEffects.Bolt visual;
     }
     private readonly List<Projectile> projectiles = new List<Projectile>();
@@ -90,6 +91,7 @@ public class CombatManager : MonoBehaviour
         }
         else
             state.Controller = controller;
+        controller.BindBasicAttackData(data,true); // B2 test fallback, no persistent equipment.
         state.BeginLife(data, data.GetCalculatedHealth(controller.attackMode));
         controller.UpdateHealthBar(state.CurrentHP, state.MaxHP);
         controller.UpdateStats(data, state.CurrentHP, state.MaxHP);
@@ -187,6 +189,7 @@ public class CombatManager : MonoBehaviour
         if (hData == null) return;
         lootRewards.Invalidate();
         hData.NormalizeCombatStats();
+        if(heroController!=null)heroController.BindBasicAttackData(hData,false);
         ClearProjectiles();
         if (CombatBalance.HeroDev != null && heroController != null) heroController.moveSpeed = CombatBalance.HeroDev.movementSpeed;
         int initialMaxHP = hData.GetCalculatedHealth(heroController != null ? heroController.attackMode : AttackMode.Melee);
@@ -197,6 +200,7 @@ public class CombatManager : MonoBehaviour
                 oldState.Controller.HideHero();
         heroStates.Clear();
         primaryHeroState.BeginLife(hData, initialMaxHP);
+        primaryHeroState.WeaponIdentity=WeaponBasicAttack.Identity(hData);
         if (heroController != null) heroStates[heroController] = primaryHeroState;
         ResetHeroAttack();
         if (heroController != null)
@@ -334,6 +338,25 @@ public class CombatManager : MonoBehaviour
     public void OnRegisteredHeroModeChanged(HeroController controller)
     {
         RefreshRegisteredHeroStats(controller,true);
+    }
+
+    public void RefreshWeaponAttack(HeroController controller)
+    {
+        var state=StateFor(controller);
+        if(state==null || !controller.UsesWeaponBasicAttack)return;
+        int hp=state.CurrentHP;
+        controller.RefreshWeaponPresentation();
+        state.WeaponIdentity=WeaponBasicAttack.Identity(state.Data);
+        state.MaxHP=state.Data.GetCalculatedHealth(controller.attackMode);
+        // A weapon change can lower the HP cap, but never heal the actor.
+        state.CurrentHP=hp<=0?0:Mathf.Min(hp,state.MaxHP);
+        state.WindupMode=controller.attackMode;
+        ResetRegisteredAttack(state);
+        float speed=CombatStats.Get(state.Data,CombatStatId.AttackSpeed,state.Data.baseAttackSpeed,
+            ElementType.Vo,new[]{CombatStats.StanceTag(controller.attackMode)});
+        state.AttackTimer=WeaponBasicAttack.Interval(controller.attackMode,speed);
+        controller.UpdateHealthBar(state.CurrentHP,state.MaxHP);
+        controller.UpdateStats(state.Data,state.CurrentHP,state.MaxHP);
     }
 
     public void RefreshRegisteredHeroStats(HeroController controller,bool resetAttack=false)
@@ -494,25 +517,30 @@ public class CombatManager : MonoBehaviour
     private void TickRegisteredHeroAttack(HeroCombatState actor,EnvironmentManager space,float dt)
     {
         var hero=actor.Controller;
+        if(hero.UsesWeaponBasicAttack && (actor.WeaponIdentity!=WeaponBasicAttack.Identity(actor.Data) ||
+            hero.attackMode!=WeaponBasicAttack.Resolve(actor.Data)))RefreshWeaponAttack(hero);
+        hero.SyncWeaponMode();
+        bool basic=hero.UsesWeaponBasicAttack;
         AttackMode mode=hero.attackMode;
         if (actor.WindupMode!=mode) { ResetRegisteredAttack(actor); actor.WindupMode=mode; }
         float speed=CombatStats.Get(actor.Data,CombatStatId.AttackSpeed,
             actor.Data.baseAttackSpeed,ElementType.Vo,new [] { CombatStats.StanceTag(mode) });
-        float duration=AttackDuration(mode,speed);
+        float duration=basic?WeaponBasicAttack.Interval(mode,speed):AttackDuration(mode,speed);
         ActiveMonsterInfo target=NearestEligibleMonster(space,actor);
-        if (mode==AttackMode.RangedMagic && (!isBattling || target==null))
+        if (!basic && mode==AttackMode.RangedMagic && (!isBattling || target==null))
         {
             actor.AttackTimer=0f;
             hero.UpdateChargeBar(false,0f);
             return;
         }
-        bool ready=AdvanceCycle(ref actor.AttackTimer,mode,duration,dt);
-        hero.UpdateChargeBar(mode==AttackMode.RangedMagic,actor.AttackTimer/duration);
+        bool ready=AdvanceCycle(ref actor.AttackTimer,basic?AttackMode.Melee:mode,duration,dt);
+        hero.UpdateChargeBar(!basic && mode==AttackMode.RangedMagic,actor.AttackTimer/duration);
         if (!ready || !isBattling || target==null) return;
-        actor.AttackTimer=mode==AttackMode.RangedMagic?0f:duration;
-        hero.UpdateChargeBar(mode==AttackMode.RangedMagic,0f);
+        actor.AttackTimer=!basic && mode==AttackMode.RangedMagic?0f:duration;
+        hero.UpdateChargeBar(!basic && mode==AttackMode.RangedMagic,0f);
         hero.PlayAttackFeedback();
-        var trace=RollDamageTrace(actor.Data,target.data,actor.WindupMode);
+        var trace=basic?SynergyMath.EvaluateBasicDamage(actor.Data,target.data,mode,Random.Range(.85f,1f)):
+            RollDamageTrace(actor.Data,target.data,actor.WindupMode);
         if (mode==AttackMode.Melee)
         {
             if(heroSfx!=null)heroSfx.TryPlay(actor,mode);
@@ -556,8 +584,10 @@ public class CombatManager : MonoBehaviour
         HeroCombatState attacker,float? impactSourceX=null,AttackMode? sourceMode=null)
     {
         if (target == null || attacker == null || attacker.Data == null) return;
-        int damage = CombatDamage.ResolveLegacy(trace.elementDamage,attacker.Data,target.data,
-            sourceMode ?? attacker.SelectedMode,resistanceSettings);
+        var damageMode=sourceMode??attacker.SelectedMode;
+        int damage=trace.weaponBasic?CombatDamage.ResolveBasicSnapshot(trace.elementDamage,trace.basicBoost,
+            target.data,damageMode,resistanceSettings):CombatDamage.ResolveLegacy(trace.elementDamage,attacker.Data,
+            target.data,damageMode,resistanceSettings);
         if (gameManager!=null)
             gameManager.RecordDamage(trace.Describe(1f,1,trace.elementDamage) +
                 (damage != trace.elementDamage ? "\n0.0.51 — Sau bổ trợ và phòng ngự: " + damage : ""));
@@ -708,7 +738,8 @@ public class CombatManager : MonoBehaviour
         DamageTrace trace,float interval,EnvironmentManager space,HeroCombatState actor)
     {
         if (actor==null || actor.Controller==null || actor.Controller.heroRect==null) return;
-        bool magic=mode==AttackMode.RangedMagic;
+        bool staffBasic=fromHero && trace.weaponBasic && mode==AttackMode.RangedMagic;
+        bool magic=mode==AttackMode.RangedMagic && !staffBasic;
         Vector2 start=BodyPosition(fromHero?actor.Controller.heroRect:monster.controller.Rect,space);
         Vector2 end=BodyPosition(fromHero?monster.controller.Rect:actor.Controller.heroRect,space);
         var shot=new Projectile {
@@ -717,7 +748,7 @@ public class CombatManager : MonoBehaviour
             monsterSpawn=monster.controller.SpawnVersion,
             hero=actor,heroLife=actor.LifeVersion,
             heroSpawn=actor.Controller.SpawnVersion,
-            fromHero=fromHero,magic=magic,start=start,end=end,trace=trace,
+            fromHero=fromHero,magic=magic,staffBasic=staffBasic,start=start,end=end,trace=trace,
             attackMode=mode,
             source=IdentityDisplay.Describe(fromHero?actor.Data:monster.data),
             duration=BattleMotion.FlightDuration(magic?magicFlightTime:physicalFlightTime,interval),
@@ -778,7 +809,7 @@ public class CombatManager : MonoBehaviour
             }
             if (t<1f) continue;
             RemoveProjectile(i); // Death callbacks may clear the remaining volley.
-            Impact(end,shot.magic);
+            if(!shot.staffBasic)Impact(end,shot.magic);
             bool hit=false;
             if (shot.fromHero && shot.magic)
             {

@@ -58,3 +58,14 @@ GameManager hoặc SaveManager. Ba projection mô phỏng bằng Canvas scale, k
 kích thước cửa sổ Windows. Chưa chạy/compile bằng Unity thật trong Cloud; các ca
 hình học không thay nghiệm thu rasterization/alpha trong Player.
 Xem `Docs/TerrainSeamHotfix.md` để bật log Editor và nghiệm thu hình ảnh.
+
+
+## W3.2.4 — weapon basic attack
+
+`WeaponBasicAttackTests` thêm **6 ca** pure-data với JsonUtility thật của Unity:
+Sword/Bow/Staff và hai nguồn Attack, JSON round trip trong bộ nhớ, Compare không
+mutation và ID enum/legacy Sword. Không tạo SaveManager, không save I/O, không
+chứng minh render hoặc combat nhiều frame. B2SpawnPositionTests chuyển primary
+mode bằng equip Bow/Staff thực, giữ các assertion vị trí/VFX đã có.
+**Chưa compile/chạy Unity Editor trong Cloud.** Xem checklist gameplay và phạm vi
+Mono tại `Docs/W3_2_4_WEAPON_BASIC_ATTACK.md` ở root repository.

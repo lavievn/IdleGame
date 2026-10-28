@@ -701,13 +701,13 @@ public class GameManager : MonoBehaviour
     private void CaptureSelectedStance()
     {
         if (runtimeHeroData != null && heroController != null)
-            runtimeHeroData.SetSavedAttackMode(heroController.attackMode);
+            runtimeHeroData.SetSavedAttackMode(WeaponBasicAttack.Resolve(runtimeHeroData));
     }
 
     private void RestoreSelectedStance()
     {
         if (runtimeHeroData != null && heroController != null)
-            heroController.ChangeAttackMode((int)runtimeHeroData.savedAttackMode);
+            heroController.BindBasicAttackData(runtimeHeroData,false);
     }
 
     // V2 individual gear: all 8 positions share one canonical inventory.
@@ -757,7 +757,10 @@ public class GameManager : MonoBehaviour
         if (!IsGameplayHUDVisible || runtimeHeroData == null ||
             !EquipmentRuntime.Equip(runtimeHeroData,instanceId,slot)) return false;
         if (combatManager != null)
-            combatManager.RefreshRegisteredHeroStats(heroController,true);
+        {
+            if(slot==EquipmentSlot.Weapon)combatManager.RefreshWeaponAttack(heroController);
+            else combatManager.RefreshRegisteredHeroStats(heroController,true);
+        }
         UpdateEventLog("Đã trang bị vào ô " + slot + ".");
         return true;
     }
@@ -766,7 +769,10 @@ public class GameManager : MonoBehaviour
         if (!IsGameplayHUDVisible || runtimeHeroData == null ||
             !EquipmentRuntime.Unequip(runtimeHeroData,slot)) return false;
         if (combatManager != null)
-            combatManager.RefreshRegisteredHeroStats(heroController,true);
+        {
+            if(slot==EquipmentSlot.Weapon)combatManager.RefreshWeaponAttack(heroController);
+            else combatManager.RefreshRegisteredHeroStats(heroController,true);
+        }
         UpdateEventLog("Đã tháo trang bị ở ô " + slot + ".");
         return true;
     }
@@ -1082,12 +1088,24 @@ public class GameManager : MonoBehaviour
 
     public void SetHeroAttackMode(int modeIndex)
     {
-        if (heroController == null || modeIndex < 0 || modeIndex > 2) return;
-        heroController.ChangeAttackMode(modeIndex);
-        CaptureSelectedStance();
-        if (combatManager != null) combatManager.OnHeroAttackModeChanged();
-        UpdateEventLog($"Đổi thế: {(AttackMode)modeIndex}");
+        // Keep serialized UnityEvent bindings safe; manual stance no longer owns primary attacks.
+        if(heroController!=null)heroController.SyncWeaponMode();
     }
+
+    public bool GrantDevWeaponSamples()
+    {
+        if(!IsGameplayHUDVisible || runtimeHeroData==null)return false;
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        bool bow=EquipmentRuntime.AddInstance(runtimeHeroData,EquipmentFoundation.CreateDemoBow());
+        bool staff=EquipmentRuntime.AddInstance(runtimeHeroData,EquipmentFoundation.CreateDemoStaff());
+        if(bow || staff)UpdateEventLog("[WEAPON TEST] Đã cấp Cung (+10 Physical) / Trượng (+10 Magical), chưa trang bị.");
+        return bow && staff;
+#else
+        return false;
+#endif
+    }
+    [ContextMenu("DEV — Grant Bow and Staff (Play Mode)")]
+    private void GrantDevWeaponSamplesFromInspector() {GrantDevWeaponSamples();}
 
     // Explicit/manual world navigation. The wave loop never changes map.
     public bool TryTravelToWorldMap(string targetId)

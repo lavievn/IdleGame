@@ -3,13 +3,14 @@ using System.Collections.Generic;
 using TuTienCore;
 
 // 0.0.51: shared, serializable stat/condition contract.
-// The game still has three fighting stances; "class" is NOT a C# class per buff.
+// Internal mode tags remain compatible; primary basic attacks follow equipped weapons.
 public enum CombatStatId
 {
     MaxHealth, Attack, Armor, MagicResistance, ElementResistance,
     PhysicalDamagePercent, MagicalDamagePercent, ElementDamagePercent,
     AttackSpeed, MovementSpeed, CastSpeed, CooldownReductionPercent,
-    HealthRegeneration, ManaRegeneration, KillHealBonus
+    HealthRegeneration, ManaRegeneration, KillHealBonus,
+    MagicalAttack // appended: legacy Attack (ID 1) remains Physical Attack
 }
 
 [Serializable]

@@ -133,6 +133,8 @@ partial class MotionRegression
             foreach(var line in item.extraStats) {line.revealed=true;line.requiredRefineLevel=20;}
             SelectComparison(panel,"gear:"+item.instanceId);
             Check(!string.Join("\n",Get<List<string>>(panel,"detailPages").ToArray()).Contains("9876"),"locked values not in totals");
+            // Neutral main stat exercises neutral comparison without relying on removed stance UI.
+            item.mainStats[0].flat=0;
             hero.savedAttackMode=AttackMode.RangedPhysical;panel.Refresh();
             Check(CompareText(panel).Contains("Delta: 0"),"inactive stance neutral");
             Check(!hero.isDirty && !item.isEquipped,"all preview remains pure");

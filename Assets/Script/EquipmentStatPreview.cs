@@ -21,7 +21,8 @@ public sealed class EquipmentStatComparison
 {
     public string candidateId;
     public EquipmentSlot slot;
-    public AttackMode mode;
+    public AttackMode currentMode;
+    public AttackMode mode; // resolved future weapon profile
     public bool isUnequip;
     public readonly List<EquipmentStatLine> lines=new List<EquipmentStatLine>();
 
@@ -31,6 +32,8 @@ public sealed class EquipmentStatComparison
     }
 }
 
+// The mode argument is kept for call compatibility; actual current/future weapon
+// assignments determine the modes, never savedAttackMode or a manual stance.
 // No random affix rolls, no mutation, no application to combat. This service
 // can be called on hover, before equip, or while editing the UI in Play Mode.
 public static class EquipmentStatPreview
@@ -107,6 +110,8 @@ public static class EquipmentStatPreview
                 stat=legacy.stat,flat=legacy.flat
             });
 
+        AttackMode currentMode=WeaponBasicAttack.Resolve(hero);
+        AttackMode nextMode=AttackMode.Melee; // no weapon in the simulated assignment
         var occupied=new HashSet<EquipmentSlot>();
         if(legacy!=null)occupied.Add(EquipmentSlot.Artifact);
         var seenIds=new HashSet<string>(StringComparer.Ordinal);
@@ -122,6 +127,7 @@ public static class EquipmentStatPreview
             EquipmentSlot destination=isCandidate && !currentOnly?slot:item.equippedSlot;
             if(!EquipmentFoundation.IsSlotAllowed(item,destination) ||
                 !seenIds.Add(item.instanceId) || !occupied.Add(destination))continue;
+            if(destination==EquipmentSlot.Weapon)nextMode=WeaponBasicAttack.Mode(WeaponBasicAttack.Family(item));
             for(int i=0;i<item.mainStats.Count;i++)
                 future.Add(EquipmentRefinement.EffectiveModifier(item,item.mainStats[i],
                     EquipmentFoundation.SourcePrefix+item.instanceId+":m:"+i));
@@ -138,7 +144,7 @@ public static class EquipmentStatPreview
         var after=currentOnly?current:future;
         var result=new EquipmentStatComparison {
             candidateId=candidate!=null?candidate.instanceId:legacyCandidate,
-            slot=slot,mode=mode,isUnequip=removing
+            slot=slot,currentMode=currentMode,mode=currentOnly?currentMode:nextMode,isUnequip=removing
         };
         foreach(CombatStatId stat in Enum.GetValues(typeof(CombatStatId)))
         {
@@ -147,9 +153,9 @@ public static class EquipmentStatPreview
             {
                 foreach(ElementType element in Enum.GetValues(typeof(ElementType)))
                     if(element!=ElementType.Vo)
-                        AddLine(result,hero,stat,element,mode,basis,current,after);
+                        AddLine(result,hero,stat,element,basis,current,after);
             }
-            else AddLine(result,hero,stat,ElementType.Vo,mode,basis,current,after);
+            else AddLine(result,hero,stat,ElementType.Vo,basis,current,after);
         }
         return result;
     }
@@ -162,45 +168,36 @@ public static class EquipmentStatPreview
                  StringComparison.Ordinal));
     }
 
+    private static float Raw(EntityDataSO hero,CombatStatId stat,AttackMode mode)
+    {
+        if(stat==CombatStatId.AttackSpeed)return hero.baseAttackSpeed;
+        if(stat!=CombatStatId.MaxHealth)return 0f;
+        long byMode=Math.Max(1,Mathf.RoundToInt(hero.baseHealth*CombatBalance.HeroHealthMultiplier(mode)));
+        long hp=byMode+hero.addedHealth+(mode==AttackMode.Melee?Math.Max(0,hero.meleeGrowthBonus):0);
+        return (float)Math.Max(1,Math.Min(int.MaxValue,hp));
+    }
+    private static float Total(EntityDataSO hero,IEnumerable<CombatStatModifier> mods,
+        CombatStatId stat,ElementType element,AttackMode mode)
+    {
+        if(stat==CombatStatId.Attack || stat==CombatStatId.MagicalAttack)
+            return WeaponBasicAttack.Value(hero,stat,mode,mods);
+        float value=CombatStats.GetWithModifiers(hero,mods,stat,Raw(hero,stat,mode),element,
+            new[]{CombatStats.StanceTag(mode)});
+        if(stat==CombatStatId.MaxHealth)value=Math.Max(1,RoundStat(value));
+        return value;
+    }
     private static void AddLine(EquipmentStatComparison output,
-        EntityDataSO hero,CombatStatId stat,ElementType element,AttackMode mode,
+        EntityDataSO hero,CombatStatId stat,ElementType element,
         List<CombatStatModifier> basis,IEnumerable<CombatStatModifier> before,
         IEnumerable<CombatStatModifier> after)
     {
-        float raw=0f;
-        bool actualTotal=false;
-        if(stat==CombatStatId.Attack)
-        {
-            raw=hero.baseDamage+hero.addedDamage;
-            actualTotal=true;
-        }
-        else if(stat==CombatStatId.MaxHealth)
-        {
-            long byMode=Math.Max(1,Mathf.RoundToInt(
-                hero.baseHealth*CombatBalance.HeroHealthMultiplier(mode)));
-            long hp=byMode+hero.addedHealth+
-                (mode==AttackMode.Melee?Math.Max(0,hero.meleeGrowthBonus):0);
-            raw=(float)Math.Max(1,Math.Min(int.MaxValue,hp));
-            actualTotal=true;
-        }
-        else if(stat==CombatStatId.AttackSpeed)
-        {
-            raw=hero.baseAttackSpeed;
-            actualTotal=true;
-        }
-        var tags=new [] { CombatStats.StanceTag(mode) };
-        float noGear=CombatStats.GetWithModifiers(hero,basis,stat,raw,element,tags);
-        float old=CombatStats.GetWithModifiers(hero,before,stat,raw,element,tags);
-        float next=CombatStats.GetWithModifiers(hero,after,stat,raw,element,tags);
-        if(stat==CombatStatId.Attack || stat==CombatStatId.MaxHealth)
-        {
-            noGear=Math.Max(1,RoundStat(noGear));
-            old=Math.Max(1,RoundStat(old));
-            next=Math.Max(1,RoundStat(next));
-        }
         output.lines.Add(new EquipmentStatLine {
-            stat=stat,element=element,withoutEquipment=noGear,
-            current=old,preview=next,isDerivedGameplayTotal=actualTotal
+            stat=stat,element=element,
+            withoutEquipment=Total(hero,basis,stat,element,output.currentMode),
+            current=Total(hero,before,stat,element,output.currentMode),
+            preview=Total(hero,after,stat,element,output.mode),
+            isDerivedGameplayTotal=stat==CombatStatId.Attack || stat==CombatStatId.MagicalAttack ||
+                stat==CombatStatId.MaxHealth || stat==CombatStatId.AttackSpeed
         });
     }
     private static float RoundStat(float x)
