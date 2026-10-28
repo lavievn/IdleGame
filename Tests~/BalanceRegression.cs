@@ -47,14 +47,14 @@ partial class MotionRegression
             var f=new Field();var d=HeroAt(1);d.currentExp=99;f.combat.SetupHeroInfo(d);
             Set(f.combat,"currentHeroHP",30);var m=f.Monster(-20);f.Battle(m);
             var victim=f.Enemies[0];
-            typeof(CombatManager).GetMethod("HandleMonsterDeath",BindingFlags.NonPublic|BindingFlags.Instance).Invoke(f.combat,new object[]{victim});
+            Lethal(f,victim);
             int hp=Get<int>(f.combat,"currentHeroHP");Check(d.currentLevel>=2,"leveled up");Check(hp>=33&&hp<=36,"melee kill heal after new level");
             Check(hp<Get<int>(f.combat,"maxHeroHP"),"no full level heal");
         });
         Run("ordinary kill healing is capped and there is no idle regeneration",()=>{
             var f=new Field();var d=HeroAt(20);f.combat.SetupHeroInfo(d);var m=f.Monster(-20);f.Battle(m);
             Set(f.combat,"currentHeroHP",f.combat.MaxHeroHP-1);
-            typeof(CombatManager).GetMethod("HandleMonsterDeath",BindingFlags.NonPublic|BindingFlags.Instance).Invoke(f.combat,new object[]{f.Enemies[0]});
+            Lethal(f,f.Enemies[0]);
             Check(Get<int>(f.combat,"currentHeroHP")==f.combat.MaxHeroHP,"heal capped");
             Set(f.combat,"currentHeroHP",100);for(int i=0;i<100;i++)CombatStep(f,1);
             Check(Get<int>(f.combat,"currentHeroHP")==100,"no idle heal");

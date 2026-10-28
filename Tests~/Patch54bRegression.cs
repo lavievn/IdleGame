@@ -103,7 +103,7 @@ partial class MotionRegression
         });
         Run("hero magic persists after primary dies while physical never retargets",()=>{
             var f=new Field();f.hero.ChangeAttackMode(2);var a=f.Monster(-200);var b=f.Monster(-250);f.Battle(a,b);Tough(f);CombatStep(f,2);
-            var victim=f.Enemies[0];typeof(CombatManager).GetMethod("HandleMonsterDeath",System.Reflection.BindingFlags.Instance|System.Reflection.BindingFlags.NonPublic).Invoke(f.combat,new object[]{victim});
+            var victim=f.Enemies[0];Lethal(f,victim);
             CombatStep(f,1.2f);Check(f.Enemies.Count==1&&f.Enemies[0].currentHP<10000,"remaining enemy receives explosion");
         });
         Run("charge UI is blue, nonblocking, reused and hidden for other attacks and death",()=>{
@@ -134,7 +134,7 @@ partial class MotionRegression
         });
         Run("enemy source death cancels its projectile and stale pooled life cannot deal damage",()=>{
             var f=new Field();var m=f.Monster(-200,AttackMode.RangedMagic);f.Battle(m);CombatStep(f,2);int hp=f.combat.CurrentHeroHP;
-            var victim=f.Enemies[0];typeof(CombatManager).GetMethod("HandleMonsterDeath",System.Reflection.BindingFlags.Instance|System.Reflection.BindingFlags.NonPublic).Invoke(f.combat,new object[]{victim});
+            var victim=f.Enemies[0];Lethal(f,victim);
             int healed=f.combat.CurrentHeroHP;m.gameObject.SetActive(true);CombatStep(f,1.2f);
             Check(f.combat.PendingProjectileCount==0&&f.combat.CurrentHeroHP==healed,"dead shooter cannot hit after pooled activation");
         });

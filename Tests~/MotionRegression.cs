@@ -115,6 +115,9 @@ partial class MotionRegression
 
     static void Main(string[] args)
     {
+        if(args.Length==1 && args[0]=="--combat-loot") {
+            CombatLootTests();BalanceTests();Patch54bTests();return;
+        }
         if(args.Length==1 && args[0]=="--inventory-compare") {
             EquipmentStatPreviewRegressionTests();InventoryComparisonTests();
             ManagementWindowRegressionTests();InventoryArtThemeRegressionTests();return;

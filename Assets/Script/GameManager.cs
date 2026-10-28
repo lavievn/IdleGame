@@ -29,6 +29,20 @@ public class GameManager : MonoBehaviour
     [SerializeField] private CombatManager combatManager;
     [SerializeField] private SaveManager saveManager;
 
+    [Header("DEV ONLY — Controlled Loot Test A (default Off)")]
+    [Tooltip("Editor/Development Build only: accepted kills give the primary Hero one Common demo sword. Not official progression.")]
+    [SerializeField] private bool controlledLootTest;
+    public bool ControlledLootTestEnabled
+    {
+        get {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            return controlledLootTest;
+#else
+            return false;
+#endif
+        }
+    }
+
     public List<GameObject> activeMonsters = new List<GameObject>();
 
     // B2-only test harness; NOT the future permanent companion/encounter system.
@@ -1254,6 +1268,7 @@ public class GameManager : MonoBehaviour
 
     private void OnDisable()
     {
+        if(combatManager!=null)combatManager.SuspendLootEncounter();
         var space=environmentManager!=null?environmentManager:EnvironmentManager.Instance;
         if(space!=null)space.CancelCameraEntryHandoff();
         // Restore presentation on cancellation, but never spawn a wave while
@@ -1269,6 +1284,7 @@ public class GameManager : MonoBehaviour
     }
     private void OnEnable()
     {
+        if(combatManager!=null)combatManager.ResumeLootEncounter();
         if(!resumeEntryWave)return;
         resumeEntryWave=false;
         if(hasDeployed && heroController!=null && heroController.IsDeployed)

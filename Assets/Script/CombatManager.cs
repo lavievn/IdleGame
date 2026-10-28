@@ -161,8 +161,14 @@ public class CombatManager : MonoBehaviour
         public float attackTimer;
         public AttackMode cycleMode;
         public int lifeId;
+        internal CombatLootRewards.KillKey lootKey;
+        internal bool acceptedLethalDamage;
     }
+    private bool resumeEncounterAfterEnable;
     private int monsterLifeSequence;
+    private readonly CombatLootRewards lootRewards=new CombatLootRewards();
+    private EntityDataSO LootRecipient => gameManager!=null
+        ? (gameManager.isActiveAndEnabled?gameManager.HeroData:null):runtimeHeroData;
 
     private readonly List<ActiveMonsterInfo> activeMonsters = new List<ActiveMonsterInfo>();
 
@@ -179,6 +185,7 @@ public class CombatManager : MonoBehaviour
     public void SetupHeroInfo(EntityDataSO hData)
     {
         if (hData == null) return;
+        lootRewards.Invalidate();
         hData.NormalizeCombatStats();
         ClearProjectiles();
         if (CombatBalance.HeroDev != null && heroController != null) heroController.moveSpeed = CombatBalance.HeroDev.movementSpeed;
@@ -202,6 +209,7 @@ public class CombatManager : MonoBehaviour
     public void StartBattle(List<GameObject> monsters, EntityDataSO baseMonsterData)
     {
         ClearBattle(true,true); // Wave change retires old damage, not Magic visuals.
+        lootRewards.BeginEncounter(LootRecipient);
         foreach (var m in monsters)
         {
             if (m == null) continue;
@@ -209,6 +217,7 @@ public class CombatManager : MonoBehaviour
             info.lifeId = ++monsterLifeSequence;
             info.go = m;
             info.controller = m.GetComponent<MonsterController>();
+            info.lootKey=lootRewards.Register(info.lifeId,info.controller!=null?info.controller.SpawnVersion:0);
             info.data = Instantiate(baseMonsterData);
             WorldMapNode worldNode = null;
             bool onWorldMap = WorldMapCatalog.Enabled(runtimeHeroData) &&
@@ -562,7 +571,9 @@ public class CombatManager : MonoBehaviour
         HeroCombatState attacker,float? impactSourceX=null)
     {
         if (target==null || !activeMonsters.Contains(target) || target.controller==null ||
-            !target.controller.IsAlive || !IsRegistered(attacker)) return;
+            !target.controller.IsAlive || !IsRegistered(attacker) ||
+            target.controller.SpawnVersion!=target.lootKey.Spawn ||
+            !lootRewards.IsCurrent(target.lootKey,LootRecipient)) return;
         target.currentHP=Mathf.Max(0,target.currentHP-damage);
         if (gameManager!=null)
         {
@@ -580,7 +591,10 @@ public class CombatManager : MonoBehaviour
             away=DamagePopupMotion.AwaySign(space.Position(target.controller.Rect).x,fromX,-1f);
         }
         target.controller.ShowDamage(damage,away);
-        if (target.currentHP==0) HandleMonsterDeathBy(target,attacker);
+        if (target.currentHP==0) {
+            target.acceptedLethalDamage=true;
+            HandleMonsterDeathBy(target,attacker);
+        }
     }
 
     // Keep the old one-argument reflection entry point in legacy tests.
@@ -590,7 +604,11 @@ public class CombatManager : MonoBehaviour
     }
     private void HandleMonsterDeathBy(ActiveMonsterInfo target,HeroCombatState attacker)
     {
-        if (target==null || !activeMonsters.Contains(target)) return;
+        if (target==null || !target.acceptedLethalDamage || target.currentHP!=0 ||
+            target.data==null || target.controller==null || !target.controller.IsAlive ||
+            target.controller.SpawnVersion!=target.lootKey.Spawn ||
+            !IsRegistered(attacker) || attacker.Data==null || !activeMonsters.Contains(target) ||
+            !lootRewards.TryClaim(target.lootKey,LootRecipient)) return;
         activeMonsters.Remove(target);
         if (target.controller!=null) target.controller.MarkDead();
         int exp=CombatBalance.KillExp(target.data.currentLevel)*
@@ -611,6 +629,16 @@ public class CombatManager : MonoBehaviour
         }
         if (gameManager!=null)
             gameManager.UpdateEventLog("Hạ "+IdentityDisplay.Describe(target.data)+". Nhận "+exp+" EXP!");
+        string lootItem,lootError;
+        var lootOutcome=lootRewards.Complete(target.lootKey,LootRecipient,
+            gameManager!=null && gameManager.ControlledLootTestEnabled,out lootItem,out lootError);
+        if(lootOutcome==CombatLootRewards.Outcome.Awarded)
+            gameManager.UpdateEventLog("[LOOT TEST A] Đang bật · Nhận Thiết Kiếm (Common) vào Kho đồ.");
+        else if(lootOutcome==CombatLootRewards.Outcome.Failed)
+        {
+            Debug.LogError(lootError);
+            if(gameManager!=null)gameManager.UpdateEventLog("[LOOT TEST A] Lỗi cấp đồ; đã dừng thưởng test. Xem Console.");
+        }
         monsterSpawner.DespawnMonster(target.go);
         if (target.data!=null) Destroy(target.data);
         if (gameManager!=null) gameManager.OnMonsterDied(target.go);
@@ -863,7 +891,36 @@ public class CombatManager : MonoBehaviour
         }
         if (effects != null) effects.Pan(amount);
     }
-    void OnDisable() { if(heroSfx!=null)heroSfx.StopAll();ClearProjectiles(); ResetAllHeroAttacks(); }
+    internal void SuspendLootEncounter()
+    {
+        resumeEncounterAfterEnable=activeMonsters.Count>0;
+        lootRewards.Invalidate();battleVersion++;
+    }
+    void OnDisable()
+    {
+        SuspendLootEncounter();
+        if(heroSfx!=null)heroSfx.StopAll();ClearProjectiles();ResetAllHeroAttacks();
+    }
+    void OnEnable() {ResumeLootEncounter();}
+    internal void ResumeLootEncounter()
+    {
+        if(!resumeEncounterAfterEnable)return;
+        resumeEncounterAfterEnable=false;
+        // Resume combat only after explicitly validating every surviving life.
+        // Re-enabled actors do not inherit any old receipt/projectile context.
+        if(!lootRewards.MatchesOwner(LootRecipient) ||
+            !ReferenceEquals(runtimeHeroData,LootRecipient))return;
+        foreach(var info in activeMonsters)
+            if(info.data==null || info.currentHP<=0 || info.controller==null ||
+                !info.controller.IsAlive || info.controller.SpawnVersion!=info.lootKey.Spawn)return;
+        battleVersion++; // Also retire any volley emitted while only the owner was disabled.
+        lootRewards.BeginEncounter(LootRecipient);
+        foreach(var info in activeMonsters)
+        {
+            info.lootKey=lootRewards.Register(info.lifeId,info.controller.SpawnVersion);
+            info.acceptedLethalDamage=false;
+        }
+    }
     void OnDestroy()
     {
         if (Instance == this) Instance = null;
@@ -874,6 +931,8 @@ public class CombatManager : MonoBehaviour
     public void ClearWaveKeepingMagicVisuals() {ClearBattle(false,true);}
     private void ClearBattle(bool preserveHeroAttack,bool keepMagicVisuals=false)
     {
+        resumeEncounterAfterEnable=false;
+        lootRewards.Invalidate();
         battleVersion++;
         isBattling = false;
         if (!preserveHeroAttack) ResetAllHeroAttacks();

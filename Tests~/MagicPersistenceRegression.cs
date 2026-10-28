@@ -15,7 +15,7 @@ partial class MotionRegression
     static int SparkCount(Field f) {return Get<IList>(Get<BattleEffects>(f.combat,"effects"),"sparks").Count;}
     static void KillInfo(Field f,CombatManager.ActiveMonsterInfo info)
     {
-        typeof(CombatManager).GetMethod("HandleMonsterDeath",System.Reflection.BindingFlags.Instance|System.Reflection.BindingFlags.NonPublic).Invoke(f.combat,new object[]{info});
+        Lethal(f,info);
     }
     static void MagicPersistenceTests()
     {

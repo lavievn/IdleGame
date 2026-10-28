@@ -135,7 +135,7 @@ partial class MotionRegression
                     typeof(CombatManager).GetMethod("DealDamageToHero",BindingFlags.NonPublic|BindingFlags.Instance).Invoke(f.combat,new object[]{10});
                     Check(Get<int>(f.combat,"currentHeroHP")==200-(mode==1?10:5),"damage multiplier");
                     var m=f.Monster(-20);f.Battle(m);int expected=CombatBalance.KillExp(f.Enemies[0].data.currentLevel)*(mode==1?3:1);
-                    typeof(CombatManager).GetMethod("HandleMonsterDeath",BindingFlags.NonPublic|BindingFlags.Instance).Invoke(f.combat,new object[]{f.Enemies[0]});
+                    Lethal(f,f.Enemies[0]);
                     Check(hero.currentExp==expected,"EXP multiplier");
                     gm.SetDifficulty(0);Check(gm.IsHardMode==(mode==1),"legacy switch cannot change map difficulty");
                 } finally {Directory.Delete(dir,true);}
