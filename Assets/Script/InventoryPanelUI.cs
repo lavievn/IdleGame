@@ -904,8 +904,8 @@ public sealed class InventoryPanelUI : MonoBehaviour
             bannerText.text=hero==null?
                 "HÀNH TRANG TU SĨ\nBảo vật trong túi Càn Khôn" :
                 "HÀNH TRANG TU SĨ\n"+
-                "Cấp "+hero.currentLevel+"  ·  Bản đồ "+hero.mapNumber+
-                "  ·  Vàng "+hero.gold+"\n"+
+                "Cấp "+hero.currentLevel+"  ·  Vàng "+hero.gold+"\n"+
+                HudW3View.MapName(hero)+"  ·  Wave "+HudW3View.MapWave(hero)+"/5\n"+
                 "Tâm pháp · Võ học · Luyện chế: sẽ mở trong các giai đoạn tiếp theo";
         if(forgeButton!=null)forgeButton.gameObject.SetActive(selected!=null && selected.gear!=null);
         equipText.text=selected!=null && !selected.equipped && (selected.gear!=null || selected.legacy) ?
@@ -957,7 +957,7 @@ public sealed class InventoryPanelUI : MonoBehaviour
                 Place(topBanner,0f,0f,combatWidth,bannerHeight);
                 var bannerRect=(RectTransform)bannerText.transform;
                 Place(bannerRect,25f,18f,
-                    Mathf.Min(460f,combatWidth-48f),88f);
+                    Mathf.Min(460f,combatWidth-48f),Mathf.Min(132f,Mathf.Max(24f,bannerHeight-36f)));
                 Place(mapArtwork,0f,0f,combatWidth,bannerHeight);
                 Place(heroArtwork,combatWidth*.44f,8f,
                     combatWidth*.40f,Mathf.Max(32f,bannerHeight-14f));
@@ -1155,7 +1155,7 @@ public sealed class InventoryPanelUI : MonoBehaviour
             new Color(.16f,.29f,.30f,.98f),false);
 
         EntityDataSO hero=Hero();
-        InventoryMapArt map=art==null || hero==null?null:art.FindMap(hero.mapNumber);
+        InventoryMapArt map=art==null || hero==null?null:art.FindMapForHero(hero);
         bool preserve=art==null || art.preserveSplashAspect;
         OptionalArt(mapArtwork,map!=null && map.mapSplash!=null?map.mapSplash:
             art==null?null:art.defaultMapSplash,preserve,false,

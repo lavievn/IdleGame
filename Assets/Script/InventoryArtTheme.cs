@@ -55,7 +55,7 @@ public sealed class InventoryArtTheme : ScriptableObject
     public Sprite defaultMapSplash;
 
     [Header("04. CAC MAU SPLASH MAP")]
-    [Tooltip("MapNumber phai trung EntityDataSO.mapNumber. De trong sprite nao se su dung anh mac dinh.")]
+    [Tooltip("World-map dùng worldMapId (ví dụ TV-20); save legacy dùng mapNumber. Thiếu ảnh/map khớp sẽ dùng ảnh mặc định.")]
     public List<InventoryMapArt> mapArts = new List<InventoryMapArt>();
 
     [Header("05. CACH HIEN THI")]
@@ -85,13 +85,25 @@ public sealed class InventoryArtTheme : ScriptableObject
     public int HudRevision => hudRevision;
     private void OnValidate() {unchecked {hudRevision++;}}
 
+    // World-map identities and legacy sequential numbers are separate namespaces.
+    // A modern save must never pick artwork from its stale legacy mapNumber.
+    public InventoryMapArt FindMapForHero(EntityDataSO hero)
+    {
+        if(hero==null)return null;
+        if(!TuTienCore.WorldMapCatalog.Enabled(hero))return FindMap(hero.mapNumber);
+        if(mapArts==null || string.IsNullOrEmpty(hero.worldMapId))return null;
+        foreach(var entry in mapArts)
+            if(entry!=null && string.Equals(entry.worldMapId,hero.worldMapId,StringComparison.Ordinal))return entry;
+        return null;
+    }
+
     public InventoryMapArt FindMap(int mapNumber)
     {
         if (mapArts == null) return null;
         for(int i=0;i<mapArts.Count;i++)
         {
             var entry=mapArts[i];
-            if(entry != null && entry.mapNumber==mapNumber)return entry;
+            if(entry != null && string.IsNullOrEmpty(entry.worldMapId) && entry.mapNumber==mapNumber)return entry;
         }
         return null;
     }
@@ -100,8 +112,10 @@ public sealed class InventoryArtTheme : ScriptableObject
 [Serializable]
 public sealed class InventoryMapArt
 {
+    [Tooltip("ID catalog world-map, ví dụ TV-20. Bỏ trống để cấu hình một map legacy bằng mapNumber.")]
+    public string worldMapId = "";
     [Min(1)]
-    [Tooltip("So map trong game (EntityDataSO.mapNumber).")]
+    [Tooltip("Số map legacy (worldMapVersion = 0), chỉ dùng khi worldMapId của entry trống.")]
     public int mapNumber = 1;
     [Tooltip("Ten map tuy chon de tham khao trong Inspector.")]
     public string displayName = "";

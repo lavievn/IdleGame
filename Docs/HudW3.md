@@ -64,3 +64,25 @@ Lỗi UnityEditor.Search/video/TLS khi khởi động nằm ngoài diff.
 Còn nghiệm thu Windows Player với native transparent-window input, resize
 desktop thật và artwork do người phát triển gán sau này. Không đổi save/schema,
 AI, damage, loot RNG, cờ thử nghiệm, sprite 200% hoặc battleground +20px.
+
+## Hoàn thiện ngữ cảnh map trong Inventory — 05/11/2026
+
+Banner Inventory đọc chung tên/wave với HUD; không dùng số map legacy để mô tả
+world-map. Chiều cao vùng chữ đáp ứng dòng map/wave thêm vào trong cửa sổ mở rộng.
+Khi HeroData được thay snapshot (như sau Load/Travel), Refresh lấy ngữ cảnh mới.
+
+`Inventory Art Theme > mapArts > worldMapId` gán ID catalog, ví dụ `TV-20` hoặc
+`XD-11`, cho save world-map. Để ID entry trống và dùng `mapNumber` cho save legacy.
+Các entry theme cũ tiếp tục hoạt động với legacy; chúng không được chọn nhầm chỉ
+vì save world-map còn giữ `mapNumber = 1`. Không khớp ID hoặc thiếu ảnh thì dùng
+ảnh mặc định của theme, hoặc nền màu nếu theme/ảnh đang tắt. Không sửa asset cũ.
+
+Nút Bản đồ vô hiệu trên save legacy/thiếu nguồn world-map, tự bật lại khi snapshot
+hiện hành hỗ trợ world-map. Trạng thái này vẫn chặn click-through và không bị
+mất khi áp lại theme. Không thay đổi điều kiện mở map ở gameplay.
+
+Validation trên mã của nhóm này: `InventoryMapContextTests` 7 ca cùng 1 hồi quy
+HUD map đạt **8/8 Unity Play Mode**, Mono `--inventory-compare` **18 nhóm đạt**.
+Fixture không tạo SaveManager hoặc thực hiện save I/O; thay snapshot trực tiếp
+để kiểm binding UI, không phải kiểm thử end-to-end Save/Load. Kiểm callback map
+qua hit-test/handler, không bấm chuột thật hoặc chạy Windows Player ở nhóm này.

@@ -153,6 +153,7 @@ public partial class UIManager : MonoBehaviour
     {
         if (worldMapUI != null && worldMapUI.HitMapSurface(mousePos)) return true;
         if(martialButton!=null && martialButton.gameObject.activeInHierarchy && RectTransformUtility.RectangleContainsScreenPoint(martialButton,mousePos,null))return true;
+        if(!worldMapButtonAvailable && worldMapButton!=null && worldMapButton.gameObject.activeInHierarchy && RectTransformUtility.RectangleContainsScreenPoint(worldMapButton,mousePos,null))return true;
         foreach (var item in interactables)
         {
             if (item != null && item.isActiveAndEnabled && RectTransformUtility.RectangleContainsScreenPoint(item.GetRect(), mousePos, null))

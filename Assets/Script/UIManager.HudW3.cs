@@ -23,6 +23,7 @@ public partial class UIManager
     private TextMeshProUGUI logToggleLabel;
     private int appliedHudLayout;
     private bool themeDirty=true;
+    private bool worldMapButtonAvailable=true;
     private InventoryArtTheme appliedTheme;
     private bool appliedArtEnabled;
     private int appliedThemeRevision;
@@ -102,6 +103,12 @@ public partial class UIManager
         {
             martialButton.GetComponent<Image>().color=new Color(.10f,.15f,.16f,1);
             martialButton.GetComponentInChildren<TextMeshProUGUI>(true).color=new Color(.49f,.58f,.58f,1);
+        }
+        if(worldMapButton!=null)
+        {
+            var caption=worldMapButton.GetComponentInChildren<TextMeshProUGUI>(true);
+            if(caption!=null)caption.color=worldMapButtonAvailable?Color.white:new Color(.49f,.58f,.58f,1);
+            if(!worldMapButtonAvailable)worldMapButton.GetComponent<Image>().color=new Color(.10f,.15f,.16f,1);
         }
         if(inventoryUI!=null)inventoryUI.ApplyTheme();
     }
@@ -207,8 +214,18 @@ public partial class UIManager
         t.rectTransform.offsetMin=new Vector2(4,2);t.rectTransform.offsetMax=new Vector2(-4,-2);
         t.fontSize=font;t.enableAutoSizing=false;t.enableWordWrapping=false;t.overflowMode=TextOverflowModes.Ellipsis;
     }
+    private void RefreshWorldMapAvailability()
+    {
+        if(worldMapButton==null)return;
+        bool available=worldMapUI!=null && hudGame!=null && TuTienCore.WorldMapCatalog.Enabled(hudGame.HeroData);
+        if(available==worldMapButtonAvailable)return;
+        worldMapButtonAvailable=available;
+        worldMapButton.GetComponent<CustomInteractable>().enabled=available;
+        themeDirty=true;
+    }
     private void TickHudW3()
     {
+        RefreshWorldMapAvailability();
         RefreshHudTheme();
         if(w3!=null)w3.Render(hudGame,CombatManager.Instance,inventoryUseArtTheme?inventoryArtTheme:null);
         if(logToggleLabel!=null)

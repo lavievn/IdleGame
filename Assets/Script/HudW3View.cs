@@ -151,14 +151,14 @@ internal sealed class HudW3View
             distanceFill.rectTransform.anchorMax=new Vector2(target>0?(float)progress/target:0,1);
         }
     }
-    private static string MapName(EntityDataSO data)
+    internal static string MapName(EntityDataSO data)
     {
         if(data==null)return "Chưa vào map";
         WorldMapNode node;
         if(WorldMapCatalog.Enabled(data))return WorldMapCatalog.TryGet(data.worldMapId,out node)?node.Name:"Map "+data.worldMapId;
         return string.IsNullOrWhiteSpace(data.mapName)?"Bản đồ "+data.mapNumber:data.mapName;
     }
-    private static int MapWave(EntityDataSO data)
+    internal static int MapWave(EntityDataSO data)
     {
         return data==null?0:Mathf.Clamp(WorldMapCatalog.Enabled(data)?data.worldMapLoopWave:data.completedWavesInMap+1,1,5);
     }
