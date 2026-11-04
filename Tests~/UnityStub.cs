@@ -92,6 +92,8 @@ namespace UnityEngine
         private Vector3 local;
         public virtual Vector3 localPosition { get { return local; } set { local = value; } }
         public Vector3 localScale = Vector3.one;
+        // Stored pose only. Native rotation/rendering is verified in Unity.
+        public Vector3 localEulerAngles;
         public Vector3 position { get { return parent == null ? localPosition : parent.TransformPoint(localPosition); } set { localPosition = parent == null ? value : parent.InverseTransformPoint(value); } }
         public Vector3 TransformPoint(Vector3 p) { p = localPosition + Vector3.Scale(p, localScale); return parent == null ? p : parent.TransformPoint(p); }
         public Vector3 InverseTransformPoint(Vector3 p) { if (parent != null) p = parent.InverseTransformPoint(p); p -= localPosition; return new Vector3(p.x/localScale.x,p.y/localScale.y,p.z/localScale.z); }

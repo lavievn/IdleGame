@@ -1,0 +1,190 @@
+using System.Collections.Generic;
+using UnityEngine;
+using UnityEngine.UI;
+
+// Cosmetic receipts only: inventory has already received the item. Never grants,
+// equips, saves or holds a monster reference; pooled actors can disappear safely.
+public sealed class LootDropPresentation : MonoBehaviour
+{
+    [SerializeField] private Sprite swordSprite;
+    [Tooltip("Kích thước icon theo pixel màn hình, giữ dễ nhìn khi đổi cỡ cửa sổ.")]
+    [SerializeField, Min(8f)] private float iconSize = 40f;
+    [SerializeField, Min(0f)] private float jumpHeight = 42f;
+    [SerializeField, Min(.05f)] private float dropDuration = .6f;
+    [SerializeField, Min(0f)] private float collectDelay = .5f;
+    [SerializeField, Min(.05f)] private float collectDuration = .55f;
+    [SerializeField] private RectTransform inventoryTarget;
+    private const int MaxVisibleDrops = 48;
+    private const float GroundOffset = 8f;
+    private sealed class Drop
+    {
+        public RectTransform Root, Icon;
+        public Image Image;
+        public float Age;
+        public bool Landed, Collecting;
+        public Vector2 FlightStart;
+    }
+    private readonly List<Drop> drops = new List<Drop>();
+    private readonly List<RectTransform> roots = new List<RectTransform>();
+    private RectTransform area;
+    private Canvas areaCanvas;
+    private bool missingSpriteReported;
+    public IReadOnlyList<RectTransform> Roots => roots;
+    public int Count => drops.Count;
+
+    public static LootDropPresentation Install(CombatManager owner)
+    {
+        var existing = owner.GetComponent<LootDropPresentation>();
+        return existing != null ? existing : owner.gameObject.AddComponent<LootDropPresentation>();
+    }
+
+    public void Show(RectTransform battlefield, Vector2 foot, string templateId,
+        string instanceId, BattleEffects effects)
+    {
+        // Profile A currently grants only this template. Do not depict an unknown
+        // future item as a sword or silently create additional inventory items.
+        if (!isActiveAndEnabled || battlefield == null ||
+            templateId != EquipmentFoundation.DemoSword || string.IsNullOrEmpty(instanceId)) return;
+        if (swordSprite == null) swordSprite = Resources.Load<Sprite>("Loot/iron_sword");
+        if (swordSprite == null)
+        {
+            if (!missingSpriteReported)
+                Debug.LogWarning("[LOOT VISUAL] Missing Sprite Resources/Loot/iron_sword; inventory reward is unaffected.");
+            missingSpriteReported = true;
+            return;
+        }
+        if (area != battlefield)
+        {
+            Clear(); area = battlefield;
+            for (Transform p = area; p != null; p = p.parent)
+            {
+                areaCanvas = p.GetComponent<Canvas>();
+                if (areaCanvas != null) break;
+            }
+        }
+        if (drops.Count >= MaxVisibleDrops) Retire(0);
+
+        var root = new GameObject("Dropped Sword " + instanceId, typeof(RectTransform)).GetComponent<RectTransform>();
+        root.SetParent(area, false);
+        root.anchorMin = root.anchorMax = area.pivot;
+        root.pivot = new Vector2(.5f, .5f);
+        root.sizeDelta = Vector2.zero;
+        root.anchoredPosition = foot;
+        var go = new GameObject("Sword", typeof(RectTransform), typeof(CanvasRenderer), typeof(Image));
+        var icon = (RectTransform)go.transform;
+        icon.SetParent(root, false);
+        icon.anchorMin = icon.anchorMax = icon.pivot = new Vector2(.5f, .5f);
+        SizeIcon(icon);
+        var image = go.GetComponent<Image>();
+        image.sprite = swordSprite;
+        image.preserveAspect = true;
+        image.raycastTarget = false;
+        var drop = new Drop { Root = root, Icon = icon, Image = image };
+        drops.Add(drop); roots.Add(root);
+        Pose(drop);
+        if (effects != null) effects.Burst(foot + new Vector2(0f, 18f), false, 2f / ProjectionScale);
+    }
+
+    public void Advance(float dt, BattleEffects effects)
+    {
+        if (area == null) { Clear(); return; }
+        dt = Mathf.Max(0f, dt);
+        float duration = Mathf.Max(.05f, dropDuration);
+        float collectAt = duration + Mathf.Max(0f, collectDelay);
+        float flightDuration = Mathf.Max(.05f, collectDuration);
+        for (int i = drops.Count - 1; i >= 0; i--)
+        {
+            var drop = drops[i];
+            if (drop.Root == null || drop.Icon == null || drop.Image == null)
+            { Retire(i); continue; }
+            SizeIcon(drop.Icon);
+            drop.Age = Mathf.Min(collectAt + flightDuration, drop.Age + dt);
+            if (!drop.Landed)
+            {
+                Pose(drop);
+                if (drop.Age >= duration)
+                {
+                    drop.Landed = true;
+                    if (effects != null)
+                        effects.Burst(drop.Root.anchoredPosition + new Vector2(0f, GroundOffset), false, .65f / ProjectionScale);
+                }
+            }
+            if (drop.Age < collectAt) continue;
+            if (!drop.Collecting)
+            {
+                drop.Collecting = true;
+                drop.FlightStart = drop.Root.anchoredPosition + drop.Icon.anchoredPosition;
+                drop.Icon.anchoredPosition = Vector2.zero;
+                // Leave ground depth sorting and scroll coupling during UI flight.
+                roots.Remove(drop.Root);
+                drop.Root.SetAsLastSibling();
+            }
+            float t = Mathf.Clamp01((drop.Age - collectAt) / flightDuration);
+            Vector2 end = CollectionTarget();
+            float ease = t * t;
+            drop.Root.anchoredPosition = new Vector2(
+                Mathf.Lerp(drop.FlightStart.x, end.x, ease),
+                Mathf.Lerp(drop.FlightStart.y, end.y, ease) + 4f * 30f * t * (1f - t));
+            float scale = Mathf.Lerp(1f, .06f, ease);
+            drop.Icon.localScale = new Vector3(scale, scale, 1f);
+            drop.Image.color = new Color(1f, 1f, 1f, 1f - Mathf.Clamp01((t - .8f) / .2f));
+            if (drop.Age >= collectAt + flightDuration) Retire(i);
+        }
+    }
+
+    private float ProjectionScale => areaCanvas != null ? Mathf.Max(.01f, areaCanvas.scaleFactor) : 1f;
+    private void SizeIcon(RectTransform icon)
+    {
+        float size = Mathf.Max(8f, iconSize) / ProjectionScale;
+        icon.sizeDelta = new Vector2(size, size);
+    }
+
+    private Vector2 CollectionTarget()
+    {
+        if (inventoryTarget != null && inventoryTarget.gameObject.activeInHierarchy)
+            return area.InverseTransformPoint(inventoryTarget.TransformPoint(inventoryTarget.rect.center));
+        // BattleArea is a stable logical space and may occupy only part of the
+        // window. Convert the actual screen edge instead of assuming rect.xMax.
+        Camera camera = areaCanvas != null && areaCanvas.renderMode != RenderMode.ScreenSpaceOverlay
+            ? areaCanvas.worldCamera : null;
+        Vector2 target;
+        if (RectTransformUtility.ScreenPointToLocalPointInRectangle(area,
+            new Vector2(Screen.width + 16f, Screen.height * .35f), camera, out target)) return target;
+        return new Vector2(area.rect.xMax + 32f, area.rect.yMax);
+    }
+
+    private void Pose(Drop drop)
+    {
+        float t = Mathf.Clamp01(drop.Age / Mathf.Max(.05f, dropDuration));
+        // Initial lift -> arc -> settle. No RNG and no horizontal displacement
+        // from the victim's captured foot. Root stays fixed for Y-depth sorting.
+        float height = 18f * (1f - t) + 4f * Mathf.Max(0f, jumpHeight) * t * (1f - t);
+        drop.Icon.anchoredPosition = new Vector2(0f, GroundOffset + height);
+        drop.Icon.localEulerAngles = new Vector3(0f, 0f, Mathf.Lerp(20f, -30f, t));
+        float scale = 1f + .18f * (1f - t);
+        drop.Icon.localScale = new Vector3(scale, scale, 1f);
+        drop.Image.color = Color.white;
+    }
+
+    // Ground view displacement, NOT camera-only projectile displacement.
+    public void Pan(float amount)
+    {
+        foreach (var drop in drops)
+            if (!drop.Collecting && drop.Root != null) drop.Root.anchoredPosition += new Vector2(amount, 0f);
+    }
+
+    private void Retire(int index)
+    {
+        var root = drops[index].Root;
+        if (root != null) { root.gameObject.SetActive(false); Destroy(root.gameObject); }
+        drops.RemoveAt(index); roots.Remove(root);
+    }
+    public void Clear()
+    {
+        for (int i = drops.Count - 1; i >= 0; i--) Retire(i);
+        area = null;
+        areaCanvas = null;
+    }
+    void OnDisable() { Clear(); }
+    void OnDestroy() { Clear(); }
+}

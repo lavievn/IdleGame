@@ -1,5 +1,13 @@
 # Kiểm thử vị trí B2 bằng Unity Play Mode
 
+## Hiệu ứng nhận đồ — 04/11/2026
+
+`LootDropPresentationTests` có 5 ca native mới: 3 tỷ lệ Canvas cho sprite/rơi/
+chờ 0,5s/thu nhỏ và bay về mép màn hình, 1 ca coroutine giới hạn/dọn graphics,
+1 ca guard template/ID/RNG. Dùng scene trống; không tạo manager/SaveManager,
+không save I/O. **Chưa compile/chạy trong Unity ở Cloud.** Xem hướng dẫn và
+checklist gameplay tại `Docs/LootDropPresentation.md` ở gốc repo.
+
 Chưa chạy hoặc biên dịch bằng Unity Editor trong Cloud. Ba ca NUnit dùng
 `TestCase`/`Assert.That`, không dùng `Assert.Multiple` hay `NonParallelizable`.
 Assembly chỉ dành cho test; truy cập Assembly-CSharp và Image qua reflection.

@@ -645,6 +645,9 @@ public class GroundPresentation : MonoBehaviour
     {
         depthVisuals.Clear();
         foreach (var rect in decorations) AddDepth(rect);
+        var combat = CombatManager.Instance;
+        if (combat != null && combat.LootDropRoots != null)
+            foreach (var rect in combat.LootDropRoots) AddDepth(rect);
         // Include visible corpses, not only active fighters.
         foreach (var hero in HeroController.VisibleHeroes)
             if (hero != null) AddDepth(hero.heroRect);

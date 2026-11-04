@@ -676,6 +676,7 @@ public class EnvironmentManager : MonoBehaviour
     public void PanEnvironment(float amount)
     {
         if (battleArea == null || groundDetails == null) return;
+        if (CombatManager.Instance != null) CombatManager.Instance.PanLoot(amount);
         EnsureGroundPresentation();
         if (groundPresentation != null) { groundPresentation.Scroll(amount); return; }
         foreach (var detail in groundDetails)
