@@ -45,7 +45,7 @@ namespace IdleGame.Tests.Presentation.PlayMode
                 Primary=Data("Chính",8);
                 C(G(Combat,"CurrentHeroCombatState"),"BeginLife",Primary,200);
             }
-            T Own<T>(T o) where T:UnityEngine.Object {owned.Add(o);return o;}
+            internal T Own<T>(T o) where T:UnityEngine.Object {owned.Add(o);return o;}
             Component Manager(string n)
             {
                 var go=Own(new GameObject(n));go.SetActive(false);return go.AddComponent(R(n));
@@ -182,6 +182,69 @@ namespace IdleGame.Tests.Presentation.PlayMode
                 Assert.That(C(f.UI,"HitControl",point),Is.SameAs(button.GetComponent(R("CustomInteractable"))));
                 C(f.UI,"HandlePointerClick",point,point);Assert.That(clicks,Is.EqualTo(1));
             }
+        }
+        [TestCase("system",false)] [TestCase("system",true)]
+        [TestCase("hero",false)] [TestCase("hero",true)]
+        [TestCase("log",false)] [TestCase("log",true)]
+        [TestCase("damage",false)] [TestCase("damage",true)]
+        public void GameplayBoundaryDismissesNonPausingModalsAndUnblocksRetry(string modal,bool paused)
+        {
+            float before=Time.timeScale;
+            try
+            {
+                using(var f=new Fixture())
+                {
+                    S(f.UI,"hudGame",f.Game);S(f.UI,"gameResolved",true);S(f.Game,"hasDeployed",true);
+                    var menu=f.Own(new GameObject("System menu boundary fixture",typeof(RectTransform)));
+                    menu.transform.SetParent(f.Root,false);menu.SetActive(false);S(f.UI,"systemMenu",menu);
+                    var details=f.Own(new GameObject("Detail boundary fixture",typeof(RectTransform)));
+                    details.transform.SetParent(f.Root,false);details.SetActive(false);S(f.UI,"damagePanel",details);
+                    var label=C(f.UI,"MakeLabel",details.transform,"",Vector2.zero,new Vector2(300,200));S(f.UI,"damageText",label);
+                    var over=f.Own(new GameObject("Game over boundary fixture",typeof(RectTransform)));
+                    var overRect=(RectTransform)over.transform;overRect.SetParent(f.Root,false);
+                    overRect.anchorMin=Vector2.zero;overRect.anchorMax=Vector2.one;overRect.offsetMin=overRect.offsetMax=Vector2.zero;
+                    over.SetActive(false);S(f.Game,"gameOverPanel",over);
+                    int calls=0;
+                    var retry=(RectTransform)C(f.UI,"SmallButton",overRect,"Retry","Retry",new Vector2(0,1),new Vector2(0,1),new Vector2(100,-100),new Vector2(100,30),new UnityEngine.Events.UnityAction(()=>calls++));
+                    C(f.UI,"SetPaused",paused);
+                    if(modal=="system")menu.SetActive(true);
+                    else if(modal=="damage")C(f.UI,"OpenDamageInfo");
+                    else C(f.UI,"OpenTextDetail",modal=="hero"?1:2,"old live-game snapshot");
+                    C(f.UI,"RefreshCombatHUDVisibility");
+                    Assert.That(modal=="system"?menu.activeSelf:details.activeSelf,Is.True,"normal gameplay keeps the chosen panel open");
+                    // Equivalent UI boundary to OnHeroDied, without combat/save I/O.
+                    S(f.Game,"hasDeployed",false);over.SetActive(true);over.transform.SetAsLastSibling();
+                    C(f.UI,"RefreshCombatHUDVisibility");Canvas.ForceUpdateCanvases();
+                    Assert.That(menu.activeSelf,Is.False);Assert.That(details.activeSelf,Is.False);
+                    Assert.That(Time.timeScale,Is.EqualTo(paused?0f:1f),"dismissing a non-pausing panel cannot change Pause");
+                    var point=RectTransformUtility.WorldToScreenPoint(null,retry.TransformPoint(retry.rect.center));
+                    Assert.That(C(f.UI,"HitControl",point),Is.SameAs(retry.GetComponent(R("CustomInteractable"))));
+                    C(f.UI,"HandlePointerClick",point,point);Assert.That(calls,Is.EqualTo(1),"visible Retry receives exactly one callback");
+                }
+            }
+            finally {Time.timeScale=before;}
+        }
+        [Test]
+        public void EntryDismissesOldDetailSnapshotWithoutReleasingPause()
+        {
+            float before=Time.timeScale;
+            try
+            {
+                using(var f=new Fixture())
+                {
+                    S(f.UI,"hudGame",f.Game);S(f.UI,"gameResolved",true);S(f.Game,"hasDeployed",true);
+                    var details=f.Own(new GameObject("Entry detail fixture",typeof(RectTransform)));
+                    details.transform.SetParent(f.Root,false);S(f.UI,"damagePanel",details);
+                    var label=C(f.UI,"MakeLabel",details.transform,"",Vector2.zero,new Vector2(300,200));S(f.UI,"damageText",label);
+                    C(f.UI,"OpenTextDetail",1,"old snapshot");C(f.UI,"SetPaused",true);
+                    S(f.Game,"enteringGameplay",true);C(f.UI,"RefreshCombatHUDVisibility");
+                    Assert.That(details.activeSelf,Is.False);Assert.That(Time.timeScale,Is.EqualTo(0));
+                    S(f.Game,"enteringGameplay",false);C(f.UI,"OpenTextDetail",1,"new snapshot");
+                    Assert.That(details.activeSelf,Is.True);Assert.That((string)G(label,"text"),Does.Contain("new snapshot"));
+                    Assert.That((string)G(label,"text"),Does.Not.Contain("old snapshot"));
+                }
+            }
+            finally {Time.timeScale=before;}
         }
         [Test]
         public void LootTargetTracksRectAndUsesRealWindowEdgeWhenHidden()

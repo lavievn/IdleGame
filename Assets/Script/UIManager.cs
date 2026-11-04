@@ -540,6 +540,13 @@ public partial class UIManager : MonoBehaviour
     private void RefreshCombatHUDVisibility()
     {
         var gm = GameForUI();
+        // These panels do not pause combat. Once Game Over/entry/title owns
+        // the screen, they must stop owning hit-tests over Retry/menu controls.
+        if(gm!=null && !gm.IsGameplayHUDVisible)
+        {
+            CloseDamageInfo();
+            CloseSystemMenu();
+        }
         bool shown = ShouldShowCombatHUD(gm != null && gm.IsGameplayHUDVisible,
             gm != null && gm.preGameUI != null && gm.preGameUI.activeInHierarchy,
             gm != null && gm.gameOverPanel != null && gm.gameOverPanel.activeInHierarchy,
