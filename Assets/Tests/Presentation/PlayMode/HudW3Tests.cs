@@ -246,6 +246,45 @@ namespace IdleGame.Tests.Presentation.PlayMode
             }
             finally {Time.timeScale=before;}
         }
+        [TestCase(false)] [TestCase(true)]
+        public void PausedB2ControlExplainsItsStateAndRetainsCallbackAfterResume(bool fullParty)
+        {
+            float before=Time.timeScale;
+            try
+            {
+                using(var f=new Fixture())
+                {
+                    S(f.UI,"hudGame",f.Game);S(f.UI,"gameResolved",true);S(f.Game,"hasDeployed",true);
+                    if(fullParty){f.Companion("B2 one",100);f.Companion("B2 two",100);}
+                    var menu=f.Own(new GameObject("B2 tools fixture",typeof(RectTransform)));
+                    var menuRect=(RectTransform)menu.transform;menuRect.SetParent(f.Root,false);
+                    menuRect.anchorMin=Vector2.zero;menuRect.anchorMax=Vector2.one;menuRect.offsetMin=menuRect.offsetMax=Vector2.zero;
+                    S(f.UI,"systemMenu",menu);C(f.UI,"BindClick",menuRect,new UnityEngine.Events.UnityAction(()=>{}));
+                    int calls=0;
+                    var button=(RectTransform)C(f.UI,"SmallButton",menuRect,"B2TestSummon","B2",new Vector2(0,1),new Vector2(0,1),new Vector2(100,-100),new Vector2(240,30),new UnityEngine.Events.UnityAction(()=>calls++));
+                    var label=button.GetComponentInChildren(R("TMPro.TextMeshProUGUI"));
+                    S(f.UI,"testSummonButton",button);S(f.UI,"testSummonText",label);
+                    var control=(Behaviour)button.GetComponent(R("CustomInteractable"));
+                    int count=(int)G(f.Game,"TestCompanionCount");string data=JsonUtility.ToJson(f.Primary);
+                    C(f.UI,"SetPaused",true);C(f.UI,"TickHudW3");Canvas.ForceUpdateCanvases();
+                    Assert.That(control.enabled,Is.False);Assert.That((string)G(label,"text"),Does.Contain("Tiếp tục"));
+                    Assert.That(((Color)G(label,"color")).r,Is.LessThan(.6f));
+                    var point=RectTransformUtility.WorldToScreenPoint(null,button.TransformPoint(button.rect.center));
+                    Assert.That(C(f.UI,"CheckInteractableHover",point),Is.True,"parent menu still blocks click-through");
+                    C(f.UI,"HandlePointerClick",point,point);Assert.That(calls,Is.Zero);
+                    C(f.UI,"ApplyHudFromInspector");C(f.UI,"TickHudW3");
+                    Assert.That(control.enabled,Is.False);Assert.That(((Color)G(label,"color")).r,Is.LessThan(.6f));
+                    C(f.UI,"SetPaused",false);C(f.UI,"TickHudW3");
+                    Assert.That(control.enabled,Is.True);
+                    Assert.That((string)G(label,"text"),Does.Contain(fullParty?"Thu hồi":"Gọi +1"));
+                    Assert.That(((Color)G(label,"color")).r,Is.GreaterThan(.8f));
+                    C(f.UI,"HandlePointerClick",point,point);Assert.That(calls,Is.EqualTo(1),"original callback remains bound exactly once");
+                    Assert.That((int)G(f.Game,"TestCompanionCount"),Is.EqualTo(count));
+                    Assert.That(JsonUtility.ToJson(f.Primary),Is.EqualTo(data));
+                }
+            }
+            finally {Time.timeScale=before;}
+        }
         [Test]
         public void LootTargetTracksRectAndUsesRealWindowEdgeWhenHidden()
         {

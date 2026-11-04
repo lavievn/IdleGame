@@ -24,6 +24,8 @@ public partial class UIManager
     private int appliedHudLayout;
     private bool themeDirty=true;
     private bool worldMapButtonAvailable=true;
+    private bool b2ControlPaused;
+    private int b2DisplayedCount=-1;
     private InventoryArtTheme appliedTheme;
     private bool appliedArtEnabled;
     private int appliedThemeRevision;
@@ -109,6 +111,11 @@ public partial class UIManager
             var caption=worldMapButton.GetComponentInChildren<TextMeshProUGUI>(true);
             if(caption!=null)caption.color=worldMapButtonAvailable?Color.white:new Color(.49f,.58f,.58f,1);
             if(!worldMapButtonAvailable)worldMapButton.GetComponent<Image>().color=new Color(.10f,.15f,.16f,1);
+        }
+        if(testSummonButton!=null && testSummonText!=null)
+        {
+            testSummonText.color=b2ControlPaused?new Color(.49f,.58f,.58f,1):Color.white;
+            if(b2ControlPaused)testSummonButton.GetComponent<Image>().color=new Color(.10f,.15f,.16f,1);
         }
         if(inventoryUI!=null)inventoryUI.ApplyTheme();
     }
@@ -223,9 +230,22 @@ public partial class UIManager
         worldMapButton.GetComponent<CustomInteractable>().enabled=available;
         themeDirty=true;
     }
+    private void RefreshB2PauseFeedback()
+    {
+        if(testSummonButton==null || testSummonText==null || hudGame==null)return;
+        bool paused=Time.timeScale==0f;
+        int count=hudGame.TestCompanionCount;
+        if(paused==b2ControlPaused && count==b2DisplayedCount)return;
+        b2ControlPaused=paused;b2DisplayedCount=count;
+        testSummonButton.GetComponent<CustomInteractable>().enabled=!paused;
+        testSummonText.text=paused?"[B2] Tiếp tục để sử dụng":
+            count>=GameManager.TestCompanionLimit?"[B2] Thu hồi (2/2)":"[B2] Gọi +1 ("+count+"/2)";
+        themeDirty=true;
+    }
     private void TickHudW3()
     {
         RefreshWorldMapAvailability();
+        RefreshB2PauseFeedback();
         RefreshHudTheme();
         if(w3!=null)w3.Render(hudGame,CombatManager.Instance,inventoryUseArtTheme?inventoryArtTheme:null);
         if(logToggleLabel!=null)

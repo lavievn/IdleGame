@@ -783,11 +783,7 @@ public partial class UIManager : MonoBehaviour
             LayoutReadableUI();
         RefreshCombatHUDVisibility();
         TickHudW3();
-        var gm = GameForUI();
-        if (testSummonText != null && gm != null)
-            testSummonText.text = gm.TestCompanionCount >= GameManager.TestCompanionLimit
-                ? "[B2] Thu hồi (2/2)"
-                : "[B2] Gọi +1 (" + gm.TestCompanionCount + "/2)";
+
     }
     private static void PlaceUI(RectTransform rect,Vector2 anchor,Vector2 pivot,Vector2 position,Vector2 size)
     {
