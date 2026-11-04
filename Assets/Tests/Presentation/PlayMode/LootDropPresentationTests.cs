@@ -98,6 +98,90 @@ namespace IdleGame.Tests.Presentation.PlayMode
             }
         }
 
+        [TestCase(600f)] [TestCase(800f)] [TestCase(1150f)]
+        public void CollectionFlightStaysInScreenSpaceWhenBattleProjectionChanges(float width)
+        {
+            using (var f = new Fixture(width))
+            {
+                f.Show();
+                var root = f.First;
+                var icon = (RectTransform)root.GetChild(0);
+                f.Advance(1.1f);
+                Vector2 start = RectTransformUtility.WorldToScreenPoint(null, root.position);
+                // A resize/management-panel transition changes both origin and
+                // scale of the battle projection, even while game time is paused.
+                f.Area.anchoredPosition += new Vector2(240f, 35f);
+                f.CanvasRoot.GetComponent<Canvas>().scaleFactor *= 1.3f;
+                Canvas.ForceUpdateCanvases();
+                f.Advance(0f);
+                Assert.That(Vector2.Distance(start, RectTransformUtility.WorldToScreenPoint(null, root.position)),
+                    Is.LessThan(.01f), "Collection must no longer inherit battle projection/camera transforms.");
+                var corners = new Vector3[4]; icon.GetWorldCorners(corners);
+                Assert.That(Vector3.Distance(corners[0], corners[1]), Is.EqualTo(40f).Within(.01f));
+                f.Advance(.53f);
+                Assert.That(RectTransformUtility.WorldToScreenPoint(null, root.position).x,
+                    Is.GreaterThan(Screen.width - 150f));
+                f.Advance(.03f); Assert.That(f.Count, Is.EqualTo(0));
+            }
+        }
+
+        [UnityTest]
+        public IEnumerator CombatClockPausesAndResumesEveryPresentationPhase()
+        {
+            float originalScale = Time.timeScale;
+            Assert.That(originalScale, Is.GreaterThan(0f), "Do not resume someone else's scene.");
+            try
+            {
+                foreach (float age in new[] { .2f, .8f, 1.2f })
+                {
+                    using (var f = new Fixture())
+                    {
+                        f.Show(); var root = f.First; var icon = (RectTransform)root.GetChild(0);
+                        var combat = f.Owner.AddComponent(Runtime("CombatManager"));
+                        combat.GetType().GetField("lootPresentation", All).SetValue(combat, f.Visual);
+                        f.Advance(age);
+                        Time.timeScale = 0f;
+                        Vector3 position = icon.position, scale = icon.localScale;
+                        yield return new WaitForSecondsRealtime(.25f);
+                        Assert.That(icon.position, Is.EqualTo(position));
+                        Assert.That(icon.localScale, Is.EqualTo(scale));
+                        Assert.That(f.Count, Is.EqualTo(1));
+                        Time.timeScale = originalScale;
+                        yield return new WaitForSeconds(.37f);
+                        Assert.That(icon.position, Is.Not.EqualTo(position), "Resume advances the live CombatManager clock.");
+                        Assert.That(f.Count, Is.EqualTo(1));
+                    }
+                    yield return null; // Flush owned Canvas/graphics destruction.
+                }
+            }
+            finally { Time.timeScale = originalScale; }
+        }
+
+        [Test]
+        public void AssignedInventoryTargetUsesItsOwnCanvasAndUpdatesDuringFlight()
+        {
+            using (var f = new Fixture())
+            {
+                var target = new GameObject("Owned inventory target", typeof(RectTransform)).GetComponent<RectTransform>();
+                target.SetParent(f.CanvasRoot.transform, false);
+                target.anchoredPosition = new Vector2(200f, 80f);
+                f.Visual.GetType().GetField("inventoryTarget", All).SetValue(f.Visual, target);
+                Canvas.ForceUpdateCanvases();
+                f.Show(); var root = f.First;
+                f.Advance(1.1f);
+                float start = RectTransformUtility.WorldToScreenPoint(null, root.position).x;
+                f.Advance(.275f);
+                float end = RectTransformUtility.WorldToScreenPoint(null, target.position).x;
+                Assert.That(RectTransformUtility.WorldToScreenPoint(null, root.position).x,
+                    Is.EqualTo(Mathf.Lerp(start, end, .25f)).Within(.01f));
+                target.anchoredPosition += new Vector2(80f, 0f);
+                Canvas.ForceUpdateCanvases(); f.Advance(0f);
+                end = RectTransformUtility.WorldToScreenPoint(null, target.position).x;
+                Assert.That(RectTransformUtility.WorldToScreenPoint(null, root.position).x,
+                    Is.EqualTo(Mathf.Lerp(start, end, .25f)).Within(.01f));
+            }
+        }
+
         [UnityTest]
         public IEnumerator VisualBudgetFlightCompletionAndDisableRemoveOnlyOwnedGraphics()
         {
@@ -110,10 +194,16 @@ namespace IdleGame.Tests.Presentation.PlayMode
                 f.Advance(2f);
                 Assert.That(f.Count, Is.EqualTo(0));
                 yield return null; Assert.That(f.Area.childCount, Is.EqualTo(0));
-                f.Show(); ((Behaviour)f.Visual).enabled = false;
+                f.Show(); var flying = f.First; f.Advance(1.2f);
+                var flightCanvas = flying.GetComponentInParent<Canvas>();
+                Assert.That(flightCanvas, Is.Not.SameAs(f.CanvasRoot.GetComponent<Canvas>()));
+                Assert.That(flightCanvas.sortingOrder, Is.GreaterThan(100));
+                ((Behaviour)f.Visual).enabled = false;
                 Assert.That(f.Count, Is.EqualTo(0));
+                Assert.That(flightCanvas.gameObject.activeSelf, Is.False);
                 f.Show(); Assert.That(f.Count, Is.EqualTo(0), "Disabled component must not spawn graphics.");
                 yield return null; Assert.That(f.Area.childCount, Is.EqualTo(0));
+                Assert.That(flightCanvas == null, Is.True, "Owned collection Canvas is also destroyed.");
             }
         }
 

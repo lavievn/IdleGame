@@ -50,5 +50,37 @@ partial class MotionRegression
             Check(gm.HeroData.equipmentItems.Count == 1 && gm.IsWaitingForExploration && VisibleLoot(f) == 0,
                 "presentation failure cannot undo reward or block death");
         });
+        Run("loot award failure and repeated death cannot create a visual or retry insertion", () => WithLootSprite(() => {
+            GameManager gm; var f = LootField(true, out gm); var monster = f.Monster(-20);
+            LootBattle(f, gm, monster); var victim = f.Enemies[0];
+            gm.HeroData.equipmentItems = null; gm.HeroData.isDirty = false;
+            Lethal(f, victim);
+            // An accepted death still credits EXP/wave progress and marks dirty;
+            // only the failed item insertion is required to leave inventory alone.
+            Check(gm.HeroData.isDirty, "accepted death dirties progress despite loot insertion failure");
+            string completed = JsonUtility.ToJson(gm.HeroData, true);
+            DeathCallback(f, victim); Lethal(f, victim);
+            Check(VisibleLoot(f) == 0 && gm.HeroData.equipmentItems == null,
+                "failed award stays terminal with no visual or inventory insertion");
+            Check(JsonUtility.ToJson(gm.HeroData, true) == completed, "duplicate death leaves all completed results unchanged");
+            Check(gm.IsWaitingForExploration, "failed award still completes final death normally");
+        }));
+        Run("simultaneous loot graphics retain independent captured feet and never award on animation cleanup", () => WithLootSprite(() => {
+            GameManager gm; var f = LootField(true, out gm);
+            var a = f.Monster(-20); var b = f.Monster(-200); var c = f.Monster(-380);
+            LootBattle(f, gm, a, b, c);
+            var victims = new System.Collections.Generic.List<CombatManager.ActiveMonsterInfo>(f.Enemies);
+            foreach (var victim in victims) Lethal(f, victim);
+            Check(VisibleLoot(f) == 3 && gm.HeroData.equipmentItems.Count == 3, "one graphic for each successful award");
+            var roots = f.combat.LootDropRoots;
+            Check(roots[0] != roots[1] && roots[1] != roots[2], "separate graphic lifetimes");
+            Near(roots[0].anchoredPosition.x, -20, "first captured foot");
+            Near(roots[1].anchoredPosition.x, -200, "second captured foot");
+            Near(roots[2].anchoredPosition.x, -380, "third captured foot");
+            f.combat.GetComponent<LootDropPresentation>().Advance(2f, null);
+            Check(VisibleLoot(f) == 0 && gm.HeroData.equipmentItems.Count == 3, "completion grants nothing");
+            f.combat.ForceClearAllMonsters();
+            Check(gm.HeroData.equipmentItems.Count == 3, "cleanup grants nothing");
+        }));
     }
 }

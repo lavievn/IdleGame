@@ -28,6 +28,7 @@ public sealed class LootDropPresentation : MonoBehaviour
     private readonly List<RectTransform> roots = new List<RectTransform>();
     private RectTransform area;
     private Canvas areaCanvas;
+    private Canvas collectionCanvas;
     private bool missingSpriteReported;
     public IReadOnlyList<RectTransform> Roots => roots;
     public int Count => drops.Count;
@@ -97,7 +98,7 @@ public sealed class LootDropPresentation : MonoBehaviour
             var drop = drops[i];
             if (drop.Root == null || drop.Icon == null || drop.Image == null)
             { Retire(i); continue; }
-            SizeIcon(drop.Icon);
+            SizeIcon(drop.Icon, drop.Collecting);
             drop.Age = Mathf.Min(collectAt + flightDuration, drop.Age + dt);
             if (!drop.Landed)
             {
@@ -112,9 +113,17 @@ public sealed class LootDropPresentation : MonoBehaviour
             if (drop.Age < collectAt) continue;
             if (!drop.Collecting)
             {
-                drop.Collecting = true;
-                drop.FlightStart = drop.Root.anchoredPosition + drop.Icon.anchoredPosition;
+                // Capture the rendered center before leaving the battlefield.
+                // Flight coordinates are real screen pixels: battle projection
+                // resizing, camera movement and ancestor masks cannot drag it.
+                drop.FlightStart = RectTransformUtility.WorldToScreenPoint(AreaCamera, drop.Icon.position);
+                EnsureCollectionCanvas();
+                drop.Root.SetParent(collectionCanvas.transform, false);
+                drop.Root.anchorMin = drop.Root.anchorMax = Vector2.zero;
+                drop.Root.anchoredPosition = drop.FlightStart;
                 drop.Icon.anchoredPosition = Vector2.zero;
+                drop.Collecting = true;
+                SizeIcon(drop.Icon, true);
                 // Leave ground depth sorting and scroll coupling during UI flight.
                 roots.Remove(drop.Root);
                 drop.Root.SetAsLastSibling();
@@ -133,24 +142,43 @@ public sealed class LootDropPresentation : MonoBehaviour
     }
 
     private float ProjectionScale => areaCanvas != null ? Mathf.Max(.01f, areaCanvas.scaleFactor) : 1f;
-    private void SizeIcon(RectTransform icon)
+    private Camera AreaCamera => areaCanvas != null && areaCanvas.renderMode != RenderMode.ScreenSpaceOverlay
+        ? areaCanvas.worldCamera : null;
+    private void EnsureCollectionCanvas()
     {
-        float size = Mathf.Max(8f, iconSize) / ProjectionScale;
+        if (collectionCanvas != null) return;
+        var go = new GameObject("Loot Collection Canvas", typeof(RectTransform), typeof(Canvas));
+        collectionCanvas = go.GetComponent<Canvas>();
+        collectionCanvas.renderMode = RenderMode.ScreenSpaceOverlay;
+        collectionCanvas.scaleFactor = 1f;
+        // Readable HUD uses 100. Keep the receipt visible through the temporary
+        // right-edge destination, including an expanded management window.
+        collectionCanvas.sortingOrder = Mathf.Max(101, areaCanvas != null ? areaCanvas.sortingOrder + 1 : 101);
+        if (areaCanvas != null) collectionCanvas.targetDisplay = areaCanvas.targetDisplay;
+    }
+    private void SizeIcon(RectTransform icon, bool collecting = false)
+    {
+        float size = Mathf.Max(8f, iconSize) / (collecting ? 1f : ProjectionScale);
         icon.sizeDelta = new Vector2(size, size);
     }
 
     private Vector2 CollectionTarget()
     {
         if (inventoryTarget != null && inventoryTarget.gameObject.activeInHierarchy)
-            return area.InverseTransformPoint(inventoryTarget.TransformPoint(inventoryTarget.rect.center));
-        // BattleArea is a stable logical space and may occupy only part of the
-        // window. Convert the actual screen edge instead of assuming rect.xMax.
-        Camera camera = areaCanvas != null && areaCanvas.renderMode != RenderMode.ScreenSpaceOverlay
-            ? areaCanvas.worldCamera : null;
-        Vector2 target;
-        if (RectTransformUtility.ScreenPointToLocalPointInRectangle(area,
-            new Vector2(Screen.width + 16f, Screen.height * .35f), camera, out target)) return target;
-        return new Vector2(area.rect.xMax + 32f, area.rect.yMax);
+        {
+            Canvas targetCanvas = null;
+            for (Transform p = inventoryTarget; p != null; p = p.parent)
+            {
+                targetCanvas = p.GetComponent<Canvas>();
+                if (targetCanvas != null) break;
+            }
+            var camera = targetCanvas != null && targetCanvas.renderMode != RenderMode.ScreenSpaceOverlay
+                ? targetCanvas.worldCamera : null;
+            return RectTransformUtility.WorldToScreenPoint(camera, inventoryTarget.TransformPoint(inventoryTarget.rect.center));
+        }
+        // Re-read every frame: the battle viewport can be narrower than the
+        // window, and the window can resize during this flight.
+        return new Vector2(Screen.width + 16f, Screen.height * .35f);
     }
 
     private void Pose(Drop drop)
@@ -182,6 +210,12 @@ public sealed class LootDropPresentation : MonoBehaviour
     public void Clear()
     {
         for (int i = drops.Count - 1; i >= 0; i--) Retire(i);
+        if (collectionCanvas != null)
+        {
+            collectionCanvas.gameObject.SetActive(false);
+            Destroy(collectionCanvas.gameObject);
+            collectionCanvas = null;
+        }
         area = null;
         areaCanvas = null;
     }
