@@ -70,6 +70,21 @@ public sealed class InventoryArtTheme : ScriptableObject
     public Color textColor = new Color(.89f,.91f,.83f,1f);
     public Color accentTextColor = new Color(.88f,.75f,.48f,1f);
 
+    [Header("06. HUD W3 / CAC KHUNG DUNG CHUNG")]
+    [Tooltip("Ảnh nền độc lập với text/hitbox. Bỏ trống để dùng màu mặc định.")]
+    public Sprite hudPanelFrame;
+    public Sprite hudHeader;
+    public Sprite hudHeroCard;
+    public Sprite hudAvatarFrame;
+    [Tooltip("Ảnh đại diện tùy chọn; chỉ hiện với ô có Hero thực, giữ tỷ lệ ảnh.")]
+    public Sprite hudHeroPortrait;
+    public Sprite hudStatTrack;
+    public Sprite hudHealthFill;
+    public Sprite hudProgressFill;
+    [NonSerialized] private int hudRevision;
+    public int HudRevision => hudRevision;
+    private void OnValidate() {unchecked {hudRevision++;}}
+
     public InventoryMapArt FindMap(int mapNumber)
     {
         if (mapArts == null) return null;

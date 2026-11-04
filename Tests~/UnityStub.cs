@@ -183,6 +183,7 @@ namespace UnityEngine
     {
         public Texture2D texture = new Texture2D(2,2,TextureFormat.RGBA32,false);
         public Rect textureRect = new Rect(0,0,2,2);
+        public Vector4 border;
         public Rect rect = new Rect(0,0,2,2);
         public static Sprite Create(Texture2D texture,Rect rect,Vector2 pivot,float pixelsPerUnit,
             uint extrude=0,SpriteMeshType meshType=SpriteMeshType.Tight)
@@ -230,6 +231,11 @@ namespace UnityEngine
     public struct Vector4
     {
         public float x,y,z,w;
+        public static Vector4 zero => new Vector4(0,0,0,0);
+        public static bool operator ==(Vector4 a,Vector4 b)=>a.x==b.x&&a.y==b.y&&a.z==b.z&&a.w==b.w;
+        public static bool operator !=(Vector4 a,Vector4 b)=>!(a==b);
+        public override bool Equals(object o)=>o is Vector4 && this==(Vector4)o;
+        public override int GetHashCode()=>x.GetHashCode()^y.GetHashCode()^z.GetHashCode()^w.GetHashCode();
         public Vector4(float a,float b,float c,float d){x=a;y=b;z=c;w=d;}
     }
     public enum RenderTextureFormat { ARGB32 }
@@ -318,6 +324,7 @@ namespace UnityEngine.UI
       public float fillAmount;public UnityEngine.Sprite sprite;public Type type;public bool preserveAspect;
       public UnityEngine.Material material;
     }
+    public class Outline : UnityEngine.MonoBehaviour { public UnityEngine.Vector2 effectDistance; public bool useGraphicAlpha; public UnityEngine.Color effectColor; }
     public class GraphicRaycaster : UnityEngine.Component { }
     public class RectMask2D : UnityEngine.Component { }
     public class Button : UnityEngine.MonoBehaviour { public bool interactable=true; public class ButtonClickedEvent:UnityEngine.Events.UnityEvent {} public ButtonClickedEvent onClick=new ButtonClickedEvent(); }
@@ -360,7 +367,7 @@ namespace TMPro {
   public void ActivateInputField(){isFocused=true;}
  }
  public enum TextAlignmentOptions { Center, TopLeft, Left, BottomRight, TopRight, MidlineLeft }
- public class TextMeshProUGUI : UnityEngine.UI.MaskableGraphic { public TMP_FontAsset font=new TMP_FontAsset(); public object fontSharedMaterial; public FontStyles fontStyle; public FontWeight fontWeight;public TextOverflowModes overflowMode;public bool enableWordWrapping; public string text; public float alpha,fontSize,fontSizeMin,fontSizeMax; public bool enableAutoSizing; public TextAlignmentOptions alignment; public UnityEngine.Vector4 margin; }
+ public class TextMeshProUGUI : UnityEngine.UI.MaskableGraphic { public TMP_FontAsset font=new TMP_FontAsset(); public object fontSharedMaterial; public FontStyles fontStyle; public FontWeight fontWeight;public TextOverflowModes overflowMode;public bool enableWordWrapping; public string text; public float alpha,fontSize,fontSizeMin,fontSizeMax; public bool enableAutoSizing,richText; public TextAlignmentOptions alignment; public UnityEngine.Vector4 margin; }
 }
 namespace UnityEngine.Pool
 {

@@ -209,11 +209,11 @@ public sealed class InventoryPanelUI : MonoBehaviour
 
         panel.detailInfoButton=panel.MakeButton("InventoryDetailInfo","Chi tiết",()=>panel.SetDetailView(false));
         panel.detailCompareButton=panel.MakeButton("InventoryDetailCompare","So sánh",()=>panel.SetDetailView(true));
-        panel.detailPrevious=panel.MakeButton("InventoryDetailPrevious","◀",()=>panel.ChangeDetailPage(-1));
-        panel.detailNext=panel.MakeButton("InventoryDetailNext","▶",()=>panel.ChangeDetailPage(1));
+        panel.detailPrevious=panel.MakeButton("InventoryDetailPrevious","<",()=>panel.ChangeDetailPage(-1));
+        panel.detailNext=panel.MakeButton("InventoryDetailNext",">",()=>panel.ChangeDetailPage(1));
         panel.detailPageLabel=panel.MakeText("InventoryDetailPage","");
-        panel.MakeButton("InventoryPrev","◀",panel.PreviousPage);
-        panel.MakeButton("InventoryNext","▶",panel.NextPage);
+        panel.MakeButton("InventoryPrev","<",panel.PreviousPage);
+        panel.MakeButton("InventoryNext",">",panel.NextPage);
         panel.MakeButton("InventoryGrantCharms","Hộ phù mẫu",panel.GrantCharms);
         panel.MakeButton("InventoryGrantSword","Kiếm rèn mẫu",panel.GrantSword);
         panel.MakeButton("InventoryGrantMaterials","Nguyên liệu +100",panel.GrantMaterials);
@@ -231,8 +231,11 @@ public sealed class InventoryPanelUI : MonoBehaviour
         panel.forgeOverlay=Backdrop(panel.root,"Forge_ModalDim",
             new Color(.012f,.021f,.027f,.88f));
         panel.forgeOverlay.GetComponent<Image>().raycastTarget=true;
+        ui.BindClick(panel.forgeOverlay,()=>{});
         panel.forgeFrame=Backdrop(panel.forgeOverlay,"Forge_Window",
             new Color(.075f,.13f,.15f,1f));
+        ui.Skin(panel.forgeFrame,UIManager.SurfaceKind.Frame);
+        ui.PanelHeader(panel.forgeFrame,30);
         panel.forgeCell=Backdrop(panel.forgeOverlay,"Forge_RarityBorder",Color.gray);
         panel.forgeCellInside=Backdrop(panel.forgeOverlay,"Forge_ItemBackground",
             new Color(.045f,.085f,.10f,1f));
@@ -1048,7 +1051,7 @@ public sealed class InventoryPanelUI : MonoBehaviour
         if(image==null)return;
         image.sprite=sprite;
         image.color=sprite!=null?Color.white:fallback;
-        image.type=sprite!=null && sliced ? Image.Type.Sliced : Image.Type.Simple;
+        image.type=sprite!=null && sliced && sprite.border!=Vector4.zero ? Image.Type.Sliced : Image.Type.Simple;
         image.preserveAspect=false;
         image.raycastTarget=false;
     }
@@ -1060,7 +1063,7 @@ public sealed class InventoryPanelUI : MonoBehaviour
         var image=rect.GetComponent<Image>();
         if(image==null)return;
         image.sprite=sprite;
-        image.type=sliced && sprite!=null?Image.Type.Sliced:Image.Type.Simple;
+        image.type=sliced && sprite!=null && sprite.border!=Vector4.zero?Image.Type.Sliced:Image.Type.Simple;
         image.preserveAspect=preserveAspect;
         image.color=new Color(1f,1f,1f,Mathf.Clamp01(opacity));
         image.raycastTarget=false;
@@ -1084,8 +1087,8 @@ public sealed class InventoryPanelUI : MonoBehaviour
             new Color(.078f,.145f,.16f,.96f),sliced);
         FrameArt(inventoryBacking,art==null?null:art.bagPanel,
             new Color(.055f,.115f,.13f,.96f),sliced);
-        OptionalArt(miniStatsBacking,art==null?null:art.miniStatsPanel,false,sliced);
-        OptionalArt(detailBacking,art==null?null:art.itemDetailsPanel,false,sliced);
+        FrameArt(miniStatsBacking,art==null?null:art.miniStatsPanel,new Color(.078f,.145f,.16f,.96f),sliced);
+        FrameArt(detailBacking,art==null?null:art.itemDetailsPanel,new Color(.055f,.115f,.13f,.96f),sliced);
         FrameArt(topBanner,art==null?null:art.heroAreaBackground,
             new Color(.048f,.105f,.119f,.965f),sliced);
 
@@ -1374,7 +1377,7 @@ public sealed class InventoryPanelUI : MonoBehaviour
         if(root==null)return;
         foreach(var text in root.GetComponentsInChildren<TextMeshProUGUI>(true))
         {
-            UIManager.ReadableText(text,Mathf.Min(15f,Mathf.Max(11f,lastWidth/105f)));
+            UIManager.ReadableText(text,Mathf.Clamp(root.rect.width/45f,11f,14f));
             text.color=new Color(.89f,.91f,.83f,1f);
         }
         header.alignment=TextAlignmentOptions.Left;

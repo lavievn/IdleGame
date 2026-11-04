@@ -55,6 +55,9 @@ public class GameManager : MonoBehaviour
     }
     private readonly List<TestCompanion> testCompanions = new List<TestCompanion>();
     public int TestCompanionCount => testCompanions.Count;
+    // Presentation-only access to existing B2 slots; includes a defeated actor.
+    public HeroController TestCompanionAt(int index) => index>=0 && index<testCompanions.Count
+        ? testCompanions[index].Controller : null;
     public const int TestCompanionLimit = 2;
     [Header("W2 MOVEMENT TEST")]
     public bool useW2StanceMoveSpeeds=true;

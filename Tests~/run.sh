@@ -14,6 +14,6 @@ mcs -define:UNITY_EDITOR -out:"$build_dir/MotionRegression.exe" \
   Assets/Script/HeroLaneMotion.cs \
   Assets/Script/HeroCombatSfx.cs \
   Assets/Script/AudioVolumeSettings.cs Assets/Script/AudioVolumeBar.cs \
-  Assets/Script/ExplorationProgressHUD.cs \
+  Assets/Script/ExplorationProgressHUD.cs Assets/Script/HudW3Layout.cs Assets/Script/HudW3View.cs Assets/Script/UIManager.HudW3.cs \
   Assets/DataScript/EntityDataSO.cs
 mono "$build_dir/MotionRegression.exe" "$@"
