@@ -100,9 +100,13 @@ partial class MotionRegression
             // Weapon regressions rebind through SetupHeroInfo to exercise the primary path.
             hero.BindBasicAttackData(combat.CurrentHeroCombatState.Data,true);
         }
-        public MonsterController Monster(float x,AttackMode mode=AttackMode.Melee,float y=0)
+        public MonsterController Monster(float x,AttackMode mode=AttackMode.Melee,float y=0,bool aware=true)
         {
-            var g=new GameObject(true);g.transform.parent=ground;var m=g.AddComponent<MonsterController>();Call(m,"Awake");Call(m,"OnEnable");m.attackMode=mode;space.SetPosition(m.Rect,new Vector2(x,y));return m;
+            var g=new GameObject(true);g.transform.parent=ground;var m=g.AddComponent<MonsterController>();Call(m,"Awake");Call(m,"OnEnable");m.attackMode=mode;space.SetPosition(m.Rect,new Vector2(x,y));
+            // Legacy combat/movement suites start in an already engaged fight.
+            // Awareness scenarios opt into the production unaware spawn below.
+            if(aware)m.ReceiveAlert(hero,true);
+            return m;
         }
         public void Step(float dt=0.1f,bool damage=false)
         {
@@ -118,6 +122,7 @@ partial class MotionRegression
 
     static void Main(string[] args)
     {
+        if(args.Length==1 && args[0]=="--monster-awareness") {MonsterAwarenessTests();return;}
         if(args.Length==1 && args[0]=="--loot-visuals") {LootDropPresentationTests();CombatLootTests();return;}
         if(args.Length==1 && args[0]=="--weapon-basic") {WeaponBasicAttackTests();return;}
         if(args.Length==1 && args[0]=="--combat-loot") {

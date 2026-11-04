@@ -74,6 +74,15 @@ public sealed class CultivationSpriteBridge : MonoBehaviour
         var bridge = controller.Rect.GetComponent<CultivationSpriteBridge>();
         if (bridge == null) bridge = controller.Rect.gameObject.AddComponent<CultivationSpriteBridge>();
         bridge.Init(true,controller.SpriteIdentityKey??ToClass(controller.attackMode),ToClass(controller.attackMode));
+        SetMonsterFacing(controller.Rect, controller.FacingRight);
+    }
+    public static void SetMonsterFacing(RectTransform rect, bool right)
+    {
+        if (rect == null) return;
+        var bridge = rect.GetComponent<CultivationSpriteBridge>();
+        if (bridge == null) return;
+        bridge.monsterFlipHorizontal = !right;
+        bridge.ApplyLayout(); // Mirror only the body child, never HP/text/root.
     }
     public static void Attack(RectTransform rect)
     {

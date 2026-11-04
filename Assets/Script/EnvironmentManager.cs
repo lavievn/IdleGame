@@ -389,6 +389,8 @@ public class EnvironmentManager : MonoBehaviour
         tracePlanFrame=Time.frameCount;
         TraceFrame("Environment.Update after camera plan before monsters");
         float groundMinusCamera = backgroundPan - cameraPan;
+        if (CombatManager.Instance != null && CombatManager.Instance.isActiveAndEnabled)
+            CombatManager.Instance.TickMonsterAwareness(this, dt);
         foreach (var monster in MonsterController.ActiveMonsters)
             if (monster != null && monster.IsAlive) monster.TickMovement(this, dt, groundMinusCamera);
         // Monsters may have entered a hero's range during this frame.
