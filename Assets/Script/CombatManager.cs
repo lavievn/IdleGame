@@ -20,6 +20,8 @@ public class CombatManager : MonoBehaviour
     public CombatResistanceSettings resistanceSettings = new CombatResistanceSettings();
     [SerializeField] private MonsterSpawner monsterSpawner;
     private BattleEffects effects;
+    private LootDropPresentation lootPresentation;
+    public IReadOnlyList<RectTransform> LootDropRoots => lootPresentation != null ? lootPresentation.Roots : null;
     private HeroCombatSfx heroSfx;
     private class Projectile
     {
@@ -187,6 +189,7 @@ public class CombatManager : MonoBehaviour
     public void SetupHeroInfo(EntityDataSO hData)
     {
         if (hData == null) return;
+        if (lootPresentation != null) lootPresentation.Clear();
         lootRewards.Invalidate();
         hData.NormalizeCombatStats();
         if(heroController!=null)heroController.BindBasicAttackData(hData,false);
@@ -385,6 +388,7 @@ public class CombatManager : MonoBehaviour
         var space = EnvironmentManager.Instance;
         float dt = Time.deltaTime;
         if (effects != null) effects.Advance(dt);
+        if (lootPresentation != null) lootPresentation.Advance(dt, effects);
         if (space == null || space.BattleArea==null)
         {
             if (projectiles.Count>0 || magicFlights.Count>0) ClearProjectiles();
@@ -663,7 +667,13 @@ public class CombatManager : MonoBehaviour
         var lootOutcome=lootRewards.Complete(target.lootKey,LootRecipient,
             gameManager!=null && gameManager.ControlledLootTestEnabled,out lootItem,out lootError);
         if(lootOutcome==CombatLootRewards.Outcome.Awarded)
+        {
+            // A cosmetic failure must not abort despawn/wave progression after
+            // the authoritative reward has already committed to inventory.
+            try { ShowAwardedLoot(target,lootItem); }
+            catch(System.Exception ex) { Debug.LogWarning("[LOOT VISUAL] "+ex.Message); }
             gameManager.UpdateEventLog("[LOOT TEST A] Đang bật · Nhận Thiết Kiếm (Common) vào Kho đồ.");
+        }
         else if(lootOutcome==CombatLootRewards.Outcome.Failed)
         {
             Debug.LogError(lootError);
@@ -673,6 +683,23 @@ public class CombatManager : MonoBehaviour
         if (target.data!=null) Destroy(target.data);
         if (gameManager!=null) gameManager.OnMonsterDied(target.go);
         if (activeMonsters.Count==0) isBattling=false;
+    }
+
+    private void ShowAwardedLoot(ActiveMonsterInfo target,string itemId)
+    {
+        var space=EnvironmentManager.Instance;
+        if(space==null || space.BattleArea==null || target.controller==null || target.controller.Rect==null)return;
+        // Capture before despawn/OnMonsterDied: the last victim can end a wave
+        // synchronously and the monster GameObject may be reused by the pool.
+        Vector2 foot=space.Position(target.controller.Rect);
+        if(effects==null)effects=BattleEffects.Create(space.BattleArea);
+        if(lootPresentation==null)lootPresentation=LootDropPresentation.Install(this);
+        lootPresentation.Show(space.BattleArea,foot,EquipmentFoundation.DemoSword,itemId,effects);
+    }
+
+    public void PanLoot(float groundAmount)
+    {
+        if(lootPresentation!=null)lootPresentation.Pan(groundAmount);
     }
 
     private void DealDamageToHero(int damage) { ApplyIncomingDamage(damage,"Quái"); }
@@ -924,6 +951,7 @@ public class CombatManager : MonoBehaviour
     }
     internal void SuspendLootEncounter()
     {
+        if(lootPresentation!=null)lootPresentation.Clear();
         resumeEncounterAfterEnable=activeMonsters.Count>0;
         lootRewards.Invalidate();battleVersion++;
     }
@@ -955,6 +983,7 @@ public class CombatManager : MonoBehaviour
     void OnDestroy()
     {
         if (Instance == this) Instance = null;
+        if (lootPresentation != null) lootPresentation.Clear();
         if (effects != null) Destroy(effects.gameObject);
     }
 
@@ -962,6 +991,7 @@ public class CombatManager : MonoBehaviour
     public void ClearWaveKeepingMagicVisuals() {ClearBattle(false,true);}
     private void ClearBattle(bool preserveHeroAttack,bool keepMagicVisuals=false)
     {
+        if(!keepMagicVisuals && lootPresentation!=null)lootPresentation.Clear();
         resumeEncounterAfterEnable=false;
         lootRewards.Invalidate();
         battleVersion++;
