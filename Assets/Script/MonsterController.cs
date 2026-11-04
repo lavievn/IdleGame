@@ -32,6 +32,8 @@ public class MonsterController : MonoBehaviour
     private static readonly System.Random awarenessRandom = new System.Random();
     private float nextLook, alertElapsed;
     private TextMeshProUGUI awarenessLabel;
+    private Canvas awarenessCanvas;
+    private CultivationSpriteBridge awarenessBody;
 
     private RectTransform rect;
     public string SpriteIdentityKey { get; private set; }
@@ -84,6 +86,13 @@ public class MonsterController : MonoBehaviour
         ResetFeedback();
         // Exactly one random roll per activation (including pooled respawns).
         InitRandomAttackMode();
+        awarenessBody = rect.GetComponent<CultivationSpriteBridge>();
+        awarenessCanvas = null;
+        for (Transform p = rect; p != null; p = p.parent)
+        {
+            awarenessCanvas = p.GetComponent<Canvas>();
+            if (awarenessCanvas != null) break;
+        }
         currentState = MonsterState.PassiveScroll;
         CurrentTarget = null;
         Awareness = MonsterAwareness.Unaware;
@@ -182,6 +191,7 @@ public class MonsterController : MonoBehaviour
     private static float NextLookInterval() { return 1.5f + (float)awarenessRandom.NextDouble() * 3.5f; }
     private void SetFacing(bool right)
     {
+        if (FacingRight == right) return;
         FacingRight = right;
         CultivationSpriteBridge.SetMonsterFacing(rect, right);
     }
@@ -253,17 +263,11 @@ public class MonsterController : MonoBehaviour
         awarenessLabel.gameObject.SetActive(true);
         awarenessLabel.text = IsAggressive ? "!" : "?";
         awarenessLabel.color = IsAggressive ? new Color(1f, .12f, .08f, 1f) : new Color(1f, .82f, .08f, 1f);
-        float scale = 1f;
-        for (Transform p = rect; p != null; p = p.parent)
-        {
-            var canvas = p.GetComponent<Canvas>();
-            if (canvas != null) { scale = Mathf.Max(.01f, canvas.scaleFactor); break; }
-        }
+        float scale = awarenessCanvas != null ? Mathf.Max(.01f, awarenessCanvas.scaleFactor) : 1f;
         var labelRect = (RectTransform)awarenessLabel.transform;
         labelRect.anchorMin = labelRect.anchorMax = rect.pivot;
         labelRect.pivot = new Vector2(.5f, 0f);
-        var bridge = rect.GetComponent<CultivationSpriteBridge>();
-        float height = bridge != null ? bridge.VisibleBodySize.y : rect.rect.height;
+        float height = awarenessBody != null ? awarenessBody.VisibleBodySize.y : rect.rect.height;
         labelRect.anchoredPosition = new Vector2(0f, height + 6f / scale);
         labelRect.sizeDelta = new Vector2(40f / scale, 32f / scale);
         awarenessLabel.fontSize = 24f / scale;
