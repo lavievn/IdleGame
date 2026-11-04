@@ -24,20 +24,24 @@ partial class MotionRegression
             var saveLabel=new GameObject(true);saveLabel.transform.parent=save.transform;saveLabel.AddComponent<TextMeshProUGUI>();
             ((RectTransform)saveLabel.transform).anchoredPosition=new Vector2(-1038,411);
             ui.systemMenu.SetActive(false);Call(ui,"Start");
-            var click=trigger.GetComponent<CustomInteractable>();
+            Check(!trigger.activeSelf,"legacy MenuArea is retired by W3");
+            // This geometry fixture has no deployed GameManager. Show only the view,
+            // then exercise the same replacement trigger through the dispatcher.
+            Get<HudW3View>(ui,"w3").Root.gameObject.SetActive(true);
+            var click=Get<RectTransform>(ui,"menuButton").GetComponent<CustomInteractable>();
             Check(click!=null&&!button.enabled,"Button-only scene trigger converted to one dispatch path");
             var root=(RectTransform)ui.systemMenu.transform;Check(root.rect.width>0&&root.rect.height>0,"positive menu geometry");
-            Check(System.Array.IndexOf(window.clickableUI,click.GetRect())>=0,"red trigger registered for Windows");
-            ui.HandleMouseClick(click.GetRect().position);Check(ui.systemMenu.activeSelf,"red click opens menu");
-            var visible=ui.systemMenu.GetComponentsInChildren<CustomInteractable>();
+            Check(System.Array.IndexOf(window.clickableUI,click.GetRect())>=0,"W3 trigger registered for Windows");
+            ui.HandleMouseClick(click.GetRect().position);Check(ui.systemMenu.activeSelf,"W3 click opens menu");
+            var visible=System.Array.FindAll(ui.systemMenu.GetComponentsInChildren<CustomInteractable>(),c=>c.gameObject!=ui.systemMenu);
             var actions=new System.Collections.Generic.Dictionary<string,CustomInteractable>();
             foreach(var item in visible) {
                 Check(!actions.ContainsKey(item.gameObject.name),"no duplicate main action "+item.gameObject.name);
                 actions.Add(item.gameObject.name,item);
             }
             var expectedActions=new System.Collections.Generic.HashSet<string>(new[]{
-                "Exit","Save","Load","Reset","WindowSize","ReturnTitle","Close"});
-            Check(expectedActions.SetEquals(actions.Keys),"six original functions plus the named Close action");
+                "Exit","Save","Load","Reset","WindowSize","ReturnTitle","Close","Tools"});
+            Check(expectedActions.SetEquals(actions.Keys),"six original functions, Close and W3 Tools action");
             foreach(var old in oldControls)
                 Check(!old.gameObject.activeInHierarchy && System.Array.IndexOf(visible,old)<0,
                     "legacy control hidden: "+old.gameObject.name);
@@ -60,6 +64,7 @@ partial class MotionRegression
                 !Get<GameObject>(ui,"mainPage").activeSelf,"Load opens load page");
             ui.CloseSystemMenu();ui.ToggleSystemMenu();
             var gm=new GameObject().AddComponent<GameManager>();
+            Set(ui,"hudGame",gm);Set(ui,"gameResolved",true);
             gm.confirmationPopup=new GameObject(true);gm.confirmationPopup.SetActive(false);
             gm.preGameUI=new GameObject(true);gm.preGameUI.SetActive(false);
             actions["Reset"].onClickEvent.Invoke();
@@ -67,7 +72,7 @@ partial class MotionRegression
                 !ui.systemMenu.activeSelf,"Reset asks GameManager for confirmation and closes menu");
             gm.OnCancelResetClicked();ui.ToggleSystemMenu();
             foreach(var item in visible)if(item.gameObject.name=="WindowSize")ui.HandleMouseClick(item.GetRect().position);
-            visible=ui.systemMenu.GetComponentsInChildren<CustomInteractable>();Check(visible.Length==4,"size page only three sizes and back");
+            visible=System.Array.FindAll(ui.systemMenu.GetComponentsInChildren<CustomInteractable>(),c=>c.gameObject!=ui.systemMenu);Check(visible.Length==4,"size page only three sizes and back");
             var sizeActions=new System.Collections.Generic.HashSet<string>();
             foreach(var item in visible)sizeActions.Add(item.gameObject.name);
             Check(sizeActions.SetEquals(new[]{"Size600","Size800","Size1150","SizeBack"}),
@@ -75,7 +80,7 @@ partial class MotionRegression
             foreach(var item in visible)if(item.gameObject.name=="Size600")ui.HandleMouseClick(item.GetRect().position);
             Check(!ui.systemMenu.activeSelf,"scale selection closes panel");
             Check(Screen.width==600 && Screen.height==338,"small preset applies 600 by 338 window");
-            ui.ToggleSystemMenu();visible=ui.systemMenu.GetComponentsInChildren<CustomInteractable>();
+            ui.ToggleSystemMenu();visible=System.Array.FindAll(ui.systemMenu.GetComponentsInChildren<CustomInteractable>(),c=>c.gameObject!=ui.systemMenu);
             bool main=false;foreach(var item in visible)if(item.gameObject.name=="Load")main=true;
             Check(main,"reopening starts at main page");
             actions["ReturnTitle"].onClickEvent.Invoke();
