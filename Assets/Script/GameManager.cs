@@ -771,6 +771,24 @@ public class GameManager : MonoBehaviour
         return true;
     }
 
+    public bool CanAllocateHeroAttribute => IsGameplayHUDVisible && !HasPendingConfirmation &&
+        runtimeHeroData!=null && runtimeHeroData.statPoints>0 && combatManager!=null && heroController!=null &&
+        combatManager.CurrentHeroCombatState!=null &&
+        combatManager.CurrentHeroCombatState.Data==runtimeHeroData && combatManager.CurrentHeroCombatState.CanFight;
+
+    public bool AllocateHeroHealth() { return AllocateHeroAttribute(true); }
+    public bool AllocateHeroPhysicalAttack() { return AllocateHeroAttribute(false); }
+    private bool AllocateHeroAttribute(bool health)
+    {
+        if(!CanAllocateHeroAttribute || (health ? runtimeHeroData.addedHealth>int.MaxValue-6 : runtimeHeroData.addedDamage==int.MaxValue))return false;
+        if(health)runtimeHeroData.AllocateHealth();else runtimeHeroData.AllocateDamage();
+        // Existing ratio-preserving refresh; leave attack timer, target and life intact.
+        combatManager.RefreshRegisteredHeroStats(heroController,false);
+        UpdateEventLog(health?"Đã dùng 1 điểm: +6 HP.":"Đã dùng 1 điểm: +1 Physical Attack.");
+        if(UIManager.Instance!=null)UIManager.Instance.RefreshCharacterProgression();
+        return true;
+    }
+
     public bool EquipGear(string instanceId,EquipmentSlot slot)
     {
         if (!IsGameplayHUDVisible || runtimeHeroData == null ||

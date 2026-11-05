@@ -397,6 +397,9 @@ public partial class UIManager : MonoBehaviour
     // Transient UI context, never a persisted profile or a loader switch.
     internal bool IsolatedValidationProfile;
     private TMPro.TextMeshProUGUI devSourceCaption;
+    private TMPro.TextMeshProUGUI progressionSummary;
+    private RectTransform allocateHealthButton,allocatePhysicalButton;
+    private CustomInteractable allocateHealthInput,allocatePhysicalInput;
     public string CharacterSourceStatus =>
         (IsolatedValidationProfile ? "THỬ NGHIỆM CÔ LẬP · " : "") +
         (CombatBalance.HeroDev != null ? "DEVB Hero đang override HP/Attack/tốc đánh/tăng trưởng/di chuyển/tầm" : "Baseline Hero bình thường") +
@@ -531,6 +534,19 @@ public partial class UIManager : MonoBehaviour
         SmallButton(body,"DamageOlder","Đòn trước",Vector2.zero,Vector2.zero,new Vector2(18,12),new Vector2(160,54),()=>ChangeDamagePage(1));
         SmallButton(body,"DamageNewer","Đòn sau",new Vector2(.5f,0),new Vector2(.5f,0),new Vector2(0,12),new Vector2(160,54),()=>ChangeDamagePage(-1));
         SmallButton(body,"DamageClose","Đóng",new Vector2(1,0),new Vector2(1,0),new Vector2(-18,12),new Vector2(160,54),CloseDamageInfo);
+        progressionSummary=MakeLabel(body,"",Vector2.zero,Vector2.zero);
+        progressionSummary.gameObject.name="CharacterProgressionSummary";
+        progressionSummary.alignment=TMPro.TextAlignmentOptions.TopLeft;
+        ReadableText(progressionSummary,13f);
+        allocateHealthButton=SmallButton(body,"CharacterAllocateHP","+6 HP · 1 điểm",Vector2.zero,Vector2.zero,Vector2.zero,Vector2.one,()=>{
+            var owner=GameForUI();if(owner!=null)owner.AllocateHeroHealth();
+        });
+        allocatePhysicalButton=SmallButton(body,"CharacterAllocatePhysical","+1 Physical Attack · 1 điểm",Vector2.zero,Vector2.zero,Vector2.zero,Vector2.one,()=>{
+            var owner=GameForUI();if(owner!=null)owner.AllocateHeroPhysicalAttack();
+        });
+        allocateHealthInput=allocateHealthButton.GetComponent<CustomInteractable>();
+        allocatePhysicalInput=allocatePhysicalButton.GetComponent<CustomInteractable>();
+        LayoutCharacterProgression();
         if (transparentWindow != null) transparentWindow.RegisterClickable(body);
         damagePanel.SetActive(false);
     }
@@ -595,9 +611,10 @@ public partial class UIManager : MonoBehaviour
     private void RefreshDamageInfo()
     {
         if (damageText == null) return;
+        LayoutCharacterProgression();RefreshCharacterProgression();
         string title = detailKind == 1 ? "CHỈ SỐ HERO" : detailKind == 2 ? "NHẬT KÝ" : "SÁT THƯƠNG " + (damagePage+1) + "/" + System.Math.Max(1,displayedDamage.Length);
         string content = detailKind != 0 ? detailSnapshot : displayedDamage.Length == 0 ? "Chưa có đòn đánh hoàn tất." : displayedDamage[damagePage];
-        var pages = ReadablePages(content, Mathf.Max(12,Screen.width-40), Mathf.Max(20,Screen.height-92));
+        var pages = ReadablePages(content, Mathf.Max(12,ManagementWindowLayout.CombatPixels(Screen.width)-40), Mathf.Max(20,Screen.height-(detailKind==1?196:92)));
         detailSliceCount = pages.Count; detailSlice = Mathf.Clamp(detailSlice,0,pages.Count-1);
         damageText.text = title + " · " + (detailSlice+1) + "/" + pages.Count + "\n" + pages[detailSlice];
     }
@@ -633,7 +650,7 @@ public partial class UIManager : MonoBehaviour
         {
             if (gm.HeroData!=null) stats=TuTienCore.IdentityDisplay.Describe(gm.HeroData)+" · Cấp "+gm.HeroData.currentLevel+"\n"+stats;
         }
-        return CharacterSourceStatus+"\n"+stats;
+        return stats;
     }
     public void RefreshCharacterProgression()
     {
@@ -642,9 +659,34 @@ public partial class UIManager : MonoBehaviour
         if(devSourceCaption!=null && devSourceCaption.text!=label)devSourceCaption.text=label;
         if(damagePanel!=null && damagePanel.activeSelf && detailKind==1)
         {
+            var gm=GameForUI();var data=gm!=null?gm.HeroData:null;
+            if(progressionSummary!=null)progressionSummary.text=(data==null?"Chưa có nhân vật.":"Cấp "+data.currentLevel+" · Điểm thuộc tính: "+data.statPoints)+"\n"+CharacterSourceStatus;
+            bool can=gm!=null && gm.CanAllocateHeroAttribute;
+            SetAllocationEnabled(allocateHealthInput,can);SetAllocationEnabled(allocatePhysicalInput,can);
             string current=CurrentHeroDetails();
             if(current!=detailSnapshot){detailSnapshot=current;RefreshDamageInfo();}
         }
+    }
+    private static void SetAllocationEnabled(CustomInteractable input,bool available)
+    {
+        if(input==null || input.enabled==available)return;input.enabled=available;
+        var image=input.GetComponent<Image>();var color=image.color;color.a=available?1f:.4f;image.color=color;
+    }
+    private void LayoutCharacterProgression()
+    {
+        if(progressionSummary==null)return;
+        bool show=detailKind==1;
+        progressionSummary.gameObject.SetActive(show);allocateHealthButton.gameObject.SetActive(show);allocatePhysicalButton.gameObject.SetActive(show);
+        if(!show) {
+            var ordinary=damageText.rectTransform;ordinary.anchorMin=Vector2.zero;ordinary.anchorMax=Vector2.one;
+            ordinary.sizeDelta=new Vector2(-16,-40);ordinary.anchoredPosition=new Vector2(0,16);return;
+        }
+        float width=Mathf.Max(280,ManagementWindowLayout.CombatPixels(Screen.width)-12);
+        PlaceUI(progressionSummary.rectTransform,new Vector2(0,1),new Vector2(0,1),new Vector2(8,-8),new Vector2(width-16,92));
+        float half=(width-24)*.5f;
+        PlaceUI(allocateHealthButton,Vector2.zero,Vector2.zero,new Vector2(8,36),new Vector2(half,28));
+        PlaceUI(allocatePhysicalButton,Vector2.zero,Vector2.zero,new Vector2(16+half,36),new Vector2(half,28));
+        var text=damageText.rectTransform;text.anchorMin=Vector2.zero;text.anchorMax=Vector2.one;text.sizeDelta=new Vector2(-16,-172);text.anchoredPosition=new Vector2(0,-18);
     }
     public void OpenLogInfo()
     {
