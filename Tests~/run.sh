@@ -19,5 +19,6 @@ mcs "${defines[@]}" -out:"$build_dir/MotionRegression.exe" \
   Assets/Script/AudioVolumeSettings.cs Assets/Script/AudioVolumeBar.cs \
   Assets/Script/ExplorationProgressHUD.cs Assets/Script/HudW3Layout.cs Assets/Script/HudW3View.cs Assets/Script/UIManager.HudW3.cs \
   Assets/Script/RealmProgression.cs \
+  Assets/Script/RealmBreakthroughTransition.cs \
   Assets/DataScript/EntityDataSO.cs
 mono "$build_dir/MotionRegression.exe" "$@"

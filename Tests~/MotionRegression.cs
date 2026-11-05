@@ -129,6 +129,7 @@ partial class MotionRegression
 
     static void Main(string[] args)
     {
+        if(args.Length==1 && args[0]=="--realm-transition") {RealmTransitionTests();return;}
         if(args.Length==1 && args[0]=="--realm-progression") {RealmProgressionTests();return;}
         if(args.Length==1 && args[0]=="--progression-ui") {ProgressionUiTests();return;}
         if(args.Length==1 && args[0]=="--gear-drop") {GearDropPrototypeTests();return;}
