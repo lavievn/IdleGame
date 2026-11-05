@@ -2,13 +2,21 @@
 
 Mốc nguồn `0944519c46610e79238c027c83ae9ea023c984c3`, branch `feature/monster-awareness-ambush`. Đầu vào: [audit](GAMEPLAY_SYSTEM_AUDIT.md) và [dependency map](GAMEPLAY_DEPENDENCY_MAP.md). Đây là **kế hoạch để giao việc sau khi xem xét**, không cấp quyền tự triển khai. Tác vụ audit dừng sau ba tài liệu.
 
+## Quyết định đã chốt — 05/11/2026
+
+Theo [cập nhật thiết kế chính thức](../CORE_GAMEPLAY_LOOP_DIRECTION_2026-10-25.md): không class cố định; thiết kế cuối cùng tách MaxHealth khỏi kiểu đánh/vũ khí. Hệ số HP Melee/Bow/Magic hiện tại là tạm; việc thay thế cần nhiệm vụ riêng, không thực hiện trong lần cập nhật tài liệu này. Nguồn HP trang bị phù hợp gồm giáp, trang sức, phù, ngọc và khảm nạm; chưa yêu cầu triển khai ngọc/khảm hoặc bật template mới.
+
+Gear prototype đã phê duyệt đúng cấu hình MainGame hiện tại: Sword/Bow (`sample:iron_sword`, `sample:basic_bow`), level 1, Attack +4, Common, chance .08, Uniform; material .60, `material:refinement`, lượng 1–2. Không sửa/lặp lại cấu hình hoặc công thức. Staff và template phòng thủ tiếp tục ngoài bảng thưởng đến khi có đặc tả chỉ số.
+
+**Giai đoạn 4–5 đang HOÃN:** chưa phát triển công pháp/võ học/kỹ năng kích hoạt/đột phá cảnh giới mới; nội dung dưới đây chỉ lưu tham khảo cho tương lai. Không tự mở lại từ roadmap hoặc yêu cầu người dùng chốt thông số các module này lúc này. Cả các giai đoạn khác cũng chỉ thực hiện khi có nhiệm vụ tiếp theo.
+
 ## Thứ tự và nguyên tắc
 
 1. Làm rõ baseline DEVB và quyền sở hữu dữ liệu trước khi đo progression.
 2. Nối API progression có sẵn vào UI; không tạo hệ class/realm authority mới.
 3. Nghiệm thu vòng farm vùng → reward → trang bị/rèn → Save/Load còn thiếu chứng cứ native.
-4. Chốt contract những phần dữ liệu nền chưa có nghiệp vụ.
-5. Chỉ tích hợp module hẹp sau khi contract được duyệt; không mặc định cần truyện/môn phái/boss/kỹ năng mới ở tác vụ tiếp theo.
+4. **HOÃN:** chốt contract những phần dữ liệu nền chưa có nghiệp vụ, chỉ khi có nhiệm vụ riêng.
+5. **HOÃN:** tích hợp module hẹp sau khi được mở lại và duyệt contract; không mặc định thêm truyện/môn phái/boss/kỹ năng.
 
 Giữ một Hero chính, auto combat và tự do chọn vũ khí. Không xóa B2 test hoặc trường profession chỉ để khớp thuật ngữ. Không thay tỷ lệ material .60/gear .08 trong các việc nối hệ; không đổi công thức Combat/Forge, map difficulty hay schema vì tiện implementation.
 
@@ -30,7 +38,7 @@ Giữ một Hero chính, auto combat và tự do chọn vũ khí. Không xóa B2
 - **Tái sử dụng:** canonical `GameManager.HeroData`; `EntityDataSO.AllocateHealth/AllocateDamage`; `RankDatabase.GetRankName`; panel Nhân vật hiện có, theme/Canvas/TMP/modal; các đường refresh combat stats/dirty/save của GameManager.
 - **Cần sửa:** thêm handler quản lý phân điểm trong manager và kết nối button panel hiện có, disable khi hết điểm; refresh UI/combat state cùng đối tượng dữ liệu. Label +1 phải là **Physical Attack**, không giả tăng MagicalAttack. Hiển thị rank derive từ level, không coi nhãn là gate đột phá.
 - **Cần bổ sung:** hai thao tác UI và presentation rank; không thêm stat, class, currency hoặc bản sao Hero. Caller mới phải bảo vệ null/menu/pending load theo pattern manager hiện tại.
-- **Phụ thuộc:** giai đoạn 1 để đánh giá mức tăng; realm presentation dùng mapping sẵn có, độc lập breakthrough chờ D2. Nếu muốn tái thiết kế mapping thì tách task riêng, giữ phần allocation độc lập.
+- **Phụ thuộc:** giai đoạn 1 để đánh giá mức tăng; realm presentation chỉ dùng mapping sẵn có. Đột phá độc lập đã hoãn; tái thiết kế mapping hoặc HP cần task riêng, giữ phần allocation độc lập.
 - **Rủi ro Save/Combat:** không cần field mới; giữ statPoints/addedHealth/addedDamage và migration cũ. Refresh HP không được heal miễn phí hoặc khởi tạo lại life. Không thay đổi weapon mode chỉ vì phân điểm.
 - **Nghiệm thu:** EXP đủ tăng đúng 1 điểm/cấp; bấm một lần tiêu một điểm và +6 HP hoặc +1 Physical; hết điểm không mutation. Equip/unequip, Pause/modal và Load/Retry không làm stale state hoặc nhân modifier. Rank tại level 1/10/11/100/101 hiển thị theo mapping hiện có, sau Load derive đúng, không có buff/gate mới. Các hành vi chưa có test mới phải được bổ sung trước khi báo PASS.
 
@@ -45,18 +53,18 @@ Giữ một Hero chính, auto combat và tự do chọn vũ khí. Không xóa B2
 - **Rủi ro Save/Combat:** load snapshot, wave clear/death boundary và stale receipt khi Travel; receipt chỉ runtime, không coi như anti-crash ledger. Không thay checkpoint/schema trong task sửa UI hoặc reward.
 - **Nghiệm thu:** config scene giữ .60/.08, controlled A tắt; một death không cấp lại khi callback trùng; một nhánh lỗi không rollback nhánh kia. Verify handler/instance/stat/Forge stock/history rồi Save/Load/combat sau Load. World clear không auto travel; boss còn bị chặn; Retry giữ gear/root/level theo policy hiện có. Phân biệt chance fixture=1 với chơi tỷ lệ thật, handler routing với native click. Chỉ chạy lại test cũ khi có diff ảnh hưởng hoặc nghi ngờ cụ thể; không lặp toàn UI matrix nếu không sửa UI.
 
-## Giai đoạn 4 — Chốt hợp đồng phần dài hạn còn rời rạc
+## Giai đoạn 4 — HOÃN: hợp đồng phần dài hạn còn rời rạc
 
 - **Ưu tiên:** P1 cho thiết kế tích hợp; không phải viết gameplay ngay.
 - **Mục tiêu:** có đặc tả đủ rõ để một task sau nối công pháp/võ học hoặc cảnh giới mà không đổi nghĩa dữ liệu đang lưu.
 - **Tái sử dụng:** root/tier/weights, CombatStats condition/source model, WeaponFamily, CombatDamagePart/Resolve, HeroCombatState/attack lifecycle, per-component Save guards. RankDatabase và DTO nghề được giữ đúng phạm vi, không giả là runtime skill catalog.
 - **Cần sửa:** tài liệu contract và test plan; làm rõ root multiplier hiện đã nằm trong damage trace để không cộng lại trong adapter tương lai. Phân biệt CastSpeed/CDR/ManaRegen chưa có consumer với stats đã vận hành.
 - **Cần bổ sung:** nếu chọn nhánh võ học: definition/loadout/learning-condition/activation contract, stable IDs và resource/cast/cooldown/effect lifecycle; nếu chọn đột phá độc lập: gate/cost/effect/state contract. Không tự chốt các con số hoặc tạo mana chỉ vì enum có ManaRegen.
-- **Phụ thuộc:** đánh giá sau giai đoạn 3, các quyết định D2–D4 bên dưới. Nghề phụ/gold hiện DATA ONLY; không bắt buộc đưa thành feature kế tiếp và không dùng profession làm class.
+- **Phụ thuộc:** chỉ mở lại bằng nhiệm vụ riêng sau khi người dùng thay đổi phạm vi hoãn và cung cấp đặc tả cần thiết. Nghề phụ/gold hiện DATA ONLY; không bắt buộc đưa thành feature kế tiếp và không dùng profession làm class.
 - **Rủi ro Save/Combat:** learned combat skill/realm state chưa có schema; không reinterpret `LearnedSupportSkill` hoặc renumber enum. Phải có old/current/future compatibility plan trước mọi field/version mới. Đòn đánh cơ bản primary không được rơi lại vào legacy ×2,5/AoE chỉ vì mode RangedMagic.
 - **Nghiệm thu:** tài liệu mô tả input/eligibility/one-shot effect/interrupt/cancel/Load semantics; chỉ rõ stat nào có consumer, source ownership và nơi áp root đúng một lần; không khóa class, không thay basic/Forge mặc định. Chưa có quyết định cần thiết thì ghi BLOCKED nhánh đó, không tạo placeholder “hoạt động”.
 
-## Giai đoạn 5 — Tích hợp hẹp theo hợp đồng đã duyệt (có điều kiện)
+## Giai đoạn 5 — HOÃN: tích hợp hẹp theo hợp đồng đã duyệt
 
 - **Ưu tiên:** P2 sau khi nền tảng đã nghiệm thu; không tự động thực hiện.
 - **Mục tiêu:** nếu người dùng chọn võ học/công pháp, chứng minh một đường học/chọn/hiệu lực trên Hero tự chiến đấu bằng hiệu ứng đã duyệt. Không mặc định xây bộ chiêu/nhiều nội dung mới.
@@ -74,10 +82,9 @@ Chỉ các quyết định không thể suy ra từ mã hoặc định hướng 
 | ID | Quyết định còn thiếu | Chỉ chặn phần nào |
 |---|---|---|
 | D1 | DEVB có được phép nạp trong Player bình thường hay chỉ các build/profile dev rõ ràng? Code hiện nạp từ persistent file; chưa có policy phát hành được thể hiện. | Thay đổi loader/build gating giai đoạn 1; hiển thị trạng thái override vẫn có thể làm độc lập. Không tự sửa file cá nhân. |
-| D2 | Realm tiếp tục derive theo mỗi 10 cấp như helper, hay về sau cần progression/đột phá độc lập? Nếu độc lập: điều kiện, cost và tác động nào được phê duyệt? | Chỉ gameplay realm độc lập. Hiển thị đúng mapping hiện có không tự cấp buff hoặc gate. |
-| D3 | Hướng Pháp cần giá trị Staff cấp 1 và nguồn tăng MagicalAttack nào trong prototype? Nền Magical = 0, phân điểm hiện chỉ tăng Physical; không có số production để suy từ Sword/Bow. | Bật Staff drop/đầu tư phép, không chặn hai weapon hiện tại hoặc allocation Physical có sẵn. |
-| D4 | Khi chọn triển khai võ học/công pháp: tập tối thiểu nào cần học/chọn, điều kiện weapon/root, passive hay active, tác dụng/cost/cast/cooldown và nơi học là gì? Mana có thực sự cần ở đợt đầu không? | Giai đoạn 4–5; không lấy DTO nghề hoặc legacy charge làm câu trả lời ngầm, không tự sáng tạo khả năng mới. |
 | D5 | Nếu farm dài chạm material cap hoặc gear list tăng lớn, muốn giữ policy từ chối nhánh hiện tại hay có chính sách sức chứa/xử lý dư khác? | Thay luật inventory/economy dài hạn; không chặn kiểm thử cap và phản hồi chính xác của luật hiện tại. Không tự thêm bán/phân giải/tài nguyên mới. |
+
+D2–D4 cũ đã được gỡ khỏi danh sách cần quyết định hiện tại: đột phá mới/công pháp/võ học/kỹ năng kích hoạt đã hoãn; Staff/template phòng thủ chưa được đưa vào thưởng. Chỉ trở lại đặc tả của các phần này khi người dùng giao nhiệm vụ riêng. Gear Sword/Bow +4 và mục tiêu MaxHealth không phụ thuộc mode đã chốt, không hỏi lại.
 
 Không hỏi lại một Hero, auto combat, không class, tự do chọn vũ khí/công pháp/võ học, tương hợp/tương khắc, môn phái không là class, tiến triển dài hạn hoặc không multiplayer. Các điểm này là ràng buộc của mọi task sau.
 

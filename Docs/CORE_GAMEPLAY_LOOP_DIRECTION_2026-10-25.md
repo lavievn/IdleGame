@@ -2,6 +2,27 @@
 
 > **Trạng thái: BẢN LÀM VIỆC / CÓ THỂ SỬA ĐỔI — ghi nhận ngày 25/10/2026.** Đây là hướng phát triển và bộ tiêu chí thảo luận, **không phải đặc tả triển khai**. Các mục ghi `Đề xuất` chưa được phê duyệt thành tính năng. Không tự thay đổi gameplay, save, camera, UI hoặc cân bằng chỉ vì tài liệu này.
 
+## Quyết định chính thức cập nhật — 05/11/2026
+
+Các quyết định dưới đây đã được người dùng chốt, ưu tiên khi đối chiếu các đề xuất cũ. Chỉ ghi nhận thiết kế trong lần cập nhật này, không cấp quyền tự sửa gameplay hoặc schema.
+
+- Không có class cố định; một nhân vật chính tự chiến đấu, tự do chọn vũ khí/công pháp/võ học.
+- Trong thiết kế cuối cùng, **kiểu đánh/vũ khí không quyết định MaxHealth**. Hệ số HP theo Melee/Bow/Magic hiện tại là cơ chế tạm và cần được thay thế trong một nhiệm vụ riêng về sau; chưa chốt công thức thay thế và không sửa HP ở nhiệm vụ này.
+- HP cộng thêm trong hệ trang bị sẽ đến từ nguồn phù hợp như giáp, trang sức, phù, ngọc và khảm nạm. Đây là định hướng nguồn chỉ số, chưa phải yêu cầu triển khai các hệ ngọc/khảm hoặc mở thêm template thưởng.
+- Chưa phát triển công pháp, võ học, kỹ năng kích hoạt hoặc đột phá cảnh giới mới. Giữ nguyên nền tảng đang có; các nhánh roadmap liên quan được hoãn đến nhiệm vụ riêng.
+- Staff và các template phòng thủ chưa đưa vào bảng thưởng trước khi có đặc tả chỉ số phù hợp; catalog và đồ đang tồn tại giữ nguyên.
+
+### Gear Drop prototype đã phê duyệt
+
+| Template ID | Cấp vật phẩm | Main stat | Phẩm chất |
+|---|---:|---|---|
+| `sample:iron_sword` | 1 | Attack +4 | Common |
+| `sample:basic_bow` | 1 | Attack +4 | Common |
+
+Equipment Enabled, chance **0,08**, chọn **Uniform** hai template, mỗi lần thành công một gear. Material Enabled, chance **0,60**, lượng **1–2** `material:refinement`. Đây là **balance prototype**, chưa phải cân bằng cuối cùng.
+
+Đã đối chiếu MainGame ở HEAD `719ca69`: cấu hình đúng các giá trị trên, `controlledLootTest = false`; không sửa scene hoặc triển khai lại. [Roadmap hiện hành](architecture/INTEGRATION_ROADMAP.md) ghi rõ các phần đã hoãn. Không sửa Combat, Save schema hoặc balance chỉ từ cập nhật định hướng này.
+
 ## 1. Tuyên ngôn trải nghiệm
 
 **Người chơi quyết định nhân vật hướng đến con đường nào; nhân vật tự trải qua hành trình ấy; kết quả mở ra những lựa chọn tiếp theo.**
