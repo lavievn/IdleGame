@@ -108,3 +108,10 @@ Khi mở Editor, chọn rõ `Assets/Scenes/MainGame.unity`, không chơi trên `
 - **Kết quả mới:** một lần khởi tạo executable cuối được quan sát, native **BLOCKED**; không sửa gameplay/test/asset. Chỉ cập nhật báo cáo. `git diff --check` PASS, không push/merge, không để Player/Editor do tác vụ mở chạy nền.
 - **Bằng chứng:** `outputs/player-recheck/windows-security-blocked.png`, `launch-record.json`, `player-once.log`, `result.json`; log gốc `C:\Users\hason\Documents\Codex\2026-11-04\truy\work\player-recheck\player-once.log`.
 - **Cần người dùng tại máy:** tự đóng Windows Security rồi nghiệm thu checklist mục 8 bằng profile thử; chưa cần thao tác nào khi đang vắng nhà. Hoàn thành phần có thể làm an toàn và dừng.
+
+## 11. Cho phép bấm Allow — bị chặn bởi công cụ điều khiển
+
+- Người dùng đã cho phép bấm Allow cho bản thử. Đã mở lại đúng executable/profile cô lập một lần (PID 28312) để xử lý yêu cầu này.
+- Quan sát đúng hộp thoại Windows Security cho `IdleGameValidation.exe`; một lần click Allow bị công cụ từ chối trước khi gửi input: `point ... is over PickerHost.exe "Windows Security", not target window IdleGameValidation.exe`.
+- Đã làm mới danh sách cửa sổ: công cụ chỉ trả về Player; accessibility của Player chỉ có pane game, không có nút Allow hay cửa sổ PickerHost để chọn. **Allow chưa được bấm; quyền Firewall chưa được xác nhận là thay đổi.** Không dùng registry/rules hoặc cơ chế input khác để vượt giới hạn điều khiển.
+- Đã dừng đúng process thử vừa mở, không chạy lại kiểm thử đã PASS. Native validation vẫn **BLOCKED**; cần người dùng tự xử lý hộp thoại tại máy khi có thể. Không yêu cầu xác nhận quyền lần nữa; hạn chế hiện tại là công cụ không truy cập được cửa sổ bảo mật.
