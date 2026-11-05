@@ -30,6 +30,22 @@ partial class MotionRegression
     }
     static void WeaponBasicAttackTests()
     {
+        Run("v04 damage diagnostics identify physical and magical source across snapshot",()=>{
+            GameManager gm;WeaponField(out gm);var h=gm.HeroData;var d=HeroAt(1);
+            var sword=WeaponInBag(gm,WeaponFamily.Sword);WearWeapon(gm,sword);
+            var physical=SynergyMath.EvaluateBasicDamage(h,d,AttackMode.Melee,1f);
+            Check(physical.attackBase==WeaponBasicAttack.Physical(h),"effective physical stat");
+            Check(physical.Describe(1,1,physical.elementDamage).Contains("Physical Attack"),"physical source label");
+            var staff=WeaponInBag(gm,WeaponFamily.Staff);WearWeapon(gm,staff);
+            int magicBefore=WeaponBasicAttack.Magical(h);
+            h.combatStatModifiers.Add(new CombatStatModifier {stat=CombatStatId.MagicalAttack,flat=17});
+            var magic=SynergyMath.EvaluateBasicDamage(h,d,AttackMode.RangedMagic,1f);
+            var impact=SynergyMath.EvaluateSnapshot(magic,d);
+            string text=impact.Describe(1,1,impact.elementDamage);
+            Check(impact.attackBase==WeaponBasicAttack.Magical(h) && impact.attackBase==magicBefore+17,"magical source excludes Physical");
+            Check(text.Contains("MagicalAttack") && text.Contains("Magical") && !text.Contains("cộng điểm:"),"impact retains source without false physical breakdown");
+            Check(impact.elementDamage==magic.elementDamage && impact.roll==magic.roll,"diagnostic preserves damage and release snapshot");
+        });
         Run("weapon 01 unarmed resolves Melee and baseline Physical10 Magical0",()=>{
             GameManager gm;var f=WeaponField(out gm);
             Check(f.hero.UsesWeaponBasicAttack && f.hero.attackMode==AttackMode.Melee,"primary weapon authority");

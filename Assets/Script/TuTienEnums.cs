@@ -149,6 +149,7 @@ namespace TuTienCore
                 attackRaw=basic && mode==AttackMode.RangedMagic?0:attacker.baseDamage,
                 attackAdded=basic && mode==AttackMode.RangedMagic?0:attacker.addedDamage,attackBase=attack,
                 modeMultiplier=multiplier,roll=roll,weaponBasic=basic,
+                attackSource=mode==AttackMode.RangedMagic?"MagicalAttack (Magical)":"Physical Attack (Physical)",
                 basicBoost=basic?CombatDamage.CaptureBasicBoost(attacker,mode):0f,
                 rolledDamage=basic?Mathf.Max(0,Mathf.RoundToInt(attack*multiplier*roll)):
                     CombatBalance.Damage(attack,mode,roll,physicalFactor),
@@ -179,7 +180,7 @@ namespace TuTienCore
                 attackRaw = snapshot.attackRaw, attackAdded = snapshot.attackAdded, attackBase = snapshot.attackBase,
                 modeMultiplier = snapshot.modeMultiplier, roll = snapshot.roll, rolledDamage = snapshot.rolledDamage,
                 elementMultiplier = element, elementDamage = Mathf.Max(snapshot.weaponBasic?0:1, Mathf.RoundToInt(snapshot.rolledDamage * element)),
-                weaponBasic=snapshot.weaponBasic,basicBoost=snapshot.basicBoost,
+                weaponBasic=snapshot.weaponBasic,basicBoost=snapshot.basicBoost,attackSource=snapshot.attackSource,
                 sourceRoots = snapshot.sourceRoots, sourceTiers = snapshot.sourceTiers, sourceWeights = snapshot.sourceWeights };
         }
         public static int Damage(EntityDataSO attacker, EntityDataSO defender, AttackMode mode, float roll, int mapMultiplier = 1)
@@ -191,6 +192,8 @@ namespace TuTienCore
     public sealed class DamageTrace
     {
         public string attacker, defender, pairs;
+        // Transient trace metadata; never part of EntityDataSO or Save schema.
+        public string attackSource;
         public bool weaponBasic;
         public float basicBoost;
         public List<ElementType> sourceRoots;
@@ -202,7 +205,9 @@ namespace TuTienCore
         public string Describe(float mapScale, int hardScale, int finalDamage)
         {
             return attacker + " → " + defender + "\n" +
-                "ATK cơ bản: " + attackRaw + "; cộng điểm: " + attackAdded + "; tổng: " + attackBase + "; kiểu đánh ×" + F(modeMultiplier) + "; dao động ×" + F(roll) + "\n" +
+                (weaponBasic ? "Nguồn " + attackSource + " (đã gồm bổ trợ chỉ số); tổng: " + attackBase :
+                    "ATK cơ bản: " + attackRaw + "; cộng điểm: " + attackAdded + "; tổng: " + attackBase) +
+                "; kiểu đánh ×" + F(modeMultiplier) + "; dao động ×" + F(roll) + "\n" +
                 "Sát thương nền = làm tròn(" + attackBase + " × " + F(modeMultiplier) + " × " + F(roll) + ") = " + rolledDamage + "\n" +
                 pairs + "\nTổng hệ số linh căn = " + F(elementMultiplier) +
                 "; sau linh căn = làm tròn(" + rolledDamage + " × " + F(elementMultiplier) + ") = " + elementDamage + "\n" +
