@@ -278,6 +278,132 @@ public sealed class MainGameFoundationProbe : MonoBehaviour
     List<CombatManager.ActiveMonsterInfo> Enemies=>(List<CombatManager.ActiveMonsterInfo>)Get(combat,"activeMonsters");
     object FirstDrop(LootDropPresentation loot)=>( (IList)Get(loot,"drops") )[0];
 
+    float ViewX(RectTransform rect)=>RectTransformUtility.WorldToScreenPoint(null,rect.position).x/Screen.width;
+    IEnumerator CameraV03()
+    {
+        phase=1;Require(space.useMultiZoneCamera && space.directionalCameraFraming && !space.cameraUseCombatCenter,"Wrong MainGame camera mode.");
+        var lines=new List<string>{"event,width,fpsRequested,time,heroViewport,monsterViewport,distance,awareness,hp"};
+        int[] widths={600,800,1150,1360},heights={338,450,647,680},rates={30,60,144,60};
+        QualitySettings.vSyncCount=0;
+        // Disposable fixture removes the current encounter; real Hero.TickMovement
+        // and Environment.Update/LateUpdate still own all walking and pan writes.
+        combat.ClearWaveKeepingMagicVisuals();((IList)Get(gm,"activeMonsters")).Clear();Call(gm,"CancelNextWave");
+        bool awarenessOnly=Array.IndexOf(Environment.GetCommandLineArgs(),"-foundationAwarenessOnly")>=0;
+        for(int i=0;i<(awarenessOnly?1:widths.Length);i++)
+        {
+            yield return Resize(widths[i],heights[i]);Application.targetFrameRate=rates[i];ui.SetPaused(false);
+            float end=Time.realtimeSinceStartup+12;int frames=0;float sum=0;
+            while(Time.realtimeSinceStartup<end){yield return new WaitForEndOfFrame();frames++;sum+=Time.unscaledDeltaTime;}
+            float x=ViewX(hero.heroRect);
+            lines.Add("moving,"+Screen.width+","+rates[i]+","+Time.time+","+x+",,,, ");
+            Require(Mathf.Abs(x-.65f)<=.015f,"MainGame moving viewport "+x+" at "+widths[i]);
+            Pass("V03 camera actual MainGame "+Screen.width+"x"+Screen.height+" requestedFPS="+rates[i]+" measuredFPS="+(frames/sum)+" movingViewport="+x+" error="+Mathf.Abs(x-.65f));
+            ui.SetPaused(true);float position=space.Position(hero.heroRect).x,velocity=space.MultiZoneVelocity;
+            yield return new WaitForSecondsRealtime(.5f);
+            Require(Mathf.Abs(space.Position(hero.heroRect).x-position)<.001f && Mathf.Abs(space.MultiZoneVelocity-velocity)<.001f,"Pause moved camera/Hero.");
+            yield return Capture("v03-camera-"+widths[i]);
+        }
+        phase=2;yield return Resize(800,450);Application.targetFrameRate=60;
+        Call(gm,"CallNextWave");var observed=new List<CombatManager.ActiveMonsterInfo>(Enemies);
+        var visible=new HashSet<int>();var alert=new Dictionary<int,MonsterAwareness>();var hp=new Dictionary<int,int>();
+        foreach(var m in observed){if(awarenessOnly)m.currentHP=m.maxHP=10000;alert[m.lifeId]=MonsterAwareness.Unaware;hp[m.lifeId]=m.maxHP;}
+        if(awarenessOnly)combat.CurrentHeroCombatState.CurrentHP=combat.CurrentHeroCombatState.MaxHP=10000;
+        ui.SetPaused(false);float deadline=Time.realtimeSinceStartup+25;
+        float stationary=0f;bool settled=false;float lastPosition=space.Position(hero.heroRect).x;
+        while(Time.realtimeSinceStartup<deadline && combat.HasLivingHero)
+        {
+            yield return new WaitForEndOfFrame();
+            stationary=hero.MovementDistanceThisFrame<.001f?stationary+Time.deltaTime:0f;
+            if(stationary>=6f && !settled){Require(Mathf.Abs(ViewX(hero.heroRect)-.65f)<=.002f,"Actual combat stop6 framing");settled=true;Pass("V03 combat stop6 viewport="+ViewX(hero.heroRect));}
+            float nowPosition=space.Position(hero.heroRect).x;Require(Mathf.Abs(nowPosition-lastPosition)<=48.01f,"Unexpected camera/Hero jump");lastPosition=nowPosition;
+            foreach(var m in observed)
+            {
+                if(m.controller==null || !m.controller.IsAlive || m.controller.SpawnVersion!=m.lootKey.Spawn)continue;
+                float vx=ViewX(m.controller.Rect),hx=ViewX(hero.heroRect);
+                float distance=Mathf.Abs(space.Position(hero.heroRect).x-space.Position(m.controller.Rect).x);
+                string state="";
+                if(vx>=0 && vx<=1 && visible.Add(m.lifeId))state+="visible;";
+                if(alert[m.lifeId]!=m.controller.Awareness){state+=m.controller.Awareness+";";alert[m.lifeId]=m.controller.Awareness;}
+                if(m.currentHP<hp[m.lifeId]){state+="damage;";hp[m.lifeId]=m.currentHP;}
+                if(state!="")lines.Add(state+","+Screen.width+",60,"+Time.time+","+hx+","+vx+","+distance+","+m.controller.Awareness+","+m.currentHP);
+            }
+        }
+        ui.SetPaused(true);File.WriteAllLines(Path.Combine(Evidence,"camera-awareness.csv"),lines);if(awarenessOnly)Require(settled,"Fixture must observe six continuous stationary combat seconds");
+        Pass("V03 awareness observation captured; no AI, spawn, attack/sight range or damage overrides; DEVB reset in owned fixture only.");
+        Status(1,"PASS");Status(2,"PASS");
+    }
+
+    void Onscreen(string name)
+    {
+        var r=Find(name);Require(r.gameObject.activeInHierarchy,"Inactive "+name);
+        var corners=new Vector3[4];r.GetWorldCorners(corners);
+        foreach(var c in corners){var p=RectTransformUtility.WorldToScreenPoint(null,c);Require(p.x>=-.5f && p.x<=Screen.width+.5f && p.y>=-.5f && p.y<=Screen.height+.5f,"Clipped control "+name+" at "+Screen.width);}
+    }
+    IEnumerator StabilityV03()
+    {
+        phase=1;var data=gm.HeroData;
+        // UI fixture stock, not a production income or balance claim.
+        var item=EquipmentFoundation.CreateCommon(EquipmentFoundation.DemoSword,1,4);
+        Require(EquipmentRuntime.AddInstance(data,item) && EquipmentInventory.Add(data,EquipmentRefinement.MaterialId,11),"UI fixture gear/stock");
+        item=EquipmentRuntime.Find(data,item.instanceId); // AddInstance stores a canonical copy.
+        data.entityName="Nguyễn Bách Luyện Thiên Đồ Trường Danh";
+        while(data.statPoints<8)data.AddExp(data.expToNextLevel);
+        combat.RefreshRegisteredHeroStats(hero,false);
+        foreach(var size in new[]{new Vector2Int(600,338),new Vector2Int(800,450),new Vector2Int(1150,647),new Vector2Int(1360,680)})
+        {
+            yield return Resize(size.x,size.y);ui.OpenHeroStats();yield return null;ui.RefreshCharacterProgression();
+            var summary=(TMPro.TextMeshProUGUI)Get(ui,"progressionSummary");summary.ForceMeshUpdate();Require(!summary.isTextOverflowing,"Long Character name header overflow "+size.x);
+            foreach(string n in new[]{"CharacterAllocateHP","CharacterAllocatePhysical","DamageClose"})Onscreen(n);
+            int points=data.statPoints,physical=data.addedDamage;Press("CharacterAllocatePhysical");yield return null;
+            Require(data.statPoints==points-1 && data.addedDamage==physical+1,"Repeated UI binding duplicated allocation listener");
+            yield return Capture("v03-character-"+size.x);Press("DamageClose");yield return null;
+            yield return OpenInventory();Select(item.instanceId);yield return null;
+            Onscreen("InventoryClose");Onscreen("InventoryEquip");Onscreen("InventoryForge");
+            Press("InventoryEquip");yield return null;Require(item.isEquipped,"Equip routing");
+            Press("EquipmentSlot0");Press("InventoryUnequip");yield return null;Require(!item.isEquipped,"Unequip routing");Select(item.instanceId);
+            Press("InventoryForge");yield return null;Require(inventory.IsForgeOpen,"Forge modal");
+            foreach(string n in new[]{"Forge_Close","Forge_Up1","Forge_Up2"})Onscreen(n);
+            yield return Capture("v03-forge-"+size.x);Press("Forge_Close");yield return null;Press("InventoryClose");yield return Resize(size.x,size.y);
+            Press("WorldMapButton");yield return null;Onscreen("WorldMapClose");Press("WorldMapClose");yield return null;
+            Pass("V03 routed UI "+size.x+"x"+size.y+": long Hero name, allocation one mutation, Inventory expansion, equip/unequip, Forge and Map open/close; NOT native mouse.");
+        }
+        phase=2;yield return Resize(800,450);ui.SetPaused(true);
+        var expected=CanonicalExpected(data);Require(gm.TryManualSave(SaveSlot.ManualSave1),"UI fixture Save");
+        yield return OpenInventory();Select(item.instanceId);Press("InventoryForge");yield return null;
+        Require(gm.LoadAndContinue(SaveSlot.ManualSave1),"Load from open modal");yield return Ready();Matches(expected,"V03 modal Load");
+        Require(!inventory.IsOpen && !inventory.IsForgeOpen,"Load kept stale modal");
+        ui.OpenHeroStats();yield return null;ui.RefreshCharacterProgression();
+        int oldPoints=gm.HeroData.statPoints;Press("CharacterAllocateHP");yield return null;
+        Require(gm.HeroData.statPoints==oldPoints-1 && data.statPoints==expected.points,"UI changed old Hero after Load");ui.CloseDamageInfo();
+        ui.SetPaused(false);yield return null;yield return new WaitForEndOfFrame();
+        Require(Get(space,"cameraTarget")==hero && combat.CurrentHeroCombatState.Data==gm.HeroData,"Camera/combat stale after Load");ui.SetPaused(true);
+        Pass("V03 Load from Forge closes modal, allocation targets fresh canonical Hero only; camera/combat rebind.");
+        phase=3;data=gm.HeroData;WorldMapNode node;Require(WorldMapCatalog.TryGet(data.worldMapId,out node),"World node");string origin=node.Id,destination=null;
+        foreach(var id in node.Links){WorldMapNode candidate;if(WorldMapCatalog.TryGet(id,out candidate) && !candidate.IsBoss){destination=id;break;}}
+        Require(destination!=null,"Missing normal neighbor");string before=JsonUtility.ToJson(data);
+        Require(!gm.TryTravelToWorldMap(destination) && JsonUtility.ToJson(data)==before,"Blocked Travel mutated Hero");
+        // Deterministic lifecycle traversal, real accepted damage/death path; not natural farm timing.
+        for(int region=0;region<2;region++)
+        {
+            string current=data.worldMapId;
+            for(int w=0;w<5;w++) {
+                if(Enemies.Count==0)Call(gm,"CallNextWave");
+                var enemies=new List<CombatManager.ActiveMonsterInfo>(Enemies);Require(enemies.Count>0,"Missing wave");
+                foreach(var m in enemies)Call(combat,"DealDamageFromHero",m,int.MaxValue,combat.CurrentHeroCombatState,null);
+                Require(data.worldMapId==current,"Wave auto-travelled");
+            }
+            Require(WorldMapCatalog.IsCleared(data,current),"Five accepted waves did not clear");
+            string next=region==0?destination:origin;Require(gm.TryTravelToWorldMap(next),"Legal/re-entry Travel");yield return Ready();data=gm.HeroData;
+        }
+        Require(data.worldMapId==origin && WorldMapCatalog.IsCleared(data,origin) && WorldMapCatalog.IsCleared(data,destination) && data.worldMapLoopWave==1,"Re-entry changed clear/wave state");
+        expected=CanonicalExpected(data);Require(gm.TryManualSave(SaveSlot.ManualSave2) && gm.LoadAndContinue(SaveSlot.ManualSave2),"Travel Save/Load");yield return Ready();Matches(expected,"V03 re-entry Load");
+        ui.SetPaused(false);yield return null;yield return new WaitForEndOfFrame();Require(Get(space,"cameraTarget")==hero,"Camera Travel/Load binding");ui.SetPaused(true);
+        Call(combat,"ApplyIncomingDamage",1000000,"[V03 fixture defeat]",null,null);yield return null;gm.OnRetryClicked();yield return Ready();
+        ui.SetPaused(false);yield return null;yield return new WaitForEndOfFrame();Require(Get(space,"cameraTarget")==hero && combat.CurrentHeroCombatState.Data==gm.HeroData,"Camera Retry binding");ui.SetPaused(true);
+        Pass("V03 blocked Travel is mutation-free; real lifecycle clears two nodes; explicit adjacent Travel and cleared-node re-entry; Save/Load then defeat/Retry retain binding.");
+        Status(1,"PASS");Status(2,"PASS");Status(3,"PASS");Status(4,"PASS");
+    }
+
     IEnumerator Run()
     {
         yield return null;
@@ -287,10 +413,12 @@ public sealed class MainGameFoundationProbe : MonoBehaviour
         AssertIsolated();ui.IsolatedValidationProfile=true;
         // A personal DEVB file may otherwise hide the level-1 gear increment.
         // Reset only static state inside this disposable test process; no file write.
-        if(Array.IndexOf(Environment.GetCommandLineArgs(),"-foundationGearDropV01")>=0 || Array.IndexOf(Environment.GetCommandLineArgs(),"-foundationProgressionV02")>=0)CombatBalance.ResetDevProfiles();
+        if(Array.IndexOf(Environment.GetCommandLineArgs(),"-foundationStabilityV03")>=0 || Array.IndexOf(Environment.GetCommandLineArgs(),"-foundationCameraV03")>=0 || Array.IndexOf(Environment.GetCommandLineArgs(),"-foundationGearDropV01")>=0 || Array.IndexOf(Environment.GetCommandLineArgs(),"-foundationProgressionV02")>=0)CombatBalance.ResetDevProfiles();
         yield return Resize(800,450);Call(gm,"InitHeroData",false);Call(gm,"DeployHero",false);yield return Ready();
         inventory=(InventoryPanelUI)Get(ui,"inventoryUI");Require(inventory!=null,"No Inventory panel.");
         ui.inventoryLayoutDebug=false;ui.inventoryUseArtTheme=false;ui.ApplyHudFromInspector();
+        if(Array.IndexOf(Environment.GetCommandLineArgs(),"-foundationStabilityV03")>=0) {yield return StabilityV03();yield break;}
+        if(Array.IndexOf(Environment.GetCommandLineArgs(),"-foundationCameraV03")>=0) {yield return CameraV03();yield break;}
         if(Array.IndexOf(Environment.GetCommandLineArgs(),"-foundationProgressionV02")>=0) {
             yield return ProgressionV02();yield break;
         }
@@ -507,6 +635,7 @@ public sealed class MainGameFoundationProbe : MonoBehaviour
         Require(!item.isEquipped && WeaponBasicAttack.DamageSource(gm.HeroData)==baseline,"Unequip left stale stats.");
         Select(id);Press("InventoryEquip");yield return null;
         Pass("GEAR v0.1 UI HANDLERS: awarded unique "+item.templateId+"; source "+baseline+" -> "+equipped+"; equip/unequip via real Inventory hit-test/click routing (not native input).");Status(1,"PASS");
+
         if(Array.IndexOf(Environment.GetCommandLineArgs(),"-foundationProgressionV02")>=0) {
             string beforeFailure=GearCore(gm.HeroData);int beforeStock=EquipmentInventory.Count(gm.HeroData,EquipmentRefinement.MaterialId);
             Require(beforeStock<EquipmentRefinement.SpecialCost,"Expected insufficient first-kill materials.");
