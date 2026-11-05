@@ -286,6 +286,31 @@ public sealed class MainGameFoundationProbe : MonoBehaviour
         yield return Resize(800,450);Call(gm,"InitHeroData",false);Call(gm,"DeployHero",false);yield return Ready();
         inventory=(InventoryPanelUI)Get(ui,"inventoryUI");Require(inventory!=null,"No Inventory panel.");
         ui.inventoryLayoutDebug=false;ui.inventoryUseArtTheme=false;ui.ApplyHudFromInspector();
+        if(Array.IndexOf(Environment.GetCommandLineArgs(),"-foundationV01MaterialSmoke")>=0)
+        {
+            var cfg=gm.ProductionLoot;
+            Require(cfg!=null && cfg.configured && cfg.material.enabled && cfg.material.chance==.60 &&
+                cfg.material.materialId==EquipmentRefinement.MaterialId && cfg.material.minQuantity==1 && cfg.material.maxQuantity==2,
+                "MainGame material prototype must be authored explicitly.");
+            Require(!cfg.equipment.enabled && cfg.equipment.chance==.08 && cfg.equipment.templates.Count==0,
+                "Unapproved gear values must remain unconfigured.");
+            Require(!gm.ControlledLootTestEnabled,"Production smoke must not use controlled loot A.");
+            Require(!string.IsNullOrEmpty(replayProfile) && gm.LoadAndContinue(SaveSlot.ManualSave1),"Smoke requires an owned replay slot.");
+            yield return Ready();
+            // Deterministic smoke only: the scene copy already asserted 0.60.
+            // Altering this in-memory test instance never edits MainGame balance.
+            cfg.material.chance=1;
+            int stock=EquipmentInventory.Count(gm.HeroData,EquipmentRefinement.MaterialId),gear=gm.HeroData.equipmentItems.Count;
+            int level=gm.HeroData.currentLevel;float exp=gm.HeroData.currentExp;
+            ui.SetPaused(false);
+            yield return Until(()=>EquipmentInventory.Count(gm.HeroData,EquipmentRefinement.MaterialId)>stock,45,"natural production material kill");
+            ui.SetPaused(true);int gained=EquipmentInventory.Count(gm.HeroData,EquipmentRefinement.MaterialId)-stock;
+            var smokeLoot=combat.GetComponent<LootDropPresentation>();
+            Require(gained>=1 && gained<=2 && gm.HeroData.equipmentItems.Count==gear && (smokeLoot==null || smokeLoot.Count==0),"Material must not fabricate gear or sword VFX.");
+            Require(gm.HeroData.currentLevel!=level || gm.HeroData.currentExp!=exp,"Reward must follow a real combat kill.");
+            AssertIsolated();Pass("V01 MATERIAL SMOKE: MainGame serialized 0.60/1-2; fixture-only chance 1; natural kill granted "+gained+" material, no gear/VFX, controlled A off.");
+            yield break;
+        }
         if(!string.IsNullOrEmpty(replayProfile))
         {
             phase=3;Set(gm,"controlledLootTest",true);
