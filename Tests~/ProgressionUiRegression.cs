@@ -36,6 +36,8 @@ partial class MotionRegression
             string after=JsonUtility.ToJson(h,false);Get<CustomInteractable>(ui,"allocateHealthInput").onClickEvent.Invoke();
             Check(JsonUtility.ToJson(h,false)==after && !gm.AllocateHeroPhysicalAttack(),"repeat with zero points has no mutation");
             Check(!Get<CustomInteractable>(ui,"allocateHealthInput").enabled,"disabled hit target at zero");
+            string summary=Get<TextMeshProUGUI>(ui,"progressionSummary").text;
+            Check(summary.Contains("HP: "+state.CurrentHP+"/"+state.MaxHP) && summary.Contains("Physical Attack: "+WeaponBasicAttack.Physical(h)) && summary.Contains("EXP: "+h.currentExp+"/"+h.expToNextLevel),"essential progression values remain visible outside paged details");
             h.AddExp(h.expToNextLevel);f.combat.RefreshRegisteredHeroStats(f.hero,false);int before=WeaponBasicAttack.Physical(h);ui.SetPaused(false);ui.RefreshCharacterProgression();
             Get<CustomInteractable>(ui,"allocatePhysicalInput").onClickEvent.Invoke();
             Check(h.addedDamage==1 && h.statPoints==0 && WeaponBasicAttack.Physical(h)==before+1 && WeaponBasicAttack.Magical(h)==0,"one physical point, no magic allocation");
