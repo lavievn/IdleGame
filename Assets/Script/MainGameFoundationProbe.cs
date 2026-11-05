@@ -404,6 +404,23 @@ public sealed class MainGameFoundationProbe : MonoBehaviour
         Status(1,"PASS");Status(2,"PASS");Status(3,"PASS");Status(4,"PASS");
     }
 
+    IEnumerator RecoveryV03()
+    {
+        phase=3;Require(!string.IsNullOrEmpty(replayProfile),"Owned replay required");
+        Require(gm.LoadAndContinue(SaveSlot.ManualSave1),"Recovery Load");yield return Ready();
+        string gear=GearCore(gm.HeroData);int hpAdded=gm.HeroData.addedHealth,physical=gm.HeroData.addedDamage,points=gm.HeroData.statPoints;
+        int source=WeaponBasicAttack.DamageSource(gm.HeroData),events=gm.DamageHistory.Length;
+        ui.SetPaused(false);yield return Until(()=>{var rows=gm.DamageHistory;for(int i=events;i<rows.Length;i++)if(rows[i].Contains("; tổng: "+source+";"))return true;return false;},45,"natural post-Load damage");ui.SetPaused(true);
+        Require(Get(space,"cameraTarget")==hero && combat.CurrentHeroCombatState.Data==gm.HeroData && GearCore(gm.HeroData)==gear && gm.HeroData.addedHealth==hpAdded && gm.HeroData.addedDamage==physical && gm.HeroData.statPoints==points,"Post-Load combat lost canonical data/binding");
+        Pass("V03 recovery: actual Combat.Update after real Load consumed restored source="+source+" with current camera binding.");
+        var expected=CanonicalExpected(gm.HeroData);Require(gm.TryManualSave(SaveSlot.ManualSave2) && gm.LoadAndContinue(SaveSlot.ManualSave2),"Recovery second Save/Load");yield return Ready();Matches(expected,"V03 recovery roundtrip");
+        Call(combat,"ApplyIncomingDamage",1000000,"[V03 recovery fixture defeat]",null,null);yield return null;gm.OnRetryClicked();yield return Ready();
+        Require(GearCore(gm.HeroData)==gear && gm.HeroData.addedHealth==hpAdded && gm.HeroData.addedDamage==physical && gm.HeroData.statPoints==points,"Load then Retry lost gear/allocation");
+        events=gm.DamageHistory.Length;ui.SetPaused(false);yield return Until(()=>gm.DamageHistory.Length>events,45,"natural post-Retry combat");ui.SetPaused(true);
+        Require(Get(space,"cameraTarget")==hero && combat.CurrentHeroCombatState.Data==gm.HeroData,"Retry combat stale binding");
+        Pass("V03 recovery: saved active progression, real Load then fixture defeat/Retry, natural combat continues; gear/allocation and camera binding preserved.");Status(3,"PASS");Status(4,"PASS");
+    }
+
     IEnumerator Run()
     {
         yield return null;
@@ -413,10 +430,11 @@ public sealed class MainGameFoundationProbe : MonoBehaviour
         AssertIsolated();ui.IsolatedValidationProfile=true;
         // A personal DEVB file may otherwise hide the level-1 gear increment.
         // Reset only static state inside this disposable test process; no file write.
-        if(Array.IndexOf(Environment.GetCommandLineArgs(),"-foundationStabilityV03")>=0 || Array.IndexOf(Environment.GetCommandLineArgs(),"-foundationCameraV03")>=0 || Array.IndexOf(Environment.GetCommandLineArgs(),"-foundationGearDropV01")>=0 || Array.IndexOf(Environment.GetCommandLineArgs(),"-foundationProgressionV02")>=0)CombatBalance.ResetDevProfiles();
+        if(Array.IndexOf(Environment.GetCommandLineArgs(),"-foundationRecoveryV03")>=0 || Array.IndexOf(Environment.GetCommandLineArgs(),"-foundationStabilityV03")>=0 || Array.IndexOf(Environment.GetCommandLineArgs(),"-foundationCameraV03")>=0 || Array.IndexOf(Environment.GetCommandLineArgs(),"-foundationGearDropV01")>=0 || Array.IndexOf(Environment.GetCommandLineArgs(),"-foundationProgressionV02")>=0)CombatBalance.ResetDevProfiles();
         yield return Resize(800,450);Call(gm,"InitHeroData",false);Call(gm,"DeployHero",false);yield return Ready();
         inventory=(InventoryPanelUI)Get(ui,"inventoryUI");Require(inventory!=null,"No Inventory panel.");
         ui.inventoryLayoutDebug=false;ui.inventoryUseArtTheme=false;ui.ApplyHudFromInspector();
+        if(Array.IndexOf(Environment.GetCommandLineArgs(),"-foundationRecoveryV03")>=0) {yield return RecoveryV03();yield break;}
         if(Array.IndexOf(Environment.GetCommandLineArgs(),"-foundationStabilityV03")>=0) {yield return StabilityV03();yield break;}
         if(Array.IndexOf(Environment.GetCommandLineArgs(),"-foundationCameraV03")>=0) {yield return CameraV03();yield break;}
         if(Array.IndexOf(Environment.GetCommandLineArgs(),"-foundationProgressionV02")>=0) {
