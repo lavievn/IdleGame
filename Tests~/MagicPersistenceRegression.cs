@@ -29,6 +29,7 @@ partial class MotionRegression
     }
     static void MagicPersistenceTests()
     {
+        EscapeLegacyMagicTests();
         Run("Magic retains launch endpoint after target death/null, same-wave AoE remains impact-only",()=>{
             var f=new Field();var target=f.Monster(-200);var near=f.Monster(-250);var far=f.Monster(-700);f.Battle(target,near,far);
             var nearby=f.Enemies[1];var outside=f.Enemies[2];int hp=nearby.currentHP;
@@ -137,5 +138,61 @@ partial class MotionRegression
             });
         }
         Resources.Unregister("Spawn/Appear");
+    }
+
+    static void EscapeLegacyMagicTests()
+    {
+        Resources.Register("WorldMapCatalog",new TextAsset(File.ReadAllText("Assets/Resources/WorldMapCatalog.txt")));
+        Resources.Register("WorldMapPolygonSeeds",new TextAsset(File.ReadAllText("Assets/Resources/WorldMapPolygonSeeds.txt")));
+        Resources.Register("Spawn/Appear",new Texture2D(4000,2500,TextureFormat.RGBA32,false));
+        try {
+            using(var sprites=new SpriteResources())
+            Run("EscapeLegacyMagic: B2 AoE survives same-map recovery without damage or rewards",()=>{
+                using(var f=new DesktopHotfixFixture(800,true)) {
+                    WaveEntryScene(f);WaveEntryFinish(f);
+                    var position=f.field.space.Position(f.field.hero.heroRect);
+                    var mage=FormationHero(f.field,position.x,200,AttackMode.RangedMagic);
+                    f.field.space.SetPosition(mage.heroRect,position);
+                    var actor=f.field.combat.StateFor(mage);
+                    Check(actor!=null && actor.Controller==mage && !mage.UsesWeaponBasicAttack,
+                        "registered temporary B2 caster, never a primary stance override");
+                    Check(f.field.hero.UsesWeaponBasicAttack,"primary retains production weapon binding");
+                    var target=f.field.Enemies[0].controller;
+                    f.field.space.SetPosition(target.Rect,position+new Vector2(-200,0));
+                    target.attackMode=AttackMode.Melee;
+                    f.field.combat.CurrentHeroCombatState.AttackTimer=1000f;
+                    ReadySoundAttack(f.field,mage);CombatStep(f.field,.01f);
+                    Check(f.field.combat.PendingProjectileCount==1,"one released projectile");
+                    var shot=FirstShot(f.field);var bolt=Bolts(f.field)[0];
+                    Check(Get<bool>(shot,"magic") && !Get<bool>(shot,"staffBasic") &&
+                        Get<object>(shot,"hero")==actor,"actual legacy AoE from the registered B2");
+                    float elapsed=Get<float>(shot,"elapsed"),remaining=Get<float>(shot,"duration")-elapsed;
+                    Check(remaining>.02f,"flight has time left before recovery");
+                    int exp=f.manager.HeroData.currentExp,mageExp=actor.Data.currentExp;
+                    int wave=f.manager.HeroData.worldMapLoopWave,progress=f.manager.HeroData.worldMapWaveProgress;
+                    int gear=f.manager.HeroData.equipmentItems.Count;
+                    string one=File.ReadAllText(f.Slot("ManualSave1")),two=File.ReadAllText(f.Slot("ManualSave2"));
+
+                    Call(f.manager,"RecoverEscapedWave");
+                    Check(f.field.combat.PendingProjectileCount==0,"recovery cancels old damage eligibility");
+                    Check(f.field.combat.DetachedMagicVisualCount==1 && Bolts(f.field).Count==1 &&
+                        Bolts(f.field)[0]==bolt,"same-map recovery preserves the exact legacy Magic visual");
+                    Near(Get<float>(Get<IList>(f.field.combat,"magicFlights")[0],"elapsed"),elapsed,
+                        "recovery does not advance the flight clock");
+                    CombatStep(f.field,remaining-.01f);
+                    Check(f.field.combat.DetachedMagicVisualCount==1 && Bolts(f.field).Count==1,"no early visual expiry");
+                    CombatStep(f.field,.02f);
+                    Check(f.field.combat.DetachedMagicVisualCount==0 && Bolts(f.field).Count==0 &&
+                        SparkCount(f.field)>0,"original flight finishes once with its terminal burst");
+                    Check(f.manager.HeroData.currentExp==exp && actor.Data.currentExp==mageExp &&
+                        f.manager.HeroData.worldMapLoopWave==wave && f.manager.HeroData.worldMapWaveProgress==progress &&
+                        f.manager.HeroData.equipmentItems.Count==gear,"detached visual grants no EXP, progress or gear");
+                    Check(File.ReadAllText(f.Slot("ManualSave1"))==one && File.ReadAllText(f.Slot("ManualSave2"))==two,
+                        "owned manual slots remain byte-identical");
+                }
+            });
+        } finally {
+            Resources.Unregister("Spawn/Appear");Resources.Unregister("WorldMapCatalog");Resources.Unregister("WorldMapPolygonSeeds");
+        }
     }
 }
