@@ -129,6 +129,7 @@ partial class MotionRegression
 
     static void Main(string[] args)
     {
+        if(args.Length==1 && args[0]=="--martial-registry") {MartialArtsRegistryTests();return;}
         if(args.Length==1 && args[0]=="--realm-save-fixture") {RealmSaveCompatibilityTests();return;}
         if(args.Length==1 && args[0]=="--realm-transition") {RealmTransitionTests();return;}
         if(args.Length==1 && args[0]=="--realm-progression") {RealmProgressionTests();return;}
