@@ -26,6 +26,9 @@ partial class MotionRegression
         Run("progression EXP points allocation keeps HP ratio attack clock and authority",()=>{
             Field f;GameManager gm;var ui=ProgressionUi(out f,out gm);var h=gm.HeroData;
             h.AddExp(CombatBalance.RequiredExp(1));Check(h.currentLevel==2 && h.statPoints==1,"one point per level");
+            var enemy=f.Monster(f.space.Position(f.hero.heroRect).x-5);
+            LootBattle(f,gm,enemy);f.hero.TickMovement(f.space,0);
+            Check(Get<bool>(f.combat,"isBattling"),"allocation exercised during a registered live encounter");
             f.combat.RefreshRegisteredHeroStats(f.hero,false);var state=f.combat.CurrentHeroCombatState;
             state.CurrentHP=state.MaxHP/2;state.AttackTimer=.42f;int life=state.LifeVersion,oldMax=state.MaxHP,oldHP=state.CurrentHP;
             ui.OpenHeroStats();ui.SetPaused(true);
