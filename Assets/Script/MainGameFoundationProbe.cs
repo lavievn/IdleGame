@@ -339,6 +339,84 @@ public sealed class MainGameFoundationProbe : MonoBehaviour
         var corners=new Vector3[4];r.GetWorldCorners(corners);
         foreach(var c in corners){var p=RectTransformUtility.WorldToScreenPoint(null,c);Require(p.x>=-.5f && p.x<=Screen.width+.5f && p.y>=-.5f && p.y<=Screen.height+.5f,"Clipped control "+name+" at "+Screen.width);}
     }
+    IEnumerator DevelopmentV04()
+    {
+        phase=1;var data=gm.HeroData;
+        var item=EquipmentFoundation.CreateCommon(EquipmentFoundation.DemoSword,1,4);
+        Require(EquipmentRuntime.AddInstance(data,item) && EquipmentInventory.Add(data,EquipmentRefinement.MaterialId,12),"V04 fixture gear/material");
+        item=EquipmentRuntime.Find(data,item.instanceId);
+        string longName="";for(int i=0;i<28;i++)longName+=(i==0?"":" ")+"TrườngDanh"+i;
+        Require(EquipmentInventory.Add(data,longName,2),"V04 long fallback item label");
+        foreach(var size in new[]{new Vector2Int(600,338),new Vector2Int(1150,647)})
+        {
+            yield return Resize(size.x,size.y);yield return OpenInventory();
+            Set(inventory,"selectedKey","stack:"+longName);Call(inventory,"SetDetailView",false);yield return null;
+            var pages=(IList)Get(inventory,"detailPages");string joined="";
+            for(int i=0;i<pages.Count;i++)
+            {
+                if(i>0)Call(inventory,"ChangeDetailPage",1);
+                var text=(TMPro.TextMeshProUGUI)Get(inventory,"detail");text.ForceMeshUpdate();
+                Require(!text.isTextOverflowing,"V04 long label detail clipped at "+size.x+" page "+i);joined+=" "+text.text;
+            }
+            for(int i=0;i<28;i++)Require(joined.Contains("TrườngDanh"+i),"V04 lost long label token "+i);
+            Require(EquipmentInventory.Count(data,longName)==2,"V04 display changed item ID/quantity");
+            Onscreen("InventoryClose");Onscreen("InventoryDetailNext");
+            yield return Capture("v04-long-label-"+size.x);yield return CloseInventory();
+        }
+        Pass("V04 long fallback item name: all 28 tokens reachable through detail pages; controls in bounds; ID/quantity unchanged. 600/1150 input sizes, actual expanded Inventory size recorded in screenshots.");
+        yield return OpenInventory();Select(item.instanceId);Press("InventoryForge");yield return null;
+        var under=Find("InventoryClose");var point=RectTransformUtility.WorldToScreenPoint(null,under.TransformPoint(under.rect.center));
+        var hit=ui.HitControl(point);Require(hit!=null && hit.GetRect()!=under,"V04 Forge modal exposes underlying close");
+        ui.HandlePointerClick(point,point);yield return null;
+        Require(inventory.IsOpen && inventory.IsForgeOpen && !item.isEquipped,"V04 click reached underlying Inventory");
+        int stock=EquipmentInventory.Count(data,EquipmentRefinement.MaterialId);
+        Require(EquipmentInventory.Add(data,EquipmentRefinement.MaterialId,3),"V04 external stock change");
+        yield return new WaitForSecondsRealtime(.3f);
+        Require(((TMPro.TextMeshProUGUI)Get(inventory,"forgeMaterialLabel")).text.Contains((stock+3).ToString()),"V04 Forge stale material count");
+        data.equipmentItems.Remove(item);data.isDirty=true;
+        yield return new WaitForSecondsRealtime(.3f);
+        Require(!inventory.IsForgeOpen,"V04 Forge retained missing item");
+        Require(EquipmentRuntime.AddInstance(data,item),"V04 restore owned fixture gear");
+        yield return CloseInventory();
+        Pass("V04 Forge modal blocks underlying close through Unity UI routing; unscaled refresh sees changed stock and closes when selected gear disappears. Not OS-native input.");Status(1,"PASS");
+
+        phase=2;yield return Resize(800,450);
+        var visual=LootDropPresentation.Install(combat);visual.SetInventoryTarget(null);
+        var field=(RectTransform)Get(space,"battleArea");
+        visual.Show(field,new Vector2(0,40),EquipmentFoundation.DemoSword,"v04-cosmetic-only",null);
+        Require(visual.Count==1,"V04 cosmetic fixture did not start");
+        visual.Advance(.3f,null);yield return Resize(600,338);visual.Advance(.35f,null);
+        Require(visual.Count==1,"V04 resize during falling lost receipt");
+        visual.Advance(.5f,null);
+        var drops=(IList)Get(visual,"drops");var drop=drops[0];var root=(RectTransform)Get(drop,"Root");
+        Require((bool)Get(drop,"Collecting"),"V04 receipt did not enter flight");
+        var start=(Vector2)Get(drop,"FlightStart");
+        yield return Resize(1150,647);visual.Advance(.15f,null);
+        float age=(float)Get(drop,"Age");float t=Mathf.Clamp01((age-1.1f)/.55f);float ease=t*t;
+        float expectedX=Mathf.Lerp(start.x,Screen.width+16f,ease);
+        Require(Mathf.Abs(root.anchoredPosition.x-expectedX)<.1f,"V04 flight destination did not follow resized screen");
+        Require(EquipmentInventory.Count(data,longName)==2 && EquipmentRuntime.Find(data,item.instanceId)!=null,"V04 visual mutated inventory");
+        yield return Capture("v04-loot-resize");visual.Advance(1f,null);Require(visual.Count==0,"V04 receipt did not retire");
+        Pass("V04 actual Game View resize during drop and UI flight; dynamic right-edge trajectory matches screen, receipt retires, inventory unchanged. Explicit Advance while paused, not natural-duration/native playback.");Status(2,"PASS");
+
+        phase=3;while(data.statPoints<2)data.AddExp(data.expToNextLevel);
+        Require(gm.TryManualSave(SaveSlot.ManualSave1),"V04 owned Save");
+        yield return OpenInventory();Select(item.instanceId);Press("InventoryForge");yield return null;
+        var beforeLoad=data;int oldAdded=data.addedDamage;
+        Require(gm.LoadAndContinue(SaveSlot.ManualSave1),"V04 Load from Forge");yield return Ready();
+        Require(!inventory.IsOpen && !inventory.IsForgeOpen,"V04 stale modal after Load");
+        ui.OpenHeroStats();yield return null;ui.RefreshCharacterProgression();int points=gm.HeroData.statPoints;
+        Press("CharacterAllocatePhysical");yield return null;
+        Require(gm.HeroData.statPoints==points-1 && gm.HeroData.addedDamage==oldAdded+1 && beforeLoad.addedDamage==oldAdded,"V04 stale/duplicate allocation after Load");
+        ui.CloseDamageInfo();data=gm.HeroData;
+        Call(combat,"ApplyIncomingDamage",1000000,"[V04 fixture defeat]",null,null);yield return null;gm.OnRetryClicked();yield return Ready();
+        Require(combat.CurrentHeroCombatState.Data==gm.HeroData && Get(space,"cameraTarget")==hero && !inventory.IsOpen && !inventory.IsForgeOpen,"V04 Retry stale bindings");
+        yield return OpenInventory();Select(item.instanceId);Press("InventoryEquip");yield return null;
+        Require(EquipmentRuntime.Find(gm.HeroData,item.instanceId).isEquipped,"V04 post-Retry Inventory stale item");
+        yield return CloseInventory();
+        Pass("V04 Load/Retry close old modals; one allocation changes only new canonical Hero; post-Retry Inventory equip and existing camera/combat bindings point at current actor.");Status(3,"PASS");Status(4,"PASS");
+    }
+
     IEnumerator StabilityV03()
     {
         phase=1;var data=gm.HeroData;
@@ -430,10 +508,11 @@ public sealed class MainGameFoundationProbe : MonoBehaviour
         AssertIsolated();ui.IsolatedValidationProfile=true;
         // A personal DEVB file may otherwise hide the level-1 gear increment.
         // Reset only static state inside this disposable test process; no file write.
-        if(Array.IndexOf(Environment.GetCommandLineArgs(),"-foundationRecoveryV03")>=0 || Array.IndexOf(Environment.GetCommandLineArgs(),"-foundationStabilityV03")>=0 || Array.IndexOf(Environment.GetCommandLineArgs(),"-foundationCameraV03")>=0 || Array.IndexOf(Environment.GetCommandLineArgs(),"-foundationGearDropV01")>=0 || Array.IndexOf(Environment.GetCommandLineArgs(),"-foundationProgressionV02")>=0)CombatBalance.ResetDevProfiles();
+        if(Array.IndexOf(Environment.GetCommandLineArgs(),"-foundationDevelopmentV04")>=0 || Array.IndexOf(Environment.GetCommandLineArgs(),"-foundationRecoveryV03")>=0 || Array.IndexOf(Environment.GetCommandLineArgs(),"-foundationStabilityV03")>=0 || Array.IndexOf(Environment.GetCommandLineArgs(),"-foundationCameraV03")>=0 || Array.IndexOf(Environment.GetCommandLineArgs(),"-foundationGearDropV01")>=0 || Array.IndexOf(Environment.GetCommandLineArgs(),"-foundationProgressionV02")>=0)CombatBalance.ResetDevProfiles();
         yield return Resize(800,450);Call(gm,"InitHeroData",false);Call(gm,"DeployHero",false);yield return Ready();
         inventory=(InventoryPanelUI)Get(ui,"inventoryUI");Require(inventory!=null,"No Inventory panel.");
         ui.inventoryLayoutDebug=false;ui.inventoryUseArtTheme=false;ui.ApplyHudFromInspector();
+        if(Array.IndexOf(Environment.GetCommandLineArgs(),"-foundationDevelopmentV04")>=0) {yield return DevelopmentV04();yield break;}
         if(Array.IndexOf(Environment.GetCommandLineArgs(),"-foundationRecoveryV03")>=0) {yield return RecoveryV03();yield break;}
         if(Array.IndexOf(Environment.GetCommandLineArgs(),"-foundationStabilityV03")>=0) {yield return StabilityV03();yield break;}
         if(Array.IndexOf(Environment.GetCommandLineArgs(),"-foundationCameraV03")>=0) {yield return CameraV03();yield break;}
