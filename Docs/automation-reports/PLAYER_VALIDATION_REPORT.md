@@ -63,7 +63,7 @@
 
 - Hai FAIL lịch sử đã tái hiện trước sửa. Những lỗi biên dịch trong phần chuẩn bị fixture/test (tham chiếu GameManager/TMP, shadow biến tạm và Vector2 operator của Mono stub) đã được xử lý; không phải lỗi runtime sản phẩm. Native xác nhận font/RectTransform thật; Mono không thay thế Player.
 - Sau 13/13, ảnh phát hiện lỗi caption mới nên chỉ chạy lại bốn ca ảnh hưởng cùng nhóm Mono UI; không lặp toàn bộ Save/Load, loot, AI hoặc các bộ đã PASS mà mã không đổi.
-- **BLOCKED bổ sung:** auto-review từ chối thêm vòng Magic để bổ sung riêng `EscapeLegacyMagic`, vì vượt giới hạn hai vòng sửa–kiểm thử cho vấn đề. Không áp dụng hoặc chạy đề xuất này. Bản nhánh giữ 17/17; chưa bổ sung ca riêng kết hợp legacy AoE với GameManager Escape. Đề xuất review nằm ngoài Git tại `work/player-validation/MagicPersistenceRegression.cs`; cần cho phép thêm vòng trước khi áp dụng/chạy.
+- **Lịch sử, đã được xử lý ở mục 9:** auto-review từng chặn vòng bổ sung `EscapeLegacyMagic`. Người dùng đã cấp ngoại lệ riêng; ca B2 legacy mới PASS, nhóm Magic hiện 18/18. Đề xuất tạm cũ ngoài Git không được áp dụng nguyên xi.
 - `git diff --check` PASS; checker metadata được ghi riêng trong thư mục tests. Không đọc/ghi/xóa save thật. Không giữ helper build hay thay đổi staging trong diff sản phẩm.
 
 ## 7. Ảnh / log
@@ -81,6 +81,18 @@ Gốc artifact: `C:\Users\hason\Documents\Codex\2026-11-04\truy\outputs\player-v
 2. Chạy executable thử có identity riêng ở trên; kiểm startup → UI → combat → Manual/Auto Save → thoát/khởi động lại/Load trong **profile thử**. Không dùng bản TT1 hoặc save thật để nghiệm thu.
 3. Bấm button, paging, chọn/trang bị/tháo, mở/đóng Forge/modal, Pause/Resume ở bốn kích thước; kiểm caption và chặn click xuyên.
 4. Kiểm resize Windows lúc loot bay, Retry và Travel với điều kiện mở map hiện có. Loot production vẫn Off/NoDrop; không bật cờ sản phẩm để thay luật thưởng.
-5. Nếu muốn giữ thêm ca legacy AoE + Escape riêng, cho phép một vòng kiểm thử bổ sung; auto-review đang chặn phần đó theo quota vòng sửa.
+5. Legacy AoE + Escape đã có regression riêng ở mục 9; không cần tiếp tục vòng sửa tự động cho ca này.
 
 Khi mở Editor, chọn rõ `Assets/Scenes/MainGame.unity`, không chơi trên `InitTestSceneFoundationValidation` là bản sao CLI. Bản hiện tại đủ điều kiện build và xem thử UI; chưa đủ bằng chứng nghiệm thu input/Windows gameplay. Hoàn thành báo cáo và dừng, không push/merge.
+
+## 9. EscapeLegacyMagic — follow-up được cấp phép
+
+- Branch giữ nguyên; bắt đầu tại `c79f0df`. Commit test mới: **`450801d9eb4a971cfabe47393f1e6d23c01b09c6`**. Không đổi mã trong Assets, Save schema, balance, gameplay hoặc chính sách hệ thống.
+- **Nguyên nhân gốc:** assertion lịch sử `same-map recovery preserves visual` được dùng khi projectile thực tế là primary staff (`staffBasic=true`, `magic=false`). `Launch` phân biệt staff đánh thường với legacy AoE; `RetireProjectile` chỉ giữ visual khi `magic=true`. Vì vậy kỳ vọng giữ Magic không hợp lệ cho staff. Ở HEAD `c79f0df`, case staff đã PASS; case tên `EscapeLegacyMagic` chưa tồn tại và chưa từng có kết quả FAIL riêng.
+- **Phân loại:** lỗi giả định/thiếu coverage của fixture; **không tái hiện lỗi production**. Không sửa runtime để ép PASS, không đổi các assertion hợp lệ của 17 ca trước.
+- **Điều kiện kiểm riêng:** MainGame entry fixture hiện có, thêm B2 `RangedMagic` qua `RegisterAdditionalHero`, giữ nguyên binding vũ khí của primary; đặt target trong tầm. Xác nhận duy nhất một projectile thuộc đúng B2 với `magic=true`, `staffBasic=false`, rồi gọi `GameManager.RecoverEscapedWave()` khi nó đang bay. Không ép primary sang chế độ legacy như đề xuất tạm cũ.
+- **Kết quả:** ca riêng `--escape-legacy-magic` **PASS 1/1 ngay lần đầu** trên runtime không đổi của `c79f0df`. Recovery xóa khả năng damage, chuyển đúng cùng visual sang detached flight, không nhảy clock/biến mất sớm, kết thúc một lần kèm burst; không tăng EXP/progress/gear và hai slot Manual của fixture giữ nguyên byte. Không có vòng sửa gameplay sau tái hiện vì không phát hiện lỗi.
+- **Hồi quy trực tiếp:** `--magic-persistence` **PASS 18/18** (ca mới + 17 ca cũ), chạy một lượt sau đó để kiểm cleanup và hai loại projectile cùng tồn tại đúng hợp đồng. Đây đều là **Mono/UnityStub**, không phải Unity/Windows acceptance.
+- **File:** `Tests~/MagicPersistenceRegression.cs` thêm test B2 với guard identity/lifecycle/reward; `Tests~/MotionRegression.cs` thêm selector riêng; báo cáo này cập nhật trạng thái. Fixture dùng đường dẫn GUID tạm hiện có, không truy cập save người chơi.
+- **Chưa xác minh:** destroyed-object semantics và hình ảnh trong Unity/Player, input native. Không chạy lại UI/Player hoặc can thiệp Firewall; các giới hạn ở mục 3–4 giữ nguyên. Không kết luận các phần đó PASS từ Mono.
+- **Log:** `C:\Users\hason\Documents\Codex\2026-11-04\truy\work\escape-legacy-magic\targeted.log`, `magic-related.log`; bản sao và summary ở `outputs/escape-legacy-magic/`. `git diff --check` PASS. Hoàn thành ngoại lệ đã cấp, không push/merge và dừng.
