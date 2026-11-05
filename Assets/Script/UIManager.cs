@@ -660,7 +660,7 @@ public partial class UIManager : MonoBehaviour
         if(damagePanel!=null && damagePanel.activeSelf && detailKind==1)
         {
             var gm=GameForUI();var data=gm!=null?gm.HeroData:null;
-            if(progressionSummary!=null)progressionSummary.text=(data==null?"Chưa có nhân vật.":"Cấp "+data.currentLevel+" · Điểm thuộc tính: "+data.statPoints)+"\n"+CharacterSourceStatus;
+            if(progressionSummary!=null)progressionSummary.text=(data==null?"Chưa có nhân vật.":"Cấp "+data.currentLevel+" · Cảnh giới: "+TuTienCore.RankDatabase.GetRankName(Mathf.Clamp(data.currentLevel,1,999))+"\nĐiểm thuộc tính: "+data.statPoints)+"\n"+CharacterSourceStatus;
             bool can=gm!=null && gm.CanAllocateHeroAttribute;
             SetAllocationEnabled(allocateHealthInput,can);SetAllocationEnabled(allocatePhysicalInput,can);
             string current=CurrentHeroDetails();

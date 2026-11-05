@@ -44,7 +44,7 @@ partial class MotionRegression
             Check(gm.EquipGear(sword.instanceId,EquipmentSlot.Weapon) && WeaponBasicAttack.Physical(h)==before+5,"gear adds once on allocation");
             Check(gm.UnequipGear(EquipmentSlot.Weapon) && WeaponBasicAttack.Physical(h)==before+1 && h.addedHealth==6 && h.addedDamage==1,"unequip preserves allocation");
         });
-        Run("progression rejects stale dead and pending Hero and rebinds after new run",()=>{
+        Run("progression rejects stale dead Hero and rebinds after new run",()=>{
             Field f;GameManager gm;var ui=ProgressionUi(out f,out gm);var old=gm.HeroData;old.statPoints=2;
             var next=HeroAt(1);next.statPoints=1;Set(gm,"runtimeHeroData",next);
             Check(!gm.AllocateHeroHealth() && old.statPoints==2 && next.statPoints==1,"stale combat binding rejected");
@@ -55,6 +55,15 @@ partial class MotionRegression
             Check(gm.HeroData.statPoints==0 && gm.HeroData.addedHealth==0 && gm.HeroData.addedDamage==0,"new run resets allocations");
             Check(!Get<CustomInteractable>(ui,"allocatePhysicalInput").enabled,"new run cannot mutate retired Hero");
             ui.OpenDamageInfo();Check(!Get<RectTransform>(ui,"allocatePhysicalButton").gameObject.activeSelf,"allocation hidden on combat log");
+        });
+        Run("progression realm display follows existing boundary mapping without mutation",()=>{
+            Field f;GameManager gm;var ui=ProgressionUi(out f,out gm);var h=gm.HeroData;
+            int[] levels={1,10,11,100,101};string[] names={"Luyện Khí","Luyện Khí","Trúc Cơ","Chân Tiên","Tiên Đế"};
+            ui.OpenHeroStats();for(int i=0;i<levels.Length;i++) {
+                h.currentLevel=levels[i];string before=JsonUtility.ToJson(h,false);ui.RefreshCharacterProgression();
+                Check(Get<TextMeshProUGUI>(ui,"progressionSummary").text.Contains("Cảnh giới: "+names[i]),"level "+levels[i]+" label derives from existing rank function");
+                Check(JsonUtility.ToJson(h,false)==before,"presentation grants no buff or persisted realm state");
+            }
         });
     }
 }
