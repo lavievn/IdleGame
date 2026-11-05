@@ -566,18 +566,52 @@ public sealed class InventoryPanelUI : MonoBehaviour
         float left=fx+12f,inner=fw-24f;
         Place((RectTransform)forgeTitle.transform,left,fy+9f,inner-80f,28f);
         Place(FindForgeButton("Forge_Close"),fx+fw-81f,fy+7f,73f,27f);
+        if(fh<360f)
+        {
+            // Short windows: put the thumbnail beside the description so the
+            // controls keep readable rows instead of shrinking under the header.
+            float s=Mathf.Min(1f,(fh-44f)/270f),top=fy+42f;
+            Place(forgeCell,left,top,80f,72f*s);
+            Place(forgeCellInside,left+4f,top+4f,72f,72f*s-8f);
+            Place((RectTransform)forgeCellLevel.transform,left+3f,top+3f,74f,18f*s);
+            Place((RectTransform)forgeCellCount.transform,left+3f,top+49f*s,74f,20f*s);
+            Place((RectTransform)forgeCellTitle.transform,left+90f,top,inner-90f,32f*s);
+            Place((RectTransform)forgeInfo.transform,left+90f,top+35f*s,inner-90f,36f*s);
+            forgeInfo.alignment=TextAlignmentOptions.TopLeft;
+            for(int i=0;i<3;i++)
+            {
+                float row=top+(79f+i*30f)*s;
+                Place(forgeMinus[i],fx+fw-102f,row,29f,26f*s);
+                Place(forgePlus[i],fx+fw-36f,row,29f,26f*s);
+                var label=GetForgeRowLabel(i);
+                Place((RectTransform)label.transform,left,row,fw-130f,26f*s);
+                label.text=new[]{"Cấp vật phẩm","Rèn thường","Rèn đặc biệt"}[i]+"  "+GetForgeValue(i);
+                label.alignment=TextAlignmentOptions.MidlineLeft;
+            }
+            Place((RectTransform)forgeProgressLabel.transform,left,top+172f*s,inner,20f*s);
+            Place(forgeProgressBack,left,top+195f*s,inner,8f*s);
+            var compactItem=EquipmentRuntime.Find(Hero(),forgeItemId);
+            float compactPct=compactItem==null?0:EquipmentRefinement.ProgressPercent(compactItem)/100f;
+            Place(forgeProgressFill,left,top+195f*s,inner*compactPct,8f*s);
+            Place((RectTransform)forgeMaterialLabel.transform,left,top+208f*s,inner,22f*s);
+            Place((RectTransform)forgeMessage.transform,left,top+233f*s,inner,26f*s);
+            return;
+        }
+        // Keep the fixed header and fit the entire body, including its message,
+        // into the frame. The old 510 denominator omitted fixed gaps/footer.
+        scale=Mathf.Min(1f,(fh-44f)/487f);
         float cellWidth=128f*scale,cellHeight=124f*scale;
-        float cx=fx+(fw-cellWidth)*.5f, cy=fy+37f*scale;
+        float cx=fx+(fw-cellWidth)*.5f, cy=fy+40f;
         Place(forgeCell,cx,cy,cellWidth,cellHeight);
         Place(forgeCellInside,cx+4f,cy+4f,cellWidth-8f,cellHeight-8f);
         Place((RectTransform)forgeCellLevel.transform,cx+cellWidth-60f,cy+8f,54f,22f);
         Place((RectTransform)forgeCellCount.transform,cx+5f,cy+cellHeight-28f,cellWidth-10f,23f);
-        Place((RectTransform)forgeCellTitle.transform,left,cy+cellHeight+4f,inner,26f);
-        float detailsY=cy+cellHeight+32f;
+        Place((RectTransform)forgeCellTitle.transform,left,cy+cellHeight+4f*scale,inner,26f*scale);
+        float detailsY=cy+cellHeight+32f*scale;
         float detailsH=102f*scale;
         Place((RectTransform)forgeInfo.transform,left,detailsY,inner,detailsH);
         forgeInfo.alignment=TextAlignmentOptions.TopLeft;
-        float start=detailsY+detailsH+6f;
+        float start=detailsY+detailsH+6f*scale;
         string[] captions={"Cấp vật phẩm","Rèn thường","Rèn đặc biệt"};
         string[] values={forgeItemId==""?"":GetForgeValue(0),
             forgeItemId==""?"":GetForgeValue(1),forgeItemId==""?"":GetForgeValue(2)};
@@ -591,7 +625,7 @@ public sealed class InventoryPanelUI : MonoBehaviour
             label.text=captions[i]+"  "+values[i];
             label.alignment=TextAlignmentOptions.MidlineLeft;
         }
-        float barY=start+rowStep*3+3f;
+        float barY=start+rowStep*3+3f*scale;
         Place((RectTransform)forgeProgressLabel.transform,left,barY,inner,25f*scale);
         Place(forgeProgressBack,left,barY+27f*scale,inner,12f*scale);
         var item=EquipmentRuntime.Find(Hero(),forgeItemId);
@@ -1008,10 +1042,10 @@ public sealed class InventoryPanelUI : MonoBehaviour
         Place(FindButton("InventoryGrantMaterials"),9f,h-33f,left-8f,26f);
 
         const int cols=5;
-        int rows=h<540f?2:4;
+        int rows=h<360f?1:h<540f?2:4;
         bagPageSize=cols*rows;
         float cellW=(gridW-12f)/cols;
-        float cellH=Mathf.Max(25f,Mathf.Min(58f,(h-300f)/rows));
+        float cellH=rows==1?58f:Mathf.Max(25f,Mathf.Min(58f,(h-300f)/rows));
         float bagY=96f;
         for(int i=0;i<bagButtons.Length;i++)
             Place(bagButtons[i],gridX+(i%cols)*(cellW+2f),
@@ -1378,6 +1412,15 @@ public sealed class InventoryPanelUI : MonoBehaviour
         foreach(var text in root.GetComponentsInChildren<TextMeshProUGUI>(true))
         {
             UIManager.ReadableText(text,Mathf.Clamp(root.rect.width/45f,11f,14f));
+            text.overflowMode=TextOverflowModes.Ellipsis;
+            var caption=text.rectTransform;
+            if(caption.anchorMin.Equals(Vector2.zero) && caption.anchorMax.Equals(Vector2.one))
+            {
+                // Short action rows still need one full font line after padding.
+                // This changes only caption space, never the button hit rectangle.
+                caption.offsetMin=new Vector2(caption.offsetMin.x,1f);
+                caption.offsetMax=new Vector2(caption.offsetMax.x,-1f);
+            }
             text.color=new Color(.89f,.91f,.83f,1f);
         }
         header.alignment=TextAlignmentOptions.Left;

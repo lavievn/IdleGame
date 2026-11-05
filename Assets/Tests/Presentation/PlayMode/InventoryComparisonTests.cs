@@ -152,5 +152,40 @@ namespace IdleGame.Tests.Presentation.PlayMode
                 Assert.That(-forge.anchoredPosition.y+forge.rect.height,Is.LessThanOrEqualTo(-equip.anchoredPosition.y));
             } finally {UnityEngine.Object.DestroyImmediate(hud);UnityEngine.Object.DestroyImmediate(host);}
         }
+        [TestCase(600,338)] [TestCase(800,450)] [TestCase(1150,647)] [TestCase(1360,680)]
+        public void CompactBagAndForgeStayBoundedAtRequestedSizes(int width,int height)
+        {
+            foreach(string name in new[]{"GameManager","UIManager","SaveManager"})
+                Assert.That(UnityEngine.Object.FindObjectsByType(TypeOf(name),FindObjectsInactive.Include,FindObjectsSortMode.None),Is.Empty);
+            var host=new GameObject("Owned inactive compact UI");host.SetActive(false);
+            var hud=new GameObject("Owned inactive compact Canvas",typeof(RectTransform),typeof(Canvas));hud.SetActive(false);
+            try {
+                var ui=host.AddComponent(TypeOf("UIManager"));
+                var panel=Invoke(TypeOf("InventoryPanelUI"),"Install",ui,(RectTransform)hud.transform);
+                Invoke(panel,"Layout",(float)width,(float)height,(float)width,(float)height);
+                var cells=(RectTransform[])Get(panel,"bagButtons");
+                Assert.That(cells[0].rect.height,Is.GreaterThanOrEqualTo(50f),"caption must have room above the next row");
+                if(height==338)Assert.That(Get(panel,"bagPageSize"),Is.EqualTo(5),"short window uses existing pagination");
+                foreach(var label in (Array)Get(panel,"bagTexts"))
+                    Assert.That(Get(label,"overflowMode").ToString(),Is.EqualTo("Ellipsis"));
+                var frame=(RectTransform)Get(panel,"forgeFrame");
+                float frameTop=-frame.anchoredPosition.y,frameBottom=frameTop+frame.rect.height;
+                foreach(string field in new[]{"forgeTitle","forgeCell","forgeCellTitle","forgeInfo","forgeProgressLabel","forgeMaterialLabel","forgeMessage"}) {
+                    var component=(Component)Get(panel,field);var rect=(RectTransform)component.transform;
+                    Assert.That(-rect.anchoredPosition.y,Is.GreaterThanOrEqualTo(frameTop),field+" top");
+                    Assert.That(-rect.anchoredPosition.y+rect.rect.height,Is.LessThanOrEqualTo(frameBottom+.01f),field+" bottom");
+                }
+                var title=(Component)Get(panel,"forgeTitle");var titleRect=(RectTransform)title.transform;
+                var cell=(RectTransform)Get(panel,"forgeCell");
+                Assert.That(-cell.anchoredPosition.y,Is.GreaterThanOrEqualTo(-titleRect.anchoredPosition.y+titleRect.rect.height+2f),"thumbnail must clear header");
+                foreach(var button in (RectTransform[])Get(panel,"forgePlus")) {
+                    Assert.That(button.rect.height,Is.GreaterThanOrEqualTo(height==338?24f:20f));
+                    var label=button.GetComponentInChildren(TypeOf("TMPro.TextMeshProUGUI"),true);
+                    var face=Get(Get(label,"font"),"faceInfo");
+                    float line=Convert.ToSingle(Get(face,"lineHeight"))/Convert.ToSingle(Get(face,"pointSize"))*Convert.ToSingle(Get(label,"fontSize"));
+                    Assert.That(((RectTransform)label.transform).rect.height,Is.GreaterThanOrEqualTo(line),"ellipsis must not erase the action caption");
+                }
+            } finally {UnityEngine.Object.DestroyImmediate(hud);UnityEngine.Object.DestroyImmediate(host);}
+        }
     }
 }
