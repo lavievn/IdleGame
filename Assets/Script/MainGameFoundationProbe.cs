@@ -30,10 +30,10 @@ public sealed class MainGameFoundationProbe : MonoBehaviour
     }
     [Serializable] sealed class Snapshot
     {
-        public int level,wave,progress,damage,maxHP;
+        public int level,wave,progress,damage,maxHP,points,hpAdded,physicalAdded;
         public float exp;
         public long gold;
-        public string map,gear,gearCore,inventory,legacyEquipped,weapon;
+        public string map,gear,gearCore,inventory,legacyEquipped,weapon,roots;
     }
     public string replayProfile;
     Result result=new Result();
@@ -260,7 +260,8 @@ public sealed class MainGameFoundationProbe : MonoBehaviour
         foreach(var item in d.inventory)stacks.Add(JsonUtility.ToJson(item));gear.Sort(StringComparer.Ordinal);stacks.Sort(StringComparer.Ordinal);
         return new Snapshot {level=d.currentLevel,exp=d.currentExp,gold=d.gold,map=d.worldMapId,wave=d.worldMapLoopWave,progress=d.worldMapWaveProgress,
             damage=WeaponBasicAttack.DamageSource(d),maxHP=d.GetCalculatedHealth(hero.attackMode),gear=string.Join("\n",gear),gearCore=GearCore(d),inventory=string.Join("\n",stacks),
-            legacyEquipped=d.equippedItemId,weapon=WeaponBasicAttack.Identity(d)};
+            legacyEquipped=d.equippedItemId,weapon=WeaponBasicAttack.Identity(d),points=d.statPoints,hpAdded=d.addedHealth,physicalAdded=d.addedDamage,
+            roots=string.Join(",",d.spiritRoots)+"|"+string.Join(",",d.rootTiers)+"|"+string.Join(",",d.rootWeights)};
     }
     void Matches(Snapshot expected,string label)
     {
@@ -286,10 +287,13 @@ public sealed class MainGameFoundationProbe : MonoBehaviour
         AssertIsolated();ui.IsolatedValidationProfile=true;
         // A personal DEVB file may otherwise hide the level-1 gear increment.
         // Reset only static state inside this disposable test process; no file write.
-        if(Array.IndexOf(Environment.GetCommandLineArgs(),"-foundationGearDropV01")>=0)CombatBalance.ResetDevProfiles();
+        if(Array.IndexOf(Environment.GetCommandLineArgs(),"-foundationGearDropV01")>=0 || Array.IndexOf(Environment.GetCommandLineArgs(),"-foundationProgressionV02")>=0)CombatBalance.ResetDevProfiles();
         yield return Resize(800,450);Call(gm,"InitHeroData",false);Call(gm,"DeployHero",false);yield return Ready();
         inventory=(InventoryPanelUI)Get(ui,"inventoryUI");Require(inventory!=null,"No Inventory panel.");
         ui.inventoryLayoutDebug=false;ui.inventoryUseArtTheme=false;ui.ApplyHudFromInspector();
+        if(Array.IndexOf(Environment.GetCommandLineArgs(),"-foundationProgressionV02")>=0) {
+            yield return ProgressionV02();yield break;
+        }
         if(Array.IndexOf(Environment.GetCommandLineArgs(),"-foundationGearDropV01")>=0)
         {
             yield return GearDropV01();yield break;
@@ -392,6 +396,86 @@ public sealed class MainGameFoundationProbe : MonoBehaviour
         var first=CanonicalExpected(gm.HeroData);AssertIsolated();Require(gm.TryManualSave(SaveSlot.ManualSave1),"Save1 failed while Forge open.");
         yield return PersistenceAndFinal(first,itemId);
     }
+    IEnumerator ProgressionV02()
+    {
+        phase=1;var data=gm.HeroData;var state=combat.CurrentHeroCombatState;
+        Require(data.currentLevel==1 && data.statPoints==0 && CombatBalance.HeroDev==null,"Fresh baseline required.");
+        Press("StatsButton");yield return null;
+        var summary=(TMPro.TextMeshProUGUI)Get(ui,"progressionSummary");
+        string before=JsonUtility.ToJson(data);var dev=DevBalanceProfile.Defaults(false,space,hero.moveSpeed);dev.attack=1000;
+        CombatBalance.SetDevProfile(false,dev);ui.RefreshCharacterProgression();
+        Require(summary.text.Contains("DEVB Hero đang override") && summary.text.Contains("THỬ NGHIỆM CÔ LẬP"),"Override/isolation visibility missing.");
+        Require(JsonUtility.ToJson(data)==before,"Visibility changed saved Hero data.");
+        CombatBalance.ResetDevProfiles();ui.RefreshCharacterProgression();Require(summary.text.Contains("Baseline Hero"),"Baseline visibility missing.");
+        Pass("V02 P1: live baseline/DEVB/isolation labels; reading visibility leaves Hero JSON unchanged; no settings file write.");
+        phase=2;data.AddExp(CombatBalance.RequiredExp(1));combat.RefreshRegisteredHeroStats(hero,false);ui.RefreshCharacterProgression();
+        Require(data.currentLevel==2 && data.statPoints==1,"Level-up point mismatch.");
+        state.CurrentHP=state.MaxHP/2;state.AttackTimer=.42f;int hp=state.CurrentHP,max=state.MaxHP,life=state.LifeVersion;
+        Press("CharacterAllocateHP");yield return null;
+        Require(data.addedHealth==6 && data.statPoints==0 && state.MaxHP==max+6 && state.CurrentHP==Mathf.RoundToInt((float)hp/max*state.MaxHP) && state.CurrentHP<state.MaxHP,
+            "HP allocation must preserve existing health ratio, not heal to full.");
+        Require(state.AttackTimer==.42f && state.LifeVersion==life,"Allocation reset attack/life.");
+        before=JsonUtility.ToJson(data);Require(!gm.AllocateHeroHealth() && !gm.AllocateHeroPhysicalAttack() && JsonUtility.ToJson(data)==before,"Zero points mutated data.");
+        Require(!((CustomInteractable)Get(ui,"allocateHealthInput")).enabled,"Zero-point button still interactive.");
+        data.AddExp(data.expToNextLevel);combat.RefreshRegisteredHeroStats(hero,false);ui.RefreshCharacterProgression();
+        int physical=WeaponBasicAttack.Physical(data);Press("CharacterAllocatePhysical");yield return null;
+        Require(data.addedDamage==1 && data.statPoints==0 && WeaponBasicAttack.Physical(data)==physical+1 && WeaponBasicAttack.Magical(data)==0,"Physical allocation wrong.");
+        Pass("V02 P2: real UI hit-test/click handlers, EXP +1 point/level, HP +6 ratio preserved, Physical +1; zero points blocked, timer/life intact.");
+        phase=3;int level=data.currentLevel;int[] boundaries={1,10,11,100,101};string[] ranks={"Luyện Khí","Luyện Khí","Trúc Cơ","Chân Tiên","Tiên Đế"};
+        for(int i=0;i<boundaries.Length;i++) {data.currentLevel=boundaries[i];before=JsonUtility.ToJson(data);ui.RefreshCharacterProgression();Require(summary.text.Contains("legacy/prototype") && summary.text.Contains(ranks[i]) && JsonUtility.ToJson(data)==before,"Legacy realm mapping/presentation mutation.");}
+        data.currentLevel=level;ui.RefreshCharacterProgression();
+        foreach(var size in new[]{new Vector2Int(600,338),new Vector2Int(800,450)}) {
+            yield return Resize(size.x,size.y);ui.RefreshCharacterProgression();summary.ForceMeshUpdate();
+            Require(!summary.isTextOverflowing,"Progression header overflows at "+size.x);
+            foreach(var name in new[]{"CharacterAllocateHP","CharacterAllocatePhysical","DamageClose"}) {
+                var r=Find(name);Vector2 point=RectTransformUtility.WorldToScreenPoint(null,r.TransformPoint(r.rect.center));
+                Require(point.x>=0 && point.x<=Screen.width && point.y>=0 && point.y<=Screen.height,"Progression control offscreen: "+name);
+            }
+            yield return Capture("v02-character-"+size.x);
+        }
+        Pass("V02 P3: realm boundaries 1/10/11/100/101; no realm Save/buff; Character header measured without overflow at 600/800.");
+        var expected=CanonicalExpected(data);AssertIsolated();Require(gm.TryManualSave(SaveSlot.ManualSave1),"Progression Save failed.");
+        byte[] manual=File.ReadAllBytes(Path.Combine(SavePath,"ManualSave1.json"));
+        Require(gm.LoadAndContinue(SaveSlot.ManualSave1),"Progression Load failed.");yield return Ready();Matches(expected,"Progression points/allocations Load");
+        ui.OpenHeroStats();yield return null;ui.RefreshCharacterProgression();
+        Require(summary.text.Contains("Điểm thuộc tính: 0") && gm.HeroData.addedHealth==6 && gm.HeroData.addedDamage==1,"Loaded Character UI stale.");
+        ui.SetPaused(false);yield return null;ui.SetPaused(true);
+        Require(gm.HeroData.addedHealth==6 && gm.HeroData.addedDamage==1,"Pause changed allocation.");
+        ui.CloseDamageInfo();gm.OnResetClicked();gm.OnConfirmResetClicked();yield return Ready();
+        Require(gm.HeroData.statPoints==0 && gm.HeroData.addedHealth==0 && gm.HeroData.addedDamage==0,"New/Reset retained old points.");
+        Require(Convert.ToBase64String(manual)==Convert.ToBase64String(File.ReadAllBytes(Path.Combine(SavePath,"ManualSave1.json"))),"Reset changed manual slot.");
+        Pass("V02 P5: Save/Load restored points/allocations and canonical combat/UI; Pause preserved state; public Reset starts fresh and retains owned Manual1 bytes.");
+        if(Array.IndexOf(Environment.GetCommandLineArgs(),"-foundationProgressionUiOnly")>=0)yield break;
+        // Reuse the already-existing natural-kill/equip/Forge/save verifier, no parallel framework.
+        yield return GearDropV01();
+        Pass("V02 P4: reward/equip/unequip/Forge UI handlers refreshed committed data; no new popup/VFX or production-rate edits.");
+        yield return WorldCycleV02();
+    }
+    IEnumerator WorldCycleV02()
+    {
+        phase=4;var data=gm.HeroData;WorldMapNode node;
+        Require(WorldMapCatalog.TryGet(data.worldMapId,out node) && node.IsStart,"Expected birth node.");
+        if(data.statPoints>0) {ui.OpenHeroStats();yield return null;Press("CharacterAllocatePhysical");yield return null;ui.CloseDamageInfo();}
+        ui.SetPaused(false);yield return Until(()=>WorldMapCatalog.IsCleared(gm.HeroData,gm.HeroData.worldMapId),240,"natural clear of five waves");ui.SetPaused(true);
+        var rootIdentity=Take().roots;int level=data.currentLevel,allocated=data.addedDamage;string gear=GearCore(data),origin=data.worldMapId;
+        string destination=null;foreach(var id in node.Links)if(WorldMapCatalog.TravelBlockReason(data,id)==null){destination=id;break;}
+        Require(destination!=null && gm.TryTravelToWorldMap(destination),"No legal neighboring Travel.");yield return Ready();
+        Require(data.worldMapId==destination && data.worldMapCleared.Contains(origin) && data.currentLevel==level && data.addedDamage==allocated && Take().roots==rootIdentity && GearCore(data)==gear,"Travel lost canonical progression.");
+        var snapshot=CanonicalExpected(data);Require(gm.TryManualSave(SaveSlot.ManualSave2) && gm.LoadAndContinue(SaveSlot.ManualSave2),"World Save/Load failed.");yield return Ready();Matches(snapshot,"World Travel Save/Load");
+        int source=WeaponBasicAttack.DamageSource(gm.HeroData);int events=gm.DamageHistory.Length;
+        ui.SetPaused(false);yield return Until(()=>{
+            var rows=gm.DamageHistory;for(int i=events;i<rows.Length;i++)if(rows[i].Contains("; tổng: "+source+";"))return true;return false;
+        },50,"combat after world Load");ui.SetPaused(true);
+        string equipment=GearCore(gm.HeroData);int hpAdded=gm.HeroData.addedHealth,damageAdded=gm.HeroData.addedDamage;
+        Call(combat,"ApplyIncomingDamage",1000000,"[V02 owned fixture defeat]",null,null);yield return null;
+        Require(!gm.CanAllocateHeroAttribute,"Defeated Hero accepts allocation.");gm.OnRetryClicked();yield return Ready();
+        Require(GearCore(gm.HeroData)==equipment && gm.HeroData.addedHealth==hpAdded && gm.HeroData.addedDamage==damageAdded && gm.HeroData.worldMapCleared.Contains(origin),"Retry lost equipment/allocation/clear state.");
+        Require(gm.TryManualSave(SaveSlot.ManualSave2) && gm.ReturnToMainMenu() && gm.LoadAndContinue(SaveSlot.ManualSave2),"Return Title / Continue failed.");yield return Ready();
+        ui.OpenHeroStats();yield return null;ui.RefreshCharacterProgression();
+        Require(combat.CurrentHeroCombatState.Data==gm.HeroData && gm.HeroData.addedDamage==damageAdded,"Title/Load left stale Hero binding.");
+        yield return Capture("v02-character-after-travel-retry-load");
+        Pass("V02 P6: natural five-wave birth-node clear, explicit legal Travel, root/level/gear/allocated stats Save/Load, post-Load Combat.Update, fixture defeat/Retry and Return Title/Continue; no boss or schema changes.");
+    }
     IEnumerator GearDropV01()
     {
         Require(string.IsNullOrEmpty(replayProfile),"Gear cycle requires a fresh owned character.");
@@ -423,6 +507,15 @@ public sealed class MainGameFoundationProbe : MonoBehaviour
         Require(!item.isEquipped && WeaponBasicAttack.DamageSource(gm.HeroData)==baseline,"Unequip left stale stats.");
         Select(id);Press("InventoryEquip");yield return null;
         Pass("GEAR v0.1 UI HANDLERS: awarded unique "+item.templateId+"; source "+baseline+" -> "+equipped+"; equip/unequip via real Inventory hit-test/click routing (not native input).");Status(1,"PASS");
+        if(Array.IndexOf(Environment.GetCommandLineArgs(),"-foundationProgressionV02")>=0) {
+            string beforeFailure=GearCore(gm.HeroData);int beforeStock=EquipmentInventory.Count(gm.HeroData,EquipmentRefinement.MaterialId);
+            Require(beforeStock<EquipmentRefinement.SpecialCost,"Expected insufficient first-kill materials.");
+            Press("InventoryForge");yield return null;Press("Forge_Up2");yield return null;
+            Require(GearCore(gm.HeroData)==beforeFailure && EquipmentInventory.Count(gm.HeroData,EquipmentRefinement.MaterialId)==beforeStock &&
+                ((string)Get(inventory,"lastForgeMessage")).Contains("Thiếu"),"Failed Forge changed data or reported success.");
+            Press("Forge_Close");yield return null;
+            Pass("V02 P4: insufficient-material Special Forge reports failure and preserves gear/stock.");
+        }
         yield return CloseInventory();int damageEvents=gm.DamageHistory.Length;
         ui.SetPaused(false);yield return Until(()=>{
             var history=gm.DamageHistory;for(int i=damageEvents;i<history.Length;i++)if(history[i].Contains("; tổng: "+equipped+";"))return true;return false;
