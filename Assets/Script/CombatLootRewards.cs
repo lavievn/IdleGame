@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 
-// Profile A only. Runtime receipts, not a serialized checkpoint or reward ledger.
+// Shared production/Profile A runtime receipts, never a serialized reward ledger.
 public sealed class CombatLootRewards
 {
     public struct KillKey
@@ -19,6 +19,7 @@ public sealed class CombatLootRewards
     }
     private readonly Dictionary<int,Receipt> lives=new Dictionary<int,Receipt>();
     private readonly Func<EquipmentInstance> factory;
+    private readonly Func<double> productionRoll;
     private EntityDataSO owner;
     private Guid runEpoch, encounter;
     private int mapVersion, mapNumber;
@@ -27,8 +28,10 @@ public sealed class CombatLootRewards
     public int ReceiptCount => lives.Count;
 
     public CombatLootRewards():this(EquipmentFoundation.CreateDemoSword) {}
-    // Injection for isolated failure/re-entry tests; production uses the factory above.
-    public CombatLootRewards(Func<EquipmentInstance> create) {factory=create;}
+    // Injection for controlled Profile A tests. Production uses explicit table entries.
+    public CombatLootRewards(Func<EquipmentInstance> create):this(create,null) {}
+    public CombatLootRewards(Func<EquipmentInstance> create,Func<double> roll)
+    {factory=create;var random=new Random();productionRoll=roll??new Func<double>(random.NextDouble);}
     public void BeginEncounter(EntityDataSO primary)
     {
         Invalidate();
@@ -95,6 +98,47 @@ public sealed class CombatLootRewards
             error="[LOOT TEST A] FAILED run="+key.RunEpoch+" encounter="+key.Encounter+
                 " life="+key.Life+" spawn="+key.Spawn+": "+ex.Message+
                 " Awarding disabled for this CombatManager; fix the data and restart Play Mode.";
+            return Outcome.Failed;
+        }
+    }
+
+    public Outcome CompleteProduction(KillKey key,EntityDataSO primary,ProductionLootConfig config,
+        out ProductionLootConfig.Reward reward,out string error)
+    {
+        reward=default(ProductionLootConfig.Reward);error="";
+        if(!IsCurrent(key,primary))return Outcome.Rejected;
+        var receipt=lives[key.Life];
+        if(!receipt.Claimed || receipt.Completed)return Outcome.Rejected;
+        receipt.Completed=true; // Same terminal receipt; no second mode, retry or reroll.
+        if(Faulted || config==null || !config.configured)return Outcome.NoDrop;
+        try
+        {
+            string reason;
+            if(!EquipmentFoundation.TryValidateSaveVersions(primary,out reason) || !config.Validate(out reason))
+                throw new InvalidOperationException(reason);
+            ProductionLootConfig.Reward selected;
+            if(!config.TrySelect(productionRoll(),out selected,out reason))
+            {
+                if(!string.IsNullOrEmpty(reason))throw new InvalidOperationException(reason);
+                return Outcome.NoDrop;
+            }
+            if(!IsCurrent(key,primary))throw new InvalidOperationException("Encounter changed during reward selection.");
+            if(selected.kind==ProductionLootConfig.Kind.CommonEquipment)
+            {
+                var item=EquipmentFoundation.CreateCommon(selected.id,selected.itemLevel,selected.mainStat);
+                if(!EquipmentFoundation.IsValid(item) || !EquipmentRuntime.AddInstance(primary,item))
+                    throw new InvalidOperationException("Equipment reward was rejected; no replacement ID generated.");
+                selected.instanceId=item.instanceId;
+            }
+            else if(!EquipmentInventory.Add(primary,selected.id,selected.quantity))
+                throw new InvalidOperationException("Material reward was rejected; no partial quantity granted.");
+            reward=selected;return Outcome.Awarded;
+        }
+        catch(Exception ex)
+        {
+            Faulted=true;
+            error="[LOOT PRODUCTION] FAILED run="+key.RunEpoch+" encounter="+key.Encounter+
+                " life="+key.Life+" spawn="+key.Spawn+": "+ex.Message;
             return Outcome.Failed;
         }
     }

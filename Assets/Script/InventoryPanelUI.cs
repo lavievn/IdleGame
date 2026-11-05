@@ -126,6 +126,11 @@ public sealed class InventoryPanelUI : MonoBehaviour
         var result=ui.SmallButton(root,name,caption,new Vector2(0f,1f),
             new Vector2(0f,1f),Vector2.zero,new Vector2(60f,36f),()=>click());
         ColorButton(result,new Color(.16f,.29f,.30f,.98f));
+        if(name.StartsWith("InventoryGrant",StringComparison.Ordinal) && !GameManager.DevelopmentItemGrantsEnabled)
+        {
+            result.GetComponent<CustomInteractable>().enabled=false;
+            ColorButton(result,new Color(.10f,.16f,.17f,1f));
+        }
         return result;
     }
     private TextMeshProUGUI MakeForgeText(string name,string caption)
@@ -1422,6 +1427,9 @@ public sealed class InventoryPanelUI : MonoBehaviour
                 caption.offsetMax=new Vector2(caption.offsetMax.x,-1f);
             }
             text.color=new Color(.89f,.91f,.83f,1f);
+            if(!GameManager.DevelopmentItemGrantsEnabled && text.transform.parent!=null &&
+                text.transform.parent.gameObject.name.StartsWith("InventoryGrant",StringComparison.Ordinal))
+                text.color=new Color(.47f,.54f,.53f,1f);
         }
         header.alignment=TextAlignmentOptions.Left;
         header.color=new Color(.88f,.75f,.48f,1f);

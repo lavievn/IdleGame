@@ -32,6 +32,19 @@ public class GameManager : MonoBehaviour
     [Header("DEV ONLY — Controlled Loot Test A (default Off)")]
     [Tooltip("Editor/Development Build only: accepted kills give the primary Hero one Common demo sword. Not official progression.")]
     [SerializeField] private bool controlledLootTest;
+    [Header("Production rewards — no balance values configured by default")]
+    [SerializeField] private ProductionLootConfig productionLoot = new ProductionLootConfig();
+    public ProductionLootConfig ProductionLoot => productionLoot;
+    public static bool DevelopmentItemGrantsEnabled
+    {
+        get {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            return true;
+#else
+            return false;
+#endif
+        }
+    }
     public bool ControlledLootTestEnabled
     {
         get {
@@ -716,6 +729,7 @@ public class GameManager : MonoBehaviour
     // V2 individual gear: all 8 positions share one canonical inventory.
     public bool GrantDemoSword()
     {
+        if(!DevelopmentItemGrantsEnabled)return false;
         if (!IsGameplayHUDVisible || runtimeHeroData == null) return false;
         if (!EquipmentRuntime.GrantDemoSword(runtimeHeroData)) return false;
         UpdateEventLog("Đã nhận Thiết Kiếm thử nghiệm.");
@@ -725,6 +739,7 @@ public class GameManager : MonoBehaviour
     // fixed latent affixes and a demonstrative quality ceiling.
     public bool GrantForgeTestSword()
     {
+        if(!DevelopmentItemGrantsEnabled)return false;
         if(!IsGameplayHUDVisible || runtimeHeroData==null)return false;
         if(!EquipmentRuntime.AddInstance(runtimeHeroData,
             EquipmentRefinement.CreateForgeDemoSword()))return false;
@@ -734,6 +749,7 @@ public class GameManager : MonoBehaviour
 
     public bool GrantForgeMaterials()
     {
+        if(!DevelopmentItemGrantsEnabled)return false;
         if(!IsGameplayHUDVisible || runtimeHeroData==null)return false;
         if(!EquipmentInventory.Add(runtimeHeroData,EquipmentRefinement.MaterialId,100))
             return false;
@@ -802,6 +818,7 @@ public class GameManager : MonoBehaviour
 
     public bool GrantInventorySamples()
     {
+        if(!DevelopmentItemGrantsEnabled)return false;
         if (!IsGameplayHUDVisible || runtimeHeroData == null) return false;
         if (!EquipmentInventory.GrantSamples(runtimeHeroData)) return false;
         UpdateEventLog("Đã nhận hai hộ phù thử nghiệm.");
