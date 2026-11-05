@@ -7,9 +7,19 @@ using TuTienCore;
 partial class MotionRegression
 {
     static object FirstShot(Field f) {return Get<IList>(f.combat,"projectiles")[0];}
-    static void EmitHeroMagic(Field f)
+    static void EmitHeroMagic(Field f,GameManager game=null)
     {
-        f.hero.ChangeAttackMode(2);ReadySoundAttack(f,f.hero);CombatStep(f,.01f);
+        if(f.hero.UsesWeaponBasicAttack)
+        {
+            // MainGame entry binds the primary to real equipment. A stance
+            // override cannot turn an unarmed primary into a staff caster.
+            Check(game!=null && game.HeroData==f.combat.CurrentHeroCombatState.Data,"primary caster uses live Hero data");
+            WearWeapon(game,WeaponInBag(game,WeaponFamily.Staff));
+            Check(WeaponBasicAttack.Resolve(game.HeroData)==AttackMode.RangedMagic,"equipped staff resolves magic");
+            f.combat.CurrentHeroCombatState.AttackTimer=0f;
+        }
+        else {f.hero.ChangeAttackMode(2);ReadySoundAttack(f,f.hero);}
+        CombatStep(f,.01f);
         Check(f.combat.PendingProjectileCount>0,"valid magic launch");
     }
     static int SparkCount(Field f) {return Get<IList>(Get<BattleEffects>(f.combat,"effects"),"sparks").Count;}
@@ -101,14 +111,16 @@ partial class MotionRegression
         using(var sprites=new SpriteResources())
         {
             foreach(string route in new[]{"Load","Travel","Retry","New","Continue","Menu","Reset","Escape"})
-            Run("Magic hard map entry or soft wave recovery boundary / "+route,()=>{
+            Run("primary staff projectile entry or wave recovery boundary / "+route,()=>{
                 using(var f=new DesktopHotfixFixture(800,true)) {
                     WaveEntryScene(f);WaveEntryFinish(f);
                     // This spawn fixture starts monsters offscreen, before
                     // they approach. Put one existing actor in valid cast range.
                     var target=f.field.Enemies[0].controller;
                     f.field.space.SetPosition(target.Rect,f.field.space.Position(f.field.hero.heroRect)+new Vector2(-200,0));
-                    target.attackMode=AttackMode.Melee;EmitHeroMagic(f.field);
+                    target.attackMode=AttackMode.Melee;EmitHeroMagic(f.field,f.manager);
+                    var released=FirstShot(f.field);
+                    Check(Get<bool>(released,"staffBasic") && !Get<bool>(released,"magic"),"primary staff is an ordinary weapon projectile, not legacy AoE Magic");
                     string one=File.ReadAllText(f.Slot("ManualSave1")),two=File.ReadAllText(f.Slot("ManualSave2"));
                     if(route=="Load")Check(f.manager.LoadAndContinue(SaveSlot.ManualSave1),"Load");
                     else if(route=="Travel")Check(f.manager.TryTravelToWorldMap(EntryNeighbor(f.manager)),"Travel");
@@ -118,8 +130,8 @@ partial class MotionRegression
                     else if(route=="Reset") {f.manager.OnResetClicked();f.manager.OnConfirmResetClicked();}
                     else Call(f.manager,"RecoverEscapedWave");
                     Check(f.field.combat.PendingProjectileCount==0,"old damage always canceled");
-                    if(route=="Escape")Check(f.field.combat.DetachedMagicVisualCount==1 && Bolts(f.field).Count==1,"same-map recovery preserves visual");
-                    else Check(f.field.combat.DetachedMagicVisualCount==0 && Bolts(f.field).Count==0,"hard map/life transition clears visuals");
+                    Check(f.field.combat.DetachedMagicVisualCount==0 && Bolts(f.field).Count==0,
+                        route=="Escape"?"ordinary staff projectile is canceled by recovery; legacy Magic retention is covered above":"hard map/life transition clears visuals");
                     Check(File.ReadAllText(f.Slot("ManualSave1"))==one && File.ReadAllText(f.Slot("ManualSave2"))==two,"manual slots byte-identical");
                 }
             });
