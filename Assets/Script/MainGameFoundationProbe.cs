@@ -283,6 +283,7 @@ public sealed class MainGameFoundationProbe : MonoBehaviour
         gm=saveOwner.GetComponent<GameManager>();combat=saveOwner.GetComponent<CombatManager>();ui=UIManager.Instance;
         space=(EnvironmentManager)Get(gm,"environmentManager");hero=(HeroController)Get(gm,"heroController");
         Require(ui!=null && space!=null && hero!=null,"MainGame references missing.");
+        AssertIsolated();ui.IsolatedValidationProfile=true;
         // A personal DEVB file may otherwise hide the level-1 gear increment.
         // Reset only static state inside this disposable test process; no file write.
         if(Array.IndexOf(Environment.GetCommandLineArgs(),"-foundationGearDropV01")>=0)CombatBalance.ResetDevProfiles();

@@ -393,6 +393,14 @@ public partial class UIManager : MonoBehaviour
     public bool IsPaused { get; private set; }
     private TMPro.TextMeshProUGUI pauseText, damageText;
     private GameObject damagePanel;
+    // Set only by a verifier after it has proved ownership of its save directory.
+    // Transient UI context, never a persisted profile or a loader switch.
+    internal bool IsolatedValidationProfile;
+    private TMPro.TextMeshProUGUI devSourceCaption;
+    public string CharacterSourceStatus =>
+        (IsolatedValidationProfile ? "THỬ NGHIỆM CÔ LẬP · " : "") +
+        (CombatBalance.HeroDev != null ? "DEVB Hero đang override HP/Attack/tốc đánh/tăng trưởng/di chuyển/tầm" : "Baseline Hero bình thường") +
+        (CombatBalance.MonsterDev != null ? " · DEVB quái bật" : "");
     private HeroController heroForUI;
     private RectTransform testSummonButton;
     private TMPro.TextMeshProUGUI testSummonText;
@@ -614,14 +622,29 @@ public partial class UIManager : MonoBehaviour
     private string detailSnapshot;
     public void OpenHeroStats()
     {
-        var hero = Object.FindFirstObjectByType<HeroController>();
+        OpenTextDetail(1,CurrentHeroDetails());
+    }
+    private string CurrentHeroDetails()
+    {
+        var hero = heroForUI;
         var gm=GameForUI();
         string stats=hero!=null ? hero.FullStatDetails : "Chưa có nhân vật.";
         if (gm!=null)
         {
             if (gm.HeroData!=null) stats=TuTienCore.IdentityDisplay.Describe(gm.HeroData)+" · Cấp "+gm.HeroData.currentLevel+"\n"+stats;
         }
-        OpenTextDetail(1,stats);
+        return CharacterSourceStatus+"\n"+stats;
+    }
+    public void RefreshCharacterProgression()
+    {
+        if(devSourceCaption==null && devButton!=null)devSourceCaption=devButton.GetComponentInChildren<TMPro.TextMeshProUGUI>(true);
+        string label=CombatBalance.HeroDev!=null?"DEVB · Hero override":CombatBalance.MonsterDev!=null?"DEVB · Quái override":"DEVB · Baseline";
+        if(devSourceCaption!=null && devSourceCaption.text!=label)devSourceCaption.text=label;
+        if(damagePanel!=null && damagePanel.activeSelf && detailKind==1)
+        {
+            string current=CurrentHeroDetails();
+            if(current!=detailSnapshot){detailSnapshot=current;RefreshDamageInfo();}
+        }
     }
     public void OpenLogInfo()
     {
@@ -783,7 +806,7 @@ public partial class UIManager : MonoBehaviour
             LayoutReadableUI();
         RefreshCombatHUDVisibility();
         TickHudW3();
-
+        RefreshCharacterProgression();
     }
     private static void PlaceUI(RectTransform rect,Vector2 anchor,Vector2 pivot,Vector2 position,Vector2 size)
     {
