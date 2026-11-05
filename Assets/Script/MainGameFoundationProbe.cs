@@ -283,17 +283,24 @@ public sealed class MainGameFoundationProbe : MonoBehaviour
         gm=saveOwner.GetComponent<GameManager>();combat=saveOwner.GetComponent<CombatManager>();ui=UIManager.Instance;
         space=(EnvironmentManager)Get(gm,"environmentManager");hero=(HeroController)Get(gm,"heroController");
         Require(ui!=null && space!=null && hero!=null,"MainGame references missing.");
+        // A personal DEVB file may otherwise hide the level-1 gear increment.
+        // Reset only static state inside this disposable test process; no file write.
+        if(Array.IndexOf(Environment.GetCommandLineArgs(),"-foundationGearDropV01")>=0)CombatBalance.ResetDevProfiles();
         yield return Resize(800,450);Call(gm,"InitHeroData",false);Call(gm,"DeployHero",false);yield return Ready();
         inventory=(InventoryPanelUI)Get(ui,"inventoryUI");Require(inventory!=null,"No Inventory panel.");
         ui.inventoryLayoutDebug=false;ui.inventoryUseArtTheme=false;ui.ApplyHudFromInspector();
+        if(Array.IndexOf(Environment.GetCommandLineArgs(),"-foundationGearDropV01")>=0)
+        {
+            yield return GearDropV01();yield break;
+        }
         if(Array.IndexOf(Environment.GetCommandLineArgs(),"-foundationV01MaterialSmoke")>=0)
         {
             var cfg=gm.ProductionLoot;
             Require(cfg!=null && cfg.configured && cfg.material.enabled && cfg.material.chance==.60 &&
                 cfg.material.materialId==EquipmentRefinement.MaterialId && cfg.material.minQuantity==1 && cfg.material.maxQuantity==2,
                 "MainGame material prototype must be authored explicitly.");
-            Require(!cfg.equipment.enabled && cfg.equipment.chance==.08 && cfg.equipment.templates.Count==0,
-                "Unapproved gear values must remain unconfigured.");
+            // Material-only regression remains available after gear is configured.
+            cfg.equipment.enabled=false;
             Require(!gm.ControlledLootTestEnabled,"Production smoke must not use controlled loot A.");
             Require(!string.IsNullOrEmpty(replayProfile) && gm.LoadAndContinue(SaveSlot.ManualSave1),"Smoke requires an owned replay slot.");
             yield return Ready();
@@ -383,6 +390,65 @@ public sealed class MainGameFoundationProbe : MonoBehaviour
         Require(combat.CurrentHeroCombatState.Data==gm.HeroData,"Forge disconnected combat state.");yield return Capture("phase3-forged-equipped");
         var first=CanonicalExpected(gm.HeroData);AssertIsolated();Require(gm.TryManualSave(SaveSlot.ManualSave1),"Save1 failed while Forge open.");
         yield return PersistenceAndFinal(first,itemId);
+    }
+    IEnumerator GearDropV01()
+    {
+        Require(string.IsNullOrEmpty(replayProfile),"Gear cycle requires a fresh owned character.");
+        var cfg=gm.ProductionLoot;
+        Require(cfg.configured && !gm.ControlledLootTestEnabled && cfg.material.enabled && cfg.material.chance==.60 &&
+            cfg.material.materialId==EquipmentRefinement.MaterialId && cfg.material.minQuantity==1 && cfg.material.maxQuantity==2,
+            "MainGame material/test flags changed.");
+        Require(cfg.equipment.enabled && cfg.equipment.chance==.08 && cfg.equipment.selectionPolicy==EquipmentRewardConfig.SelectionPolicy.Uniform &&
+            cfg.equipment.templates.Count==2,"MainGame gear must be enabled at 8%, Uniform.");
+        for(int i=0;i<2;i++) {
+            var t=cfg.equipment.templates[i];Require(t.templateId==(i==0?EquipmentFoundation.DemoSword:EquipmentFoundation.DemoBow) && t.itemLevel==1 && t.mainStat==4,
+                "Authored prototype must be level 1, Attack4 Sword/Bow.");
+        }
+        Require(gm.HeroData.equipmentItems.Count==0 && EquipmentInventory.Count(gm.HeroData,EquipmentRefinement.MaterialId)==0,"Fresh character has no dev gear/material.");
+        Require(CombatBalance.HeroDev==null && CombatBalance.MonsterDev==null && WeaponBasicAttack.DamageSource(gm.HeroData)==10,"Gear cycle requires the production level-1 baseline, not personal DEVB overrides.");
+        Pass("GEAR v0.1 CONFIG: fresh MainGame; material .60/1-2, gear .08 Uniform Sword/Bow level1 Attack4; controlled A off.");
+        // Only the isolated runtime config is made deterministic; asset stays .60/.08.
+        cfg.material.chance=cfg.equipment.chance=1;
+        phase=2;var lives=new List<CombatManager.ActiveMonsterInfo>(Enemies);
+        ui.SetPaused(false);yield return Until(()=>gm.HeroData.equipmentItems.Count>0,50,"natural production gear kill");ui.SetPaused(true);
+        Unique();string id=gm.HeroData.equipmentItems[0].instanceId;int count=gm.HeroData.equipmentItems.Count,stock=EquipmentInventory.Count(gm.HeroData,EquipmentRefinement.MaterialId);
+        bool duplicate=false;foreach(var dead in lives)if(dead.currentHP<=0){Call(combat,"HandleMonsterDeath",dead);duplicate=true;break;}
+        Require(duplicate && count==gm.HeroData.equipmentItems.Count && stock==EquipmentInventory.Count(gm.HeroData,EquipmentRefinement.MaterialId),"Duplicate death changed rewards.");
+        phase=1;yield return OpenInventory();Select(id);int baseline=WeaponBasicAttack.DamageSource(gm.HeroData);
+        Press("InventoryEquip");yield return null;
+        var item=EquipmentRuntime.Find(gm.HeroData,id);int equipped=WeaponBasicAttack.DamageSource(gm.HeroData);
+        Require(item.isEquipped && equipped==baseline+4 && hero.attackMode==WeaponBasicAttack.Resolve(gm.HeroData),"Inventory handler did not apply exact weapon stats/mode.");
+        Press("EquipmentSlot0");Press("InventoryUnequip");yield return null;
+        Require(!item.isEquipped && WeaponBasicAttack.DamageSource(gm.HeroData)==baseline,"Unequip left stale stats.");
+        Select(id);Press("InventoryEquip");yield return null;
+        Pass("GEAR v0.1 UI HANDLERS: awarded unique "+item.templateId+"; source "+baseline+" -> "+equipped+"; equip/unequip via real Inventory hit-test/click routing (not native input).");Status(1,"PASS");
+        yield return CloseInventory();int damageEvents=gm.DamageHistory.Length;
+        ui.SetPaused(false);yield return Until(()=>{
+            var history=gm.DamageHistory;for(int i=damageEvents;i<history.Length;i++)if(history[i].Contains("; tổng: "+equipped+";"))return true;return false;
+        },50,"new natural combat trace using equipped source");ui.SetPaused(true);
+        Pass("GEAR v0.1 COMBAT: subsequent natural attack trace consumes equipped source "+equipped+" in mode "+hero.attackMode+"; duplicate death did not change gear/material.");Status(2,"PASS");
+        // Earn the complete Forge budget from more natural death rewards.
+        ui.SetPaused(false);yield return Until(()=>EquipmentInventory.Count(gm.HeroData,EquipmentRefinement.MaterialId)>=11,180,"natural material rewards for Normal+Special Forge");ui.SetPaused(true);Unique();
+        phase=3;yield return OpenInventory();Select(id);Press("InventoryForge");yield return null;
+        Require(inventory.IsForgeOpen,"Forge handler did not open.");stock=EquipmentInventory.Count(gm.HeroData,EquipmentRefinement.MaterialId);
+        int beforeForge=WeaponBasicAttack.DamageSource(gm.HeroData);Press("Forge_Up1");yield return null;
+        Require(item.refineLevel==1 && Mathf.Abs(EquipmentRefinement.PowerMultiplier(item)-1.02f)<.0001f &&
+            EquipmentInventory.Count(gm.HeroData,EquipmentRefinement.MaterialId)==stock-1,"Normal Forge cost/power.");
+        Press("Forge_Up2");yield return null;
+        Require(item.rarity==EquipmentRarity.Hoang && item.specialForgeCount==1 && item.forgeHistory.Count==1 &&
+            Mathf.Abs(EquipmentRefinement.PowerMultiplier(item)-1.16f)<.0001f && EquipmentInventory.Count(gm.HeroData,EquipmentRefinement.MaterialId)==stock-11 &&
+            WeaponBasicAttack.DamageSource(gm.HeroData)==beforeForge+1,"Special Forge cost/power/history.");
+        Pass("GEAR v0.1 FORGE: only natural reward material; stock "+stock+" -> "+(stock-11)+"; power 1 -> 1.02 -> 1.16, source "+beforeForge+" -> "+WeaponBasicAttack.DamageSource(gm.HeroData)+".");
+        var expected=CanonicalExpected(gm.HeroData);AssertIsolated();Require(gm.TryManualSave(SaveSlot.ManualSave1),"Gear cycle Save failed.");
+        byte[] bytes=File.ReadAllBytes(Path.Combine(SavePath,"ManualSave1.json"));
+        Require(gm.LoadAndContinue(SaveSlot.ManualSave1),"Gear cycle Load failed.");yield return Ready();Matches(expected,"Gear v0.1 Load");
+        Require(Convert.ToBase64String(bytes)==Convert.ToBase64String(File.ReadAllBytes(Path.Combine(SavePath,"ManualSave1.json"))),"Load rewrote save.");
+        Pass("GEAR v0.1 SAVE/LOAD: same instance IDs, slots, main stats, Forge history, resource, character and combat state; owned save unchanged by Load.");Status(3,"PASS");
+        phase=4;damageEvents=gm.DamageHistory.Length;int loadedSource=WeaponBasicAttack.DamageSource(gm.HeroData);
+        ui.SetPaused(false);yield return Until(()=>{
+            var history=gm.DamageHistory;for(int i=damageEvents;i<history.Length;i++)if(history[i].Contains("; tổng: "+loadedSource+";"))return true;return false;
+        },50,"natural combat using restored forged source");ui.SetPaused(true);AssertIsolated();
+        Pass("GEAR v0.1 POST LOAD: real Combat.Update uses restored forged source "+loadedSource+"; deterministic chances were runtime-only overrides, no dev grant.");Status(4,"PASS");
     }
     IEnumerator PersistenceAndFinal(Snapshot first,string itemId)
     {

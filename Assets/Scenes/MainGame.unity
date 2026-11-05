@@ -3825,10 +3825,16 @@ MonoBehaviour:
       minQuantity: 1
       maxQuantity: 2
     equipment:
-      enabled: 0
+      enabled: 1
       chance: 0.08
-      selectionPolicy: 0
-      templates: []
+      selectionPolicy: 1
+      templates:
+      - templateId: sample:iron_sword
+        itemLevel: 1
+        mainStat: 4
+      - templateId: sample:basic_bow
+        itemLevel: 1
+        mainStat: 4
   activeMonsters: []
   waveDelay: 5
 --- !u!4 &649540125

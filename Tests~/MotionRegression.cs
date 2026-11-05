@@ -129,6 +129,7 @@ partial class MotionRegression
 
     static void Main(string[] args)
     {
+        if(args.Length==1 && args[0]=="--gear-drop") {GearDropPrototypeTests();return;}
         if(args.Length==1 && args[0]=="--production-rewards") {ProductionRewardTests();return;}
         if(args.Length==2 && args[0]=="--production-rewards") {ProductionRewardTests(args[1]);return;}
         if(args.Length==1 && args[0]=="--forge") {ForgeRegressionTests();return;}
