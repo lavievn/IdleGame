@@ -377,7 +377,8 @@ public sealed class MultiZoneCamera
         return Blend(maximum,correction,(distance-red)/Math.Max(1f,width*.5f-red));
     }
     public float Pan(float focus,float left,float right,float dt,float green,float yellow,float red,
-        float minimum,float maximum,float acceleration,float deceleration,float correction,float maxStep)
+        float minimum,float maximum,float acceleration,float deceleration,float correction,float maxStep,
+        float preferredX=.5f,float trackingVelocity=0f,bool positionalTracking=false)
     {
         if(dt<=0f || right<=left || float.IsNaN(focus) || float.IsInfinity(focus))return 0f;
         acceleration=Valid(acceleration,900f);deceleration=Valid(deceleration,1200f);
@@ -387,13 +388,17 @@ public sealed class MultiZoneCamera
         while(remaining>0f)
         {
             float h=Math.Min(remaining,1f/120f);remaining-=h;
-            float error=(left+right)*.5f-focus-pan;
-            if(Math.Abs(error)<.001f && Math.Abs(Velocity)<.01f) { Velocity=0f;break; }
+            float error=left+(right-left)*Clamp(preferredX,.2f,.8f)-focus-pan;
+            if(Math.Abs(trackingVelocity)<.01f && Math.Abs(error)<.001f && Math.Abs(Velocity)<.01f) { Velocity=0f;break; }
             float speed=ResponseSpeed(Math.Abs(error),right-left,green,yellow,red,minimum,maximum,correction);
+            // Directional tracking needs finite settling after walking stops.
+            // The legacy near-center crawl alone takes too long to remove braking drift.
+            // Position feedback stays inside the existing speed/acceleration limits.
+            if(positionalTracking)speed=Math.Max(speed,Math.Min(Valid(maximum,450f),Math.Abs(error)*4f));
             // Brake BEFORE reaching the center. Substeps keep this continuous
             // across frame rates and through zone boundaries/direction reversals.
             speed=Math.Min(speed,(float)Math.Sqrt(2f*deceleration*Math.Abs(error)));
-            float desired=Math.Sign(error)*speed;
+            float desired=Clamp(trackingVelocity+Math.Sign(error)*speed,-limit,limit);
             bool braking=Velocity*desired<0f || Math.Abs(desired)<Math.Abs(Velocity);
             float delta=(braking?deceleration:acceleration)*h;
             float next=Velocity+Clamp(desired-Velocity,-delta,delta);
@@ -407,7 +412,7 @@ public sealed class MultiZoneCamera
                 step=Velocity*stopTime*.5f+next*runTime*.5f;
             }
             // Finish a small, physically brakeable final step without oscillation.
-            if(step*error>=0f && Math.Abs(step)>=Math.Abs(error) && Math.Abs(Velocity)<=deceleration*h)
+            if(Math.Abs(trackingVelocity)<.01f && step*error>=0f && Math.Abs(step)>=Math.Abs(error) && Math.Abs(Velocity)<=deceleration*h)
             { pan+=error;Velocity=0f;break; }
             pan+=step;Velocity=next;
         }

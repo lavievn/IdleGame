@@ -86,10 +86,19 @@ public class EnvironmentManager : MonoBehaviour
     private float previousMultiZoneFocus;
     public float MultiZoneVelocity => multiZoneCamera.Velocity;
 
+    [Header("DIRECTIONAL FRAMING — screen-space target, primary camera subject")]
+    public bool directionalCameraFraming;
+    [Range(.5f,.8f)] public float leftwardFramingX=.65f;
+    [Min(.05f)] public float directionalFramingSmoothTime=.35f;
+    private float framingRatio=.65f,framingDesired=.65f,framingPreviousHeroX;
+    private readonly CombatFocusSmoother directionalFramingSmoother=new CombatFocusSmoother();
+    private bool framingSampleReady;
+
     // Only call while a new map is hidden. Gameplay subject changes never reset velocity.
     public void ResetCameraForMapEntry()
     {
         multiZoneCamera.Reset();combatFocusSmoother.Reset();multiZoneFocusReady=false;multiZoneSubject=null;
+        framingSampleReady=false;directionalFramingSmoother.Reset();framingRatio=framingDesired=leftwardFramingX;
         deadzoneCamera.Reset();stationaryCombatVelocity=0f;hasPlannedPan=false;
     }
 
@@ -454,6 +463,9 @@ public class EnvironmentManager : MonoBehaviour
         CurrentBackgroundSpeed = Time.deltaTime > 0f ? backgroundPan / Time.deltaTime : 0f;
         CurrentCameraSpeed = Time.deltaTime > 0f ? pan / Time.deltaTime : 0f;
         if(useMultiZoneCamera)previousMultiZoneFocus=CurrentCameraSmoothedFocusX+pan;
+        if(useMultiZoneCamera && directionalCameraFraming && cameraTarget!=null && cameraTarget.IsDeployed) {
+            framingPreviousHeroX=Position(cameraTarget.heroRect).x;framingSampleReady=true;
+        }
         IsScrolling = Mathf.Abs(pan) > 0.01f;
         TraceFrame("Environment.LateUpdate after pan");
     }
@@ -474,6 +486,15 @@ public class EnvironmentManager : MonoBehaviour
             CurrentCameraFocusCount=0;return;
         }
         float heroX=Position(cameraTarget.heroRect).x;int count=1;
+        float tracking=0f;
+        if(directionalCameraFraming) {
+            float step=framingSampleReady && multiZoneSubject==cameraTarget && cameraTarget.MovementFrame==Time.frameCount?heroX-framingPreviousHeroX:0f;
+            float leftTarget=float.IsNaN(leftwardFramingX)||float.IsInfinity(leftwardFramingX)?.65f:Mathf.Clamp(leftwardFramingX,.5f,.8f);
+            if(Mathf.Abs(step)>.001f)framingDesired=step<0?leftTarget:1f-leftTarget;
+            // Retain the last direction while standing in combat; never snap back to center.
+            framingRatio=leftTarget+directionalFramingSmoother.Step(framingDesired-leftTarget,Time.deltaTime,Mathf.Max(.05f,directionalFramingSmoothTime),1f);
+            tracking=-step/Time.deltaTime;
+        }
         float raw=cameraUseCombatCenter?CombatCenterX(heroX,out count):heroX;
         // Preserve the absolute filtered center when the anchor Hero dies or
         // changes. Retain focus AND pan velocities across gameplay roster changes.
@@ -486,7 +507,8 @@ public class EnvironmentManager : MonoBehaviour
         CurrentCameraFocusX=raw;CurrentCameraSmoothedFocusX=focus;CurrentCameraFocusCount=count;
         pan=multiZoneCamera.Pan(focus,battleArea.rect.xMin,battleArea.rect.xMax,Time.deltaTime,
             greenZoneWidth,yellowZoneWidth,redZoneWidth,minFollowSpeed,maxFollowSpeed,
-            maxAcceleration,maxDeceleration,correctionSpeed,maxCameraStep);
+            maxAcceleration,maxDeceleration,correctionSpeed,maxCameraStep,
+            directionalCameraFraming?framingRatio:.5f,tracking,directionalCameraFraming);
     }
 
     // Equal-weight center of all deployed Heroes and living, ON-SCREEN monsters.

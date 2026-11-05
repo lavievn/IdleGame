@@ -166,6 +166,7 @@ partial class MotionRegression
         if(args.Length==1 && args[0]=="--movement-spike") { HeroMovementSpikeTests();return; }
         if(args.Length==1 && args[0]=="--render-trace") { HeroRenderTraceTests();return; }
         if(args.Length==1 && args[0]=="--position-hotfix") { B2SpawnPositionTests();return; }
+        if(args.Length==1 && args[0]=="--camera-framing") {CameraFramingTests();return;}
         if(args.Length==1 && args[0]=="--multi-zone") { MultiZoneCameraTests();return; }
         if(args.Length==1 && args[0]=="--map-entry") { UnifiedMapEntryTests();return; }
         if(args.Length==1 && args[0]=="--distance-waves") { DistanceWaveTests();return; }

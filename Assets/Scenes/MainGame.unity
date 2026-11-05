@@ -962,9 +962,13 @@ MonoBehaviour:
   cameraIdleSmoothTime: 0.6
   advanceStationaryCombatToRight: 1
   stationaryCombatSmoothTime: 1.5
-  cameraUseCombatCenter: 1
+  cameraUseCombatCenter: 0
   cameraCombatFocusSmoothTime: 1.5
   cameraCombatFocusMaxSpeed: 240
+  useMultiZoneCamera: 1
+  directionalCameraFraming: 1
+  leftwardFramingX: 0.65
+  directionalFramingSmoothTime: 0.35
   meleeRangeRatio: 0.035
   heroPhysicalRangeRatio: 0.36
   heroMagicRangeRatio: 0.42
