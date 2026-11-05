@@ -4,6 +4,27 @@ using System.IO;
 using UnityEngine;
 partial class MotionRegression
 {
+    static void StabilizationLifecycleTests()
+    {
+        Run("v03 Pause retains primary pending attack interval and Resume releases once",()=>{
+            GameManager gm;var f=WeaponField(out gm);WearWeapon(gm,WeaponInBag(gm,WeaponFamily.Bow));
+            var m=f.Monster(-200);LootBattle(f,gm,m);Tough(f);f.hero.TickMovement(f.space,0);
+            var state=f.combat.CurrentHeroCombatState;state.AttackTimer=.4f;state.WindupMode=f.hero.attackMode;
+            CombatStep(f,.1f);Near(state.AttackTimer,.3f,"pending interval");Check(f.combat.PendingProjectileCount==0,"not released yet");
+            Time.timeScale=0;CombatStep(f,2);Near(state.AttackTimer,.3f,"paused interval unchanged");Check(f.combat.PendingProjectileCount==0,"pause does not fire");
+            Time.timeScale=1;CombatStep(f,.31f);Check(f.combat.PendingProjectileCount==1,"resume one release");
+        });
+        foreach(bool monsterFirst in new[]{false,true})
+        Run("v03 same-frame death ordering monsterFirst="+monsterFirst,()=>{
+            GameManager gm;var f=WeaponField(out gm);var m=f.Monster(-20);LootBattle(f,gm,m);var victim=f.Enemies[0];
+            if(monsterFirst)Lethal(f,victim);
+            f.combat.ApplyDamageToRegisteredHero(f.hero,int.MaxValue,"[owned ordering fixture]");
+            if(!monsterFirst)Lethal(f,victim);
+            DeathCallback(f,victim);Lethal(f,victim);
+            Check(!f.combat.HasLivingHero && gm.HeroData.equipmentItems.Count==(monsterFirst?1:0),"only accepted pre-owner-death kill may grant once");
+            Check(f.combat.PendingProjectileCount==0,"owner defeat clears outgoing shots");
+        });
+    }
     static void StabilizationCameraSoakTests()
     {
         Run("v03 100 repeated move stop reversal cycles and ten hidden-entry resets",()=>{
