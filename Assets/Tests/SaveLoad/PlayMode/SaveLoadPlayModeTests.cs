@@ -23,11 +23,15 @@ namespace IdleGame.Tests.SaveLoad.PlayMode
             object[] args={key,hero,config,null,null};
             var outcome=service.GetType().GetMethod("CompleteProduction").Invoke(service,args);
             Assert.That(outcome.ToString(),Is.EqualTo("Awarded"),Convert.ToString(args[4]));
+            Assert.That(PlayModeRuntime.Get(args[3],"MaterialOutcome").ToString(),Is.EqualTo("Awarded"));
+            Assert.That(PlayModeRuntime.Get(args[3],"EquipmentOutcome").ToString(),Is.EqualTo("Awarded"));
+            object[] duplicate={key,hero,config,null,null};
+            Assert.That(service.GetType().GetMethod("CompleteProduction").Invoke(service,duplicate).ToString(),Is.EqualTo("Rejected"));
             return args[3];
         }
 
         [UnityTest]
-        public IEnumerator ProductionRewardsForge_SaveLoadSupportsExistingSchema()
+        public IEnumerator ProductionV01BothStreamsForge_SaveLoadSupportsExistingSchema()
         {
             // Explicit test configuration; nothing is written into production balance.
             var source=Hero();
@@ -36,12 +40,12 @@ namespace IdleGame.Tests.SaveLoad.PlayMode
             inventory.GetMethod("InitializeNewRun").Invoke(null,new object[]{source});
             equipment.GetMethod("InitializeNewRun").Invoke(null,new object[]{source});
             PlayModeRuntime.Set(source,"gold",123L);
-            var reward=AwardProduction(source,"{\"configured\":true,\"entries\":[{\"kind\":1,\"id\":\"sample:iron_sword\",\"probability\":1,\"quantity\":1,\"itemLevel\":1,\"mainStat\":7}]}");
-            string id=(string)PlayModeRuntime.Get(reward,"instanceId");
+            var reward=AwardProduction(source,"{\"configured\":true,\"material\":{\"enabled\":true,\"chance\":1,\"materialId\":\"material:refinement\",\"minQuantity\":14,\"maxQuantity\":14},\"equipment\":{\"enabled\":true,\"chance\":1,\"selectionPolicy\":1,\"templates\":[{\"templateId\":\"sample:iron_sword\",\"itemLevel\":1,\"mainStat\":7}]}}");
+            string id=(string)PlayModeRuntime.Get(PlayModeRuntime.Get(reward,"Equipment"),"instanceId");
             Assert.That(equipment.GetMethod("Equip").Invoke(null,new object[]{source,id,Enum.Parse(PlayModeRuntime.Type("EquipmentSlot"),"Weapon")}),Is.EqualTo(true));
             var damage=PlayModeRuntime.Type("WeaponBasicAttack").GetMethod("DamageSource");
             int before=(int)damage.Invoke(null,new object[]{source});
-            AwardProduction(source,"{\"configured\":true,\"entries\":[{\"kind\":2,\"id\":\"material:refinement\",\"probability\":1,\"quantity\":14}]}");
+            Assert.That(inventory.GetMethod("Count").Invoke(null,new object[]{source,"material:refinement"}),Is.EqualTo(14),"both streams committed on one receipt");
             var forge=PlayModeRuntime.Type("EquipmentRefinement").GetMethod("TryApply");
             foreach(string operation in new[]{"NormalUp","SpecialUp"}) {
                 object[] args={source,id,Enum.Parse(PlayModeRuntime.Type("EquipmentRefinement+Operation"),operation),null};

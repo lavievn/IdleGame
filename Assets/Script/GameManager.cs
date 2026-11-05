@@ -32,7 +32,7 @@ public class GameManager : MonoBehaviour
     [Header("DEV ONLY — Controlled Loot Test A (default Off)")]
     [Tooltip("Editor/Development Build only: accepted kills give the primary Hero one Common demo sword. Not official progression.")]
     [SerializeField] private bool controlledLootTest;
-    [Header("Production rewards — no balance values configured by default")]
+    [Header("Production Loot v0.1 — prototype balance, configured explicitly in MainGame")]
     [SerializeField] private ProductionLootConfig productionLoot = new ProductionLootConfig();
     public ProductionLootConfig ProductionLoot => productionLoot;
     public static bool DevelopmentItemGrantsEnabled

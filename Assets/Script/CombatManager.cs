@@ -701,25 +701,27 @@ public class CombatManager : MonoBehaviour
             gameManager.UpdateEventLog("Hạ "+IdentityDisplay.Describe(target.data)+". Nhận "+exp+" EXP!");
         string lootItem="",lootError;
         bool testProfile=gameManager!=null && gameManager.ControlledLootTestEnabled;
-        ProductionLootConfig.Reward productionReward=default(ProductionLootConfig.Reward);
+        CombatLootRewards.ProductionResult production=default(CombatLootRewards.ProductionResult);
         var lootOutcome=testProfile
             ?lootRewards.Complete(target.lootKey,LootRecipient,true,out lootItem,out lootError)
             :lootRewards.CompleteProduction(target.lootKey,LootRecipient,
-                gameManager!=null?gameManager.ProductionLoot:null,out productionReward,out lootError);
-        if(!testProfile)lootItem=productionReward.instanceId;
-        if(lootOutcome==CombatLootRewards.Outcome.Awarded)
+                gameManager!=null?gameManager.ProductionLoot:null,out production,out lootError);
+        if(!testProfile)lootItem=production.Equipment.instanceId;
+        if((testProfile && lootOutcome==CombatLootRewards.Outcome.Awarded) ||
+            (!testProfile && production.EquipmentOutcome==CombatLootRewards.Outcome.Awarded))
         {
             // A cosmetic failure must not abort despawn/wave progression after
             // the authoritative reward has already committed to inventory.
-            try { if(testProfile || productionReward.kind==ProductionLootConfig.Kind.CommonEquipment)ShowAwardedLoot(target,lootItem); }
+            try { ShowAwardedLoot(target,lootItem); }
             catch(System.Exception ex) { Debug.LogWarning("[LOOT VISUAL] "+ex.Message); }
             if(gameManager!=null)gameManager.UpdateEventLog(testProfile
                 ?"[LOOT TEST A] Đang bật · Nhận Thiết Kiếm (Common) vào Kho đồ."
-                :"Nhận "+(productionReward.kind==ProductionLootConfig.Kind.ForgeMaterial
-                    ?EquipmentRefinement.MaterialName+" x"+productionReward.quantity
-                    :EquipmentRefinement.DisplayName(EquipmentRuntime.Find(LootRecipient,lootItem)))+" vào Kho đồ.");
+                :"Nhận "+EquipmentRefinement.DisplayName(EquipmentRuntime.Find(LootRecipient,lootItem))+" vào Kho đồ.");
         }
-        else if(lootOutcome==CombatLootRewards.Outcome.Failed)
+        if(!testProfile && production.MaterialOutcome==CombatLootRewards.Outcome.Awarded && gameManager!=null)
+            gameManager.UpdateEventLog("Nhận "+EquipmentRefinement.MaterialName+" x"+production.Material.quantity+" vào Kho đồ.");
+        // Partial success must retain its feedback AND report the failed stream.
+        if(!string.IsNullOrEmpty(lootError))
         {
             Debug.LogError(lootError);
             if(gameManager!=null)gameManager.UpdateEventLog(testProfile?"[LOOT TEST A] Lỗi cấp đồ; đã dừng thưởng test. Xem Console.":"Lỗi cấp thưởng; xem Console.");
