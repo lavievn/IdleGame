@@ -11,8 +11,8 @@ public sealed class CultivationSpriteBridge : MonoBehaviour
     private const float AttackDisplayDuration = .16f;
     private const float HitDisplayDuration = .2f;
     [Header("Presentation only (does not resize the combat RectTransform)")]
-    [Min(.01f)] public float heroScale = 1f;
-    [Min(.01f)] public float monsterScale = 1f;
+    [Min(.01f)] public float heroScale = 2f;
+    [Min(.01f)] public float monsterScale = 2f;
     public bool heroFlipHorizontal = true;
     public bool monsterFlipHorizontal = false;
 
@@ -27,6 +27,7 @@ public sealed class CultivationSpriteBridge : MonoBehaviour
     [SerializeField, HideInInspector] private Image sourceImage;
     [SerializeField, HideInInspector] private bool sourceWasEnabled;
     [SerializeField, HideInInspector] private Image image;
+    [SerializeField, HideInInspector] private Image healthFill;
     private bool enemy;
     private string classKey;
     private string fallbackClass;
@@ -65,6 +66,7 @@ public sealed class CultivationSpriteBridge : MonoBehaviour
         if (controller == null || controller.heroRect == null) return;
         var bridge = controller.heroRect.GetComponent<CultivationSpriteBridge>();
         if (bridge == null) bridge = controller.heroRect.gameObject.AddComponent<CultivationSpriteBridge>();
+        bridge.healthFill = controller.hpFillImage;
         bridge.Init(false, ToClass(controller.attackMode));
     }
     public static void AttachMonster(MonsterController controller)
@@ -73,7 +75,17 @@ public sealed class CultivationSpriteBridge : MonoBehaviour
         controller.RefreshSpriteIdentity();
         var bridge = controller.Rect.GetComponent<CultivationSpriteBridge>();
         if (bridge == null) bridge = controller.Rect.gameObject.AddComponent<CultivationSpriteBridge>();
+        bridge.healthFill = controller.hpFillImage;
         bridge.Init(true,controller.SpriteIdentityKey??ToClass(controller.attackMode),ToClass(controller.attackMode));
+        SetMonsterFacing(controller.Rect, controller.FacingRight);
+    }
+    public static void SetMonsterFacing(RectTransform rect, bool right)
+    {
+        if (rect == null) return;
+        var bridge = rect.GetComponent<CultivationSpriteBridge>();
+        if (bridge == null) return;
+        bridge.monsterFlipHorizontal = !right;
+        bridge.ApplyLayout(); // Mirror only the body child, never HP/text/root.
     }
     public static void Attack(RectTransform rect)
     {
@@ -284,6 +296,22 @@ public sealed class CultivationSpriteBridge : MonoBehaviour
         float scale = Mathf.Max(.01f, enemy ? monsterScale : heroScale);
         bool flip = enemy ? monsterFlipHorizontal : heroFlipHorizontal;
         body.localScale = new Vector3(flip ? -scale : scale, scale, 1f);
+        // Keep the existing health bar above the enlarged silhouette without
+        // scaling its width/fill/text or changing the actor's logical root.
+        if (healthFill != null)
+        {
+            var bar = healthFill.transform.parent as RectTransform;
+            if (bar == transform) bar = healthFill.rectTransform;
+            bool owned = false;
+            for (Transform p = bar; p != null; p = p.parent)
+                if (p == transform) { owned = true; break; }
+            if (owned && bar != null && bar != transform)
+            {
+                Vector3 local = transform.InverseTransformPoint(bar.position);
+                local.y = VisibleBodySize.y + 6f;
+                bar.position = transform.TransformPoint(local);
+            }
+        }
     }
     private void ReleaseSprites()
     {

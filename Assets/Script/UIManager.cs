@@ -4,7 +4,7 @@ using UnityEngine.Events;
 using System.Collections.Generic;
 using System.Collections;
 
-public class UIManager : MonoBehaviour
+public partial class UIManager : MonoBehaviour
 {
     [Header("Core References")]
     public static UIManager Instance;
@@ -94,7 +94,7 @@ public class UIManager : MonoBehaviour
         ConfigureSystemMenu();
         ConfigureGameplayPanels();
         worldMapUI = WorldMapPanelUI.Install(this,hudCanvas);
-        ConfigureMapTitle();
+        ConfigureHudW3();
         LayoutReadableUI();
         if (mapMenu != null) mapMenu.SetActive(false);
         foreach (var rect in Object.FindObjectsByType<RectTransform>(FindObjectsInactive.Include, FindObjectsSortMode.None))
@@ -102,7 +102,7 @@ public class UIManager : MonoBehaviour
     }
     public void SetDifficulty(int mode)
     {
-        var gm = Object.FindFirstObjectByType<GameManager>();
+        var gm = GameForUI();
         if (gm != null) gm.SetDifficulty(mode);
         if (mapMenu != null) mapMenu.SetActive(false);
     }
@@ -152,6 +152,8 @@ public class UIManager : MonoBehaviour
     public bool CheckInteractableHover(Vector2 mousePos)
     {
         if (worldMapUI != null && worldMapUI.HitMapSurface(mousePos)) return true;
+        if(martialButton!=null && martialButton.gameObject.activeInHierarchy && RectTransformUtility.RectangleContainsScreenPoint(martialButton,mousePos,null))return true;
+        if(!worldMapButtonAvailable && worldMapButton!=null && worldMapButton.gameObject.activeInHierarchy && RectTransformUtility.RectangleContainsScreenPoint(worldMapButton,mousePos,null))return true;
         foreach (var item in interactables)
         {
             if (item != null && item.isActiveAndEnabled && RectTransformUtility.RectangleContainsScreenPoint(item.GetRect(), mousePos, null))
@@ -162,7 +164,7 @@ public class UIManager : MonoBehaviour
 
     public CustomInteractable HitControl(Vector2 mousePos)
     {
-        GameManager gm = Object.FindFirstObjectByType<GameManager>();
+        GameManager gm = GameForUI();
         if(gm!=null && gm.IsEnteringGameplay)return null;
         bool confirmation = gm != null && gm.HasPendingConfirmation;
         CustomInteractable hit = null;
@@ -184,6 +186,7 @@ public class UIManager : MonoBehaviour
                 if (gm != null && gm.preGameUI != null && gm.preGameUI.activeInHierarchy &&
                     !item.transform.IsChildOf(gm.preGameUI.transform) &&
                     (gm.confirmationPopup == null || !item.transform.IsChildOf(gm.confirmationPopup.transform))) continue;
+                if(musicVolumePanel!=null && musicVolumePanel.IsOpen && !item.transform.IsChildOf(musicVolumePanel.Root))continue;
                 if (devUI != null && devUI.IsOpen && !item.transform.IsChildOf(devUI.Root)) continue;
                 if (inventoryUI != null && inventoryUI.IsOpen &&
                     !item.transform.IsChildOf(inventoryUI.Root)) continue;
@@ -226,7 +229,7 @@ public class UIManager : MonoBehaviour
 
     private StartMenuUI OpeningSettingsMenu()
     {
-        var gm=Object.FindFirstObjectByType<GameManager>();
+        var gm=GameForUI();
         return gm!=null && gm.preGameUI!=null && gm.preGameUI.activeInHierarchy
             && (gm.confirmationPopup==null || !gm.confirmationPopup.activeInHierarchy)
             ? gm.GetComponent<StartMenuUI>() : null;
@@ -237,7 +240,7 @@ public class UIManager : MonoBehaviour
         var menu=OpeningSettingsMenu();
         openingVolumeDragMenu=null;
         if(menu!=null && menu.TryBeginVolumeDrag(point)) {openingVolumeDragMenu=menu;return true;}
-        var gm=Object.FindFirstObjectByType<GameManager>();
+        var gm=GameForUI();
         return gm!=null && gm.IsGameplayHUDVisible && !gm.HasPendingConfirmation &&
             musicVolumePanel!=null && musicVolumePanel.IsVolumeTrack(HitControl(point)) && musicVolumePanel.TryBeginDrag(point);
     }
@@ -248,7 +251,7 @@ public class UIManager : MonoBehaviour
         if(openingVolumeDragMenu!=null)openingVolumeDragMenu.DragVolume(point);
         else if(musicVolumePanel!=null)
         {
-            var gm=Object.FindFirstObjectByType<GameManager>();
+            var gm=GameForUI();
             if(gm==null || !gm.IsGameplayHUDVisible || gm.HasPendingConfirmation) {EndOpeningVolumeDrag();return;}
             musicVolumePanel.Drag(point);
         }
@@ -267,7 +270,12 @@ public class UIManager : MonoBehaviour
     private void ConfigureSystemMenu()
     {
         if (transparentWindow == null) transparentWindow = Object.FindFirstObjectByType<TransparentWindow>();
-        if (systemMenu == null) return;
+        if (systemMenu == null)
+        {
+            systemMenu=new GameObject("System Menu",typeof(RectTransform),typeof(CanvasRenderer),typeof(Image));
+            systemMenu.transform.SetParent(combatUIRoot,false);
+            systemMenu.SetActive(false);
+        }
         var root = systemMenu.GetComponent<RectTransform>();
         root.anchorMin = root.anchorMax = new Vector2(1f,0f);
         root.pivot = new Vector2(1f,0f);
@@ -292,7 +300,7 @@ public class UIManager : MonoBehaviour
         MakeMenuButton(mainPage, "Save", "Lưu thủ công", 1, OpenManualSaveMenu);
         MakeMenuButton(mainPage, "Load", "Tải bản lưu", 2, OpenLoadMenu);
         MakeMenuButton(mainPage, "Reset", "Đặt lại nhân vật", 3, () => {
-            CloseSystemMenu(); var gm = Object.FindFirstObjectByType<GameManager>(); if (gm != null) gm.OnResetClicked();
+            CloseSystemMenu(); var gm = GameForUI(); if (gm != null) gm.OnResetClicked();
         });
         MakeMenuButton(mainPage, "WindowSize", "Kích thước cửa sổ", 4, () => ShowPage(sizePage));
         MakeMenuButton(mainPage, "ReturnTitle", "Quay lại màn hình chính", 5, ReturnToTitle);
@@ -353,6 +361,7 @@ public class UIManager : MonoBehaviour
         var rect = (RectTransform)go.transform; rect.SetParent(parent, false);
         rect.anchorMin = Vector2.zero; rect.anchorMax = Vector2.one; rect.pivot = new Vector2(.5f,.5f);
         rect.sizeDelta = Vector2.zero; rect.anchoredPosition = Vector2.zero;
+        PanelHeader(rect,26);
         MakeLabel(rect, title, new Vector2(170,-24), new Vector2(320,34));
         return go;
     }
@@ -379,10 +388,22 @@ public class UIManager : MonoBehaviour
         MakeLabel(rect, label, new Vector2(150,-25), new Vector2(284,44));
         var click = go.GetComponent<CustomInteractable>(); click.onClickEvent = new UnityEvent(); click.onClickEvent.AddListener(action);
         RegisterInteractable(click);
+        Skin(rect,SurfaceKind.Button);
     }
     public bool IsPaused { get; private set; }
     private TMPro.TextMeshProUGUI pauseText, damageText;
     private GameObject damagePanel;
+    // Set only by a verifier after it has proved ownership of its save directory.
+    // Transient UI context, never a persisted profile or a loader switch.
+    internal bool IsolatedValidationProfile;
+    private TMPro.TextMeshProUGUI devSourceCaption;
+    private TMPro.TextMeshProUGUI progressionSummary;
+    private RectTransform allocateHealthButton,allocatePhysicalButton;
+    private CustomInteractable allocateHealthInput,allocatePhysicalInput;
+    public string CharacterSourceStatus =>
+        (IsolatedValidationProfile ? "THỬ NGHIỆM CÔ LẬP · " : "") +
+        (CombatBalance.HeroDev != null ? "DEVB Hero đang override HP/Attack/tốc đánh/tăng trưởng/di chuyển/tầm" : "Baseline Hero bình thường") +
+        (CombatBalance.MonsterDev != null ? " · DEVB quái bật" : "");
     private HeroController heroForUI;
     private RectTransform testSummonButton;
     private TMPro.TextMeshProUGUI testSummonText;
@@ -391,7 +412,7 @@ public class UIManager : MonoBehaviour
     public void SetPaused(bool paused)
     {
         if(!paused) {
-            var gm=Object.FindFirstObjectByType<GameManager>();
+            var gm=GameForUI();
             if(gm!=null && gm.IsEnteringGameplay)return;
         }
         IsPaused = paused; Time.timeScale = paused ? 0f : 1f;
@@ -415,12 +436,16 @@ public class UIManager : MonoBehaviour
         var rect = (RectTransform)go.transform; rect.SetParent(parent, false);
         rect.anchorMin = rect.anchorMax = anchor; rect.pivot = pivot; rect.anchoredPosition = position; rect.sizeDelta = size;
         go.GetComponent<Image>().color = new Color(.15f,.25f,.35f,1f); go.GetComponent<Image>().raycastTarget = false;
-        MakeLabel(rect, label, new Vector2(size.x * .5f,-size.y * .5f), new Vector2(size.x-12,size.y-8));
+        var caption=MakeLabel(rect,label,Vector2.zero,Vector2.zero);
+        caption.rectTransform.anchorMin=Vector2.zero;caption.rectTransform.anchorMax=Vector2.one;
+        caption.rectTransform.pivot=new Vector2(.5f,.5f);
+        caption.rectTransform.offsetMin=new Vector2(6,4);caption.rectTransform.offsetMax=new Vector2(-6,-4);
+        Skin(rect,SurfaceKind.Button);
         BindClick(rect, action); return rect;
     }
     private void ConfigureGameplayPanels()
     {
-        var gm = Object.FindFirstObjectByType<GameManager>();
+        var gm = GameForUI();
         var hero = Object.FindFirstObjectByType<HeroController>();
         Transform canvas = combatUIRoot;
         if (canvas == null) return;
@@ -465,7 +490,7 @@ public class UIManager : MonoBehaviour
         testSummonButton = SmallButton(canvas, "B2TestSummon", "[B2] Gọi +1 (0/2)",
             new Vector2(0,1), new Vector2(0,1), new Vector2(6,-139),
             new Vector2(146,26), () => {
-                var game = Object.FindFirstObjectByType<GameManager>();
+                var game = GameForUI();
                 if (game != null) game.CycleTestCompanions();
             });
         testSummonText = testSummonButton.GetComponentInChildren<TMPro.TextMeshProUGUI>(true);
@@ -474,7 +499,7 @@ public class UIManager : MonoBehaviour
             // Reserve space at the right of the log so Info cannot obscure a formula/name.
             var log = (RectTransform)gm.eventLog.transform;
             BindClick(log,OpenLogInfo);
-            SmallButton(log,"DamageInfoButton","Info",new Vector2(1,1),new Vector2(1,1),new Vector2(-8,-8),new Vector2(100,42),OpenDamageInfo);
+            SmallButton(log,"DamageInfoButton","Chi tiết",new Vector2(1,1),new Vector2(1,1),new Vector2(-8,-8),new Vector2(100,42),OpenDamageInfo);
             if (gm.eventLogText != null) {
                 var textRect = (RectTransform)gm.eventLogText.transform;
                 textRect.anchorMin = Vector2.zero; textRect.anchorMax = Vector2.one;
@@ -509,6 +534,19 @@ public class UIManager : MonoBehaviour
         SmallButton(body,"DamageOlder","Đòn trước",Vector2.zero,Vector2.zero,new Vector2(18,12),new Vector2(160,54),()=>ChangeDamagePage(1));
         SmallButton(body,"DamageNewer","Đòn sau",new Vector2(.5f,0),new Vector2(.5f,0),new Vector2(0,12),new Vector2(160,54),()=>ChangeDamagePage(-1));
         SmallButton(body,"DamageClose","Đóng",new Vector2(1,0),new Vector2(1,0),new Vector2(-18,12),new Vector2(160,54),CloseDamageInfo);
+        progressionSummary=MakeLabel(body,"",Vector2.zero,Vector2.zero);
+        progressionSummary.gameObject.name="CharacterProgressionSummary";
+        progressionSummary.alignment=TMPro.TextAlignmentOptions.TopLeft;
+        ReadableText(progressionSummary,13f);
+        allocateHealthButton=SmallButton(body,"CharacterAllocateHP","+6 HP · 1 điểm",Vector2.zero,Vector2.zero,Vector2.zero,Vector2.one,()=>{
+            var owner=GameForUI();if(owner!=null)owner.AllocateHeroHealth();
+        });
+        allocatePhysicalButton=SmallButton(body,"CharacterAllocatePhysical","+1 Physical Attack · 1 điểm",Vector2.zero,Vector2.zero,Vector2.zero,Vector2.one,()=>{
+            var owner=GameForUI();if(owner!=null)owner.AllocateHeroPhysicalAttack();
+        });
+        allocateHealthInput=allocateHealthButton.GetComponent<CustomInteractable>();
+        allocatePhysicalInput=allocatePhysicalButton.GetComponent<CustomInteractable>();
+        LayoutCharacterProgression();
         if (transparentWindow != null) transparentWindow.RegisterClickable(body);
         damagePanel.SetActive(false);
     }
@@ -525,7 +563,14 @@ public class UIManager : MonoBehaviour
     }
     private void RefreshCombatHUDVisibility()
     {
-        var gm = Object.FindFirstObjectByType<GameManager>();
+        var gm = GameForUI();
+        // These panels do not pause combat. Once Game Over/entry/title owns
+        // the screen, they must stop owning hit-tests over Retry/menu controls.
+        if(gm!=null && !gm.IsGameplayHUDVisible)
+        {
+            CloseDamageInfo();
+            CloseSystemMenu();
+        }
         bool shown = ShouldShowCombatHUD(gm != null && gm.IsGameplayHUDVisible,
             gm != null && gm.preGameUI != null && gm.preGameUI.activeInHierarchy,
             gm != null && gm.gameOverPanel != null && gm.gameOverPanel.activeInHierarchy,
@@ -536,15 +581,11 @@ public class UIManager : MonoBehaviour
             (worldMapUI != null && worldMapUI.IsOpen));
         if (inventoryUI != null && inventoryUI.IsOpen &&
             (gm == null || !gm.IsGameplayHUDVisible)) inventoryUI.Close();
-        if (inventoryButton != null) inventoryButton.gameObject.SetActive(shown);
-        if (volumeButton != null) volumeButton.gameObject.SetActive(shown);
-        if (worldMapButton != null) worldMapButton.gameObject.SetActive(shown &&
-            gm != null && TuTienCore.WorldMapCatalog.Enabled(gm.HeroData));
-        if (musicVolumePanel != null) musicVolumePanel.SetVisibleInGameplay(shown);
-        if (statsPanel != null) statsPanel.gameObject.SetActive(shown && Screen.height >= 290);
-        if (testSummonButton != null) testSummonButton.gameObject.SetActive(shown);
-        if (gm != null && gm.eventLog != null) gm.eventLog.gameObject.SetActive(shown);
-        if (mapTitleRect != null) mapTitleRect.gameObject.SetActive(shown && !string.IsNullOrEmpty(mapTitleName));
+        if(w3!=null)w3.Root.gameObject.SetActive(shown);
+        if(musicVolumePanel!=null)musicVolumePanel.SetVisibleInGameplay(shown);
+        if(statsPanel!=null)statsPanel.gameObject.SetActive(false);
+        if(gm!=null && gm.eventLog!=null)gm.eventLog.gameObject.SetActive(shown && showCompactLog);
+
     }
     private void HideLegacyAttackModeButtons()
     {
@@ -557,7 +598,7 @@ public class UIManager : MonoBehaviour
     {
         if (damagePanel == null) return;
         detailKind = 0; detailSlice = 0;
-        var gm = Object.FindFirstObjectByType<GameManager>();displayedDamage = gm != null ? gm.DamageHistory : new string[0];damagePage = 0;
+        var gm = GameForUI();displayedDamage = gm != null ? gm.DamageHistory : new string[0];damagePage = 0;
         damagePanel.SetActive(true);damagePanel.transform.SetAsLastSibling();RefreshDamageInfo();
     }
     public void CloseDamageInfo() { if (damagePanel != null) damagePanel.SetActive(false); }
@@ -570,9 +611,10 @@ public class UIManager : MonoBehaviour
     private void RefreshDamageInfo()
     {
         if (damageText == null) return;
+        LayoutCharacterProgression();RefreshCharacterProgression();
         string title = detailKind == 1 ? "CHỈ SỐ HERO" : detailKind == 2 ? "NHẬT KÝ" : "SÁT THƯƠNG " + (damagePage+1) + "/" + System.Math.Max(1,displayedDamage.Length);
         string content = detailKind != 0 ? detailSnapshot : displayedDamage.Length == 0 ? "Chưa có đòn đánh hoàn tất." : displayedDamage[damagePage];
-        var pages = ReadablePages(content, Mathf.Max(12,Screen.width-40), Mathf.Max(20,Screen.height-92));
+        var pages = ReadablePages(content, Mathf.Max(12,ManagementWindowLayout.CombatPixels(Screen.width)-40), Mathf.Max(20,Screen.height-(detailKind==1?196:92)));
         detailSliceCount = pages.Count; detailSlice = Mathf.Clamp(detailSlice,0,pages.Count-1);
         damageText.text = title + " · " + (detailSlice+1) + "/" + pages.Count + "\n" + pages[detailSlice];
     }
@@ -597,21 +639,61 @@ public class UIManager : MonoBehaviour
     private string detailSnapshot;
     public void OpenHeroStats()
     {
-        var hero = Object.FindFirstObjectByType<HeroController>();
-        var gm=Object.FindFirstObjectByType<GameManager>();
+        OpenTextDetail(1,CurrentHeroDetails());
+    }
+    private string CurrentHeroDetails()
+    {
+        var hero = heroForUI;
+        var gm=GameForUI();
         string stats=hero!=null ? hero.FullStatDetails : "Chưa có nhân vật.";
         if (gm!=null)
         {
             if (gm.HeroData!=null) stats=TuTienCore.IdentityDisplay.Describe(gm.HeroData)+" · Cấp "+gm.HeroData.currentLevel+"\n"+stats;
-            stats+="\n\nSỰ KIỆN\n"+gm.FullEventHistory;
-            var details=gm.DamageHistory;
-            stats+="\n\nCHI TIẾT SÁT THƯƠNG\n"+(details.Length==0?"Chưa có đòn đánh.":string.Join("\n\n",details));
         }
-        OpenTextDetail(1,stats);
+        return stats;
+    }
+    public void RefreshCharacterProgression()
+    {
+        if(devSourceCaption==null && devButton!=null)devSourceCaption=devButton.GetComponentInChildren<TMPro.TextMeshProUGUI>(true);
+        string label=CombatBalance.HeroDev!=null?"DEVB · Hero override":CombatBalance.MonsterDev!=null?"DEVB · Quái override":"DEVB · Baseline";
+        if(devSourceCaption!=null && devSourceCaption.text!=label)devSourceCaption.text=label;
+        if(damagePanel!=null && damagePanel.activeSelf && detailKind==1)
+        {
+            var gm=GameForUI();var data=gm!=null?gm.HeroData:null;
+            var state=CombatManager.Instance!=null?CombatManager.Instance.CurrentHeroCombatState:null;
+            string health=state!=null && state.Data==data?state.CurrentHP+"/"+state.MaxHP:"—";
+            if(progressionSummary!=null)progressionSummary.text=(data==null?"Chưa có nhân vật.":"Cấp "+data.currentLevel+" · Cảnh giới legacy/prototype: "+TuTienCore.RankDatabase.GetRankName(Mathf.Clamp(data.currentLevel,1,999))+"\nĐiểm thuộc tính: "+data.statPoints+
+                "\nHP: "+health+" · Physical Attack: "+WeaponBasicAttack.Physical(data)+" · EXP: "+data.currentExp+"/"+data.expToNextLevel)+"\n"+CharacterSourceStatus;
+            bool can=gm!=null && gm.CanAllocateHeroAttribute;
+            SetAllocationEnabled(allocateHealthInput,can);SetAllocationEnabled(allocatePhysicalInput,can);
+            string current=CurrentHeroDetails();
+            if(current!=detailSnapshot){detailSnapshot=current;RefreshDamageInfo();}
+        }
+    }
+    private static void SetAllocationEnabled(CustomInteractable input,bool available)
+    {
+        if(input==null || input.enabled==available)return;input.enabled=available;
+        var image=input.GetComponent<Image>();var color=image.color;color.a=available?1f:.4f;image.color=color;
+    }
+    private void LayoutCharacterProgression()
+    {
+        if(progressionSummary==null)return;
+        bool show=detailKind==1;
+        progressionSummary.gameObject.SetActive(show);allocateHealthButton.gameObject.SetActive(show);allocatePhysicalButton.gameObject.SetActive(show);
+        if(!show) {
+            var ordinary=damageText.rectTransform;ordinary.anchorMin=Vector2.zero;ordinary.anchorMax=Vector2.one;
+            ordinary.sizeDelta=new Vector2(-16,-40);ordinary.anchoredPosition=new Vector2(0,16);return;
+        }
+        float width=Mathf.Max(280,ManagementWindowLayout.CombatPixels(Screen.width)-12);
+        PlaceUI(progressionSummary.rectTransform,new Vector2(0,1),new Vector2(0,1),new Vector2(8,-8),new Vector2(width-16,92));
+        float half=(width-24)*.5f;
+        PlaceUI(allocateHealthButton,Vector2.zero,Vector2.zero,new Vector2(8,36),new Vector2(half,28));
+        PlaceUI(allocatePhysicalButton,Vector2.zero,Vector2.zero,new Vector2(16+half,36),new Vector2(half,28));
+        var text=damageText.rectTransform;text.anchorMin=Vector2.zero;text.anchorMax=Vector2.one;text.sizeDelta=new Vector2(-16,-172);text.anchoredPosition=new Vector2(0,-18);
     }
     public void OpenLogInfo()
     {
-        var gm = Object.FindFirstObjectByType<GameManager>();
+        var gm = GameForUI();
         OpenTextDetail(2,gm != null ? gm.FullEventHistory : "Chưa có nhật ký.");
     }
     private void OpenTextDetail(int kind,string text)
@@ -632,7 +714,7 @@ public class UIManager : MonoBehaviour
 
     public void ToggleMusicVolume()
     {
-        var gm = Object.FindFirstObjectByType<GameManager>();
+        var gm = GameForUI();
         if (gm == null || !gm.IsGameplayHUDVisible || musicVolumePanel == null) return;
         musicVolumePanel.Toggle();
     }
@@ -641,7 +723,7 @@ public class UIManager : MonoBehaviour
     {
         if (inventoryUI == null || (devUI != null && devUI.IsOpen) ||
             inventoryUI.IsOpen) return;
-        var gm=Object.FindFirstObjectByType<GameManager>();
+        var gm=GameForUI();
         if (gm == null || !gm.IsGameplayHUDVisible) return;
         CloseDamageInfo(); CloseSystemMenu();
         wasPausedBeforeInventory=IsPaused;
@@ -693,113 +775,16 @@ public class UIManager : MonoBehaviour
     private WorldMapPanelUI worldMapUI;
     private MusicVolumePanelUI musicVolumePanel;
     private InventoryPanelUI inventoryUI;
-    private RectTransform mapTitleRect;
-    private TMPro.TextMeshProUGUI mapTitleText, mapDebugText;
-    private Coroutine mapTitleRoutine;
-    private float mapTitleElapsed;
-    private string mapTitleName;
     private DevBalanceUI devUI;
-    private int layoutWidth, layoutHeight, layoutStatLines = -1;
+    private int layoutWidth, layoutHeight;
 
     // A separate presentation label: does not change map progress or world coordinates.
-    private void ConfigureMapTitle()
-    {
-        if (combatUIRoot == null || mapTitleRect != null) return;
-        mapTitleText = MakeLabel(combatUIRoot,"",Vector2.zero,new Vector2(560,85));
-        mapTitleRect = (RectTransform)mapTitleText.transform;
-        mapTitleRect.gameObject.name = "AnimatedMapTitle";
-        mapTitleText.alignment = TMPro.TextAlignmentOptions.Center;
-        mapTitleText.color = new Color(1f,.89f,.57f,1f);
-        mapTitleText.raycastTarget = false;
-        mapTitleText.enableAutoSizing = false;
-        mapTitleText.enableWordWrapping = false;
-        mapTitleText.overflowMode = TMPro.TextOverflowModes.Ellipsis;
-        // Secondary debug line follows the small title, not the large 3s intro.
-        mapDebugText = MakeLabel(mapTitleRect,"",Vector2.zero,new Vector2(345,38));
-        mapDebugText.gameObject.name = "MapWaveAndTerrain";
-        var debugRect = (RectTransform)mapDebugText.transform;
-        debugRect.anchorMin = debugRect.anchorMax = new Vector2(.5f,0f);
-        debugRect.pivot = new Vector2(.5f,1f);
-        debugRect.anchoredPosition = new Vector2(0f,-2f);
-        debugRect.sizeDelta = new Vector2(345f,38f);
-        mapDebugText.alignment = TMPro.TextAlignmentOptions.Center;
-        mapDebugText.raycastTarget = false;
-        mapDebugText.enableWordWrapping = false;
-        mapDebugText.overflowMode = TMPro.TextOverflowModes.Ellipsis;
-        mapDebugText.gameObject.SetActive(false);
-        mapTitleRect.gameObject.SetActive(false);
-    }
-    // This is updated for every wave; ShowMapTitle only restarts when the map changes.
-    public void UpdateMapDebug(EntityDataSO data)
-    {
-        if (data == null) return;
-        if (mapTitleRect == null) ConfigureMapTitle();
-        if (mapDebugText == null) return;
-        int wave = Mathf.Clamp(data.completedWavesInMap + 1,1,5);
-        mapDebugText.text = TuTienCore.WorldMapCatalog.Enabled(data)
-            ? "Map " + data.worldMapId + " · Wave " + data.worldMapLoopWave + "/5" +
-                "\nĐịa hình: " + (TuTienCore.WorldMapCatalog.TryGet(data.worldMapId,
-                    out TuTienCore.WorldMapNode debugNode) ? debugNode.TerrainLabel :
-                    TuTienCore.WorldNames.Terrain(data.mapTerrain))
-            : "Bản đồ " + data.mapNumber + " · Wave " + wave + "/5" +
-                "\nĐịa hình: " + TuTienCore.WorldNames.Terrain(data.mapTerrain);
-    }
-    public void ShowMapTitle(string name)
-    {
-        if (string.IsNullOrEmpty(name)) return;
-        if (mapTitleRect == null) ConfigureMapTitle();
-        if (mapTitleRect == null) return;
-        if (mapTitleRoutine != null) StopCoroutine(mapTitleRoutine);
-        mapTitleName = name;
-        mapTitleElapsed = 0f;
-        mapTitleText.text = name;
-        mapTitleRect.gameObject.SetActive(true);
-        mapTitleRect.SetAsLastSibling();
-        UpdateMapTitleAppearance();
-        mapTitleRoutine = StartCoroutine(AnimateMapTitle());
-    }
-    public void HideMapTitle()
-    {
-        if (mapTitleRoutine != null) StopCoroutine(mapTitleRoutine);
-        mapTitleRoutine = null;
-        mapTitleName = null;
-        if (mapTitleRect != null) mapTitleRect.gameObject.SetActive(false);
-    }
-    private IEnumerator AnimateMapTitle()
-    {
-        while (mapTitleElapsed < MapTitleMotion.HoldSeconds + MapTitleMotion.TravelSeconds)
-        {
-            mapTitleElapsed = Mathf.Min(MapTitleMotion.HoldSeconds + MapTitleMotion.TravelSeconds,
-                mapTitleElapsed + Time.deltaTime);
-            UpdateMapTitleAppearance();
-            yield return null;
-        }
-        mapTitleRoutine = null;
-    }
-    private void UpdateMapTitleAppearance()
-    {
-        if (mapTitleRect == null || mapTitleText == null) return;
-        float t = MapTitleMotion.Progress(mapTitleElapsed);
-        float w = Mathf.Max(1f,ManagementWindowLayout.CombatPixels(Screen.width));
-        float rightWidth = StatsColumnWidth(w);
-        float leftWidth = Mathf.Max(150f,w-rightWidth-18f);
-        // Center of window -> small persistent title under left combat log.
-        Vector2 anchor = new Vector2(.5f * (1f-t),.5f + .5f*t);
-        mapTitleRect.anchorMin = mapTitleRect.anchorMax = anchor;
-        mapTitleRect.pivot = new Vector2(.5f,.5f);
-        mapTitleRect.anchoredPosition = new Vector2(leftWidth * .5f * t,-151f*t);
-        float big = Mathf.Clamp(w*.065f,32f,64f),small = w < 750f ? 16f : 18f;
-        mapTitleText.fontSize = big+(small-big)*t;
-        if (mapDebugText != null)
-        {
-            mapDebugText.fontSize = w < 750f ? 12f : 14f;
-            mapDebugText.gameObject.SetActive(t >= .999f);
-            var debugRect = (RectTransform)mapDebugText.transform;
-            debugRect.sizeDelta = new Vector2(Mathf.Min(leftWidth-10f,335f),42f);
-        }
-        float wide = Mathf.Min(w-20f,660f),narrow = Mathf.Min(leftWidth-12f,320f);
-        mapTitleRect.sizeDelta = new Vector2(wide+(narrow-wide)*t,90f-60f*t);
-    }
+    // Compatibility entry points: the persistent W3 map view reads live world data.
+    // The old animated title no longer writes over the W3 layout.
+    public void UpdateMapDebug(EntityDataSO data) { TickHudW3(); }
+    public void ShowMapTitle(string name) { }
+    public void HideMapTitle() { }
+
     public static float StatsColumnWidth(float width)
     {
         return Mathf.Min(340f,Mathf.Max(220f,width*.40f));
@@ -832,7 +817,7 @@ public class UIManager : MonoBehaviour
         combatUIRoot.pivot = Vector2.zero;
         combatUIRoot.anchoredPosition = Vector2.zero;
         combatUIRoot.sizeDelta = new Vector2(Screen.width,Screen.height);
-        var gm = Object.FindFirstObjectByType<GameManager>();
+        var gm = GameForUI();
         var oldRoot = systemMenu != null ? systemMenu.transform.parent : gm != null && gm.eventLog != null ? gm.eventLog.transform.parent : null;
         var move = new List<Transform>();
         if (oldRoot != null) foreach(Transform child in oldRoot) {
@@ -849,18 +834,7 @@ public class UIManager : MonoBehaviour
     }
     void LateUpdate()
     {
-        // UI objects created after our Start (e.g. the start menu) share the same
-        // readable sizing. Button events use one dispatcher, including Windows.
-        bool controlsChanged = false;
-        foreach(var button in Object.FindObjectsByType<Button>(FindObjectsInactive.Include,FindObjectsSortMode.None)) {
-            if (!button.enabled) continue;
-            controlsChanged = true;
-            var b = button; var item = b.GetComponent<CustomInteractable>();
-            if (item == null) { item = b.gameObject.AddComponent<CustomInteractable>(); item.onClickEvent = new UnityEvent(); item.onClickEvent.AddListener(()=>{if(b.interactable)b.onClick.Invoke();}); }
-            RegisterInteractable(item); if (transparentWindow != null) transparentWindow.RegisterClickable(item.GetRect()); button.enabled = false;
-        }
-        int lines = heroForUI == null || string.IsNullOrEmpty(heroForUI.FullStatDetails) ? 9 :
-            heroForUI.FullStatDetails.Split('\n').Length;
+        // Bind scene controls once after Start; view updates use cached references.
         // Do NOT relearn the compact preset during asynchronous collapse:
         // Screen.width may still equal the expanded dimensions for a frame.
         ManagementWindowLayout.ResolveResize(Screen.width,Screen.height);
@@ -873,14 +847,11 @@ public class UIManager : MonoBehaviour
             (ManagementWindowLayout.CompactWidth != Screen.width ||
              ManagementWindowLayout.CompactHeight != Screen.height))
             ManagementWindowLayout.SetCompact(Screen.width,Screen.height);
-        if (controlsChanged || Screen.width != layoutWidth || Screen.height != layoutHeight || lines != layoutStatLines)
+        if (Screen.width != layoutWidth || Screen.height != layoutHeight || (hudLayout!=null && hudLayout.Revision!=appliedHudLayout))
             LayoutReadableUI();
         RefreshCombatHUDVisibility();
-        var gm = Object.FindFirstObjectByType<GameManager>();
-        if (testSummonText != null && gm != null)
-            testSummonText.text = gm.TestCompanionCount >= GameManager.TestCompanionLimit
-                ? "[B2] Thu hồi (2/2)"
-                : "[B2] Gọi +1 (" + gm.TestCompanionCount + "/2)";
+        TickHudW3();
+        RefreshCharacterProgression();
     }
     private static void PlaceUI(RectTransform rect,Vector2 anchor,Vector2 pivot,Vector2 position,Vector2 size)
     {
@@ -894,50 +865,16 @@ public class UIManager : MonoBehaviour
         // Canvas supplies its pixel rect in Unity; explicitly set the test double too.
         hudCanvas.pivot = new Vector2(.5f,.5f); hudCanvas.sizeDelta = new Vector2(Screen.width,Screen.height);
         hudCanvas.position = new Vector3(Screen.width*.5f,Screen.height*.5f,0);
-        var gm = Object.FindFirstObjectByType<GameManager>();
+        var gm = GameForUI();
         float w = ManagementWindowLayout.CombatPixels(Screen.width);
         float h = ManagementWindowLayout.CombatHeight(Screen.height);
         if (combatUIRoot != null)
             PlaceUI(combatUIRoot,Vector2.zero,Vector2.zero,Vector2.zero,new Vector2(w,h));
-        PlaceUI(pauseRect,new Vector2(1,1),new Vector2(1,1),new Vector2(-4,-4),new Vector2(76,24));
-        PlaceUI(devButton,new Vector2(1,1),new Vector2(1,1),new Vector2(-84,-4),new Vector2(52,24));
-        PlaceUI(statsButton,new Vector2(1,1),new Vector2(1,1),new Vector2(-140,-4),new Vector2(60,24));
-        // Preserve pause/stats/dev positions. Shift Inventory left by one slot,
-        // placing Volume immediately to its right with matching 62x24 bounds.
-        PlaceUI(inventoryButton,new Vector2(1,1),new Vector2(1,1),
-            new Vector2(-268,-4),new Vector2(62,24));
-        PlaceUI(volumeButton,new Vector2(1,1),new Vector2(1,1),
-            new Vector2(-204,-4),new Vector2(62,24));
-        PlaceUI(worldMapButton,new Vector2(1,1),new Vector2(1,1),
-            new Vector2(-336,-4),new Vector2(62,24));
-        if (worldMapUI != null) worldMapUI.Resize();
-        if (musicVolumePanel != null) musicVolumePanel.Layout();
-        if (inventoryUI != null) inventoryUI.Layout(w,h,Screen.width,Screen.height);
-        // Full stats sit below the 3 top-right tools. Combat log takes the left column.
-        float rightWidth = StatsColumnWidth(w);
-        float leftWidth = Mathf.Max(150f,w-rightWidth-18f);
-        // Keep the B2 tool at its existing position, left of the map label.
-        PlaceUI(testSummonButton,new Vector2(0,1),new Vector2(0,1),
-            new Vector2(6,-139),new Vector2(Mathf.Min(146,leftWidth-12f),26f));
-        foreach(var rect in Object.FindObjectsByType<RectTransform>(FindObjectsInactive.Include,FindObjectsSortMode.None))
-            if (rect.gameObject.name == "MenuArea") PlaceUI(rect,new Vector2(1,0),new Vector2(1,0),new Vector2(-4,4),new Vector2(64,24));
+        if(worldMapUI!=null)worldMapUI.Resize();
+        if(musicVolumePanel!=null)musicVolumePanel.Layout();
+        if(inventoryUI!=null)inventoryUI.Layout(w,h,Screen.width,Screen.height);
         LayoutSystemMenu(w,h);
-        if (gm != null && gm.eventLog != null) {
-            var log = (RectTransform)gm.eventLog.transform;
-            PlaceUI(log,new Vector2(0,1),new Vector2(0,1),new Vector2(6,-32),new Vector2(leftWidth,Mathf.Min(66,h*.19f)));
-            if (transparentWindow != null) transparentWindow.RegisterClickable(log);
-            if (gm.eventLogText != null) { var rt = (RectTransform)gm.eventLogText.transform; rt.anchorMin = Vector2.zero; rt.anchorMax = Vector2.one; rt.pivot = new Vector2(.5f,.5f); rt.sizeDelta = new Vector2(-58,-8); rt.anchoredPosition = new Vector2(-22,0); gm.eventLogText.overflowMode = TMPro.TextOverflowModes.Ellipsis; }
-            var info = FindNamedRect("DamageInfoButton"); PlaceUI(info,new Vector2(1,1),new Vector2(1,1),new Vector2(-3,-3),new Vector2(42,22));
-        }
-        if (statsPanel != null) {
-            int lineCount = heroForUI == null || string.IsNullOrEmpty(heroForUI.FullStatDetails) ? 9 :
-                heroForUI.FullStatDetails.Split('\n').Length;
-            layoutStatLines = lineCount;
-            float height = Mathf.Min(h-116f,Mathf.Max(158f,lineCount*(w<750?18f:19f)+16f));
-            PlaceUI(statsPanel,new Vector2(1,1),new Vector2(1,1),new Vector2(-6,-32),
-                new Vector2(rightWidth,Mathf.Max(100f,height)));
-            var stat = statsPanel.GetComponentInChildren<TMPro.TextMeshProUGUI>(true); if (stat != null) {var rt=(RectTransform)stat.transform;rt.anchorMin=Vector2.zero;rt.anchorMax=Vector2.one;rt.sizeDelta=new Vector2(-16,-14);rt.anchoredPosition=Vector2.zero;rt.pivot=new Vector2(.5f,.5f);ConfigureCompactStatsText(stat);}
-        }
+        LayoutHudW3(w,h);
         if (damagePanel != null) {
             var rt = (RectTransform)damagePanel.transform; rt.anchorMin = Vector2.zero; rt.anchorMax = Vector2.one; rt.pivot = new Vector2(.5f,.5f); rt.sizeDelta = new Vector2(-12,-12); rt.anchoredPosition = Vector2.zero;
             var text = (RectTransform)damageText.transform; text.anchorMin = Vector2.zero; text.anchorMax = Vector2.one; text.sizeDelta = new Vector2(-16,-40); text.anchoredPosition = new Vector2(0,16);
@@ -957,46 +894,23 @@ public class UIManager : MonoBehaviour
             }
             if (gm.confirmationPopup != null && titleUI==null) LayoutStartMenu(gm.confirmationPopup.transform,w,h,true);
         }
-        // Text/button content stretches inside its resized parent at a fixed
-        // readable pixel font, rather than shrinking a 1920px canvas to 250px.
-        foreach(var text in Object.FindObjectsByType<TMPro.TextMeshProUGUI>(FindObjectsInactive.Include,FindObjectsSortMode.None)) {
-            if (!text.transform.IsChildOf(hudCanvas)) continue;
-            // Opening owns its button/placeholder sizing; the HUD's global
-            // text pass must never overwrite the cinematic layout.
-            if (gm != null && gm.GetComponent<StartMenuUI>() != null &&
-                gm.GetComponent<StartMenuUI>().OwnsText(text)) continue;
-            if (text.transform.parent != null &&
-                text.transform.parent.gameObject.name.StartsWith("Opening Cinematic")) continue;
-            // The inventory has independent font hierarchy and sizes; the
-            // global compact HUD style would otherwise enlarge 20 grid cells.
-            if (inventoryUI != null &&
-                (text.transform.IsChildOf(inventoryUI.Root) ||
-                 text.transform.IsChildOf(inventoryUI.DecorationRoot))) continue;
-            bool compact = text.transform.parent != null && text.transform.parent.GetComponent<CustomInteractable>() != null;
-            if (text == mapTitleText || text == mapDebugText) continue; // Map labels own their fonts.
-            float fontSize = text == (gm != null ? gm.eventLogText : null) ? 16f :
-                text == (heroForUI != null ? heroForUI.atkStatusText : null) ? (w>=1000?15f:14f) :
-                compact ? (w>=1000?16f:14f) : (w>=1000?17f:w>=750?16f:14f);
-            ReadableText(text,fontSize);
-            if (text.transform.parent != null && text.transform.parent.GetComponent<CustomInteractable>() != null && text != (gm != null ? gm.eventLogText : null)) {
-                var rt = (RectTransform)text.transform; rt.anchorMin=Vector2.zero;rt.anchorMax=Vector2.one;rt.sizeDelta=new Vector2(-8,-4);rt.anchoredPosition=Vector2.zero;rt.pivot=new Vector2(.5f,.5f);
-            }
-        }
-        if (heroForUI != null && heroForUI.atkStatusText != null) ConfigureCompactStatsText(heroForUI.atkStatusText);
         if (devUI != null) devUI.Layout();
-        UpdateMapTitleAppearance();
         RefreshCombatHUDVisibility();
     }
     private RectTransform FindNamedRect(string name)
     {
-        foreach(var rt in Object.FindObjectsByType<RectTransform>(FindObjectsInactive.Include,FindObjectsSortMode.None)) if (rt.gameObject.name == name && rt.IsChildOf(hudCanvas)) return rt; return null;
+        RectTransform cached;
+        if(namedUI.TryGetValue(name,out cached) && cached!=null)return cached;
+        foreach(var rt in hudCanvas.GetComponentsInChildren<RectTransform>(true))
+            if(rt.gameObject.name==name) {namedUI[name]=rt;return rt;}
+        return null;
     }
     private void LayoutSystemMenu(float w,float h)
     {
         if (systemMenu == null) return;
         float mw = Mathf.Min(340,w-12), mh = Mathf.Min(320,h-12);
         PlaceUI((RectTransform)systemMenu.transform,new Vector2(1,0),new Vector2(1,0),new Vector2(-6,6),new Vector2(mw,mh));
-        foreach(var page in new[]{mainPage,savePage,overwritePage,loadPage,sizePage}) if (page != null) {
+        foreach(var page in new[]{mainPage,savePage,overwritePage,loadPage,sizePage,toolsPage}) if (page != null) {
             int buttonCount = 0;
             foreach(Transform child in page.transform)
                 if (child.GetComponent<CustomInteractable>() != null) buttonCount++;
@@ -1004,6 +918,7 @@ public class UIManager : MonoBehaviour
             int index = 0;
             foreach(Transform child in page.transform) {
                 var rect = child as RectTransform; if (rect == null) continue;
+                if(child.gameObject.name=="Header Background")continue;
                 if (child.GetComponent<CustomInteractable>() == null)
                     PlaceUI(rect,new Vector2(0,1),new Vector2(.5f,.5f),
                         new Vector2(mw/2,-12),new Vector2(mw-12,22));
@@ -1037,6 +952,7 @@ public class UIManager : MonoBehaviour
         if (overwritePage != null) overwritePage.SetActive(overwritePage == page);
         if (loadPage != null) loadPage.SetActive(loadPage == page);
         if (sizePage != null) sizePage.SetActive(sizePage == page);
+        if (toolsPage != null) toolsPage.SetActive(toolsPage == page);
     }
 
     private void OpenLoadMenu()
@@ -1076,7 +992,7 @@ public class UIManager : MonoBehaviour
     private void SaveToSlot(SaveSlot slot)
     {
         if (slot != SaveSlot.ManualSave1 && slot != SaveSlot.ManualSave2) return;
-        var gm = Object.FindFirstObjectByType<GameManager>();
+        var gm = GameForUI();
         if (gm == null)
         {
             if (saveTitle != null) saveTitle.text = "KHÔNG TÌM THẤY GAME";
@@ -1097,7 +1013,7 @@ public class UIManager : MonoBehaviour
     {
         // Do not trigger extra writes when the confirmation page is inactive.
         if (overwritePage == null || !overwritePage.activeSelf) return;
-        var gm = Object.FindFirstObjectByType<GameManager>();
+        var gm = GameForUI();
         WriteManualSlot(gm,pendingManualSlot);
     }
 
@@ -1114,12 +1030,12 @@ public class UIManager : MonoBehaviour
     public void CloseSystemMenu() { if (systemMenu != null) systemMenu.SetActive(false); ShowPage(mainPage); }
     private void ReturnToTitle()
     {
-        var gm=Object.FindFirstObjectByType<GameManager>();
+        var gm=GameForUI();
         if(gm!=null && gm.ReturnToMainMenu())CloseSystemMenu();
     }
     private void LoadSlot(SaveSlot slot)
     {
-        var gm = Object.FindFirstObjectByType<GameManager>();
+        var gm = GameForUI();
         if (gm != null && gm.LoadAndContinue(slot)) CloseSystemMenu();
     }
 

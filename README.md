@@ -35,7 +35,7 @@ Xem [Định hướng Core Gameplay Loop — 25/10/2026](Docs/CORE_GAMEPLAY_LOOP
 | Môi trường | Chín bộ ảnh bốn layer: Plains, Forest, Mountain, Desert, Swamp, Snow, Steppe, Lake, Sea; mapping runtime có cho các loại map và một số map đặc thù theo ID |
 | Bản đồ thế giới | Catalog 133 map, điều hướng/zoom có triển khai; cần tiếp tục nghiệm thu chức năng/UI |
 | Home | Đã đạt mức chấp nhận nội bộ về bố cục; còn khả năng tinh chỉnh thẩm mỹ |
-| UI gameplay | **Chưa hoàn thiện**; có bố cục định hướng mới, chưa triển khai HUD mới |
+| UI gameplay | HUD W3 đã triển khai: 3 thẻ Hero, map/wave, toolbar, log tùy chọn và theme dự phòng; còn nghiệm thu Windows Player |
 | Inventory / Equipment / Skill | Đã có logic và UI một phần; cần audit, hoàn thiện luồng tương tác để chơi được |
 | Save/Load | Đã qua nhiều đợt rà soát; chưa chốt lại chính sách checkpoint mới; tránh thay đổi ngoài phạm vi |
 | Độ hoàn thiện sản phẩm | **Prototype / development build**, chưa đủ điều kiện gọi là Alpha hay bản chơi hoàn chỉnh |
@@ -49,7 +49,7 @@ Xem [Định hướng Core Gameplay Loop — 25/10/2026](Docs/CORE_GAMEPLAY_LOOP
 
 **Giới hạn thẩm mỹ:** hiện chỉ bộ Đồng bằng đã được người phát triển tự xử lý hai mép để đạt seamless theo yêu cầu. Các bộ khác còn lộ đường nối khi lặp, sẽ chỉnh thủ công sau. Có thể cần kiểm tra alpha, seam và tương quan điểm chân trên Unity/Windows.
 
-## Bố cục gameplay HUD đã thống nhất định hướng (chưa code)
+## Bố cục gameplay HUD W3 đã triển khai
 - Ba thẻ Hero góc **trên phải**: avatar, tên, cấp độ, HP và Mana.
 - **Bên trái**: tên map theo chiều dọc và wave hiện tại/tổng wave; không hiển thị loại địa hình.
 - **Mép phải**: khu vực hệ thống Nhân vật, Hòm đồ, Võ học, Bản đồ, Menu.
@@ -59,9 +59,11 @@ Xem [Định hướng Core Gameplay Loop — 25/10/2026](Docs/CORE_GAMEPLAY_LOOP
 - Giữ cơ chế chỉnh UI trong Play Mode; kiểm tra kích cỡ cửa sổ 600/800/1150.
 - Chưa thay đổi camera hoặc di chuyển để ép Hero vào vùng trình diễn.
 
+Chi tiết bố cục, Inspector/theme và giới hạn kiểm thử: [HUD W3](Docs/HudW3.md).
+
 ## Ưu tiên tiếp theo (W3)
-1. Audit HUD/UI hiện có, các panel, hệ thống mở/đóng và chồng lớp; lập bản đồ phụ thuộc trước khi sửa.
-2. Dựng bố cục HUD mới và ba thẻ Hero, tên map/wave, toolbar hệ thống, log ẩn mặc định.
+1. Nghiệm thu HUD W3 trên Windows Player và native transparent-window input.
+2. Gán artwork qua theme sau khi duyệt bố cục/nền màu mặc định; không đổi callback/hitbox.
 3. Audit và hoàn thiện Inventory → Equipment → Skill, giúp người chơi nhặt/so sánh/trang bị và thấy tiến triển thực.
 4. Kiểm thử Unity Edit Mode/Play Mode và Windows Player, hiệu năng, scale UI, lưu thiết lập.
 

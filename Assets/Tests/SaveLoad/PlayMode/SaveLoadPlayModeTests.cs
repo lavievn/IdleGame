@@ -13,6 +13,62 @@ namespace IdleGame.Tests.SaveLoad.PlayMode
 #endif
     public sealed class SaveLoadPlayModeTests : SaveLoadPlayModeFixture
     {
+        static object AwardProduction(ScriptableObject hero,string json)
+        {
+            var service=Activator.CreateInstance(PlayModeRuntime.Type("CombatLootRewards"));
+            PlayModeRuntime.Call(service,"BeginEncounter",hero);
+            var key=PlayModeRuntime.Call(service,"Register",1,1);
+            Assert.That(PlayModeRuntime.Call(service,"TryClaim",key,hero),Is.EqualTo(true));
+            var config=JsonUtility.FromJson(json,PlayModeRuntime.Type("ProductionLootConfig"));
+            object[] args={key,hero,config,null,null};
+            var outcome=service.GetType().GetMethod("CompleteProduction").Invoke(service,args);
+            Assert.That(outcome.ToString(),Is.EqualTo("Awarded"),Convert.ToString(args[4]));
+            Assert.That(PlayModeRuntime.Get(args[3],"MaterialOutcome").ToString(),Is.EqualTo("Awarded"));
+            Assert.That(PlayModeRuntime.Get(args[3],"EquipmentOutcome").ToString(),Is.EqualTo("Awarded"));
+            object[] duplicate={key,hero,config,null,null};
+            Assert.That(service.GetType().GetMethod("CompleteProduction").Invoke(service,duplicate).ToString(),Is.EqualTo("Rejected"));
+            return args[3];
+        }
+
+        [UnityTest]
+        public IEnumerator ProductionV01BothStreamsForge_SaveLoadSupportsExistingSchema()
+        {
+            // Explicit test configuration; nothing is written into production balance.
+            var source=Hero();
+            var inventory=PlayModeRuntime.Type("EquipmentInventory");
+            var equipment=PlayModeRuntime.Type("EquipmentRuntime");
+            inventory.GetMethod("InitializeNewRun").Invoke(null,new object[]{source});
+            equipment.GetMethod("InitializeNewRun").Invoke(null,new object[]{source});
+            PlayModeRuntime.Set(source,"gold",123L);
+            var reward=AwardProduction(source,"{\"configured\":true,\"material\":{\"enabled\":true,\"chance\":1,\"materialId\":\"material:refinement\",\"minQuantity\":14,\"maxQuantity\":14},\"equipment\":{\"enabled\":true,\"chance\":1,\"selectionPolicy\":1,\"templates\":[{\"templateId\":\"sample:iron_sword\",\"itemLevel\":1,\"mainStat\":7}]}}");
+            string id=(string)PlayModeRuntime.Get(PlayModeRuntime.Get(reward,"Equipment"),"instanceId");
+            Assert.That(equipment.GetMethod("Equip").Invoke(null,new object[]{source,id,Enum.Parse(PlayModeRuntime.Type("EquipmentSlot"),"Weapon")}),Is.EqualTo(true));
+            var damage=PlayModeRuntime.Type("WeaponBasicAttack").GetMethod("DamageSource");
+            int before=(int)damage.Invoke(null,new object[]{source});
+            Assert.That(inventory.GetMethod("Count").Invoke(null,new object[]{source,"material:refinement"}),Is.EqualTo(14),"both streams committed on one receipt");
+            var forge=PlayModeRuntime.Type("EquipmentRefinement").GetMethod("TryApply");
+            foreach(string operation in new[]{"NormalUp","SpecialUp"}) {
+                object[] args={source,id,Enum.Parse(PlayModeRuntime.Type("EquipmentRefinement+Operation"),operation),null};
+                Assert.That(forge.Invoke(null,args),Is.EqualTo(true),Convert.ToString(args[3]));
+            }
+            Assert.That(inventory.GetMethod("Count").Invoke(null,new object[]{source,"material:refinement"}),Is.EqualTo(3));
+            Assert.That(PlayModeRuntime.Get(source,"gold"),Is.EqualTo(123L));
+            equipment.GetMethod("Normalize").Invoke(null,new object[]{source});
+            string expected=JsonUtility.ToJson(Sword(source));
+            int total=(int)damage.Invoke(null,new object[]{source});
+            Assert.That(total,Is.GreaterThan(before));
+            Assert.That((bool)ManagerCall("SaveGame",source,PlayModeRuntime.Slot("ManualSave1")),Is.True);
+            byte[] saved=Files.Read("ManualSave1.json");yield return null;
+            var loaded=Hero("{}");
+            Assert.That((bool)ManagerCall("LoadGame",loaded,PlayModeRuntime.Slot("ManualSave1")),Is.True);
+            Assert.That(JsonUtility.ToJson(Sword(loaded)),Is.EqualTo(expected),"ID, equipped slot, rolls and Forge history");
+            Assert.That(List(loaded,"equipmentItems").Count,Is.EqualTo(1));
+            Assert.That(inventory.GetMethod("Count").Invoke(null,new object[]{loaded,"material:refinement"}),Is.EqualTo(3));
+            Assert.That(PlayModeRuntime.Get(loaded,"gold"),Is.EqualTo(123L));
+            Assert.That((int)damage.Invoke(null,new object[]{loaded}),Is.EqualTo(total));
+            Assert.That(Files.Read("ManualSave1.json"),Is.EqualTo(saved),"Load does not rewrite owned save");
+        }
+
         [UnityTest]
         public IEnumerator Awake_UsesConfiguredDirectory_AndLocksIt()
         {

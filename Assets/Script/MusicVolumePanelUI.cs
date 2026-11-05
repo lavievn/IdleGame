@@ -27,6 +27,10 @@ public sealed class MusicVolumePanelUI
         background.color = new Color(.08f, .13f, .20f, .96f);
         background.raycastTarget = false;
 
+        owner.Skin(root,UIManager.SurfaceKind.Frame);
+        owner.BindClick(root,()=>{});
+        owner.PanelHeader(root,30);
+        owner.SmallButton(root,"VolumeClose","×",new Vector2(1,1),new Vector2(1,1),new Vector2(-4,-4),new Vector2(25,22),Hide);
         var title = owner.MakeLabel(root, "ÂM LƯỢNG", new Vector2(150, -16), new Vector2(260, 25));
         title.fontSize = 13f;
         owner.MakeLabel(root,"Nhạc nền (BGM)",new Vector2(100,-40),new Vector2(180,25));
@@ -57,6 +61,7 @@ public sealed class MusicVolumePanelUI
         return owner == null || parent == null ? null : new MusicVolumePanelUI(owner, parent);
     }
 
+    public RectTransform Root => root;
     public bool IsOpen => root != null && root.gameObject.activeSelf;
 
     public void Toggle()

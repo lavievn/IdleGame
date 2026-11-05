@@ -7,9 +7,19 @@ using TuTienCore;
 partial class MotionRegression
 {
     static object FirstShot(Field f) {return Get<IList>(f.combat,"projectiles")[0];}
-    static void EmitHeroMagic(Field f)
+    static void EmitHeroMagic(Field f,GameManager game=null)
     {
-        f.hero.ChangeAttackMode(2);ReadySoundAttack(f,f.hero);CombatStep(f,.01f);
+        if(f.hero.UsesWeaponBasicAttack)
+        {
+            // MainGame entry binds the primary to real equipment. A stance
+            // override cannot turn an unarmed primary into a staff caster.
+            Check(game!=null && game.HeroData==f.combat.CurrentHeroCombatState.Data,"primary caster uses live Hero data");
+            WearWeapon(game,WeaponInBag(game,WeaponFamily.Staff));
+            Check(WeaponBasicAttack.Resolve(game.HeroData)==AttackMode.RangedMagic,"equipped staff resolves magic");
+            f.combat.CurrentHeroCombatState.AttackTimer=0f;
+        }
+        else {f.hero.ChangeAttackMode(2);ReadySoundAttack(f,f.hero);}
+        CombatStep(f,.01f);
         Check(f.combat.PendingProjectileCount>0,"valid magic launch");
     }
     static int SparkCount(Field f) {return Get<IList>(Get<BattleEffects>(f.combat,"effects"),"sparks").Count;}
@@ -19,6 +29,7 @@ partial class MotionRegression
     }
     static void MagicPersistenceTests()
     {
+        EscapeLegacyMagicTests();
         Run("Magic retains launch endpoint after target death/null, same-wave AoE remains impact-only",()=>{
             var f=new Field();var target=f.Monster(-200);var near=f.Monster(-250);var far=f.Monster(-700);f.Battle(target,near,far);
             var nearby=f.Enemies[1];var outside=f.Enemies[2];int hp=nearby.currentHP;
@@ -101,14 +112,16 @@ partial class MotionRegression
         using(var sprites=new SpriteResources())
         {
             foreach(string route in new[]{"Load","Travel","Retry","New","Continue","Menu","Reset","Escape"})
-            Run("Magic hard map entry or soft wave recovery boundary / "+route,()=>{
+            Run("primary staff projectile entry or wave recovery boundary / "+route,()=>{
                 using(var f=new DesktopHotfixFixture(800,true)) {
                     WaveEntryScene(f);WaveEntryFinish(f);
                     // This spawn fixture starts monsters offscreen, before
                     // they approach. Put one existing actor in valid cast range.
                     var target=f.field.Enemies[0].controller;
                     f.field.space.SetPosition(target.Rect,f.field.space.Position(f.field.hero.heroRect)+new Vector2(-200,0));
-                    target.attackMode=AttackMode.Melee;EmitHeroMagic(f.field);
+                    target.attackMode=AttackMode.Melee;EmitHeroMagic(f.field,f.manager);
+                    var released=FirstShot(f.field);
+                    Check(Get<bool>(released,"staffBasic") && !Get<bool>(released,"magic"),"primary staff is an ordinary weapon projectile, not legacy AoE Magic");
                     string one=File.ReadAllText(f.Slot("ManualSave1")),two=File.ReadAllText(f.Slot("ManualSave2"));
                     if(route=="Load")Check(f.manager.LoadAndContinue(SaveSlot.ManualSave1),"Load");
                     else if(route=="Travel")Check(f.manager.TryTravelToWorldMap(EntryNeighbor(f.manager)),"Travel");
@@ -118,12 +131,68 @@ partial class MotionRegression
                     else if(route=="Reset") {f.manager.OnResetClicked();f.manager.OnConfirmResetClicked();}
                     else Call(f.manager,"RecoverEscapedWave");
                     Check(f.field.combat.PendingProjectileCount==0,"old damage always canceled");
-                    if(route=="Escape")Check(f.field.combat.DetachedMagicVisualCount==1 && Bolts(f.field).Count==1,"same-map recovery preserves visual");
-                    else Check(f.field.combat.DetachedMagicVisualCount==0 && Bolts(f.field).Count==0,"hard map/life transition clears visuals");
+                    Check(f.field.combat.DetachedMagicVisualCount==0 && Bolts(f.field).Count==0,
+                        route=="Escape"?"ordinary staff projectile is canceled by recovery; legacy Magic retention is covered above":"hard map/life transition clears visuals");
                     Check(File.ReadAllText(f.Slot("ManualSave1"))==one && File.ReadAllText(f.Slot("ManualSave2"))==two,"manual slots byte-identical");
                 }
             });
         }
         Resources.Unregister("Spawn/Appear");
+    }
+
+    static void EscapeLegacyMagicTests()
+    {
+        Resources.Register("WorldMapCatalog",new TextAsset(File.ReadAllText("Assets/Resources/WorldMapCatalog.txt")));
+        Resources.Register("WorldMapPolygonSeeds",new TextAsset(File.ReadAllText("Assets/Resources/WorldMapPolygonSeeds.txt")));
+        Resources.Register("Spawn/Appear",new Texture2D(4000,2500,TextureFormat.RGBA32,false));
+        try {
+            using(var sprites=new SpriteResources())
+            Run("EscapeLegacyMagic: B2 AoE survives same-map recovery without damage or rewards",()=>{
+                using(var f=new DesktopHotfixFixture(800,true)) {
+                    WaveEntryScene(f);WaveEntryFinish(f);
+                    var position=f.field.space.Position(f.field.hero.heroRect);
+                    var mage=FormationHero(f.field,position.x,200,AttackMode.RangedMagic);
+                    f.field.space.SetPosition(mage.heroRect,position);
+                    var actor=f.field.combat.StateFor(mage);
+                    Check(actor!=null && actor.Controller==mage && !mage.UsesWeaponBasicAttack,
+                        "registered temporary B2 caster, never a primary stance override");
+                    Check(f.field.hero.UsesWeaponBasicAttack,"primary retains production weapon binding");
+                    var target=f.field.Enemies[0].controller;
+                    f.field.space.SetPosition(target.Rect,position+new Vector2(-200,0));
+                    target.attackMode=AttackMode.Melee;
+                    f.field.combat.CurrentHeroCombatState.AttackTimer=1000f;
+                    ReadySoundAttack(f.field,mage);CombatStep(f.field,.01f);
+                    Check(f.field.combat.PendingProjectileCount==1,"one released projectile");
+                    var shot=FirstShot(f.field);var bolt=Bolts(f.field)[0];
+                    Check(Get<bool>(shot,"magic") && !Get<bool>(shot,"staffBasic") &&
+                        Get<object>(shot,"hero")==actor,"actual legacy AoE from the registered B2");
+                    float elapsed=Get<float>(shot,"elapsed"),remaining=Get<float>(shot,"duration")-elapsed;
+                    Check(remaining>.02f,"flight has time left before recovery");
+                    int exp=f.manager.HeroData.currentExp,mageExp=actor.Data.currentExp;
+                    int wave=f.manager.HeroData.worldMapLoopWave,progress=f.manager.HeroData.worldMapWaveProgress;
+                    int gear=f.manager.HeroData.equipmentItems.Count;
+                    string one=File.ReadAllText(f.Slot("ManualSave1")),two=File.ReadAllText(f.Slot("ManualSave2"));
+
+                    Call(f.manager,"RecoverEscapedWave");
+                    Check(f.field.combat.PendingProjectileCount==0,"recovery cancels old damage eligibility");
+                    Check(f.field.combat.DetachedMagicVisualCount==1 && Bolts(f.field).Count==1 &&
+                        Bolts(f.field)[0]==bolt,"same-map recovery preserves the exact legacy Magic visual");
+                    Near(Get<float>(Get<IList>(f.field.combat,"magicFlights")[0],"elapsed"),elapsed,
+                        "recovery does not advance the flight clock");
+                    CombatStep(f.field,remaining-.01f);
+                    Check(f.field.combat.DetachedMagicVisualCount==1 && Bolts(f.field).Count==1,"no early visual expiry");
+                    CombatStep(f.field,.02f);
+                    Check(f.field.combat.DetachedMagicVisualCount==0 && Bolts(f.field).Count==0 &&
+                        SparkCount(f.field)>0,"original flight finishes once with its terminal burst");
+                    Check(f.manager.HeroData.currentExp==exp && actor.Data.currentExp==mageExp &&
+                        f.manager.HeroData.worldMapLoopWave==wave && f.manager.HeroData.worldMapWaveProgress==progress &&
+                        f.manager.HeroData.equipmentItems.Count==gear,"detached visual grants no EXP, progress or gear");
+                    Check(File.ReadAllText(f.Slot("ManualSave1"))==one && File.ReadAllText(f.Slot("ManualSave2"))==two,
+                        "owned manual slots remain byte-identical");
+                }
+            });
+        } finally {
+            Resources.Unregister("Spawn/Appear");Resources.Unregister("WorldMapCatalog");Resources.Unregister("WorldMapPolygonSeeds");
+        }
     }
 }

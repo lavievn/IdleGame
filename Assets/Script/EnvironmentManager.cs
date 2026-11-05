@@ -246,6 +246,10 @@ public class EnvironmentManager : MonoBehaviour
     private float logicalWidth;
     private int presentationWidth;
     private int presentationCombatWidth;
+    [Header("BATTLE VIEW — screen pixels, presentation only")]
+    [Tooltip("Nâng toàn bộ battleground; không thay đổi tọa độ logic hoặc camera combat.")]
+    [SerializeField] private float battleVerticalOffsetPixels = 20f;
+    private float presentationVerticalOffset = float.NaN;
 
     // The battle keeps one coordinate system for its entire lifetime. Resizing
     // changes only the screen-space projection, never anchors/ranges/shot endpoints.
@@ -288,15 +292,18 @@ public class EnvironmentManager : MonoBehaviour
         if (battleCanvas == null || Screen.width <= 0) return;
         int projectedWidth=ManagementWindowLayout.CombatPixels(Screen.width);
         if (presentationWidth == Screen.width &&
-            presentationCombatWidth == projectedWidth) return;
+            presentationCombatWidth == projectedWidth &&
+            presentationVerticalOffset == battleVerticalOffsetPixels) return;
         presentationWidth=Screen.width;
         presentationCombatWidth=projectedWidth;
+        presentationVerticalOffset=battleVerticalOffsetPixels;
         battleCanvas.scaleFactor=
             ManagementWindowLayout.BattleCanvasScale(Screen.width,logicalWidth);
         // Only the projection's origin changes: the world-space Ground,
         // Hero, Monster and projectile coordinates remain untouched.
         battleArea.anchoredPosition=new Vector2(
-            ManagementWindowLayout.BattleLocalOffsetX(Screen.width,logicalWidth),0f);
+            ManagementWindowLayout.BattleLocalOffsetX(Screen.width,logicalWidth),
+            battleVerticalOffsetPixels / Mathf.Max(.01f, battleCanvas.scaleFactor));
     }
 
     public bool HasLoopingTerrain => groundPresentation != null;
@@ -389,6 +396,8 @@ public class EnvironmentManager : MonoBehaviour
         tracePlanFrame=Time.frameCount;
         TraceFrame("Environment.Update after camera plan before monsters");
         float groundMinusCamera = backgroundPan - cameraPan;
+        if (CombatManager.Instance != null && CombatManager.Instance.isActiveAndEnabled)
+            CombatManager.Instance.TickMonsterAwareness(this, dt);
         foreach (var monster in MonsterController.ActiveMonsters)
             if (monster != null && monster.IsAlive) monster.TickMovement(this, dt, groundMinusCamera);
         // Monsters may have entered a hero's range during this frame.

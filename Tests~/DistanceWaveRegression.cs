@@ -38,7 +38,11 @@ partial class MotionRegression
                         // sum just BELOW 1000 at the mathematical boundary.
                         // Never lower the runtime threshold or change tolerance.
                         if(f.manager.activeMonsters.Count==0) {
-                            Check(f.manager.ExplorationDistance<1000,"only an actually incomplete threshold may wait another frame");
+                            // The public HUD value is float; 999.99999 can round
+                            // to 1000 while the authoritative double is below it.
+                            double actual=Get<double>(f.manager,"explorationDistance");
+                            Console.WriteLine("distance threshold raw="+actual.ToString("R")+" HUD="+f.manager.ExplorationDistance.ToString("R"));
+                            Check(actual<1000d,"only an actually incomplete threshold may wait another frame");
                             NativeOrderTraceFrame(f,.125f);
                         }
                         Check(f.manager.activeMonsters.Count>0 && !f.manager.IsWaitingForExploration,"one wave at distance threshold");
@@ -51,7 +55,7 @@ partial class MotionRegression
                 using(var f=new DesktopHotfixFixture(800,true)) {
                     DistanceReady(f,200);int steps=0;
                     while(f.manager.activeMonsters.Count==0 && steps<fps*6) {
-                        Check(f.manager.ExplorationDistance<1000,"still below threshold before last step");
+                        Check(Get<double>(f.manager,"explorationDistance")<1000d,"still below threshold before last step");
                         NativeOrderTraceFrame(f,1f/fps);steps++;
                     }
                     Check(steps>=fps*5 && steps<=fps*5+2,"approximately five gameplay seconds, quantized without early wave");

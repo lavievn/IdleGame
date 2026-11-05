@@ -333,6 +333,28 @@ public class CombatManager : MonoBehaviour
     }
 
     public int CurrentHeroHP => currentHeroHP;
+    public void TickMonsterAwareness(EnvironmentManager space, float dt)
+    {
+        if (Time.timeScale == 0f || space == null || space.BattleArea == null) return;
+        HeroController detected = null;
+        foreach (var info in activeMonsters)
+        {
+            if (!CurrentMonsterLife(info)) continue;
+            var seen = info.controller.TickAwareness(space, dt);
+            if (detected == null && seen != null) detected = seen;
+        }
+        if (detected != null) AlertEncounter(detected, false);
+    }
+    private bool CurrentMonsterLife(ActiveMonsterInfo info)
+    {
+        return info.controller != null && info.controller.IsAlive && info.currentHP > 0 &&
+            info.controller.SpawnVersion == info.lootKey.Spawn && lootRewards.IsCurrent(info.lootKey, LootRecipient);
+    }
+    private void AlertEncounter(HeroController hero, bool immediate)
+    {
+        foreach (var info in activeMonsters)
+            if (CurrentMonsterLife(info)) info.controller.ReceiveAlert(hero, immediate);
+    }
     public int MaxHeroHP => maxHeroHP;
     public void OnHeroAttackModeChanged()
     {
@@ -417,6 +439,12 @@ public class CombatManager : MonoBehaviour
             if (i>=activeMonsters.Count) continue;
             var info=activeMonsters[i];
             if (info.controller==null || !info.controller.IsAlive) continue;
+            if (!info.controller.IsAggressive)
+            {
+                info.attackTimer = 0f;
+                info.controller.UpdateChargeBar(false, 0f);
+                continue;
+            }
             AttackMode mode=info.controller.attackMode;
             if (info.cycleMode!=mode) { info.cycleMode=mode; info.attackTimer=0f; }
             float speed=CombatStats.Get(info.data,CombatStatId.AttackSpeed,
@@ -608,12 +636,20 @@ public class CombatManager : MonoBehaviour
             !target.controller.IsAlive || !IsRegistered(attacker) ||
             target.controller.SpawnVersion!=target.lootKey.Spawn ||
             !lootRewards.IsCurrent(target.lootKey,LootRecipient)) return;
+        if (damage <= 0) return;
+        bool surprise = !target.controller.HasDetectedHero;
+        if (surprise) damage = (int)System.Math.Min(int.MaxValue, (long)damage * 2L);
+        // Resolve at the accepted impact, after defense. A stale/missed shot
+        // cannot consume surprise or wake this encounter; a lethal ambush still
+        // alerts the other living members before the victim leaves the pool.
+        AlertEncounter(attacker.Controller, true);
         target.currentHP=Mathf.Max(0,target.currentHP-damage);
         if (gameManager!=null)
         {
             gameManager.RecordDamageEvent(attacker.Data!=null?attacker.Data.entityName:"Hero",
                 target.data!=null?target.data.entityName:"Quái",damage);
             gameManager.UpdateEventLog(IdentityDisplay.Describe(target.data)+" nhận "+damage+" sát thương.");
+            if (surprise) gameManager.UpdateEventLog("Đánh bất ngờ: sát thương đòn đầu ×2.");
         }
         target.controller.UpdateHealthBar(target.currentHP,target.maxHP);
         var space=EnvironmentManager.Instance;
@@ -663,21 +699,32 @@ public class CombatManager : MonoBehaviour
         }
         if (gameManager!=null)
             gameManager.UpdateEventLog("Hạ "+IdentityDisplay.Describe(target.data)+". Nhận "+exp+" EXP!");
-        string lootItem,lootError;
-        var lootOutcome=lootRewards.Complete(target.lootKey,LootRecipient,
-            gameManager!=null && gameManager.ControlledLootTestEnabled,out lootItem,out lootError);
-        if(lootOutcome==CombatLootRewards.Outcome.Awarded)
+        string lootItem="",lootError;
+        bool testProfile=gameManager!=null && gameManager.ControlledLootTestEnabled;
+        CombatLootRewards.ProductionResult production=default(CombatLootRewards.ProductionResult);
+        var lootOutcome=testProfile
+            ?lootRewards.Complete(target.lootKey,LootRecipient,true,out lootItem,out lootError)
+            :lootRewards.CompleteProduction(target.lootKey,LootRecipient,
+                gameManager!=null?gameManager.ProductionLoot:null,out production,out lootError);
+        if(!testProfile)lootItem=production.Equipment.instanceId;
+        if((testProfile && lootOutcome==CombatLootRewards.Outcome.Awarded) ||
+            (!testProfile && production.EquipmentOutcome==CombatLootRewards.Outcome.Awarded))
         {
             // A cosmetic failure must not abort despawn/wave progression after
             // the authoritative reward has already committed to inventory.
             try { ShowAwardedLoot(target,lootItem); }
             catch(System.Exception ex) { Debug.LogWarning("[LOOT VISUAL] "+ex.Message); }
-            gameManager.UpdateEventLog("[LOOT TEST A] Đang bật · Nhận Thiết Kiếm (Common) vào Kho đồ.");
+            if(gameManager!=null)gameManager.UpdateEventLog(testProfile
+                ?"[LOOT TEST A] Đang bật · Nhận Thiết Kiếm (Common) vào Kho đồ."
+                :"Nhận "+EquipmentRefinement.DisplayName(EquipmentRuntime.Find(LootRecipient,lootItem))+" vào Kho đồ.");
         }
-        else if(lootOutcome==CombatLootRewards.Outcome.Failed)
+        if(!testProfile && production.MaterialOutcome==CombatLootRewards.Outcome.Awarded && gameManager!=null)
+            gameManager.UpdateEventLog("Nhận "+EquipmentRefinement.MaterialName+" x"+production.Material.quantity+" vào Kho đồ.");
+        // Partial success must retain its feedback AND report the failed stream.
+        if(!string.IsNullOrEmpty(lootError))
         {
             Debug.LogError(lootError);
-            if(gameManager!=null)gameManager.UpdateEventLog("[LOOT TEST A] Lỗi cấp đồ; đã dừng thưởng test. Xem Console.");
+            if(gameManager!=null)gameManager.UpdateEventLog(testProfile?"[LOOT TEST A] Lỗi cấp đồ; đã dừng thưởng test. Xem Console.":"Lỗi cấp thưởng; xem Console.");
         }
         monsterSpawner.DespawnMonster(target.go);
         if (target.data!=null) Destroy(target.data);
@@ -694,7 +741,8 @@ public class CombatManager : MonoBehaviour
         Vector2 foot=space.Position(target.controller.Rect);
         if(effects==null)effects=BattleEffects.Create(space.BattleArea);
         if(lootPresentation==null)lootPresentation=LootDropPresentation.Install(this);
-        lootPresentation.Show(space.BattleArea,foot,EquipmentFoundation.DemoSword,itemId,effects);
+        var item=EquipmentRuntime.Find(LootRecipient,itemId);
+        if(item!=null)lootPresentation.Show(space.BattleArea,foot,item.templateId,itemId,effects);
     }
 
     public void PanLoot(float groundAmount)

@@ -72,7 +72,7 @@ namespace IdleGame.Tests.Presentation.PlayMode
             {
                 var root=new GameObject(name,components);roots.Add(root);return root;
             }
-            internal Fixture(float projectionWidth)
+            internal Fixture(float projectionWidth,bool largeActors=false)
             {
                 Assert.That(Application.isPlaying,Is.True,"Run this fixture in Play Mode.");
                 Assert.That(Time.timeScale,Is.GreaterThan(0f),"Do not unpause a scene owned by the user.");
@@ -111,6 +111,14 @@ namespace IdleGame.Tests.Presentation.PlayMode
                     Set(Primary,"enableRangedLaneMotion",false);
                     rig.SetActive(true); // Native deferred Awake, not a reflection imitation.
                     Call(Primary,"SpawnHero",true,(Vector2?)new Vector2(576,0));
+                    if(!largeActors)
+                    {
+                        // Legacy full-frame containment uses a 100-high floor
+                        // and an explicit 1x body. Keep those original assertions;
+                        // ranged foot-lane cases opt into production 2x below.
+                        var bridge=rect.GetComponent(Runtime("CultivationSpriteBridge"));
+                        Set(bridge,"heroScale",1f);Call(bridge,"ApplyLayout");
+                    }
 
                     var managers=Root("B2 native test managers");managers.SetActive(false);
                     Manager=managers.AddComponent(Runtime("GameManager"));((Behaviour)Manager).enabled=false;
@@ -251,7 +259,7 @@ namespace IdleGame.Tests.Presentation.PlayMode
         {
             // Native transforms and imported art; injected simulation steps do
             // not constitute a rendered multi-map/Windows acceptance test.
-            using(var f=new Fixture(projectionWidth))
+            using(var f=new Fixture(projectionWidth,true))
             {
                 Set(f.Primary,"enableRangedLaneMotion",true);
                 EquipPrimaryWeapon(f,mode);

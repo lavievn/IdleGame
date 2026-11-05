@@ -68,8 +68,10 @@ partial class MotionRegression
         public RectTransform ground,grass;
         public MonsterSpawner spawner;
         public CombatManager combat;
-        public Field(float scale=1f,bool limitRenderMovement=false)
+        private readonly bool legacySpriteScale;
+        public Field(float scale=1f,bool limitRenderMovement=false,bool largeActors=false)
         {
+            legacySpriteScale=!largeActors;
             // A fresh simulated scene cannot inherit the previous scene's
             // asynchronous map-entry pause. Individual pause cases set it later.
             Time.timeScale=1f;
@@ -94,15 +96,24 @@ partial class MotionRegression
             // Dedicated lane cases enable the production setting explicitly.
             hero.enableRangedLaneMotion=false;
             hero.heroRect=(RectTransform)new GameObject(true).transform;hero.heroRect.parent=ground;hero.heroRect.anchorMin=hero.heroRect.anchorMax=new Vector2(1,0);hero.heroRect.pivot=new Vector2(1,0);Call(hero,"Awake");hero.SpawnHero();
+            // Historical geometry suites deliberately fit a 1x alpha-padded
+            // frame inside a 100-unit floor. Preserve that explicit reference;
+            // production 2x bodies have separate native scale/foot-lane tests.
+            if(legacySpriteScale){var bridge=hero.heroRect.GetComponent<CultivationSpriteBridge>();bridge.heroScale=1f;Call(bridge,"ApplyLayout");}
             spawner=new GameObject().AddComponent<MonsterSpawner>();Set(spawner,"monsterPool",new ObjectPool<GameObject>(()=>new GameObject(),m=>{},m=>m.SetActive(false),m=>{},5,20));
             combat=new GameObject().AddComponent<CombatManager>();Call(combat,"Start");combat.SetupHeroInfo(new EntityDataSO { baseHealth=10000,baseDamage=10,expToNextLevel=1000000 });
             // Historical attack-mode cases exercise the explicit temporary-B2 fallback.
             // Weapon regressions rebind through SetupHeroInfo to exercise the primary path.
             hero.BindBasicAttackData(combat.CurrentHeroCombatState.Data,true);
         }
-        public MonsterController Monster(float x,AttackMode mode=AttackMode.Melee,float y=0)
+        public MonsterController Monster(float x,AttackMode mode=AttackMode.Melee,float y=0,bool aware=true)
         {
-            var g=new GameObject(true);g.transform.parent=ground;var m=g.AddComponent<MonsterController>();Call(m,"Awake");Call(m,"OnEnable");m.attackMode=mode;space.SetPosition(m.Rect,new Vector2(x,y));return m;
+            var g=new GameObject(true);g.transform.parent=ground;var m=g.AddComponent<MonsterController>();Call(m,"Awake");Call(m,"OnEnable");m.attackMode=mode;space.SetPosition(m.Rect,new Vector2(x,y));
+            if(legacySpriteScale){var bridge=m.Rect.GetComponent<CultivationSpriteBridge>();bridge.monsterScale=1f;Call(bridge,"ApplyLayout");}
+            // Legacy combat/movement suites start in an already engaged fight.
+            // Awareness scenarios opt into the production unaware spawn below.
+            if(aware)m.ReceiveAlert(hero,true);
+            return m;
         }
         public void Step(float dt=0.1f,bool damage=false)
         {
@@ -118,6 +129,14 @@ partial class MotionRegression
 
     static void Main(string[] args)
     {
+        if(args.Length==1 && args[0]=="--progression-ui") {ProgressionUiTests();return;}
+        if(args.Length==1 && args[0]=="--gear-drop") {GearDropPrototypeTests();return;}
+        if(args.Length==1 && args[0]=="--production-rewards") {ProductionRewardTests();return;}
+        if(args.Length==2 && args[0]=="--production-rewards") {ProductionRewardTests(args[1]);return;}
+        if(args.Length==1 && args[0]=="--forge") {ForgeRegressionTests();return;}
+        if(args.Length==1 && args[0]=="--manual-load-ui") {ManualLoadUiRegressionTests();return;}
+        if(args.Length==1 && args[0]=="--actor-presentation") {ActorPresentationTests();return;}
+        if(args.Length==1 && args[0]=="--monster-awareness") {MonsterAwarenessTests();return;}
         if(args.Length==1 && args[0]=="--loot-visuals") {LootDropPresentationTests();CombatLootTests();return;}
         if(args.Length==1 && args[0]=="--weapon-basic") {WeaponBasicAttackTests();return;}
         if(args.Length==1 && args[0]=="--combat-loot") {
@@ -130,6 +149,7 @@ partial class MotionRegression
         if(args.Length==1 && args[0]=="--plains") {PlainsPresentationTests();return;}
         if(args.Length==1 && args[0]=="--terrain-art") {MultiTerrainTests();return;}
         if(args.Length==1 && args[0]=="--terrain-seams") {TerrainSeamTests();return;}
+        if(args.Length==1 && args[0]=="--escape-legacy-magic") {EscapeLegacyMagicTests();return;}
         if(args.Length==1 && args[0]=="--magic-persistence") {MagicPersistenceTests();return;}
         if(args.Length==1 && args[0]=="--audio-volumes") {DualVolumeTests();MusicVolumeRegressionTests();OpeningSettingsRegressionTests();return;}
         if(args.Length==1 && args[0]=="--enemy-sprites") { EnemySpriteTests();return; }

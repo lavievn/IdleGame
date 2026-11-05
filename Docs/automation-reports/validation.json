@@ -1,0 +1,54 @@
+{
+  "date": "2026-11-05",
+  "branch": "feature/monster-awareness-ambush",
+  "start": "95a2456",
+  "groups": [
+    {
+      "group": 1,
+      "commit": "9f1a828",
+      "rounds": 1,
+      "mono_manual_load_ui": {
+        "passed": 8,
+        "failed": 0
+      }
+    },
+    {
+      "group": 2,
+      "commit": "a389ee0",
+      "rounds": 1,
+      "native_playmode": {
+        "passed": 9,
+        "failed": 0,
+        "skipped": 0
+      },
+      "mono_desktop_ui": {
+        "passed": 59,
+        "failed": 0
+      }
+    },
+    {
+      "group": 3,
+      "commit": "11aee13",
+      "rounds": 1,
+      "native_playmode": {
+        "passed": 2,
+        "failed": 0,
+        "skipped": 0
+      },
+      "mono_formation": {
+        "passed": 39,
+        "failed": 0
+      }
+    }
+  ],
+  "stop_reason": "Maximum 3 independent work groups reached. No fourth implementation group.",
+  "not_run": [
+    "Windows Player",
+    "Physical mouse input on new code",
+    "Native full Save/Load plus Inventory/Forge end-to-end"
+  ],
+  "notes": [
+    "Mono 59 desktop cases include the 8 Load cases; do not sum as unique cases.",
+    "Tests are recorded against each group commit, not claimed as a rerun of every prior suite."
+  ]
+}
