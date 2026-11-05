@@ -10,6 +10,8 @@ Gear prototype đã phê duyệt đúng cấu hình MainGame hiện tại: Sword
 
 **Giai đoạn 4–5 đang HOÃN:** chưa phát triển công pháp/võ học/kỹ năng kích hoạt/đột phá cảnh giới mới; nội dung dưới đây chỉ lưu tham khảo cho tương lai. Không tự mở lại từ roadmap hoặc yêu cầu người dùng chốt thông số các module này lúc này. Cả các giai đoạn khác cũng chỉ thực hiện khi có nhiệm vụ tiếp theo.
 
+**Cảnh giới chính thức đã được tái xác nhận theo thiết kế 15/10/2026:** Level tổng liên tục; tiến trình nội bộ mỗi đại cảnh giới 30 cấp (Sơ 1–9, Trung 10–19, Hậu 20–29, từ 30 viên mãn/bình cảnh); tiểu cảnh giới tự chuyển, đại cảnh giới chỉ chuyển sau Thiên Kiếp hai pha dự kiến chịu đòn/gây đủ sát thương. Không reset Level tổng khi đột phá; mốc bắt đầu tiến trình mới là Level lúc đột phá. Mapping mỗi 10 level của RankDatabase chỉ là legacy/prototype, không là authority hoặc cách tự chuyển đại cảnh giới chính thức. Batch v0.2 không triển khai Thiên Kiếp hay thay Save; xem [thiết kế cập nhật](../CORE_GAMEPLAY_LOOP_DIRECTION_2026-10-25.md).
+
 ## Thứ tự và nguyên tắc
 
 1. Làm rõ baseline DEVB và quyền sở hữu dữ liệu trước khi đo progression.
@@ -36,11 +38,11 @@ Giữ một Hero chính, auto combat và tự do chọn vũ khí. Không xóa B2
 - **Ưu tiên:** P1; giá trị trực tiếp trước khi thêm combat skill.
 - **Mục tiêu:** dùng được statPoints từ level-up và nhìn rõ level/cảnh giới hiện có.
 - **Tái sử dụng:** canonical `GameManager.HeroData`; `EntityDataSO.AllocateHealth/AllocateDamage`; `RankDatabase.GetRankName`; panel Nhân vật hiện có, theme/Canvas/TMP/modal; các đường refresh combat stats/dirty/save của GameManager.
-- **Cần sửa:** thêm handler quản lý phân điểm trong manager và kết nối button panel hiện có, disable khi hết điểm; refresh UI/combat state cùng đối tượng dữ liệu. Label +1 phải là **Physical Attack**, không giả tăng MagicalAttack. Hiển thị rank derive từ level, không coi nhãn là gate đột phá.
+- **Cần sửa:** thêm handler quản lý phân điểm trong manager và kết nối button panel hiện có, disable khi hết điểm; refresh UI/combat state cùng đối tượng dữ liệu. Label +1 phải là **Physical Attack**, không giả tăng MagicalAttack. Chỉ hiển thị rank derive từ level với nhãn **legacy/prototype**; không coi nhãn là gate hoặc authority đại cảnh giới chính thức.
 - **Cần bổ sung:** hai thao tác UI và presentation rank; không thêm stat, class, currency hoặc bản sao Hero. Caller mới phải bảo vệ null/menu/pending load theo pattern manager hiện tại.
 - **Phụ thuộc:** giai đoạn 1 để đánh giá mức tăng; realm presentation chỉ dùng mapping sẵn có. Đột phá độc lập đã hoãn; tái thiết kế mapping hoặc HP cần task riêng, giữ phần allocation độc lập.
 - **Rủi ro Save/Combat:** không cần field mới; giữ statPoints/addedHealth/addedDamage và migration cũ. Refresh HP không được heal miễn phí hoặc khởi tạo lại life. Không thay đổi weapon mode chỉ vì phân điểm.
-- **Nghiệm thu:** EXP đủ tăng đúng 1 điểm/cấp; bấm một lần tiêu một điểm và +6 HP hoặc +1 Physical; hết điểm không mutation. Equip/unequip, Pause/modal và Load/Retry không làm stale state hoặc nhân modifier. Rank tại level 1/10/11/100/101 hiển thị theo mapping hiện có, sau Load derive đúng, không có buff/gate mới. Các hành vi chưa có test mới phải được bổ sung trước khi báo PASS.
+- **Nghiệm thu:** EXP đủ tăng đúng 1 điểm/cấp; bấm một lần tiêu một điểm và +6 HP hoặc +1 Physical; hết điểm không mutation. Equip/unequip, Pause/modal và Load/Retry không làm stale state hoặc nhân modifier. Nhãn legacy/prototype tại level 1/10/11/100/101 khớp mapping cũ, sau Load derive đúng, không có buff/gate mới và không tuyên bố nghiệm thu cảnh giới chính thức. Các hành vi chưa có test mới phải được bổ sung trước khi báo PASS.
 
 ## Giai đoạn 3 — Nghiệm thu một vòng farm khu vực ổn định
 

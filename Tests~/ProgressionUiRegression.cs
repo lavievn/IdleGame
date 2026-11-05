@@ -61,7 +61,8 @@ partial class MotionRegression
             int[] levels={1,10,11,100,101};string[] names={"Luyện Khí","Luyện Khí","Trúc Cơ","Chân Tiên","Tiên Đế"};
             ui.OpenHeroStats();for(int i=0;i<levels.Length;i++) {
                 h.currentLevel=levels[i];string before=JsonUtility.ToJson(h,false);ui.RefreshCharacterProgression();
-                Check(Get<TextMeshProUGUI>(ui,"progressionSummary").text.Contains("Cảnh giới: "+names[i]),"level "+levels[i]+" label derives from existing rank function");
+                string label=Get<TextMeshProUGUI>(ui,"progressionSummary").text;
+                Check(label.Contains("legacy/prototype") && label.Contains(names[i]),"level "+levels[i]+" label is explicitly legacy and derives from existing rank function");
                 Check(JsonUtility.ToJson(h,false)==before,"presentation grants no buff or persisted realm state");
             }
         });
