@@ -37,7 +37,7 @@
 - Bản cuối từ `3886cbf`: `BuildResult.Succeeded`, **0 errors / 49 warnings**, 604,807,656 bytes, `BuildOptions.None`.
 - Executable: `C:\Users\hason\Documents\Codex\2026-11-04\truy\outputs\player-validation\final-player\IdleGameValidation.exe`.
 - Bản build thử dùng company `IdleGameValidation`, product GUID riêng, đã đối chiếu `app.info` và marker trước lần chạy. Saves và PlayerPrefs tách khỏi profile sản phẩm; company/product trong ProjectSettings được khôi phục. Profile bản cuối: `C:\Users\hason\AppData\LocalLow\IdleGameValidation\Run-55f517ecd65a4493adac9ae867f73de8`.
-- Hai bản trước sửa UI (Development và Release) đã tạo process/cửa sổ nhưng đều gặp hộp thoại Firewall. Đã dừng đúng hai process do tác vụ mở. **Startup tương tác, UI, Combat và Save/Load trong Player: BLOCKED/NOT RUN.** Executable cuối chưa launch lại vì trở ngại này vẫn còn; không lấy build PASS làm gameplay PASS.
+- Hai bản trước sửa UI (Development và Release) đã tạo process/cửa sổ nhưng đều gặp hộp thoại Firewall. Đã dừng đúng hai process do tác vụ mở. **Startup tương tác, UI, Combat và Save/Load trong Player: BLOCKED/NOT RUN.** Executable cuối đã được thử đúng một lần ở mục 10 và cũng bị Windows Security chặn; không lấy build PASS hoặc process đang chạy làm gameplay PASS.
 
 ## 5. Lỗi đã sửa
 
@@ -96,3 +96,15 @@ Khi mở Editor, chọn rõ `Assets/Scenes/MainGame.unity`, không chơi trên `
 - **File:** `Tests~/MagicPersistenceRegression.cs` thêm test B2 với guard identity/lifecycle/reward; `Tests~/MotionRegression.cs` thêm selector riêng; báo cáo này cập nhật trạng thái. Fixture dùng đường dẫn GUID tạm hiện có, không truy cập save người chơi.
 - **Chưa xác minh:** destroyed-object semantics và hình ảnh trong Unity/Player, input native. Không chạy lại UI/Player hoặc can thiệp Firewall; các giới hạn ở mục 3–4 giữ nguyên. Không kết luận các phần đó PASS từ Mono.
 - **Log:** `C:\Users\hason\Documents\Codex\2026-11-04\truy\work\escape-legacy-magic\targeted.log`, `magic-related.log`; bản sao và summary ở `outputs/escape-legacy-magic/`. `git diff --check` PASS. Hoàn thành ngoại lệ đã cấp, không push/merge và dừng.
+
+## 10. Kiểm tra Player khi người dùng vắng mặt
+
+- Bắt đầu tại **`5f744d63a04b9aa4b331dff6752cd2cecacc7201`**, branch không đổi, working tree sạch. Không có Unity/Player đang chạy. Đối chiếu Git: Assets/ProjectSettings/Packages không đổi so với bản build `3886cbf`; không build lại hoặc lặp test đã PASS.
+- Xác nhận executable cuối, `app.info`, profile GUID/marker và đường dẫn không qua reparse trước khi chạy. Profile chỉ có marker trước lần khởi động này; không dùng dữ liệu Save thật. SHA-256 executable, PID, giờ UTC và số lần chạy được ghi ở `work/player-recheck/launch-record.json`.
+- **Đúng một lần launch:** PID `33472`, cửa sổ `Run-55f517ecd65a4493adac9ae867f73de8`. Log ghi Direct3D 11 khởi tạo và video nền đã ready; process còn responding tại thời điểm quan sát. Có lỗi TLS/Curl như lượt trước. Đây chỉ là bằng chứng khởi tạo, **không phải PASS startup tương tác/gameplay/Save-Load**.
+- **BLOCKED native:** ảnh mới vẫn hiện Windows Security/Firewall. Không gửi click/phím vào hộp thoại hoặc game qua hộp thoại; không sửa Firewall rules, registry, UAC hay chính sách. Dừng đúng process vừa mở sau khi đối chiếu PID/executable; không mở lần thứ hai. Hộp thoại bảo mật có thể vẫn cần người dùng tự đóng.
+- **EscapeLegacyMagic:** đã đối chiếu mục 9 và log/result gần nhất. Test/selector/runtime không đổi kể từ `450801d`; giữ kết quả **Mono 1/1 targeted, 18/18 related đã chạy**, không chạy lại hoặc tự cấp thêm một vòng. Không có lỗi mới được xác nhận để sửa.
+- **Phần độc lập còn lại:** rà các mục chưa nghiệm thu: bấm UI/modal/Pause, Windows resize, Retry/Travel và Player Save-Load đều cần native bị chặn. Ảnh Game View bốn kích thước và các nhóm tự động liên quan đã PASS, mã không đổi nên không lặp. Destroyed-object semantics của Magic trong Unity vẫn **NOT RUN**; nhóm Presentation hiện không có fixture Magic native tương ứng để chạy ngay, không dựng thêm fixture hoặc mở rộng ngoại lệ trong lượt này. Không suy diễn từ Mono sang Unity.
+- **Kết quả mới:** một lần khởi tạo executable cuối được quan sát, native **BLOCKED**; không sửa gameplay/test/asset. Chỉ cập nhật báo cáo. `git diff --check` PASS, không push/merge, không để Player/Editor do tác vụ mở chạy nền.
+- **Bằng chứng:** `outputs/player-recheck/windows-security-blocked.png`, `launch-record.json`, `player-once.log`, `result.json`; log gốc `C:\Users\hason\Documents\Codex\2026-11-04\truy\work\player-recheck\player-once.log`.
+- **Cần người dùng tại máy:** tự đóng Windows Security rồi nghiệm thu checklist mục 8 bằng profile thử; chưa cần thao tác nào khi đang vắng nhà. Hoàn thành phần có thể làm an toàn và dừng.
