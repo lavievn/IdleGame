@@ -1,5 +1,7 @@
 # Blood Essence — Contract V1
 
+> **v0.7:** MainGame owned playtest đã chạy Qi/tu vi và Save/Load, nhưng Blood/Burning vẫn khóa. Gameplay adapter reject Burning/debt/charges thay vì xóa nợ để Load. Không thay hợp đồng domain hoặc tuyên bố durable transaction; xem [báo cáo v0.7](../automation-reports/CULTIVATION_GAMEPLAY_V07_REPORT.md).
+
 06/11/2026 · v0.6 REVISED. **IMPLEMENTED/VERIFIED domain**, **BLOCKED production activation**. Xem [dual progression](DUAL_PROGRESSION_CONTRACT_V1.md) cho authority và Save gate.
 
 ## Tích lũy và sức chứa
