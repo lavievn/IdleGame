@@ -23,9 +23,10 @@ public partial class SaveManager
         bool valid=CultivationGameplayState.TryRestore(component,CultivationProfile,out candidate,out reason);
         LastCultivationFailure=reason;return valid;
     }
-    bool ValidateCultivationJson(string json,out string component)
+    bool ValidateCultivationJson(string json,out string component,bool allowLegacy=false)
     {
         string reason;bool valid=CultivationGameplayState.TryReadHeroJson(json,CultivationProfile,out component,out reason);
+        if(valid && CultivationProfile!=null && CultivationProfile.IsProduction && string.IsNullOrEmpty(component) && !allowLegacy){valid=false;reason="LegacyMigrationRequired";}
         LastCultivationFailure=reason;return valid;
     }
     string CultivationForLoadedCandidate(string validatedComponent)

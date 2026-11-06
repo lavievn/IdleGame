@@ -374,7 +374,7 @@ public partial class GameManager : MonoBehaviour
             ?"Chưa có sát thương":string.Join("\n",recentDamage.ToArray());
     }
     public EntityDataSO HeroData => runtimeHeroData;
-    private enum MenuChoice { None, Continue, NewGame }
+    private enum MenuChoice { None, Continue, NewGame , CultivationUpgrade }
     private MenuChoice pendingChoice;
     private SaveSlot continueSlot;
     private bool manualSelection;
@@ -885,6 +885,7 @@ public partial class GameManager : MonoBehaviour
     {
         if (HasPendingConfirmation) return false;
         if (saveManager == null || !saveManager.HasSave(slot)) { UpdateEventLog("Ô lưu này chưa có dữ liệu."); return false; }
+        if(saveManager.NeedsCultivationMigration(slot)){RequestCultivationMigration(slot,deploy,false);return false;}
 
         var loaded = Instantiate(heroDataSO != null ? heroDataSO : runtimeHeroData);
         if (!saveManager.LoadGame(loaded, slot)) { Destroy(loaded); UpdateEventLog("Không đọc được bản lưu."); return false; }
@@ -900,6 +901,10 @@ public partial class GameManager : MonoBehaviour
         }
         CultivationGameplayBinding prepared;
         if(!PrepareCultivation(loaded,out prepared)){Destroy(loaded);return false;}
+        return ApplyLoadedCandidate(loaded,slot,deploy,prepared);
+    }
+    bool ApplyLoadedCandidate(EntityDataSO loaded,SaveSlot slot,bool deploy,CultivationGameplayBinding prepared,bool fromTitle=false)
+    {
         CancelGameplayEntry();
         // 1. Dọn dẹp sạch sẽ chiến trường tránh kẹt Coroutine
         hasDeployed = false;
@@ -917,7 +922,7 @@ public partial class GameManager : MonoBehaviour
         recentEvents.Clear(); recentDamage.Clear(); fullEventHistory.Clear();
         damageHistory.Clear();
         continueSlot = slot;
-        manualSelection = true;
+        manualSelection = !fromTitle;
 
         // Only the legacy non-deploying load returns to the waiting menu.
         // Immediate loads must not restart the opening/black curtain first.
@@ -930,7 +935,7 @@ public partial class GameManager : MonoBehaviour
             ", EXP " + loaded.currentExp + ", map " + loaded.mapNumber + ".");
         if (deploy)
         {
-            DeployHero();
+            DeployHero(fromTitle);
             if (combatManager != null)
             {
                 var state = combatManager.CurrentHeroCombatState;
@@ -1066,12 +1071,14 @@ public partial class GameManager : MonoBehaviour
     public void OnConfirmResetClicked()
     {
         var choice = pendingChoice;
+        if(choice==MenuChoice.CultivationUpgrade){ConfirmCultivationMigration();return;}
         if (choice == MenuChoice.None) return;
         bool fromTitle=preGameUI!=null && preGameUI.activeInHierarchy;
         pendingChoice = MenuChoice.None;
         if (confirmationPopup != null) confirmationPopup.SetActive(false);
         if (choice == MenuChoice.Continue)
         {
+            if(saveManager!=null && saveManager.NeedsCultivationMigration(continueSlot)){RequestCultivationMigration(continueSlot,true,fromTitle);return;}
             var loaded = Instantiate(heroDataSO);
             if (saveManager == null || !saveManager.LoadGame(loaded, continueSlot))
             {
@@ -1129,6 +1136,7 @@ public partial class GameManager : MonoBehaviour
     }
     public void OnCancelResetClicked()
     {
+        if(IsCultivationMigrationPending){CancelCultivationMigration();return;}
         pendingChoice = MenuChoice.None;
         if (confirmationPopup != null) confirmationPopup.SetActive(false);
     }
@@ -1337,6 +1345,7 @@ public partial class GameManager : MonoBehaviour
 
     private void OnDisable()
     {
+        CancelCultivationMigration(false);
         DisposeCultivation();
         if(combatManager!=null)combatManager.SuspendLootEncounter();
         var space=environmentManager!=null?environmentManager:EnvironmentManager.Instance;
@@ -1370,6 +1379,7 @@ public partial class GameManager : MonoBehaviour
     }
     private void OnDestroy()
     {
+        CancelCultivationMigration(false);
         DisposeCultivation();
         if(mapEntryCover!=null)Destroy(mapEntryCover.transform.parent.gameObject);
     }

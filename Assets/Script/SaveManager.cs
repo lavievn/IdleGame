@@ -58,6 +58,7 @@ public partial class SaveManager : MonoBehaviour
             // Preserve the existing gameplay default exactly.
             saveDirectory = Application.persistentDataPath + "/Saves/";
         }
+        ConfigureDefaultCultivation();
         Instance = this;
         DontDestroyOnLoad(gameObject);
 
@@ -113,8 +114,12 @@ public partial class SaveManager : MonoBehaviour
     public bool LoadGame(EntityDataSO entityData, SaveSlot slot)
     {
         if (entityData == null) return false;
-
-        string jsonData = LoadGame(slot.ToString());
+        if(CultivationProfile!=null && CultivationProfile.IsProduction && NeedsMigrationReceiptRecovery(slot))return false;
+        return TryLoadSnapshot(entityData,LoadGame(slot.ToString()),slot,false);
+    }
+    private bool TryLoadSnapshot(EntityDataSO entityData,string jsonData,SaveSlot slot,bool allowLegacy)
+    {
+        if(entityData==null)return false;
         if (!string.IsNullOrEmpty(jsonData))
         {
             try
@@ -132,7 +137,7 @@ public partial class SaveManager : MonoBehaviour
                     Debug.LogWarning("[SaveManager] Refusing Realm load from "+slot+": "+reason);return false;
                 }
                 string cultivationComponent;
-                if(!ValidateCultivationJson(jsonData,out cultivationComponent)){Debug.LogWarning("[SaveManager] Refusing cultivation load: "+LastCultivationFailure);return false;}
+                if(!ValidateCultivationJson(jsonData,out cultivationComponent,allowLegacy)){Debug.LogWarning("[SaveManager] Refusing cultivation load: "+LastCultivationFailure);return false;}
                 // Missing Realm fields must not inherit the ScriptableObject template.
                 entityData.cultivationJson=""; // Never inherit an inline template/session snapshot.
                 entityData.realmComponentVersion=0;entityData.realmId=null;entityData.realmEntryLevel=0;
@@ -404,6 +409,7 @@ public partial class SaveManager : MonoBehaviour
             // existing slot (for example, after refusing to load that slot).
             // Unreadable-version/corrupt JSON is not a detected future schema;
             // preserve the existing ability to explicitly replace corrupt saves.
+            string expectedFileHash=File.Exists(finalPath)?TuTienCore.CultivationMigrationTransaction.Hash(File.ReadAllBytes(finalPath)):null;
             EquipmentVersionProbe existing;
             if (File.Exists(finalPath) &&
                 TryReadEquipmentVersions(File.ReadAllText(finalPath), out existing, out reason) &&
@@ -425,7 +431,7 @@ public partial class SaveManager : MonoBehaviour
             }
             if(File.Exists(finalPath)) {
                 string existingComponent;
-                if(!ValidateCultivationJson(File.ReadAllText(finalPath),out existingComponent)) {
+                if(!ValidateCultivationJson(File.ReadAllText(finalPath),out existingComponent,true)) {
                     Debug.LogWarning("[SaveManager] Preserving incompatible cultivation slot: "+LastCultivationFailure);return false;
                 }
                 // A context without cultivation may not erase a component from a newer/other game.
@@ -444,8 +450,11 @@ public partial class SaveManager : MonoBehaviour
             CheckOwnedWriteFault(OwnedWriteFault.AfterTempWrite);
             CheckOwnedWriteFault(OwnedWriteFault.BeforeReplace);
 #endif
-            if (File.Exists(finalPath)) File.Replace(tempPath, finalPath, null);
-            else File.Move(tempPath, finalPath);
+            TuTienCore.CultivationMigrationTransaction.ReplaceExpected(tempPath,finalPath,expectedFileHash,
+                TuTienCore.CultivationMigrationTransaction.Hash(File.ReadAllBytes(tempPath)));
+#if UNITY_EDITOR
+            SuccessfulSnapshotWrites++;
+#endif
             return true;
         }
         catch (Exception e) { Debug.LogError("Không ghi được bản lưu: " + e.Message); return false; }

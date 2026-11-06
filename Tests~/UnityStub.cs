@@ -22,6 +22,7 @@ namespace UnityEngine
         public static T FindObjectOfType<T>() where T : Object { return FindFirstObjectByType<T>(); }
         public static void DontDestroyOnLoad(Object o) { }
         public static void Destroy(Object value) { objects.Remove(value); }
+        public static void DestroyImmediate(Object value) { Destroy(value); }
     }
     public class Component : Object
     {
@@ -44,7 +45,7 @@ namespace UnityEngine
     public class WaitForSeconds { public float seconds; public WaitForSeconds(float seconds) { this.seconds = seconds; } }
     public class WaitForSecondsRealtime { public float seconds; public WaitForSecondsRealtime(float seconds) { this.seconds = seconds; } }
     public class WaitForEndOfFrame { }
-    public class ScriptableObject : Object { }
+    public class ScriptableObject : Object { public static T CreateInstance<T>() where T:ScriptableObject,new() {return new T();} }
     public class GameObject : Object
     {
         public int layer;
@@ -388,7 +389,7 @@ namespace UnityEngine.Events {
 namespace UnityEngine {
  public enum LogType { Log }
  public enum LogOption { NoStacktrace }
- public static class Application { public static string persistentDataPath=System.IO.Path.Combine(System.IO.Path.GetTempPath(),"idle-tests-"+Guid.NewGuid());public static string streamingAssetsPath=System.IO.Path.GetTempPath();public static void Quit(){} }
+ public static class Application { public static bool isPlaying;public static string persistentDataPath=System.IO.Path.Combine(System.IO.Path.GetTempPath(),"idle-tests-"+Guid.NewGuid());public static string streamingAssetsPath=System.IO.Path.GetTempPath();public static void Quit(){} }
  public static class Debug {
      // Opt-in observation for diagnostics regressions; silent by default.
      public static System.Action<string> LogObserver;
@@ -407,7 +408,7 @@ namespace UnityEngine {
  public static class JsonUtility {
    static string Quote(string s){return s==null?"null":"\""+s.Replace("\\","\\\\").Replace("\"","\\\"").Replace("\r","\\r").Replace("\n","\\n").Replace("\t","\\t")+"\"";}
    public static T FromJson<T>(string json) where T : new() { return new T(); }
-  public static string ToJson(object value,bool pretty){var fields=new List<string>();foreach(var f in value.GetType().GetFields()) {
+    public static string ToJson(object value,bool pretty=false){var fields=new List<string>();foreach(var f in value.GetType().GetFields()) {
    if(f.FieldType==typeof(int)||f.FieldType==typeof(float)||f.FieldType==typeof(double)||f.FieldType.IsEnum)fields.Add("\""+f.Name+"\":"+Convert.ToString(f.FieldType.IsEnum?(object)Convert.ToInt32(f.GetValue(value)):f.GetValue(value),System.Globalization.CultureInfo.InvariantCulture));
    else if(f.FieldType==typeof(List<int>) || f.FieldType==typeof(List<float>)) {
     var nums=new List<string>();var items=(System.Collections.IEnumerable)f.GetValue(value);

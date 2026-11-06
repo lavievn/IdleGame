@@ -19,14 +19,19 @@ public partial class GameManager
         throw new InvalidOperationException("Cultivation playtest requires Editor/Development context.");
 #endif
     }
+    void ResolveProductionCultivation()
+    {
+        if(cultivationProfile==null && saveManager!=null && saveManager.CultivationProfile!=null && saveManager.CultivationProfile.IsProduction)cultivationProfile=saveManager.CultivationProfile;
+    }
     void InitializeCultivation()
     {
+        ResolveProductionCultivation();
         DisposeCultivation();runtimeHeroData.cultivationJson="";
         if(cultivationProfile!=null)cultivation=new CultivationGameplayBinding(runtimeHeroData,cultivationProfile,CultivationGameplayState.New(cultivationProfile));
     }
     bool PrepareCultivation(EntityDataSO candidate,out CultivationGameplayBinding binding)
     {
-        binding=null;CultivationSession state;string reason;
+        ResolveProductionCultivation();binding=null;CultivationSession state;string reason;
         if(!CultivationGameplayState.TryRestore(candidate.cultivationJson,cultivationProfile,out state,out reason))
         {Debug.LogWarning("[Cultivation] Candidate rejected: "+reason);return false;}
         if(state!=null)binding=new CultivationGameplayBinding(candidate,cultivationProfile,state);
