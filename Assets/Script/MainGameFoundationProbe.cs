@@ -36,6 +36,7 @@ public sealed partial class MainGameFoundationProbe : MonoBehaviour
         public string map,gear,gearCore,inventory,legacyEquipped,weapon,roots;
     }
     public string replayProfile;
+    public string replaySlotName="ManualSave1";
     Result result=new Result();
     GameManager gm; CombatManager combat; EnvironmentManager space; HeroController hero;
     UIManager ui; SaveManager saves; InventoryPanelUI inventory;
@@ -68,11 +69,16 @@ public sealed partial class MainGameFoundationProbe : MonoBehaviour
         var args=Environment.GetCommandLineArgs();
         for(int i=0;i+1<args.Length;i++)if(args[i]=="-foundationSourceHead")probe.sourceHead=args[i+1];
         for(int i=0;i+1<args.Length;i++)if(args[i]=="-foundationResumeSavedProfile")probe.replayProfile=args[i+1];
+        for(int i=0;i+1<args.Length;i++)if(args[i]=="-foundationResumeSlot")probe.replaySlotName=args[i+1];
+        SaveSlot replaySlot;Require(Enum.TryParse(probe.replaySlotName,out replaySlot) && Enum.IsDefined(typeof(SaveSlot),replaySlot),"Explicit replay slot is valid");
         if(!string.IsNullOrEmpty(probe.replayProfile))
         {
             VerifyPath(probe.replayProfile);Require(File.ReadAllText(Path.Combine(probe.replayProfile,".owner"))==Marker,"Replay source is not owned.");
             Directory.CreateDirectory(Path.Combine(probe.profileRoot,"saves"));
-            File.Copy(Path.Combine(probe.replayProfile,"saves/ManualSave1.json"),Path.Combine(probe.profileRoot,"saves/ManualSave1.json"),false);
+            File.Copy(Path.Combine(probe.replayProfile,"saves/"+probe.replaySlotName+".json"),Path.Combine(probe.profileRoot,"saves/"+probe.replaySlotName+".json"),false);
+            string receipt=probe.replaySlotName+".cultivation-migration.json";
+            if(File.Exists(Path.Combine(probe.replayProfile,"saves/"+receipt)))File.Copy(Path.Combine(probe.replayProfile,"saves/"+receipt),Path.Combine(probe.profileRoot,"saves/"+receipt),false);
+            foreach(string backup in Directory.GetFiles(Path.Combine(probe.replayProfile,"saves"),probe.replaySlotName+".cultivation-*.legacy.bak"))File.Copy(backup,Path.Combine(probe.profileRoot,"saves/"+Path.GetFileName(backup)),false);
         }
         Directory.CreateDirectory(Path.Combine(probe.profileRoot,"evidence"));
         Require(EditorSceneManager.SaveScene(scene,SceneCopy),"Could not save owned scene copy.");
@@ -126,6 +132,11 @@ public sealed partial class MainGameFoundationProbe : MonoBehaviour
             var profile=CultivationPlaytestBootstrap.ReadProfile(File.ReadAllText(balance?"Assets/Editor/CultivationBalanceV1.json":"Assets/Editor/CultivationPlaytestV07.json"));
             saves.ConfigureCultivationPlaytestBeforeAwake(profile,true);
             saveOwner.GetComponent<GameManager>().ConfigureCultivationPlaytest(profile);
+        }
+        if(Array.IndexOf(Environment.GetCommandLineArgs(),"-foundationCultivationV09")>=0 && !CultivationIntegrationGate.ProductionEnabled) {
+            CultivationPlaytestProfile profile;WorldQiDistribution table;CultivationConfigurationReason code;string detail;
+            Require(CultivationProductionConfiguration.TryLoad(out profile,out table,out code,out detail),"Owned production configuration "+code+" "+detail);
+            saves.ConfigureCultivationProductionBeforeAwake(profile);saveOwner.GetComponent<GameManager>().ConfigureCultivationPlaytest(profile);
         }
         saveOwner.SetActive(true);AssertIsolated();
         result.unity=Application.unityVersion;result.sourceHead=sourceHead;result.profile=profileRoot;result.evidence=Evidence;
@@ -614,7 +625,7 @@ public sealed partial class MainGameFoundationProbe : MonoBehaviour
         AssertIsolated();ui.IsolatedValidationProfile=true;
         // A personal DEVB file may otherwise hide the level-1 gear increment.
         // Reset only static state inside this disposable test process; no file write.
-        if(Array.IndexOf(Environment.GetCommandLineArgs(),"-foundationCultivationV08")>=0 || Array.IndexOf(Environment.GetCommandLineArgs(),"-foundationCultivationV07")>=0 || Array.IndexOf(Environment.GetCommandLineArgs(),"-foundationDualProgressionV06")>=0 || Array.IndexOf(Environment.GetCommandLineArgs(),"-foundationRealmV06")>=0 || Array.IndexOf(Environment.GetCommandLineArgs(),"-foundationDevelopmentV04")>=0 || Array.IndexOf(Environment.GetCommandLineArgs(),"-foundationRecoveryV03")>=0 || Array.IndexOf(Environment.GetCommandLineArgs(),"-foundationStabilityV03")>=0 || Array.IndexOf(Environment.GetCommandLineArgs(),"-foundationCameraV03")>=0 || Array.IndexOf(Environment.GetCommandLineArgs(),"-foundationGearDropV01")>=0 || Array.IndexOf(Environment.GetCommandLineArgs(),"-foundationProgressionV02")>=0)CombatBalance.ResetDevProfiles();
+        if(Array.IndexOf(Environment.GetCommandLineArgs(),"-foundationCultivationV09UICap")>=0 || Array.IndexOf(Environment.GetCommandLineArgs(),"-foundationCultivationV09")>=0 || Array.IndexOf(Environment.GetCommandLineArgs(),"-foundationCultivationV08")>=0 || Array.IndexOf(Environment.GetCommandLineArgs(),"-foundationCultivationV07")>=0 || Array.IndexOf(Environment.GetCommandLineArgs(),"-foundationDualProgressionV06")>=0 || Array.IndexOf(Environment.GetCommandLineArgs(),"-foundationRealmV06")>=0 || Array.IndexOf(Environment.GetCommandLineArgs(),"-foundationDevelopmentV04")>=0 || Array.IndexOf(Environment.GetCommandLineArgs(),"-foundationRecoveryV03")>=0 || Array.IndexOf(Environment.GetCommandLineArgs(),"-foundationStabilityV03")>=0 || Array.IndexOf(Environment.GetCommandLineArgs(),"-foundationCameraV03")>=0 || Array.IndexOf(Environment.GetCommandLineArgs(),"-foundationGearDropV01")>=0 || Array.IndexOf(Environment.GetCommandLineArgs(),"-foundationProgressionV02")>=0)CombatBalance.ResetDevProfiles();
         yield return Resize(800,450);Call(gm,"InitHeroData",false);
         if(Array.IndexOf(Environment.GetCommandLineArgs(),"-foundationCultivationV07")>=0) {
             Require(gm.Cultivation!=null && gm.Cultivation.Current.Foundation.Amount==0 && gm.Cultivation.Current.Reserve.Amount==0,"New session starts at zero independently of Level");
@@ -623,6 +634,8 @@ public sealed partial class MainGameFoundationProbe : MonoBehaviour
         Call(gm,"DeployHero",false);yield return Ready();
         inventory=(InventoryPanelUI)Get(ui,"inventoryUI");Require(inventory!=null,"No Inventory panel.");
         ui.inventoryLayoutDebug=false;ui.inventoryUseArtTheme=false;ui.ApplyHudFromInspector();
+        if(Array.IndexOf(Environment.GetCommandLineArgs(),"-foundationCultivationV09UICap")>=0) {yield return CultivationV09UICap();yield break;}
+        if(Array.IndexOf(Environment.GetCommandLineArgs(),"-foundationCultivationV09")>=0) {yield return CultivationV09();yield break;}
         if(Array.IndexOf(Environment.GetCommandLineArgs(),"-foundationCultivationV08")>=0) {yield return CultivationV08();yield break;}
         if(Array.IndexOf(Environment.GetCommandLineArgs(),"-foundationCultivationV07")>=0) {yield return CultivationV07();yield break;}
         if(Array.IndexOf(Environment.GetCommandLineArgs(),"-foundationDualProgressionV06")>=0) {yield return DualProgressionV06();yield break;}

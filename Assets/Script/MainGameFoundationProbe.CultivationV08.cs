@@ -11,7 +11,7 @@ public sealed partial class MainGameFoundationProbe
     IEnumerator CultivationV08()
     {
         phase=1;
-        Require(gm.Cultivation!=null && gm.Cultivation.Profile.Id=="balance:cultivation-early-v1" && !CultivationIntegrationGate.ProductionEnabled,"Isolated v1 profile, production gate closed");
+        Require(gm.Cultivation!=null && gm.Cultivation.Profile.Id=="balance:cultivation-early-v1" && !gm.Cultivation.Profile.IsProduction,"Historical isolated v1 profile retains its own identity even after production activation");
         if(!string.IsNullOrEmpty(replayProfile)) {
             string raw=File.ReadAllText(Path.Combine(SavePath,"ManualSave1.json")),component,error;
             Require(CultivationGameplayState.TryReadHeroJson(raw,gm.Cultivation.Profile,out component,out error),"Restart source validation");

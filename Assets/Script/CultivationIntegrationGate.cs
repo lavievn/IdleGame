@@ -1,9 +1,9 @@
 public static class CultivationIntegrationGate
 {
-    // v0.8 balance v1 is independently configured and tested in isolated contexts.
-    // Production remains closed: legacy player consent/upgrade commit and rollback UI
-    // are not implemented. Never silently initialize or rewrite personal Saves.
-    // Blood Essence Burning and Heavenly Trial remain locked independently.
-    public const bool ProductionEnabled=false;
+    // v0.9 production config +133-node table, native migration/backup/rollback and
+    // real MainGame consent/lifecycle/visual acceptance passed before activation.
+    // Startup only binds validated config. Legacy slots still require explicit consent.
+    // Blood Essence Burning, Heavenly Trial and offline cultivation remain locked.
+    public const bool ProductionEnabled=true;
     public const string Status="Tu vi chưa cấu hình";
 }

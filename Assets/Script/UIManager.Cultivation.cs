@@ -14,11 +14,11 @@ public partial class UIManager
         CultivationRealmDefinition definition;p.Catalog.TryGet(s.Foundation.ActualRealmId,out definition);
         string stage=realm.MinorStage==RealmMinorStage.SoKy?"Sơ kỳ":realm.MinorStage==RealmMinorStage.TrungKy?"Trung kỳ":realm.MinorStage==RealmMinorStage.HauKy?"Hậu kỳ":"Viên mãn · Bình cảnh";
         var h=gm.HeroData;
-        return (p.SaveVersion==1?"[PLAYTEST v":"[THỬ NGHIỆM v")+p.Version+"] Level "+h.currentLevel+" · EXP: "+h.currentExp+"/"+h.expToNextLevel+
+        return (p.IsProduction?"Tu luyện · ":(p.SaveVersion==1?"[PLAYTEST v":"[THỬ NGHIỆM v")+p.Version+"] ")+"Level "+h.currentLevel+" · EXP: "+h.currentExp+"/"+h.expToNextLevel+
             "\n"+p.RealmName(s.Foundation.ActualRealmId)+" · "+stage+
             "\nTu vi căn cơ: "+QiNumber(s.Foundation.Amount)+" / "+QiNumber(definition.Thresholds[3])+"\n"+
             "\nLinh khí dự trữ: "+QiNumber(s.Reserve.Amount)+
-            " · Mật độ: "+QiNumber(p.Density(h.worldMapId))+
+            (p.IsProduction?" · Qi map: "+QiNumber(p.EnvironmentalQiPerSecond(h.worldMapId))+"/s":" · Mật độ: "+QiNumber(p.Density(h.worldMapId)))+
             "\nHấp thu: "+QiNumber(p.Density(h.worldMapId)*p.Rules.AbsorptionRate*p.Rules.AbsorptionEfficiency)+"/s · Luyện hóa: ≤"+QiNumber(p.Rules.RefinementRate)+"/s"+
             "\nLinh lực: "+QiNumber(s.Energy.Current)+" / "+QiNumber(p.Rules.EnergyMaximum(s.Injury.Severity))+
             "\nTinh Huyết khóa · Thiên Kiếp chưa mở · Điểm: "+h.statPoints;
