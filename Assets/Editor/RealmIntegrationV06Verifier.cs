@@ -36,9 +36,12 @@ public static class RealmIntegrationV06Verifier
             source.ApplyHeroBalance();EquipmentInventory.InitializeNewRun(source);EquipmentRuntime.InitializeNewRun(source);
             Require(EquipmentInventory.Add(source,EquipmentRefinement.MaterialId,37),"fixture material");
             var gear=EquipmentFoundation.CreateCommon(EquipmentFoundation.DemoSword,1,4);Require(EquipmentRuntime.AddInstance(source,gear),"fixture gear");
+            Require(EquipmentRuntime.Equip(source,gear.instanceId,EquipmentSlot.Weapon),"Native fixture equipped gear with real modifiers");
             Require(WorldMapCatalog.StartNew(source),"fixture world");source.worldMapWaveProgress=3;source.worldMapLoopWave=4;source.completedWavesInMap=3;source.gold=9876543210L;
             source.NormalizeRoots();source.NormalizeMapProgress();source.NormalizeCombatStats();EquipmentInventory.Normalize(source);EquipmentRuntime.Normalize(source);
             RealmProgressionAuthority.Initialize(source);
+            int sourceAttack=WeaponBasicAttack.Physical(source),sourceModifierCount=source.combatStatModifiers.Count;
+            Require(sourceModifierCount>0 && sourceAttack==source.baseDamage+source.addedDamage+4,"Nonempty modifier fixture must add exactly four Physical");
             string current=JsonUtility.ToJson(source,true),legacy=StripRealm(current);string slot=Path.Combine(directory,"ManualSave1.json");
             Require(!legacy.Contains("\"realmComponentVersion\""),"Legacy fixture has no Realm fields");File.WriteAllText(slot,legacy);
             loaded=UnityEngine.Object.Instantiate(source);loaded.realmComponentVersion=99;loaded.realmId="template:wrong";loaded.realmEntryLevel=999;
@@ -53,6 +56,7 @@ public static class RealmIntegrationV06Verifier
             Require(migrated.Contains("\"realmComponentVersion\": 1") && migrated.Contains("\"realmId\": \"realm:luyen-khi\"") && migrated.Contains("\"realmEntryLevel\": 1"),"Migrated component fields actually persisted in JSON");
             for(int i=0;i<3;i++)Require(saves.LoadGame(loaded,SaveSlot.ManualSave1) && loaded.realmEntryLevel==1 && loaded.realmId==RealmProgressionAuthority.LuyenKhiId && loaded.currentLevel==45 && loaded.currentExp==source.currentExp,"Repeated current Load idempotent");
             Require(StripRealm(JsonUtility.ToJson(loaded,true),true)==StripRealm(current,true),"Current roundtrip preserves all other fields/modifiers");
+            Require(WeaponBasicAttack.Physical(loaded)==sourceAttack && loaded.combatStatModifiers.Count==sourceModifierCount,"Repeated native Load must not duplicate equipped modifiers");
             result.checks.Add("Legacy/current/native JsonUtility, contaminated template, repeated loads, no file rewrite on Load; all unrelated JSON fields preserved.");
             string slot2=Path.Combine(directory,"ManualSave2.json");
             foreach(string bad in new[]{current.Replace("\"realmComponentVersion\": 1","\"realmComponentVersion\": 2"),
