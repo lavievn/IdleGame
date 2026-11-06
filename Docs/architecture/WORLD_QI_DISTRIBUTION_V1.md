@@ -10,7 +10,19 @@ The current `WorldMapArtwork.png` is1448×1086. `WorldMapPolygonSeeds.txt` provi
 
 Export columns: `nodeId,sourceX,sourceY,normalizedX,normalizedY,coordinateStatus`. Native verification checks133/133 centers against `WorldMapCatalog.PreviewPosition`, their own actual click polygons and the imported sprite dimensions. No missing/duplicate ID. `coordinateStatus` retains `IMAGE_LABEL` for127 and `INFERRED` for6 (`TL-01,TL-17,TL-19,HT-13,TM-03,TM-13`). All source polygons remain historically `reviewed=false`; runtime registration is verified, not reclassified as manually approved geographic labels. No pins, polygons or links are moved.
 
-The user's unlabelled original map/illustrative heatmap were not found in this task workspace. Existing indexed artwork is used only as a debug background. No Qi numbers were extracted from image colors and no pixel-level match to the illustrative heatmap is claimed.
+At initial v0.9 handoff the user's unlabelled original map/illustrative heatmap were not found in the task workspace. The v1 debug output therefore uses the existing indexed artwork. The user supplied the illustrative heatmap after handoff; its registration audit is recorded below. V1 Qi numbers remain procedural, not extracted from image colors.
+
+## Heatmap reference received after handoff
+
+The supplied `15378.png` is1280×960, SHA256 `35adb6412db808d8a9a44ec629449c5db754d71a76fdf78c1deeb472f636a6bb`. Source artwork remains1448×1086, SHA256 `a4cc5889ef5a2431e19865da2caca2b0513b01ac789c58fa3bd7f221f3fc5602`. Both have4:3 aspect. Top-left pixel mapping is `referenceX=sourceX*1280/1448`, `referenceY=sourceY*960/1086`; bottom-left normalized coordinates stay unchanged.
+
+Image-analysis audit excludes the frame/compass and uses SIFT ratio0.7 plus3px affine RANSAC. It finds1295 ratio matches/1290 inliers across all four interior quadrants, with median0.633px residual under simple uniform scaling (0.451px after fitting). Thus uniform registration is supported by interior map features, not merely matching borders. This measures matched-feature residual, not guaranteed accuracy at every node. It does not change the six inherited INFERRED centers or their provenance.
+
+The image is now usable as a spatial visual reference for regional design. Visible warm clusters include the northwestern palace area, southwest settlement, southeast forest settlement and central lake settlement. The northeastern volcanic colors also mix underlying terrain and illustration; they do not alone establish a numerical Qi value. There is no calibrated scalar legend, so no color-to-Qi extraction or per-node numeric fidelity is claimed.
+
+External task evidence contains `heatmap-reference-registration.json` and `heatmap-reference-node-registration.csv` with all133 stable IDs, source/reference coordinates, mapping status, inherited coordinate provenance and separately labelled current v1 tier/rate. Every row explicitly marks `qiExtractedFromImage=false`. The attachment is retained at its original task location; it is not installed as runtime art or sampled at runtime.
+
+This input update leaves `world-qi:atlas-v1` version1, its fingerprint and all existing Save identities unchanged. Its procedural four-hotspot distribution is not presented as matching every warm region in the new image. A distribution designed around these illustrated regions must be exported under a new data/config version and preserve the supported v1 Save path, rather than silently replacing v1 semantics.
 
 ## Data and generator
 
