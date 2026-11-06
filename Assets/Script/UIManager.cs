@@ -78,7 +78,11 @@ public partial class UIManager : MonoBehaviour
     void Awake()
     {
         Instance = this;
+#if DEVELOPMENT_BUILD && UNITY_STANDALONE_WIN && !UNITY_EDITOR
+        if(!WindowsDevelopmentAcceptanceV10.UseOwnedDefaultBalance())CombatBalance.LoadDevProfiles();
+#else
         CombatBalance.LoadDevProfiles();
+#endif
     }
 
     void Start()

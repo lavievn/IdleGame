@@ -38,6 +38,11 @@ public sealed class WindowsDevelopmentAcceptanceV10:MonoBehaviour
         Require(File.ReadAllText(Path.Combine(root,".owner"))==Owner && File.ReadAllText(Path.Combine(Path.GetDirectoryName(root),".owned-player-root"))==Owner,"Owned parent/profile markers required");
         string personal=Path.GetFullPath(Path.Combine(Application.persistentDataPath,"Saves"));Require(!root.StartsWith(personal,StringComparison.OrdinalIgnoreCase) && !personal.StartsWith(root,StringComparison.OrdinalIgnoreCase),"Never personal Saves");
     }
+    public static bool UseOwnedDefaultBalance()
+    {
+        if(RootArgument==null)return false;
+        VerifyRoot();CombatBalance.ResetDevProfiles();Debug.Log("[WINDOWS V10] OWNED_DEFAULT_BALANCE no personal DEVB read/write");return true;
+    }
     public static void ConfigureBeforeAwake(SaveManager manager)
     {
         if(RootArgument==null)return;
