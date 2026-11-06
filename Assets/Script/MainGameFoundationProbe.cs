@@ -144,6 +144,11 @@ public sealed partial class MainGameFoundationProbe : MonoBehaviour
             Require(CultivationProductionConfiguration.TryLoadVersion(2,out profile,out qi,out code,out why),"Isolated v2 "+why);
             saves.ConfigureCultivationProductionBeforeAwake(profile);saveOwner.GetComponent<GameManager>().ConfigureCultivationPlaytest(profile);
         }
+        if(Array.IndexOf(Environment.GetCommandLineArgs(),"-foundationCultivationV11C")>=0 && !CultivationIntegrationGate.CapacityEnabled) {
+            CultivationPlaytestProfile profile;WorldQiDistribution qi;CultivationConfigurationReason code;string why;
+            Require(CultivationProductionConfiguration.TryLoadVersion(3,out profile,out qi,out code,out why),"Isolated capacity "+why);
+            saves.ConfigureCultivationProductionBeforeAwake(profile);saveOwner.GetComponent<GameManager>().ConfigureCultivationPlaytest(profile);
+        }
         saveOwner.SetActive(true);AssertIsolated();
         result.unity=Application.unityVersion;result.sourceHead=sourceHead;result.profile=profileRoot;result.evidence=Evidence;
         Application.logMessageReceived+=ObserveLog;
@@ -631,7 +636,7 @@ public sealed partial class MainGameFoundationProbe : MonoBehaviour
         AssertIsolated();ui.IsolatedValidationProfile=true;
         // A personal DEVB file may otherwise hide the level-1 gear increment.
         // Reset only static state inside this disposable test process; no file write.
-        if(Array.IndexOf(Environment.GetCommandLineArgs(),"-foundationCultivationV11B")>=0 || Array.IndexOf(Environment.GetCommandLineArgs(),"-foundationCultivationV09UICap")>=0 || Array.IndexOf(Environment.GetCommandLineArgs(),"-foundationCultivationV09")>=0 || Array.IndexOf(Environment.GetCommandLineArgs(),"-foundationCultivationV08")>=0 || Array.IndexOf(Environment.GetCommandLineArgs(),"-foundationCultivationV07")>=0 || Array.IndexOf(Environment.GetCommandLineArgs(),"-foundationDualProgressionV06")>=0 || Array.IndexOf(Environment.GetCommandLineArgs(),"-foundationRealmV06")>=0 || Array.IndexOf(Environment.GetCommandLineArgs(),"-foundationDevelopmentV04")>=0 || Array.IndexOf(Environment.GetCommandLineArgs(),"-foundationRecoveryV03")>=0 || Array.IndexOf(Environment.GetCommandLineArgs(),"-foundationStabilityV03")>=0 || Array.IndexOf(Environment.GetCommandLineArgs(),"-foundationCameraV03")>=0 || Array.IndexOf(Environment.GetCommandLineArgs(),"-foundationGearDropV01")>=0 || Array.IndexOf(Environment.GetCommandLineArgs(),"-foundationProgressionV02")>=0)CombatBalance.ResetDevProfiles();
+        if(Array.IndexOf(Environment.GetCommandLineArgs(),"-foundationCultivationV11C")>=0 || Array.IndexOf(Environment.GetCommandLineArgs(),"-foundationCultivationV11B")>=0 || Array.IndexOf(Environment.GetCommandLineArgs(),"-foundationCultivationV09UICap")>=0 || Array.IndexOf(Environment.GetCommandLineArgs(),"-foundationCultivationV09")>=0 || Array.IndexOf(Environment.GetCommandLineArgs(),"-foundationCultivationV08")>=0 || Array.IndexOf(Environment.GetCommandLineArgs(),"-foundationCultivationV07")>=0 || Array.IndexOf(Environment.GetCommandLineArgs(),"-foundationDualProgressionV06")>=0 || Array.IndexOf(Environment.GetCommandLineArgs(),"-foundationRealmV06")>=0 || Array.IndexOf(Environment.GetCommandLineArgs(),"-foundationDevelopmentV04")>=0 || Array.IndexOf(Environment.GetCommandLineArgs(),"-foundationRecoveryV03")>=0 || Array.IndexOf(Environment.GetCommandLineArgs(),"-foundationStabilityV03")>=0 || Array.IndexOf(Environment.GetCommandLineArgs(),"-foundationCameraV03")>=0 || Array.IndexOf(Environment.GetCommandLineArgs(),"-foundationGearDropV01")>=0 || Array.IndexOf(Environment.GetCommandLineArgs(),"-foundationProgressionV02")>=0)CombatBalance.ResetDevProfiles();
         yield return Resize(800,450);Call(gm,"InitHeroData",false);
         if(Array.IndexOf(Environment.GetCommandLineArgs(),"-foundationCultivationV07")>=0) {
             Require(gm.Cultivation!=null && gm.Cultivation.Current.Foundation.Amount==0 && gm.Cultivation.Current.Reserve.Amount==0,"New session starts at zero independently of Level");
@@ -640,6 +645,7 @@ public sealed partial class MainGameFoundationProbe : MonoBehaviour
         Call(gm,"DeployHero",false);yield return Ready();
         inventory=(InventoryPanelUI)Get(ui,"inventoryUI");Require(inventory!=null,"No Inventory panel.");
         ui.inventoryLayoutDebug=false;ui.inventoryUseArtTheme=false;ui.ApplyHudFromInspector();
+        if(Array.IndexOf(Environment.GetCommandLineArgs(),"-foundationCultivationV11C")>=0) {yield return CultivationV11C();yield break;}
         if(Array.IndexOf(Environment.GetCommandLineArgs(),"-foundationCultivationV11B")>=0) {yield return CultivationV11B();yield break;}
         if(Array.IndexOf(Environment.GetCommandLineArgs(),"-foundationCultivationV09UICap")>=0) {yield return CultivationV09UICap();yield break;}
         if(Array.IndexOf(Environment.GetCommandLineArgs(),"-foundationCultivationV09")>=0) {yield return CultivationV09();yield break;}

@@ -7,21 +7,25 @@ public partial class UIManager
 {
     Image cultivationTrack,cultivationFill;RectTransform cultivationUpgrade;
     bool CultivationVisible {get {var g=GameForUI();return detailKind==1 && g!=null && g.Cultivation!=null;}}
-    static string QiNumber(double n){return n.ToString("0.0",CultureInfo.InvariantCulture);}
+    static string QiNumber(double n){return n.ToString("0.0#",CultureInfo.InvariantCulture);}
     string CultivationSummary(GameManager gm)
     {
         var b=gm.Cultivation;var p=b.Profile;var s=b.Current;var realm=p.Catalog.Evaluate(s.Foundation.ActualRealmId,s.Foundation.Amount);
         CultivationRealmDefinition definition;p.Catalog.TryGet(s.Foundation.ActualRealmId,out definition);
         string stage=realm.MinorStage==RealmMinorStage.SoKy?"Sơ kỳ":realm.MinorStage==RealmMinorStage.TrungKy?"Trung kỳ":realm.MinorStage==RealmMinorStage.HauKy?"Hậu kỳ":"Viên mãn · Bình cảnh";
-        var h=gm.HeroData;
+        var h=gm.HeroData;string rates;
+        if(p.Rules.CapacityCatalog!=null){var cap=b.Capacity;var flow=b.LastStepFlow;
+            rates="\nTrần hấp thu: "+QiNumber(cap.Absorption)+"/s · thực: "+QiNumber(flow.AbsorptionPerSecond)+"/s"+
+                "\nTrần luyện hóa: "+QiNumber(cap.Refinement)+"/s · thực: "+QiNumber(flow.RefinementPerSecond)+"/s";
+        }else rates="\nHấp thu: "+QiNumber(p.EnvironmentalQiPerSecond(h.worldMapId))+"/s · Luyện hóa: ≤"+QiNumber(p.Rules.RefinementRate)+"/s";
         return (p.IsProduction?"Tu luyện · ":(p.SaveVersion==1?"[PLAYTEST v":"[THỬ NGHIỆM v")+p.Version+"] ")+"Level "+h.currentLevel+" · EXP: "+h.currentExp+"/"+h.expToNextLevel+
             "\n"+p.RealmName(s.Foundation.ActualRealmId)+" · "+stage+
             "\nTu vi căn cơ: "+QiNumber(s.Foundation.Amount)+" / "+QiNumber(definition.Thresholds[3])+"\n"+
             "\nLinh khí dự trữ: "+QiNumber(s.Reserve.Amount)+
             (p.IsProduction?" · Qi map: "+QiNumber(p.EnvironmentalQiPerSecond(h.worldMapId))+"/s":" · Mật độ: "+QiNumber(p.Density(h.worldMapId)))+
-            "\nHấp thu: "+QiNumber(p.Density(h.worldMapId)*p.Rules.AbsorptionRate*p.Rules.AbsorptionEfficiency)+"/s · Luyện hóa: ≤"+QiNumber(p.Rules.RefinementRate)+"/s"+
+            rates+
             "\nLinh lực: "+QiNumber(s.Energy.Current)+" / "+QiNumber(p.Rules.EnergyMaximum(s.Injury.Severity))+
-            "\nTinh Huyết khóa · Thiên Kiếp chưa mở · Điểm: "+h.statPoints;
+            "\nHuyết/kiếp khóa · Điểm: "+h.statPoints+(p.Rules.CapacityCatalog!=null?" · thực = bước gần nhất":"");
     }
     void LayoutCultivationTrack(float width)
     {

@@ -67,6 +67,7 @@ namespace TuTienCore
                         {reason="Invalid cultivation clock checkpoint.";return false;}
                     string sourceId=dto.configurationId;int sourceVersion=dto.configurationVersion;
                     if(v==3){var provenance=(CultivationGameplayComponentV3)dto;sourceId=provenance.clockConfigurationId;sourceVersion=provenance.clockConfigurationVersion;CultivationPlaytestProfile source;if(!CultivationProductionConfiguration.TryClockSource(sourceId,sourceVersion,profile,out source) || source.StepSeconds!=profile.StepSeconds){reason="Unsupported pending clock source configuration.";return false;}}
+                    if(c.clockRemainder>0 && profile.IsProduction){CultivationPlaytestProfile pending;if(!CultivationProductionConfiguration.TryClockSource(sourceId,sourceVersion,profile,out pending) || !pending.HasNode(c.clockNodeId)){reason="UnknownPendingQiNode";return false;}}
                     clock=new CultivationClockState(c.clockRemainder,c.clockElapsed,c.clockNodeId,sourceId,sourceVersion);
                     dto.version=1; // Domain v1 payload is unchanged; clock schema validated separately above.
                 }
@@ -93,6 +94,7 @@ namespace TuTienCore
         readonly EntityDataSO hero;readonly CultivationSession session;
         public readonly CultivationPlaytestProfile Profile;
         public bool IsDisposed {get;private set;}public CultivationSnapshot Current {get{return session.Current;}}
+        public CultivationCapacity Capacity {get{return session.Capacity;}}public CultivationStepFlow LastStepFlow {get{return session.LastStepFlow;}}
         public Guid Epoch {get{return session.Epoch;}}public Guid OwnerId {get{return session.OwnerId;}}
         public long TickCount {get;private set;}public double Density {get;private set;}
         double remainder,elapsed;string pendingNode,pendingConfigurationId;int pendingConfigurationVersion;long lastFrame=-1;string published;
