@@ -61,13 +61,14 @@ partial class MotionRegression
             Check(!Get<CustomInteractable>(ui,"allocatePhysicalInput").enabled,"new run cannot mutate retired Hero");
             ui.OpenDamageInfo();Check(!Get<RectTransform>(ui,"allocatePhysicalButton").gameObject.activeSelf,"allocation hidden on combat log");
         });
-        Run("progression realm display follows existing boundary mapping without mutation",()=>{
+        Run("progression realm display follows canonical stage boundaries without legacy promotion",()=>{
             Field f;GameManager gm;var ui=ProgressionUi(out f,out gm);var h=gm.HeroData;
-            int[] levels={1,10,11,100,101};string[] names={"Luyện Khí","Luyện Khí","Trúc Cơ","Chân Tiên","Tiên Đế"};
+            int[] levels={1,9,10,19,20,29,30,45,100,101};string[] names={"Sơ kỳ 1","Sơ kỳ 9","Trung kỳ 10","Trung kỳ 19","Hậu kỳ 20","Hậu kỳ 29","Viên mãn","Viên mãn","Viên mãn","Viên mãn"};
             ui.OpenHeroStats();for(int i=0;i<levels.Length;i++) {
                 h.currentLevel=levels[i];string before=JsonUtility.ToJson(h,false);ui.RefreshCharacterProgression();
                 string label=Get<TextMeshProUGUI>(ui,"progressionSummary").text;
-                Check(label.Contains("legacy/prototype") && label.Contains(names[i]),"level "+levels[i]+" label is explicitly legacy and derives from existing rank function");
+                Check(!label.Contains("legacy/prototype") && label.Contains("Luyện Khí") && label.Contains(names[i]) && label.Contains("Level "+levels[i]) && label.Contains("Nội bộ "+levels[i]),"canonical Level/internal/stage "+levels[i]);
+                Check(!label.Contains("Trúc Cơ") && !label.Contains("Chân Tiên") && !label.Contains("Tiên Đế"),"no legacy automatic promotion");
                 Check(JsonUtility.ToJson(h,false)==before,"presentation grants no buff or persisted realm state");
             }
         });

@@ -451,6 +451,7 @@ public class GameManager : MonoBehaviour
         runtimeHeroData.currentLevel = 1;
         runtimeHeroData.currentExp = 0;
         runtimeHeroData.expToNextLevel = 100;
+        RealmProgressionAuthority.Initialize(runtimeHeroData);
         runtimeHeroData.addedHealth = runtimeHeroData.addedDamage = runtimeHeroData.statPoints = 0;
         // New characters start with the established melee test stance.
         // Randomized combat aptitudes belong to future character generation.
