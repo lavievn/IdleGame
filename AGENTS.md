@@ -62,3 +62,14 @@ phiên Cloud đang mở có thể chưa refresh. Khi skill không xuất hiện 
 **đọc trực tiếp SKILL.md theo các liên kết ở trên**, rồi dùng reference/script
 tương ứng trong thư mục đó. Không cần cài plugin, gọi mạng hoặc tạo bản sao skill.
 Không tuyên bố auto-trigger đã được nghiệm thu nếu mới chỉ kiểm tra file.
+
+
+## Local Windows storage (07/11/2026)
+
+On hason's workstation, the active worktree is `D:/IdleGame/Project` and development
+outputs, temporary data, UPM cache and owned fixtures belong under `D:/IdleGame`.
+Use `Tools/Local-IdleGame.ps1` (or `D:/IdleGame/Launch.ps1`) for Editor, compilation,
+Mono, native verifiers and Windows builds. Do not create new IdleGame builds/caches
+under C. Older C paths are compatibility junctions; invoke the real D paths so
+owned-fixture guards do not encounter a junction ancestor. The Unity installation
+itself remains in Program Files on C. Do not use personal Saves as fixtures.
