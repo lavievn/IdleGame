@@ -18,6 +18,7 @@ partial class MotionRegression
         });
         Run("revised blood extensions add time and linear locked debt without extra healing or realm stacking",()=>{
             var c=CultivationFixture(1000,charges:3,rules:CultivationFixtureRules(refine:0));var id=ActivateFixtureBlood(c);
+            var paused=c.Current;Check(c.Tick(c.OwnerId,c.Epoch,0,5,true,100)==CultivationReason.Paused && c.Current==paused && c.Current.Burning.RemainingSeconds==30,"pause preserves active duration and all resources");
             c.Tick(c.OwnerId,c.Epoch,0,5,false,0);Check(c.Current.Burning.RemainingSeconds==25,"time consumed");
             var command=Guid.NewGuid();Check(c.ExtendBlood(c.OwnerId,c.Epoch,command,id)==CultivationReason.None && c.Current.Burning.RemainingSeconds==55,"adds30 not reset");
             Check(c.ExtendBlood(c.OwnerId,c.Epoch,command,id)==CultivationReason.DuplicateCommand,"duplicate extension no charge");
@@ -76,6 +77,7 @@ partial class MotionRegression
             var c=CultivationFixture(400,100,injury:20);c.Tick(c.OwnerId,c.Epoch,0,1,false,0);
             Check(c.Current.Foundation.Amount>400 && c.Current.Injury.Severity==20,"Qi never heals injury");double foundation=c.Current.Foundation.Amount;
             var passive=new InjuryTreatmentSession(Guid.NewGuid(),c.OwnerId,c.Epoch,InjuryTreatmentSource.PassiveNurturing,.1,1,10);
+            var paused=c.Current;Check(passive.Tick(c,0,2,true)==CultivationReason.Paused && c.Current==paused,"paused treatment cannot heal");
             Check(passive.Tick(c,0,2,false)==CultivationReason.None,"slow nurturing");Near((float)c.Current.Injury.Severity,19.8f,"separate passive healing");
             var treatmentId=Guid.NewGuid();var treatment=new InjuryTreatmentSession(treatmentId,c.OwnerId,c.Epoch,InjuryTreatmentSource.ExplicitExternalTreatment,10,5,10);
             Check(treatment.Tick(c,0,1,false)==CultivationReason.None && treatment.State==InjuryTreatmentState.Completed,"explicit fixture treatment budget");

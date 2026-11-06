@@ -370,7 +370,7 @@ public sealed class MainGameFoundationProbe : MonoBehaviour
         Require(!ReferenceEquals(old,gm.HeroData) && gm.HeroData.currentLevel==45 && gm.HeroData.statPoints==44 && gm.HeroData.realmId==legacyId && gm.HeroData.realmEntryLevel==legacyEntry,"Retained snapshot authority lost");
         ui.OpenHeroStats();yield return null;ui.RefreshCharacterProgression();Require(((TMPro.TextMeshProUGUI)Get(ui,"progressionSummary")).text.Contains(CultivationIntegrationGate.Status),"No old stage label after Load");ui.CloseDamageInfo();
         Pass("REVISED owned MainGame Save/Load keeps v1 fields/Level/points but does not create Qi/blood/debt fields or fake cultivation UI. No cultivation scheduler or Burning effect activated in game.");
-        Status(2,"PASS");Status(3,"PASS");Status(4,"PASS");
+        Status(2,"PASS"); // This gated mode covers two checks; unrelated phases stay NOT RUN.
     }
 
     IEnumerator LegacyLevelRealmV06()

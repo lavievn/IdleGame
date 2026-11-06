@@ -35,6 +35,14 @@ partial class MotionRegression
                 CultivationRealmEvaluator invalid;CultivationReason reason;
                 Check(!CultivationRealmEvaluator.TryCreate(new[]{new CultivationRealmDefinition("fixture:bad",0,thresholds)},out invalid,out reason) && invalid==null,"bad threshold catalog rejected atomically");
             }
+            foreach(var definitions in new[]{
+                new[]{new CultivationRealmDefinition("duplicate",0,new[]{0d,1,2,3}),new CultivationRealmDefinition("duplicate",1,new[]{0d,1,2,3})},
+                new[]{new CultivationRealmDefinition("a",0,new[]{0d,1,2,3}),new CultivationRealmDefinition("b",0,new[]{0d,1,2,3})},
+                new[]{new CultivationRealmDefinition("bad-capacity",0,new[]{0d,1,2,3},true,new[]{1,2,2,4},true)},
+                new[]{new CultivationRealmDefinition("bad-entry-capacity",0,new[]{0d,1,2,3},true,new[]{2,3,4,5},true)}}) {
+                CultivationRealmEvaluator invalid;CultivationReason reason;
+                Check(!CultivationRealmEvaluator.TryCreate(definitions,out invalid,out reason) && invalid==null,"duplicate ID/tier or invalid blood capacity catalog rejects atomically");
+            }
             Check(!catalog.Evaluate("unknown",0).IsValid && !catalog.Evaluate("fixture:kim-dan",-1).IsValid,"invalid realm/foundation");
         });
         Run("revised Qi absorption refinement and bottleneck conserve reserve without kill dependency",()=>{
