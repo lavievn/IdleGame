@@ -1,0 +1,23 @@
+{
+  "schemaVersion": 1,
+  "version": 1,
+  "id": "playtest:cultivation-v07",
+  "title": "Tu luyện thử nghiệm v0.7",
+  "startingRealm": "realm:luyen-khi",
+  "realms": [
+    { "id": "realm:luyen-khi", "name": "Luyện Khí", "tier": 0, "successor": "", "thresholds": [0, 6, 12, 20] }
+  ],
+  "qiSources": [
+    { "nodeId": "TV-20", "density": 3 },
+    { "nodeId": "TV-18", "density": 5 }
+  ],
+  "fallbackDensity": 2,
+  "absorptionRate": 1,
+  "absorptionEfficiency": 1,
+  "refinementRate": 1,
+  "refinementEfficiency": 1,
+  "maximumFrameSeconds": 0.5,
+  "stepSeconds": 0.1,
+  "maximumEnergy": 100,
+  "recoveryRate": 2
+}
