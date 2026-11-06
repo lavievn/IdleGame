@@ -662,10 +662,8 @@ public partial class UIManager : MonoBehaviour
             var gm=GameForUI();var data=gm!=null?gm.HeroData:null;
             var state=CombatManager.Instance!=null?CombatManager.Instance.CurrentHeroCombatState:null;
             string health=state!=null && state.Data==data?state.CurrentHP+"/"+state.MaxHP:"—";
-            TuTienCore.RealmProgressionResult realm;
-            bool realmValid=RealmProgressionAuthority.TryEvaluate(data,out realm);
-            if(progressionSummary!=null)progressionSummary.text=(data==null?"Chưa có nhân vật.":"Level "+data.currentLevel+" · "+RealmProgressionAuthority.Describe(data)+
-                "\nNội bộ "+(realmValid?realm.InternalLevel.ToString():"—")+(realmValid && realm.AtBottleneck?" · Bình cảnh":"")+" · Điểm thuộc tính: "+data.statPoints+
+            if(progressionSummary!=null)progressionSummary.text=(data==null?"Chưa có nhân vật.":"Level "+data.currentLevel+" · "+LegacyRealmSnapshotCompatibility.Describe(data)+
+                "\nTu luyện mới chưa kích hoạt · Điểm thuộc tính: "+data.statPoints+
                 "\nHP: "+health+" · Physical Attack: "+WeaponBasicAttack.Physical(data)+" · EXP: "+data.currentExp+"/"+data.expToNextLevel)+"\n"+CharacterSourceStatus;
             bool can=gm!=null && gm.CanAllocateHeroAttribute;
             SetAllocationEnabled(allocateHealthInput,can);SetAllocationEnabled(allocatePhysicalInput,can);

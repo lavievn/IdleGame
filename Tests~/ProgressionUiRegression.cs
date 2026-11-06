@@ -61,13 +61,13 @@ partial class MotionRegression
             Check(!Get<CustomInteractable>(ui,"allocatePhysicalInput").enabled,"new run cannot mutate retired Hero");
             ui.OpenDamageInfo();Check(!Get<RectTransform>(ui,"allocatePhysicalButton").gameObject.activeSelf,"allocation hidden on combat log");
         });
-        Run("progression realm display follows canonical stage boundaries without legacy promotion",()=>{
+        Run("progression Level cannot infer cultivation while production configuration gate is closed",()=>{
             Field f;GameManager gm;var ui=ProgressionUi(out f,out gm);var h=gm.HeroData;
-            int[] levels={1,9,10,19,20,29,30,45,100,101};string[] names={"Sơ kỳ 1","Sơ kỳ 9","Trung kỳ 10","Trung kỳ 19","Hậu kỳ 20","Hậu kỳ 29","Viên mãn","Viên mãn","Viên mãn","Viên mãn"};
+            int[] levels={1,9,10,19,20,29,30,45,100,101};
             ui.OpenHeroStats();for(int i=0;i<levels.Length;i++) {
                 h.currentLevel=levels[i];string before=JsonUtility.ToJson(h,false);ui.RefreshCharacterProgression();
                 string label=Get<TextMeshProUGUI>(ui,"progressionSummary").text;
-                Check(!label.Contains("legacy/prototype") && label.Contains("Luyện Khí") && label.Contains(names[i]) && label.Contains("Level "+levels[i]) && label.Contains("Nội bộ "+levels[i]),"canonical Level/internal/stage "+levels[i]);
+                Check(label.Contains("Luyện Khí") && label.Contains(CultivationIntegrationGate.Status) && label.Contains("Level "+levels[i]) && !label.Contains("Nội bộ") && !label.Contains("Viên mãn") && !label.Contains("Sơ kỳ") && !CultivationIntegrationGate.ProductionEnabled,"no inferred cultivation from Level "+levels[i]);
                 Check(!label.Contains("Trúc Cơ") && !label.Contains("Chân Tiên") && !label.Contains("Tiên Đế"),"no legacy automatic promotion");
                 Check(JsonUtility.ToJson(h,false)==before,"presentation grants no buff or persisted realm state");
             }

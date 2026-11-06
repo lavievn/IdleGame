@@ -94,7 +94,7 @@ public class SaveManager : MonoBehaviour
         if (entityData == null) return false;
         string reason;
         if (!EquipmentFoundation.TryValidateSaveVersions(entityData, out reason) ||
-            !RealmProgressionAuthority.TryValidate(entityData.realmComponentVersion,entityData.realmId,entityData.realmEntryLevel,entityData.currentLevel,out reason))
+            !LegacyRealmSnapshotCompatibility.TryValidate(entityData.realmComponentVersion,entityData.realmId,entityData.realmEntryLevel,entityData.currentLevel,out reason))
         {
             Debug.LogWarning("[SaveManager] Refusing save: " + reason);
             return false;
@@ -188,12 +188,12 @@ public class SaveManager : MonoBehaviour
                         slot + "; refusing to resume a mixed-era character.");
                     return false;
                 }
-                if(legacyRealm)RealmProgressionAuthority.Initialize(entityData);
+                if(legacyRealm)LegacyRealmSnapshotCompatibility.Initialize(entityData);
                 else if(entityData.realmComponentVersion!=realm.realmComponentVersion || entityData.realmId!=realm.realmId || entityData.realmEntryLevel!=realm.realmEntryLevel)
                 {
                     Debug.LogError("[SaveManager] Incomplete Realm restore; refusing mixed state.");return false;
                 }
-                if(!RealmProgressionAuthority.TryValidate(entityData.realmComponentVersion,entityData.realmId,entityData.realmEntryLevel,entityData.currentLevel,out reason))
+                if(!LegacyRealmSnapshotCompatibility.TryValidate(entityData.realmComponentVersion,entityData.realmId,entityData.realmEntryLevel,entityData.currentLevel,out reason))
                 {
                     Debug.LogWarning("[SaveManager] Invalid restored Realm: "+reason);return false;
                 }
@@ -373,7 +373,7 @@ public class SaveManager : MonoBehaviour
             legacy=!hasVersion && !hasId && !hasEntry;
             if(!legacy && !(hasVersion && hasId && hasEntry)) {reason="Incomplete Realm component.";return false;}
             if(legacy)return true; // Conservative migration happens only on the loaded candidate.
-            return RealmProgressionAuthority.TryValidate(probe.realmComponentVersion,probe.realmId,probe.realmEntryLevel,probe.currentLevel,out reason);
+            return LegacyRealmSnapshotCompatibility.TryValidate(probe.realmComponentVersion,probe.realmId,probe.realmEntryLevel,probe.currentLevel,out reason);
         }
         catch(Exception ex) {probe=null;reason="Cannot read Realm component: "+ex.Message;return false;}
     }

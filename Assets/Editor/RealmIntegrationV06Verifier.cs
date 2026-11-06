@@ -39,7 +39,7 @@ public static class RealmIntegrationV06Verifier
             Require(EquipmentRuntime.Equip(source,gear.instanceId,EquipmentSlot.Weapon),"Native fixture equipped gear with real modifiers");
             Require(WorldMapCatalog.StartNew(source),"fixture world");source.worldMapWaveProgress=3;source.worldMapLoopWave=4;source.completedWavesInMap=3;source.gold=9876543210L;
             source.NormalizeRoots();source.NormalizeMapProgress();source.NormalizeCombatStats();EquipmentInventory.Normalize(source);EquipmentRuntime.Normalize(source);
-            RealmProgressionAuthority.Initialize(source);
+            LegacyRealmSnapshotCompatibility.Initialize(source);
             int sourceAttack=WeaponBasicAttack.Physical(source),sourceModifierCount=source.combatStatModifiers.Count;
             Require(sourceModifierCount>0 && sourceAttack==source.baseDamage+source.addedDamage+4,"Nonempty modifier fixture must add exactly four Physical");
             string current=JsonUtility.ToJson(source,true),legacy=StripRealm(current);string slot=Path.Combine(directory,"ManualSave1.json");
@@ -49,18 +49,18 @@ public static class RealmIntegrationV06Verifier
             File.WriteAllText(Path.Combine(root,"loaded-diagnostic.json"),JsonUtility.ToJson(loaded,true));
             File.WriteAllText(Path.Combine(root,"source-diagnostic.json"),current);
             Debug.Log("[REALM V06 NATIVE] Observed legacy state version="+loaded.realmComponentVersion+" id="+loaded.realmId+" entry="+loaded.realmEntryLevel+" level="+loaded.currentLevel+" exp="+loaded.currentExp);
-            Require(loaded.realmComponentVersion==1 && loaded.realmId==RealmProgressionAuthority.LuyenKhiId && loaded.realmEntryLevel==1 && loaded.currentLevel==45 && loaded.currentExp==source.currentExp,"Conservative legacy migration, not template realm");
+            Require(loaded.realmComponentVersion==1 && loaded.realmId==LegacyRealmSnapshotCompatibility.LuyenKhiId && loaded.realmEntryLevel==1 && loaded.currentLevel==45 && loaded.currentExp==source.currentExp,"Conservative legacy migration, not template realm");
             Require(StripRealm(JsonUtility.ToJson(loaded,true),true)==StripRealm(current,true),"Legacy migration preserves all unrelated serialized fields");
             Require(File.ReadAllText(slot)==legacy,"Load does not rewrite legacy file");
             Require(saves.SaveGame(loaded,SaveSlot.ManualSave1),"Save migrated candidate");string migrated=File.ReadAllText(slot);
             Require(migrated.Contains("\"realmComponentVersion\": 1") && migrated.Contains("\"realmId\": \"realm:luyen-khi\"") && migrated.Contains("\"realmEntryLevel\": 1"),"Migrated component fields actually persisted in JSON");
-            for(int i=0;i<3;i++)Require(saves.LoadGame(loaded,SaveSlot.ManualSave1) && loaded.realmEntryLevel==1 && loaded.realmId==RealmProgressionAuthority.LuyenKhiId && loaded.currentLevel==45 && loaded.currentExp==source.currentExp,"Repeated current Load idempotent");
+            for(int i=0;i<3;i++)Require(saves.LoadGame(loaded,SaveSlot.ManualSave1) && loaded.realmEntryLevel==1 && loaded.realmId==LegacyRealmSnapshotCompatibility.LuyenKhiId && loaded.currentLevel==45 && loaded.currentExp==source.currentExp,"Repeated current Load idempotent");
             Require(StripRealm(JsonUtility.ToJson(loaded,true),true)==StripRealm(current,true),"Current roundtrip preserves all other fields/modifiers");
             Require(WeaponBasicAttack.Physical(loaded)==sourceAttack && loaded.combatStatModifiers.Count==sourceModifierCount,"Repeated native Load must not duplicate equipped modifiers");
             result.checks.Add("Legacy/current/native JsonUtility, contaminated template, repeated loads, no file rewrite on Load; all unrelated JSON fields preserved.");
             string slot2=Path.Combine(directory,"ManualSave2.json");
             foreach(string bad in new[]{current.Replace("\"realmComponentVersion\": 1","\"realmComponentVersion\": 2"),
-                current.Replace(RealmProgressionAuthority.LuyenKhiId,"realm:unknown"),current.Replace("\"realmEntryLevel\": 1","\"realmEntryLevel\": 46"),
+                current.Replace(LegacyRealmSnapshotCompatibility.LuyenKhiId,"realm:unknown"),current.Replace("\"realmEntryLevel\": 1","\"realmEntryLevel\": 46"),
                 current.Replace("\"realmEntryLevel\": 1","\"realmEntryLevel\": 0"),current.Replace("\"realmComponentVersion\": 1","\"realmComponentVersion\": -2147483648"),
                 current.Replace("\"realmComponentVersion\": 1","\"realmComponentVersion\": -2147483648").Replace("\"realmEntryLevel\": 1","\"realmEntryLevel\": -2147483648").Replace("\"realmId\": \"realm:luyen-khi\"","\"realmId\": null"),
                 System.Text.RegularExpressions.Regex.Replace(current,@"^\s*""realmEntryLevel""\s*:[^\r\n]*\r?\n?","",System.Text.RegularExpressions.RegexOptions.Multiline)})
@@ -72,7 +72,7 @@ public static class RealmIntegrationV06Verifier
             result.checks.Add("Future version, unknown ID, entry0/after-Level, explicit int.Min version and partial component rejected before mutation; existing invalid/future snapshot preserved.");
             string validBefore=File.ReadAllText(slot);loaded.realmId="realm:invalid";
             Require(!saves.SaveGame(loaded,SaveSlot.ManualSave1) && File.ReadAllText(slot)==validBefore,"Typed invalid Realm save preserves valid file");
-            loaded.realmId=RealmProgressionAuthority.LuyenKhiId;
+            loaded.realmId=LegacyRealmSnapshotCompatibility.LuyenKhiId;
             string temp=Path.Combine(directory,"ManualSave1.tmp");Directory.CreateDirectory(temp);
             Require(!saves.SaveGame(source,SaveSlot.ManualSave1) && File.ReadAllText(slot)==validBefore,"Write failure before commit preserves previous snapshot");Directory.Delete(temp);
             result.checks.Add("Invalid typed Save and injected .tmp-directory write failure leave previous .json bytes unchanged; existing atomic writer retained.");

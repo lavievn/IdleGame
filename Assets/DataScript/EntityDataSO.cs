@@ -7,9 +7,9 @@ public class EntityDataSO : ScriptableObject
 {
     public string entityName = "Vô Danh";
     public int currentLevel = 1;
-    // Only canonical Realm fields persist. Minor stage/internal level are derived.
-    public int realmComponentVersion = RealmProgressionAuthority.ComponentVersion;
-    public string realmId = RealmProgressionAuthority.LuyenKhiId;
+    // Retained v1 Save metadata only; NOT authority for the revised cultivation system.
+    public int realmComponentVersion = LegacyRealmSnapshotCompatibility.ComponentVersion;
+    public string realmId = LegacyRealmSnapshotCompatibility.LuyenKhiId;
     public int realmEntryLevel = 1;
     public int currentExp = 0;
     public int expToNextLevel = 100;
