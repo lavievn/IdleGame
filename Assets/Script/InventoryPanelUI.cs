@@ -894,7 +894,7 @@ public sealed class InventoryPanelUI : MonoBehaviour
         }
         else
         {
-            summary.text=lastHeight<440 ?
+            summary.text=summary.rectTransform.rect.height<30f ?
                 "Cấp "+hero.currentLevel+" · Đã mặc "+CountWorn(hero)+"/8" :
                 "Cấp "+hero.currentLevel+" · Vàng "+hero.gold+
                 "\nHP "+hero.GetCalculatedHealth(WeaponBasicAttack.Resolve(hero))+
@@ -961,7 +961,7 @@ public sealed class InventoryPanelUI : MonoBehaviour
     private static string ShortName(string name)
     {
         if(string.IsNullOrEmpty(name))return "?";
-        return name.Length>13 ? name.Substring(0,12)+"…" : name;
+        return name.Length>10 ? name.Substring(0,9)+"…" : name;
     }
     private static int CountWorn(EntityDataSO hero)
     {
@@ -1032,7 +1032,7 @@ public sealed class InventoryPanelUI : MonoBehaviour
         Place(FindButton("InventoryPrev"),w-94f,64f,40f,26f);
         Place(FindButton("InventoryNext"),w-51f,64f,40f,26f);
         float slotW=(left-16f)/2f;
-        float slotH=Mathf.Max(27f,Mathf.Min(48f,(h-185f)/4f-4f));
+        float slotH=Mathf.Max(25f,Mathf.Min(48f,(h-210f)/4f));
         float slotStep=slotH+4f;
         for(int i=0;i<Slots.Length;i++)
             Place(slotButtons[i],8f+(i%2)*(slotW+2f),
@@ -1411,6 +1411,12 @@ public sealed class InventoryPanelUI : MonoBehaviour
         }
     }
 
+    static void FitCaption(TextMeshProUGUI text,float minimum)
+    {
+        if(text==null)return;
+        text.enableWordWrapping=false;text.enableAutoSizing=true;
+        text.fontSizeMin=minimum;text.fontSizeMax=14f;
+    }
     public void StyleText()
     {
         if(root==null)return;
@@ -1434,6 +1440,10 @@ public sealed class InventoryPanelUI : MonoBehaviour
         header.alignment=TextAlignmentOptions.Left;
         header.color=new Color(.88f,.75f,.48f,1f);
         bagStatus.color=new Color(.50f,.83f,.75f,1f);
+        // Explicit two-line slot/bag captions fit their actual width instead of wrapping a name onto a third line.
+        foreach(var caption in slotTexts)FitCaption(caption,10f);
+        foreach(var caption in bagTexts)FitCaption(caption,10f);
+        FitCaption(summary,9f);
         summary.alignment=TextAlignmentOptions.TopLeft;
         detail.alignment=TextAlignmentOptions.TopLeft;
         bagStatus.alignment=TextAlignmentOptions.Left;

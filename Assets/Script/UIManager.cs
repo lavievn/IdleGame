@@ -24,7 +24,7 @@ public partial class UIManager : MonoBehaviour
 
     [Header("0.0.52 UI WORKSPACE - DO KICH THUOC ASSET")]
     [Tooltip("Bật hướng dẫn đo Cao x Rộng trực tiếp trên cửa sổ Kho đồ.")]
-    public bool inventoryLayoutDebug = true;
+    public bool inventoryLayoutDebug = false;
     [Tooltip("Lớp phủ xanh tối trong suốt. Chỉ để đo bố cục, không nhận click.")]
     public Color inventoryDebugFill = new Color(.035f,.17f,.20f,.16f);
     [Tooltip("Viền xanh ngọc để xác định đúng kích thước từng RectTransform.")]

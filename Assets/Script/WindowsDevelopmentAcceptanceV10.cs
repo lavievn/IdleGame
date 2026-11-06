@@ -79,13 +79,16 @@ public sealed class WindowsDevelopmentAcceptanceV10:MonoBehaviour
         Canvas.ForceUpdateCanvases();if(space!=null)space.SyncBattleProjection();
     }
     IEnumerator Capture(string name){yield return new WaitForEndOfFrame();ScreenCapture.CaptureScreenshot(Path.Combine(Evidence,name+".png"));yield return new WaitForSecondsRealtime(.1f);}
-    IEnumerator Panel(string name,int w,int h){yield return Resize(w,h);foreach(var text in UnityEngine.Object.FindObjectsByType<TextMeshProUGUI>(FindObjectsSortMode.None)){if(!text.isActiveAndEnabled)continue;text.ForceMeshUpdate();if(text.isTextOverflowing)result.uiIssues.Add(name+" "+w+"x"+h+" TMP overflow: "+text.transform.parent.gameObject.name+"/"+text.text);}yield return Capture(name+"-"+w);}
+    IEnumerator Panel(string name,int w,int h){yield return Resize(w,h);foreach(var text in UnityEngine.Object.FindObjectsByType<TextMeshProUGUI>(FindObjectsSortMode.None)){if(!text.isActiveAndEnabled)continue;Require(text.gameObject.name!="LayoutGuideLabel","No unintended Inventory debug guide");text.ForceMeshUpdate();if(text.isTextOverflowing)result.uiIssues.Add(name+" "+w+"x"+h+" TMP overflow: "+text.transform.parent.gameObject.name+"/"+text.text);}if(name=="inventory-equipment"){
+            var summary=(TextMeshProUGUI)Get(inventory,"summary");var button=Find("InventoryGrantCharms");var a=new Vector3[4];var b=new Vector3[4];summary.rectTransform.GetWorldCorners(a);button.GetWorldCorners(b);
+            Require(a[0].y>=b[1].y+1,"Inventory summary must remain above footer buttons at"+w);
+        }yield return Capture(name+"-"+w);}
     void WriteResult(){File.WriteAllText(Path.Combine(Evidence,"player-result.json"),JsonUtility.ToJson(result,true));}
     IEnumerator Run()
     {
         yield return new WaitForSecondsRealtime(1);
         gm=UnityEngine.Object.FindFirstObjectByType<GameManager>();saves=SaveManager.Instance;ui=UIManager.Instance;hero=UnityEngine.Object.FindFirstObjectByType<HeroController>();combat=UnityEngine.Object.FindFirstObjectByType<CombatManager>();space=UnityEngine.Object.FindFirstObjectByType<EnvironmentManager>();
-        Require(gm!=null && saves!=null && ui!=null && Debug.isDebugBuild,"Real development Player managers");AssertIsolated();result.saveDirectory=saves.SaveDirectory;
+        Require(gm!=null && saves!=null && ui!=null && Debug.isDebugBuild,"Real development Player managers");Require(!ui.inventoryLayoutDebug,"Player Inventory debug layout is off by default");AssertIsolated();result.saveDirectory=saves.SaveDirectory;
         Require(saves.CultivationProfile!=null && saves.CultivationProfile.IsProduction && Resources.Load<TextAsset>("WorldQiDistributionV1")!=null,"Packaged default production resources");
         if(result.mode=="replay"){
             string component,error;Require(CultivationGameplayState.TryReadHeroJson(File.ReadAllText(Path.Combine(SavePath,"ManualSave2.json")),saves.CultivationProfile,out component,out error),"Restart source");
