@@ -1,5 +1,7 @@
 # Backlog triển khai sau v0.4
 
+> **SUPERSEDED phần Realm/Level — v0.6 REVISED, 06/11/2026.** Quy tắc suy tu vi/tiểu cảnh giới từ Total Level/entry Level đã bị hủy. Nội dung dưới đây giữ làm lịch sử; dùng [Dual Progression V1](DUAL_PROGRESSION_CONTRACT_V1.md), [Blood Essence V1](BLOOD_ESSENCE_CONTRACT_V1.md) và [báo cáo revised](../automation-reports/DUAL_PROGRESSION_V06_REPORT.md) cho API/authority hiện tại. Các phần Martial/Boss độc lập không bị thay thế bởi banner này.
+
 ## Phạm vi và cách giao việc
 
 **PROPOSED — chưa phê duyệt để tự triển khai.** Cập nhật 06/11/2026. Đây là kết quả B4, không mở tiếp gameplay sau khi batch v0.4 kết thúc. Nguồn: [realm](REALM_PROGRESSION_CONTRACT.md), [võ học/công pháp](MARTIAL_ARTS_CONTRACT.md), [boss](BOSS_ENCOUNTER_CONTRACT.md), mã đến `0b66288`.

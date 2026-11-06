@@ -1,5 +1,7 @@
 # Realm → Save/Load: ghi chú tích hợp v0.5
 
+> **SUPERSEDED phần Realm/Level — v0.6 REVISED, 06/11/2026.** Quy tắc suy tu vi/tiểu cảnh giới từ Total Level/entry Level đã bị hủy. Nội dung dưới đây giữ làm lịch sử; dùng [Dual Progression V1](DUAL_PROGRESSION_CONTRACT_V1.md), [Blood Essence V1](BLOOD_ESSENCE_CONTRACT_V1.md) và [báo cáo revised](../automation-reports/DUAL_PROGRESSION_V06_REPORT.md) cho API/authority hiện tại. Các phần Martial/Boss độc lập không bị thay thế bởi banner này.
+
 06/11/2026. **IMPLEMENTED:** evaluator/transition thuần và DTO fixture. **PROPOSED/BLOCKED:** tích hợp Save production, chưa được cấp quyền thay schema.
 
 ## Mã hiện có và authority

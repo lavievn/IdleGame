@@ -1,5 +1,7 @@
 # Hợp đồng tiến trình cảnh giới chính thức
 
+> **SUPERSEDED phần Realm/Level — v0.6 REVISED, 06/11/2026.** Quy tắc suy tu vi/tiểu cảnh giới từ Total Level/entry Level đã bị hủy. Nội dung dưới đây giữ làm lịch sử; dùng [Dual Progression V1](DUAL_PROGRESSION_CONTRACT_V1.md), [Blood Essence V1](BLOOD_ESSENCE_CONTRACT_V1.md) và [báo cáo revised](../automation-reports/DUAL_PROGRESSION_V06_REPORT.md) cho API/authority hiện tại. Các phần Martial/Boss độc lập không bị thay thế bởi banner này.
+
 ## Trạng thái và mốc đối chiếu
 
 **PROPOSED — thiết kế kỹ thuật v0.4, chưa phê duyệt để triển khai.** Ngày 05–06/11/2026; nguồn `ba86368`, đối chiếu lại sau `e1fe9e9` và `0b66288`. Hai commit v0.4 không thêm state cảnh giới hoặc Save. Các tên field/API dưới đây là đề xuất, chưa tồn tại trong production.
