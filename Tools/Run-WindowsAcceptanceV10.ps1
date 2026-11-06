@@ -30,25 +30,25 @@ if($Mode -eq 'Build'){
  $p.WaitForExit();if($p.ExitCode -ne 0){throw "Build failed: $($p.ExitCode); see build.log"};Get-Content -LiteralPath (Join-Path $build 'build-result.json');exit 0
 }
 if(!(Test-Path -LiteralPath $exe)){throw 'Build first'}
-$profiles=Join-Path $out 'profiles';Assert-NoReparse $profiles;New-Item -ItemType Directory -Path $profiles -Force | Out-Null
-$pm=Join-Path $profiles '.owned-player-root';if(Test-Path -LiteralPath $pm){if([IO.File]::ReadAllText($pm) -ne $marker){throw 'Wrong profile parent owner'}}else{[IO.File]::WriteAllText($pm,$marker)}
-$profile=Join-Path $profiles ('idlegame-v10-'+[guid]::NewGuid().ToString('N'));New-Item -ItemType Directory -Path $profile | Out-Null
-[IO.File]::WriteAllText((Join-Path $profile '.owner'),$marker)
+$ownedProfilesRoot=Join-Path $out 'profiles';Assert-NoReparse $ownedProfilesRoot;New-Item -ItemType Directory -Path $ownedProfilesRoot -Force | Out-Null
+$pm=Join-Path $ownedProfilesRoot '.owned-player-root';if(Test-Path -LiteralPath $pm){if([IO.File]::ReadAllText($pm) -ne $marker){throw 'Wrong profile parent owner'}}else{[IO.File]::WriteAllText($pm,$marker)}
+$ownedProfilePath=Join-Path $ownedProfilesRoot ('idlegame-v10-'+[guid]::NewGuid().ToString('N'));New-Item -ItemType Directory -Path $ownedProfilePath | Out-Null
+[IO.File]::WriteAllText((Join-Path $ownedProfilePath '.owner'),$marker)
 if($Mode -eq 'Replay'){
  if(![IO.Path]::IsPathFullyQualified($ReplayProfile)){throw 'Absolute owned replay profile required'}
  Assert-NoReparse $ReplayProfile
  if((Split-Path $ReplayProfile -Leaf) -notmatch '^idlegame-v10-[0-9a-f]{32}$' -or [IO.File]::ReadAllText((Join-Path $ReplayProfile '.owner')) -ne $marker -or [IO.File]::ReadAllText((Join-Path (Split-Path $ReplayProfile -Parent) '.owned-player-root')) -ne $marker){throw 'Unowned replay source'}
- $dest=Join-Path $profile 'saves';New-Item -ItemType Directory -Path $dest | Out-Null
+ $dest=Join-Path $ownedProfilePath 'saves';New-Item -ItemType Directory -Path $dest | Out-Null
  $files=@('ManualSave2.json','ManualSave2.cultivation-migration.json');$files+=@(Get-ChildItem -LiteralPath (Join-Path $ReplayProfile 'saves') -Filter 'ManualSave2.cultivation-*.legacy.bak' -File | ForEach-Object {$_.Name})
  foreach($file in $files){$source=Join-Path $ReplayProfile ('saves/'+$file);if((Get-Item -LiteralPath $source).Attributes -band [IO.FileAttributes]::ReparsePoint){throw 'Linked replay file refused'};Copy-Item -LiteralPath $source -Destination (Join-Path $dest $file)}
 }
 $head=git -C $project rev-parse HEAD;$runMode=if($Mode -eq 'Replay'){'replay'}elseif($Mode -eq 'Manual'){'observe'}else{'matrix'}
-$player=Start-Process -FilePath $exe -ArgumentList @('-ownedV10Root',('"'+$profile+'"'),'-ownedV10Mode',$runMode,'-ownedV10Head',$head,'-logFile',('"'+(Join-Path $profile 'player.log')+'"'),'-screen-fullscreen','0') -WindowStyle Hidden -PassThru
-Write-Output "OWNED_PROFILE $profile";Write-Output "OWNED_PLAYER_PID $($player.Id)"
+$player=Start-Process -FilePath $exe -ArgumentList @('-ownedV10Root',('"'+$ownedProfilePath+'"'),'-ownedV10Mode',$runMode,'-ownedV10Head',$head,'-logFile',('"'+(Join-Path $ownedProfilePath 'player.log')+'"'),'-screen-fullscreen','0') -WindowStyle Hidden -PassThru
+Write-Output "OWNED_PROFILE $ownedProfilePath";Write-Output "OWNED_PLAYER_PID $($player.Id)"
 if($Mode -eq 'Manual'){exit 0}
 if(!$player.WaitForExit(240000)){
  if([IO.Path]::GetFullPath($player.MainModule.FileName) -ne [IO.Path]::GetFullPath($exe)){throw 'Refusing to stop unexpected process'}
  $player.Kill();$player.WaitForExit();throw 'Owned acceptance timed out; stopped only the process launched above'
 }
-if($player.ExitCode -ne 0){Get-Content -LiteralPath (Join-Path $profile 'player.log') -Tail 25;throw "Player failed: $($player.ExitCode)"}
-Get-Content -LiteralPath (Join-Path $profile 'evidence/player-result.json')
+if($player.ExitCode -ne 0){Get-Content -LiteralPath (Join-Path $ownedProfilePath 'player.log') -Tail 25;throw "Player failed: $($player.ExitCode)"}
+Get-Content -LiteralPath (Join-Path $ownedProfilePath 'evidence/player-result.json')
