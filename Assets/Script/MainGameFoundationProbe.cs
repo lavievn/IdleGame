@@ -13,7 +13,7 @@ using TuTienCore;
 
 // Explicit CLI integration verifier, never a startup hook or a Player feature.
 // Runs the real MainGame on an ignored scene copy and a marker-owned save path.
-public sealed class MainGameFoundationProbe : MonoBehaviour
+public sealed partial class MainGameFoundationProbe : MonoBehaviour
 {
     public GameObject saveOwner;
     public string profileRoot;
@@ -121,6 +121,11 @@ public sealed class MainGameFoundationProbe : MonoBehaviour
         Require(File.ReadAllText(Path.Combine(profileRoot,".owner"))==Marker,"Missing ownership marker.");
         Require(saveOwner!=null && !saveOwner.activeSelf,"Save owner must be inactive before Awake.");
         saves=saveOwner.GetComponent<SaveManager>();saves.ConfigureSaveDirectoryBeforeAwake(SavePath);
+        if(Array.IndexOf(Environment.GetCommandLineArgs(),"-foundationCultivationV07")>=0) {
+            var profile=CultivationPlaytestBootstrap.ReadProfile(File.ReadAllText("Assets/Editor/CultivationPlaytestV07.json"));
+            saves.ConfigureCultivationPlaytestBeforeAwake(profile,true);
+            saveOwner.GetComponent<GameManager>().ConfigureCultivationPlaytest(profile);
+        }
         saveOwner.SetActive(true);AssertIsolated();
         result.unity=Application.unityVersion;result.sourceHead=sourceHead;result.profile=profileRoot;result.evidence=Evidence;
         Application.logMessageReceived+=ObserveLog;
@@ -608,10 +613,16 @@ public sealed class MainGameFoundationProbe : MonoBehaviour
         AssertIsolated();ui.IsolatedValidationProfile=true;
         // A personal DEVB file may otherwise hide the level-1 gear increment.
         // Reset only static state inside this disposable test process; no file write.
-        if(Array.IndexOf(Environment.GetCommandLineArgs(),"-foundationDualProgressionV06")>=0 || Array.IndexOf(Environment.GetCommandLineArgs(),"-foundationRealmV06")>=0 || Array.IndexOf(Environment.GetCommandLineArgs(),"-foundationDevelopmentV04")>=0 || Array.IndexOf(Environment.GetCommandLineArgs(),"-foundationRecoveryV03")>=0 || Array.IndexOf(Environment.GetCommandLineArgs(),"-foundationStabilityV03")>=0 || Array.IndexOf(Environment.GetCommandLineArgs(),"-foundationCameraV03")>=0 || Array.IndexOf(Environment.GetCommandLineArgs(),"-foundationGearDropV01")>=0 || Array.IndexOf(Environment.GetCommandLineArgs(),"-foundationProgressionV02")>=0)CombatBalance.ResetDevProfiles();
-        yield return Resize(800,450);Call(gm,"InitHeroData",false);Call(gm,"DeployHero",false);yield return Ready();
+        if(Array.IndexOf(Environment.GetCommandLineArgs(),"-foundationCultivationV07")>=0 || Array.IndexOf(Environment.GetCommandLineArgs(),"-foundationDualProgressionV06")>=0 || Array.IndexOf(Environment.GetCommandLineArgs(),"-foundationRealmV06")>=0 || Array.IndexOf(Environment.GetCommandLineArgs(),"-foundationDevelopmentV04")>=0 || Array.IndexOf(Environment.GetCommandLineArgs(),"-foundationRecoveryV03")>=0 || Array.IndexOf(Environment.GetCommandLineArgs(),"-foundationStabilityV03")>=0 || Array.IndexOf(Environment.GetCommandLineArgs(),"-foundationCameraV03")>=0 || Array.IndexOf(Environment.GetCommandLineArgs(),"-foundationGearDropV01")>=0 || Array.IndexOf(Environment.GetCommandLineArgs(),"-foundationProgressionV02")>=0)CombatBalance.ResetDevProfiles();
+        yield return Resize(800,450);Call(gm,"InitHeroData",false);
+        if(Array.IndexOf(Environment.GetCommandLineArgs(),"-foundationCultivationV07")>=0) {
+            Require(gm.Cultivation!=null && gm.Cultivation.Current.Foundation.Amount==0 && gm.Cultivation.Current.Reserve.Amount==0,"New session starts at zero independently of Level");
+            gm.HeroData.worldMapId="TV-20";WorldMapCatalog.Normalize(gm.HeroData); // Explicit starting-node fixture.
+        }
+        Call(gm,"DeployHero",false);yield return Ready();
         inventory=(InventoryPanelUI)Get(ui,"inventoryUI");Require(inventory!=null,"No Inventory panel.");
         ui.inventoryLayoutDebug=false;ui.inventoryUseArtTheme=false;ui.ApplyHudFromInspector();
+        if(Array.IndexOf(Environment.GetCommandLineArgs(),"-foundationCultivationV07")>=0) {yield return CultivationV07();yield break;}
         if(Array.IndexOf(Environment.GetCommandLineArgs(),"-foundationDualProgressionV06")>=0) {yield return DualProgressionV06();yield break;}
         if(Array.IndexOf(Environment.GetCommandLineArgs(),"-foundationRealmV06")>=0)throw new InvalidOperationException("Retired Level-based verifier. Use -foundationDualProgressionV06.");
         if(Array.IndexOf(Environment.GetCommandLineArgs(),"-foundationDevelopmentV04")>=0) {yield return DevelopmentV04();yield break;}
