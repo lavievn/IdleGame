@@ -52,7 +52,7 @@ namespace TuTienCore
             if(capacity==0 || blood.Charges>=capacity)return blood; // Hold excess charges; no deletion, no accrual at/over cap.
             double total=blood.AccumulationProgress+progress;int room=capacity-blood.Charges;
             int grants=(int)Math.Min(room,Math.Floor(total));int charges=blood.Charges+grants;
-            return new BloodEssenceState(charges,charges>=capacity?blood.AccumulationProgress:total-grants);
+            return new BloodEssenceState(charges,charges>=capacity?0:total-grants);
         }
         public CultivationReason Tick(Guid owner,Guid epoch,long step,double dt,bool paused,double worldQiDensity)
         {
@@ -84,6 +84,7 @@ namespace TuTienCore
             var realm=Realms.Evaluate(Current.Foundation.ActualRealmId,Current.Foundation.Amount);if(realm.BloodCapacity==0)return CultivationReason.Locked;
             if(Current.Blood.Charges>=realm.BloodCapacity)return CultivationReason.AtCapacity;
             if(!CultivationNumber.NonNegative(Current.Blood.AccumulationProgress+progress))return CultivationReason.Overflow;
+            if(progress>realm.BloodCapacity-Current.Blood.Charges-Current.Blood.AccumulationProgress)return CultivationReason.AtCapacity; // Reject external overflow; caller retains its resource.
             if(!Commit(Copy(blood:Accumulate(Current.Blood,progress,realm.BloodCapacity))))return CultivationReason.InvalidSnapshot;commands.Add(command);return CultivationReason.None;
         }
         public CultivationReason SpendSpiritualEnergy(Guid owner,Guid epoch,Guid command,double amount)

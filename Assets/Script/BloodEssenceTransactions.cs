@@ -60,9 +60,10 @@ namespace TuTienCore
         {return stat==CombatStatId.Attack || stat==CombatStatId.MagicalAttack || stat==CombatStatId.Armor || stat==CombatStatId.MagicResistance || stat==CombatStatId.HealthRegeneration || stat==CombatStatId.KillHealBonus;}
         // Caller supplies evaluated ABSOLUTE values excluding this owner's burn prefix.
         // Flat delta doubles those values including existing flat gear, without changing math.
-        public static CultivationReason Reconcile(CultivationSession session,IList<CombatStatModifier> modifiers,IDictionary<CombatStatId,float> unbuffedValues)
+        public static CultivationReason Reconcile(CultivationSession session,Guid targetOwner,Guid targetEpoch,IList<CombatStatModifier> modifiers,IDictionary<CombatStatId,float> unbuffedValues)
         {
             if(session==null || modifiers==null || unbuffedValues==null)return CultivationReason.InvalidValue;
+            if(session.OwnerId!=targetOwner || session.Epoch!=targetEpoch)return CultivationReason.OwnerMismatch;
             var planned=new List<CombatStatModifier>();var b=session.Current.Burning;string prefix=OwnerPrefix(session.OwnerId);
             if(b!=null && b.Status==BurningStatus.Active)
                 foreach(var pair in unbuffedValues) {

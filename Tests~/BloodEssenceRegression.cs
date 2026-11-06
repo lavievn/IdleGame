@@ -31,13 +31,13 @@ partial class MotionRegression
             var c=CultivationFixture(1000,charges:1);var id=ActivateFixtureBlood(c);var hero=HeroAt(1);
             var mods=new List<CombatStatModifier>{new CombatStatModifier {sourceId="equipment:fixture",stat=CombatStatId.Attack,flat=4}};
             var values=new Dictionary<CombatStatId,float>{{CombatStatId.Attack,14},{CombatStatId.MagicalAttack,0}};
-            Check(BloodEssenceModifiers.Reconcile(c,mods,values)==CultivationReason.None,"first owned modifiers");
-            Check(BloodEssenceModifiers.Reconcile(c,mods,values)==CultivationReason.None && mods.Count==3,"no duplicate modifier/source on refresh");
+            Check(BloodEssenceModifiers.Reconcile(c,c.OwnerId,c.Epoch,mods,values)==CultivationReason.None,"first owned modifiers");
+            Check(BloodEssenceModifiers.Reconcile(c,c.OwnerId,c.Epoch,mods,values)==CultivationReason.None && mods.Count==3,"no duplicate modifier/source on refresh");
             Check(CombatStats.GetWithModifiers(hero,mods,CombatStatId.Attack,10)==28,"absolute source14 doubles including gear, no formula change");
             foreach(var forbidden in new[]{CombatStatId.MaxHealth,CombatStatId.AttackSpeed,CombatStatId.MovementSpeed,CombatStatId.PhysicalDamagePercent,CombatStatId.CooldownReductionPercent})
-                Check(BloodEssenceModifiers.Reconcile(c,mods,new Dictionary<CombatStatId,float>{{forbidden,1}})==CultivationReason.InvalidValue && mods.Count==3,"forbidden stat rejected atomically");
+                Check(BloodEssenceModifiers.Reconcile(c,c.OwnerId,c.Epoch,mods,new Dictionary<CombatStatId,float>{{forbidden,1}})==CultivationReason.InvalidValue && mods.Count==3,"forbidden stat rejected atomically");
             c.Tick(c.OwnerId,c.Epoch,0,30,false,0);Check(c.Current.Burning.Status==BurningStatus.SettlementPending,"expiry retains liability");
-            Check(BloodEssenceModifiers.Reconcile(c,mods,values)==CultivationReason.None && mods.Count==1 && mods[0].sourceId=="equipment:fixture","expiry removes only own burn prefix");
+            Check(BloodEssenceModifiers.Reconcile(c,c.OwnerId,c.Epoch,mods,values)==CultivationReason.None && mods.Count==1 && mods[0].sourceId=="equipment:fixture","expiry removes only own burn prefix");
             Check(c.SettleBlood(c.OwnerId,c.Epoch,id)==CultivationReason.None,"settlement");
         });
         Run("revised blood locked reference survives growth and settlement is exactly once",()=>{

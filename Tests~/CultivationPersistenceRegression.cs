@@ -14,6 +14,10 @@ partial class MotionRegression
             var loaded=slot.Current;Check(loaded!=c && c.Current==source,"candidate load did not mutate prior owner state");
             Check(loaded.Current.Burning.Status==BurningStatus.SettlementPending && loaded.Current.Burning.EndReason==BurningEndReason.Load && loaded.Current.Burning.TotalDebt==200 && loaded.Current.Burning.ReferenceFoundation==1000,"active debt preserved, no restart benefit");
             Check(loaded.Current.Foundation.Amount==1000 && loaded.Current.Reserve.Amount==50 && loaded.Current.Blood.Charges==1 && loaded.Current.Burning.RemainingSeconds==55,"Load grants no Qi/charge/progression or offline time");
+            var mods=new System.Collections.Generic.List<CombatStatModifier> {new CombatStatModifier {sourceId=BloodEssenceModifiers.OwnerPrefix(c.OwnerId)+id.ToString("N"),stat=CombatStatId.Attack,flat=10}};
+            var values=new System.Collections.Generic.Dictionary<CombatStatId,float>{{CombatStatId.Attack,10}};
+            Check(BloodEssenceModifiers.Reconcile(c,loaded.OwnerId,loaded.Epoch,mods,values)==CultivationReason.OwnerMismatch && mods.Count==1,"stale session cannot reapply modifiers to loaded owner epoch");
+            Check(BloodEssenceModifiers.Reconcile(loaded,loaded.OwnerId,loaded.Epoch,mods,values)==CultivationReason.None && mods.Count==0,"current pending recovery removes old owned effect");
             Check(loaded.SettleBlood(c.OwnerId,c.Epoch,id)==CultivationReason.OwnerMismatch,"old callback epoch cannot reach loaded Hero");
             Check(loaded.SettleBlood(c.OwnerId,epoch,id)==CultivationReason.None && loaded.Current.Foundation.Amount==800,"explicit recovery settlement");
             var paid=CultivationComponentCodec.Capture(loaded,CultivationFixtureConfiguration);Check(slot.TryLoad(paid,c.Realms,c.Rules,CultivationFixtureConfiguration,c.OwnerId,Guid.NewGuid())==CultivationReason.None,"paid snapshot reload");

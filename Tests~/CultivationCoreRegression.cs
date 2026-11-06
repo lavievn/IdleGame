@@ -72,6 +72,12 @@ partial class MotionRegression
             c.Tick(c.OwnerId,c.Epoch,0,10,false,0);Check(c.Current.Blood.Charges==1,"KimDan So capacity1");
             var blood=c.Current.Blood;c.Tick(c.OwnerId,c.Epoch,1,60,false,0);Check(c.Current.Blood==blood,"no accumulation beyond capacity");
             Check(c.AccelerateBlood(c.OwnerId,c.Epoch,Guid.NewGuid(),100)==CultivationReason.AtCapacity,"acceleration cannot exceed capacity");
+            var partial=CultivationFixture(rules:CultivationFixtureRules(refine:0,bloodRate:.1));
+            partial.Tick(partial.OwnerId,partial.Epoch,0,5,false,0);
+            Check(partial.Current.Blood.Charges==0 && partial.Current.Blood.AccumulationProgress==.5,"half charge banked");
+            var unchanged=partial.Current;
+            Check(partial.AccelerateBlood(partial.OwnerId,partial.Epoch,Guid.NewGuid(),.6)==CultivationReason.AtCapacity && partial.Current==unchanged,"external acceleration exceeding free capacity rejected atomically");
+            Check(partial.AccelerateBlood(partial.OwnerId,partial.Epoch,Guid.NewGuid(),.5)==CultivationReason.None && partial.Current.Blood.Charges==1 && partial.Current.Blood.AccumulationProgress==0,"fraction consumed exactly once when filling capacity");
             var higher=CultivationFixture(600);Check(higher.AccelerateBlood(higher.OwnerId,higher.Epoch,Guid.NewGuid(),2.5)==CultivationReason.None && higher.Current.Blood.Charges==2 && higher.Current.Blood.AccumulationProgress==.5,"external fixture acceleration, no production item");
         });
     }
