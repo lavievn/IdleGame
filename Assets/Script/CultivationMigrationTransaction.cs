@@ -101,7 +101,6 @@ namespace TuTienCore
         static bool Same(string path,string expected){return File.Exists(path) && Hash(File.ReadAllBytes(path))==expected;}
         static void Stage(string path,byte[] bytes){using(var f=new FileStream(path,FileMode.Create,FileAccess.Write,FileShare.None)){f.Write(bytes,0,bytes.Length);f.Flush(true);}}
         static void AtomicExpected(string path,byte[] bytes,string expected){string temp=path+".tmp";Stage(temp,bytes);ReplaceExpected(temp,path,expected,Hash(bytes));}
-        static void Atomic(string path,byte[] bytes){AtomicExpected(path,bytes,File.Exists(path)?Hash(File.ReadAllBytes(path)):null);}
         internal static void ReplaceExpected(string temp,string path,string expected,string desired)
         {
             for(int attempt=0;attempt<4;attempt++){
@@ -126,12 +125,12 @@ namespace TuTienCore
                 Receipt(p,"Prepared");Fault(ownedFault,"AfterBackup");reason=CultivationMigrationReason.WriteFailed;Stage(temp,p.Upgraded);Fault(ownedFault,"AfterTemp");Fault(ownedFault,"BeforeReplace");
                 if(!Same(path,p.OriginalHash)){reason=CultivationMigrationReason.SourceChanged;return false;}ReplaceExpected(temp,path,p.OriginalHash,p.UpgradedHash);replaced=true;Fault(ownedFault,"AfterReplace");reason=CultivationMigrationReason.VerificationFailed;Fault(ownedFault,"BeforeVerify");
                 if(!Same(path,p.UpgradedHash) || !validateCurrent(Text(File.ReadAllBytes(path))))throw new IOException("Committed snapshot mismatch/invalid candidate.");Receipt(p,"Committed");reason=CultivationMigrationReason.None;return true;
-            }catch(Exception e) when(e is IOException || e is UnauthorizedAccessException || e is ArgumentException){LastDiagnostic=e.Message;if(replaced){try{if(!Same(path,p.UpgradedHash)){reason=CultivationMigrationReason.RollbackBlocked;return false;}Atomic(path,p.Original);if(!Same(path,p.OriginalHash))throw new IOException("Rollback mismatch");Receipt(p,"Prepared");}catch(Exception rollback) when(rollback is IOException || rollback is UnauthorizedAccessException){reason=CultivationMigrationReason.RollbackBlocked;}}return false;}
+            }catch(Exception e) when(e is IOException || e is UnauthorizedAccessException || e is ArgumentException){LastDiagnostic=e.Message;if(replaced){try{if(!Same(path,p.UpgradedHash)){reason=CultivationMigrationReason.RollbackBlocked;return false;}AtomicExpected(path,p.Original,p.UpgradedHash);if(!Same(path,p.OriginalHash))throw new IOException("Rollback mismatch");Receipt(p,"Prepared");}catch(Exception rollback) when(rollback is IOException || rollback is UnauthorizedAccessException){reason=CultivationMigrationReason.RollbackBlocked;}}return false;}
         }
         public static bool RestoreOriginal(CultivationMigrationPlan p,string expectedCurrentHash,out CultivationMigrationReason reason)
         {
             reason=CultivationMigrationReason.RollbackBlocked;if(p==null || expectedCurrentHash!=p.UpgradedHash)return false;
-            try{string path=SlotPath(p.Directory,p.Slot);if(!Same(path,expectedCurrentHash) || !Same(p.BackupPath,p.OriginalHash))return false;Receipt(p,"RollbackPrepared");Atomic(path,p.Original);if(!Same(path,p.OriginalHash))return false;Receipt(p,"RolledBack");reason=CultivationMigrationReason.None;return true;}catch(Exception e) when(e is IOException || e is UnauthorizedAccessException){return false;}
+            try{string path=SlotPath(p.Directory,p.Slot);if(!Same(path,expectedCurrentHash) || !Same(p.BackupPath,p.OriginalHash))return false;Receipt(p,"RollbackPrepared");AtomicExpected(path,p.Original,p.UpgradedHash);if(!Same(path,p.OriginalHash))return false;Receipt(p,"RolledBack");reason=CultivationMigrationReason.None;return true;}catch(Exception e) when(e is IOException || e is UnauthorizedAccessException){return false;}
         }
     }
 }
