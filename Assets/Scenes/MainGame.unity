@@ -4749,7 +4749,7 @@ MonoBehaviour:
   spawnSkin: FadeIn_01
   attackMode: 0
   attackRange: 50
-  moveSpeed: 300
+  moveSpeed: 100
   laneSpeed: 150
   hpFillImage: {fileID: 1988525334}
   dmgTextPrototype: {fileID: 1835480570}

@@ -191,6 +191,7 @@ partial class MotionRegression
         if(args.Length==1 && args[0]=="--camera-entry") { CameraEntryHandoffTests();return; }
         if(args.Length==1 && args[0]=="--world-trace") { WorldEntryTraceTests();return; }
         if(args.Length==1 && args[0]=="--wave-entry") { WaveEntryTests();return; }
+        if(args.Length==1 && args[0]=="--basic-movement") {BasicMovementTests();return;}
         if(args.Length==1 && args[0]=="--formation") { FormationTests();B2CombatRoutingTests();B2TestPartyTests();return; }
         if(args.Length==1 && args[0]=="--spawn") { SpawnEntryTests();return; }
         if (args.Length == 1 && args[0] == "--desktop-ui") {
@@ -286,39 +287,7 @@ partial class MotionRegression
             Check(!WorldMapPolygons.ValidPolygon(tooFew),
                 "two corners cannot form a clickable map");
         });
-        Run("clamp approach in both directions, including long frame",()=>{
-            Near(BattleMotion.Approach(0,100,30,1000,1),70,"right");Near(BattleMotion.Approach(0,-100,30,1000,1),-70,"left");Near(BattleMotion.Approach(0,10,30,1000,1),0,"already in range");
-        });
-        Run("equal melee range at 0.2/0.5/1/2 Canvas scale",()=>{
-            foreach(float scale in new[]{0.2f,0.5f,1f,2f}) { var f=new Field(scale);var m=f.Monster(-35);Check(f.hero.CanAttack(m,f.space),"hero scale "+scale);Check(m.CanAttack(f.hero,f.space),"monster scale "+scale);f.space.SetPosition(m.Rect,new Vector2(-36,0));Check(!f.hero.CanAttack(m,f.space)&&!m.CanAttack(f.hero,f.space),"outside range"); }
-        });
-        Run("camera pans all actors and ground equally",()=>{
-            foreach(float scale in new[]{0.2f,1f,2f}) { var f=new Field(scale);var m=f.Monster(-300);f.hero.TickMovement(f.space,0);m.TickMovement(f.space,0);float h=f.space.Position(f.hero.heroRect).x,b=f.space.Position(m.Rect).x,g=f.space.Position(f.grass).x;Time.deltaTime=0.1f;Call(f.space,"LateUpdate");float pan=f.space.Position(f.hero.heroRect).x-h;Check(pan>0,"base camera pan continues");Near(f.space.Position(m.Rect).x-b,pan,"monster pan");Near(f.space.Position(f.grass).x-g,pan,"ground pan"); }
-        });
-        Run("offscreen monster advances right independently of world pan",()=>{
-            var f=new Field();var m=f.Monster(-550);f.Step();Near(f.space.Position(m.Rect).x+550,f.space.Position(f.grass).x-100+15,"forward movement plus camera");Check(m.CurrentTarget==f.hero,"scans hero at spawn");
-        });
-        Run("ranged hero stops while melee monster keeps approaching",()=>{
-            var f=new Field();f.hero.ChangeAttackMode(1);var m=f.Monster(-300);f.hero.TickMovement(f.space,0.1f);float before=f.space.Position(f.hero.heroRect).x;f.hero.TickMovement(f.space,0.1f);Near(f.space.Position(f.hero.heroRect).x,before,"hero stays");m.TickMovement(f.space,0.1f);Near(f.space.Position(m.Rect).x,-285,"monster independent speed");
-        });
-        Run("another attacker cannot halve approaching monster speed",()=>{
-            var f=new Field();f.hero.ChangeAttackMode(1);var close=f.Monster(-20,AttackMode.RangedMagic);var far=f.Monster(-300);close.TickMovement(f.space,0.1f);far.TickMovement(f.space,0.1f);Check(close.currentState==MonsterState.Attacking,"attacker ready");Near(f.space.Position(far.Rect).x,-285,"far speed stays 150");
-        });
-        Run("melee hero approaches a stationary ranged monster",()=>{
-            var f=new Field();var m=f.Monster(-200,AttackMode.RangedMagic);f.hero.TickMovement(f.space,0.1f);m.TickMovement(f.space,0.1f);Near(f.space.Position(f.hero.heroRect).x,-15,"hero advances");Near(f.space.Position(m.Rect).x,-200,"ranged monster stays");
-        });
-        Run("nearest target rescanned while approaching and retained during attack",()=>{
-            var f=new Field();var a=f.Monster(-100);var b=f.Monster(-101);f.hero.TickMovement(f.space,0);f.space.SetPosition(b.Rect,new Vector2(-90,0));f.hero.TickMovement(f.space,0);Check(f.hero.CurrentTarget==b,"closer target selected while approaching");f.space.SetPosition(b.Rect,new Vector2(-30,0));f.hero.TickMovement(f.space,0);f.space.SetPosition(a.Rect,new Vector2(-20,0));f.hero.TickMovement(f.space,0);Check(f.hero.CurrentTarget==b,"in-range target retained during strike");b.MarkDead();f.hero.TickMovement(f.space,0);Check(f.hero.CurrentTarget==a,"reacquires on death");
-        });
-        Run("hidden hero freezes exploration; respawn recovers",()=>{
-            var f=new Field();var m=f.Monster(-550);f.hero.HideHero();float x=f.space.Position(m.Rect).x;f.Step();Near(f.space.Position(m.Rect).x,x,"no hidden camera");Check(HeroController.ActiveHeroes.Count==0,"unregistered");f.hero.SpawnHero();Check(f.hero.IsDeployed,"respawn");Near(f.space.Position(f.hero.heroRect).x,f.space.HomeX,"spawn centre");
-        });
-        Run("hero death stops AI and retry clears dead state",()=>{
-            var f=new Field();f.hero.Die();f.Step();Check(f.hero.IsDead&&!f.hero.IsDeployed,"dead stopped");f.hero.SpawnHero();Check(f.hero.IsDeployed&&!f.hero.IsDead,"retry alive");
-        });
-        Run("no crossing at low frame rate",()=>{
-            var f=new Field();var m=f.Monster(-100);f.hero.TickMovement(f.space,2);m.TickMovement(f.space,2);Near(f.space.Position(f.hero.heroRect).x-f.space.Position(m.Rect).x,35,"stop at range");
-        });
+        BasicMovementTests();
         Run("zone camera holds speed across 30/60/144 FPS",()=>{
             foreach(int fps in new[]{30,60,144}) {
                 var f=new Field(); f.space.scrollSpeed=1000; f.hero.moveSpeed=1000;
@@ -525,4 +494,41 @@ partial class MotionRegression
         BalanceSimulations();
         Console.WriteLine("PASS: "+tests+" regression scenarios (Unity test doubles; not Play Mode).");
     }
+    static void BasicMovementTests()
+    {
+        Run("clamp approach in both directions, including long frame",()=>{
+            Near(BattleMotion.Approach(0,100,30,1000,1),70,"right");Near(BattleMotion.Approach(0,-100,30,1000,1),-70,"left");Near(BattleMotion.Approach(0,10,30,1000,1),0,"already in range");
+        });
+        Run("equal melee range at 0.2/0.5/1/2 Canvas scale",()=>{
+            foreach(float scale in new[]{0.2f,0.5f,1f,2f}) { var f=new Field(scale);var m=f.Monster(-35);Check(f.hero.CanAttack(m,f.space),"hero scale "+scale);Check(m.CanAttack(f.hero,f.space),"monster scale "+scale);f.space.SetPosition(m.Rect,new Vector2(-36,0));Check(!f.hero.CanAttack(m,f.space)&&!m.CanAttack(f.hero,f.space),"outside range"); }
+        });
+        Run("camera pans all actors and ground equally",()=>{
+            foreach(float scale in new[]{0.2f,1f,2f}) { var f=new Field(scale);var m=f.Monster(-300);f.hero.TickMovement(f.space,0);m.TickMovement(f.space,0);float h=f.space.Position(f.hero.heroRect).x,b=f.space.Position(m.Rect).x,g=f.space.Position(f.grass).x;Time.deltaTime=0.1f;Call(f.space,"LateUpdate");float pan=f.space.Position(f.hero.heroRect).x-h;Check(pan>0,"base camera pan continues");Near(f.space.Position(m.Rect).x-b,pan,"monster pan");Near(f.space.Position(f.grass).x-g,pan,"ground pan"); }
+        });
+        Run("offscreen monster advances right independently of world pan",()=>{
+            var f=new Field();var m=f.Monster(-550);f.Step();Near(f.space.Position(m.Rect).x+550,f.space.Position(f.grass).x-100+10,"forward movement plus camera");Check(m.CurrentTarget==f.hero,"scans hero at spawn");
+        });
+        Run("ranged hero stops while melee monster keeps approaching",()=>{
+            var f=new Field();f.hero.ChangeAttackMode(1);var m=f.Monster(-300);f.hero.TickMovement(f.space,0.1f);float before=f.space.Position(f.hero.heroRect).x;f.hero.TickMovement(f.space,0.1f);Near(f.space.Position(f.hero.heroRect).x,before,"hero stays");m.TickMovement(f.space,0.1f);Near(f.space.Position(m.Rect).x,-290,"monster independent speed100");
+        });
+        Run("another attacker cannot halve approaching monster speed",()=>{
+            var f=new Field();f.hero.ChangeAttackMode(1);var close=f.Monster(-20,AttackMode.RangedMagic);var far=f.Monster(-300);close.TickMovement(f.space,0.1f);far.TickMovement(f.space,0.1f);Check(close.currentState==MonsterState.Attacking,"attacker ready");Near(f.space.Position(far.Rect).x,-290,"far speed stays100");
+        });
+        Run("melee hero approaches a stationary ranged monster",()=>{
+            var f=new Field();var m=f.Monster(-200,AttackMode.RangedMagic);f.hero.TickMovement(f.space,0.1f);m.TickMovement(f.space,0.1f);Near(f.space.Position(f.hero.heroRect).x,-10,"hero advances at base100");Near(f.space.Position(m.Rect).x,-200,"ranged monster stays");
+        });
+        Run("nearest target rescanned while approaching and retained during attack",()=>{
+            var f=new Field();var a=f.Monster(-100);var b=f.Monster(-101);f.hero.TickMovement(f.space,0);f.space.SetPosition(b.Rect,new Vector2(-90,0));f.hero.TickMovement(f.space,0);Check(f.hero.CurrentTarget==b,"closer target selected while approaching");f.space.SetPosition(b.Rect,new Vector2(-30,0));f.hero.TickMovement(f.space,0);f.space.SetPosition(a.Rect,new Vector2(-20,0));f.hero.TickMovement(f.space,0);Check(f.hero.CurrentTarget==b,"in-range target retained during strike");b.MarkDead();f.hero.TickMovement(f.space,0);Check(f.hero.CurrentTarget==a,"reacquires on death");
+        });
+        Run("hidden hero freezes exploration; respawn recovers",()=>{
+            var f=new Field();var m=f.Monster(-550);f.hero.HideHero();float x=f.space.Position(m.Rect).x;f.Step();Near(f.space.Position(m.Rect).x,x,"no hidden camera");Check(HeroController.ActiveHeroes.Count==0,"unregistered");f.hero.SpawnHero();Check(f.hero.IsDeployed,"respawn");Near(f.space.Position(f.hero.heroRect).x,f.space.HomeX,"spawn centre");
+        });
+        Run("hero death stops AI and retry clears dead state",()=>{
+            var f=new Field();f.hero.Die();f.Step();Check(f.hero.IsDead&&!f.hero.IsDeployed,"dead stopped");f.hero.SpawnHero();Check(f.hero.IsDeployed&&!f.hero.IsDead,"retry alive");
+        });
+        Run("no crossing at low frame rate",()=>{
+            var f=new Field();var m=f.Monster(-100);f.hero.TickMovement(f.space,2);m.TickMovement(f.space,2);Near(f.space.Position(f.hero.heroRect).x-f.space.Position(m.Rect).x,35,"stop at range");
+        });
+    }
+
 }

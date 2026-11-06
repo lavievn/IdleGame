@@ -26,9 +26,8 @@ public sealed class DevBalanceUI
     public DevBalanceUI(UIManager ui, RectTransform canvas)
     {
         owner = ui;
-        var hero = UnityEngine.Object.FindFirstObjectByType<HeroController>();
-        defaults[0] = DevBalanceProfile.Defaults(false,EnvironmentManager.Instance,hero != null ? hero.moveSpeed : 300);
-        defaults[1] = DevBalanceProfile.Defaults(true,EnvironmentManager.Instance,150);
+        defaults[0] = DevBalanceProfile.Defaults(false,EnvironmentManager.Instance,100);
+        defaults[1] = DevBalanceProfile.Defaults(true,EnvironmentManager.Instance,100);
         var go = new GameObject("DevBalancePanel",typeof(RectTransform),typeof(CanvasRenderer),typeof(Image));
         Root = (RectTransform)go.transform; Root.SetParent(canvas,false);
         go.GetComponent<Image>().color = new Color(.04f,.06f,.1f,.98f); go.GetComponent<Image>().raycastTarget = false;

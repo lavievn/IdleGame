@@ -14,7 +14,7 @@ public class MonsterController : MonoBehaviour
     public TextMeshProUGUI dmgTextPrototype;
     public AttackMode attackMode;
     public float attackRange;
-    [Min(0f)] public float moveSpeed = 150f;
+    [Min(0f)] public float moveSpeed = 100f;
     public MonsterState currentState = MonsterState.PassiveScroll;
     public static List<MonsterController> ActiveMonsters = new List<MonsterController>();
     public HeroController CurrentTarget { get; private set; }
