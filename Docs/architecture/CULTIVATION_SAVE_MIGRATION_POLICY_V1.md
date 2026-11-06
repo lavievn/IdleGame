@@ -1,53 +1,55 @@
-# Cultivation Save Migration Policy V1
+# Cultivation Save Migration Policy V1 — v0.9 implementation
 
-06/11/2026 · v0.8 · **Production migration BLOCKED/OFF**. Đây là policy và guard được kiểm bằng fixture, không phải quyền nâng cấp Save cá nhân. Không bắt người dùng New Game để tiếp tục sử dụng Save cũ.
+06/11/2026. Production configuration and consent migration are implemented. Default MainGame activation follows native/Play Mode gates; release/Windows Player status is stated separately in the v0.9 report. Personal Saves are never test fixtures. The original v0.8 OFF/blocked policy remains historical context in its report, not the current activation state.
 
-## Authority và classification
+## Classification and authority
 
-`EntityDataSO.cultivationJson` chứa component độc lập. Level/EXP/points, roots, inventory, equipment, forge và world giữ authority cũ; không suy tu vi từ Level. Load v0.8 không thay thresholds/config của Save rồi chỉ cập nhật version để vượt validation.
+`EntityDataSO.cultivationJson` remains an independent component. Level/EXP/stat points/roots/inventory/equipment/forge/world retain their existing authority. No cultivation is inferred from Level, and migration adds no Blood, injury, breakthrough or offline time.
 
-| Dữ liệu nguồn | Hành vi đã triển khai |
+| Source | Current behavior |
 |---|---|
-| New Game không có state | Bỏ component tồn dư ở template; profile đã explicit chọn khởi tạo đúng initial values và owner mới |
-| Legacy Save không có field hoặc chuỗi rỗng | Context bình thường vẫn dùng Save legacy không có tu luyện; chỉ owned playtest đã explicit `initializeLegacy=true` tạo candidate zero-state, không tự ghi file |
-| Component hợp lệ, cùng schema/config ID/version | Validate trước candidate swap; restore resources và clock; fresh epoch, không thưởng thời gian |
-| Configuration version cũ | Từ chối Load với lý do không tương thích; giữ snapshot nguồn/state hiện tại, chưa có converter production |
-| Configuration ID khác | Từ chối; dùng đúng profile/context gốc hoặc migration được version hóa về sau |
-| Future configuration/component version | Từ chối đọc và ghi đè; không downgrade |
-| Malformed/partial/null/duplicate/unknown fields hoặc type sai | Reject trước overwrite; giữ valid canonical Hero/session |
-| Template/Character có component tồn dư | New không kế thừa; Load reset field trước overwrite và dùng component đã validate từ file, không dùng dữ liệu template |
+| New Hero | Ignore stale template component; new owner, Luyện Khí foundation/reserve/energy0 under validated production config |
+| Legacy absent/empty component | Preview/read-only preflight allowed; playable Load blocked until explicit upgrade consent and verified commit |
+| Current schema/config | Validate candidate first, restore state/remainder under fresh epoch, no repeated grants |
+| Old or different configuration | Refuse; no ID/version retagging or absolute-foundation reinterpretation |
+| Future component/config | Refuse Load/overwrite; preserve source and live state |
+| Malformed/partial/null/duplicate/unknown cultivation fields | Reject before candidate swap; do not repair by deleting fields |
+| Stale template | New discards; Load uses the validated source component, not template values |
+| Prepared metadata with exact upgraded snapshot | Validate snapshot/backup hashes, complete compatibility metadata only; player file is not rewritten on Load |
+| Committed migration followed by a componentless old-binary snapshot | Downgrade guard rejects reinitialization; preserve files for guarded recovery |
 
-V0.7: definition schema1, config `playtest:cultivation-v07` version1, gameplay component1. V0.8: definition schema2, config `balance:cultivation-early-v1` version1, gameplay component2. Domain payload v1 cho blood/debt vẫn giữ contract cũ; adapter v2 validate clock rồi truyền payload domain v1 vào candidate validator. Không coi component1 là future chỉ vì profile mới; báo cần migration explicit. Profile v0.7 đọc đúng snapshot cũ, không dùng balance mới để reinterpret số tu vi tuyệt đối.
+Historical v0.7 component1/profile and v0.8 component2/balance IDs remain distinct. Production uses component2 with its own `production:cultivation-v09` version1. No implicit converter for other configurations or future versions exists.
 
-## Clock schema2
+## Consent flow
 
-Ba field thêm: `clockRemainder`, `clockElapsed`, `clockNodeId`. Remainder bounded `[0,step)`, elapsed hữu hạn `[remainder,1e12]`; source string giới hạn128 ký tự, remainder>0 bắt buộc có source. Tất cả field authority bắt buộc hiện diện, exact scalar type; unknown field cần schema explicit. Không có wall-clock timestamp/offline bonus. Schema1 giữ policy lịch sử bỏ remainder khi rebind; không tự thêm field clock vào Save v0.7.
+Load/Continue detects a valid legacy slot, reads it without mutation, validates a candidate with existing SaveManager rules, creates an upgraded JSON candidate and prepares a cultivation binding. Every unrelated JSON root value is copied from the original token; only `cultivationJson` is added/replaced. Existing normal Load normalization rules for legacy equipment metadata are unchanged, not a new Forge/stat migration.
 
-Mỗi frame hợp lệ publish checkpoint cùng state canonical. Capture không flush thời gian chưa xử lý vào foundation; Load khôi phục remainder và dùng lại một lần khi đủ step. Travel quyết toán remainder ở source cũ trước mutate map. Repeated Load/rollback đi về timeline trong slot, không cộng thêm thời gian từ session bị bỏ. Native doubles được đọc từ token invariant đã validate để giữ chính xác binary value của số đã serialize.
+The existing StartMenu confirmation modal explains that Level/EXP/stats/equipment/progress stay, cultivation starts from0 and a backup is created. Buttons are **Đồng ý nâng cấp** and **Hủy / quay lại**. It owns hit testing and pauses time while pending. Only this selected slot is upgraded. Decline destroys the candidate and restores prior pause state without disk writes or dirtying the live Hero. Viewing slot summaries never starts a migration.
 
-## Transaction boundaries đã có
+Accept rechecks both live canonical identity/snapshot and disk source hash, verifies backup, commits the candidate, verifies committed bytes and semantic validity, records completion, and only then swaps canonical Hero/session. Failures retain the running Hero/session. A later click cannot reuse a retired callback or duplicate a component. Existing title/manual-load/AutoSave behavior resumes after successful commit; other manual slots are not mass upgraded.
 
-SaveManager giữ temp write → flush writer/FileStream.Flush(true) → Windows File.Replace hoặc File.Move. Validate source và existing slot trước commit; future/unknown/invalid không bị ghi đè. File temp mồ côi không là canonical Load. Không thêm root version, backup rotation hoặc ledger ngoài slot. ManualSave1/2 vẫn rollback theo snapshot, New/Reset giữ hai manual slots như trước.
+## Files and retention
 
-GameManager.Load tạo EntityDataSO candidate, SaveManager validate component trước overwrite; chuẩn bị binding candidate trước hủy/swap canonical Hero. Candidate thất bại giữ live state/session/life. Save write failure giữ committed file và session đang chạy. API SaveManager.LoadGame trực tiếp vẫn là API cho destination candidate; batch không tái cấu trúc rollback toàn bộ các field legacy bên ngoài cultivation.
+For slot `ManualSave1`, backup is `ManualSave1.cultivation-<originalSHA256>.legacy.bak` in its Save directory. It is written with CreateNew and flushed before replacement. Existing exact backup can be reused after failure; mismatched backup is never overwritten. Re-read SHA and JSON validation prove it represents the already-validated original. Backup bytes remain immutable and are not deleted on success. No automatic backup cleanup/rotation/retention expiry is introduced.
 
-Native fixture kiểm before-write/after-temp/before-replace, actual temp path bị chặn và Windows destination lock không cho Replace; so byte snapshot ngay trước fault, Load giữ final, write kế tiếp phục hồi. Đây không phải chứng minh mất điện hoặc kill-process đúng giữa syscall. Không đọc/ghi/xóa Save cá nhân để thử.
+`ManualSave1.cultivation-migration.json` is a versioned compatibility transaction record: slot, config ID/version, original/upgraded hashes, backup filename and state. It contains no resources, clock awards or alternate progression timeline. States are Prepared/Committed/RollbackPrepared/RolledBack. Unknown/future/malformed metadata fails closed. Normal manual Save rollback remains slot-local; this record protects migration compatibility rather than selecting a newer gameplay snapshot.
 
-## Điều kiện nâng cấp production còn thiếu
+New Game retains existing ManualSave1/2 semantics. AutoSave reset still owns the automatic slot only; retained migration backup/metadata are not silently deleted. A later different snapshot cannot be overwritten by an old rollback plan because its expected hash no longer matches.
 
-Legacy player migration cần lựa chọn explicit của người chơi trong flow thật. Trước khi canonical commit phải:
+## Atomic commit and recovery
 
-1. Đọc/validate source không mutate; hiển thị khởi tạo Luyện Khí theo balance đã chọn, không đổi EXP/gear/world và không cấp Tinh Huyết.
-2. Chuẩn bị candidate version hóa và backup/rollback source byte-identical theo chính sách được duyệt; không thêm backup rotation chung bằng suy diễn.
-3. Chỉ commit sau đồng ý explicit; failed write/load giữ source và live session; restore rollback không tạo duplicate rewards/clock.
-4. Nghiệm thu upgrade/cancel/restart/fault/rollback bằng fixture, rồi xác nhận đường người chơi và binary compatibility trước mở production.
+The current source SHA is checked before commit and again at the replacement boundary. Temp bytes are flushed, then Windows File.Replace/File.Move commits. Migration verifies final bytes/semantic candidate before marking Committed. Ordinary Save keeps its existing schema guards/temp writer and shares the checksum-checked replacement helper, added after observed transient Windows1175 errors. This is a bounded reliability fix, not a persistence rewrite.
 
-Batch hiện **không có consent UI hoặc production upgrade transaction**; do đó gate đóng đúng yêu cầu. `initializeLegacy=true` trong launcher/editor verifier là đồng ý cho fixture sở hữu, không phải consent của người chơi và không mở MainGame mặc định. Không lấy im lặng làm chấp nhận.
+Replacement retries at most4 times with20ms spacing (60ms total delay), rechecking target/staged hashes. An ambiguous error is considered completed only if the exact desired snapshot is present; a different/newer target is never overwritten. Identical ordinary snapshots still attempt a real commit so explicit Save timestamp/latest-slot behavior remains as before; an existing lock cannot be disguised as success merely because bytes already match. Persistent failure returns failure with the prior committed file retained.
 
-Configuration change chọn một trong ba đường được duyệt về sau: giữ profile cũ; converter có schema/config version và rollback; hoặc từ chối Load với thông báo hợp lệ. Không âm thầm chuyển absolute foundation sang bảng thresholds mới hoặc tính lại theo Level.
+If a post-Replace verification step fails, rollback writes the exact original **only if the current target still equals this transaction's upgraded hash**. A newer/different target blocks automatic rollback; immutable backup remains. `SaveManager.RestoreCultivationBackup(plan,expectedCurrentHash,...)` is the guarded recovery API, tested against both exact originals and newer snapshots. It is not an automatic overwrite of a player's later progress.
 
-## Rollback tính năng
+On restart, Prepared metadata plus the exact upgraded snapshot and exact backup proves replacement finished before completion metadata. Load can complete metadata without changing the player snapshot; a modeled interruption test covers this state. Real process restart verifies a migrated slot/metadata/backup in a new Unity process. This does not prove arbitrary power loss or kill timing within every filesystem syscall, and an old binary that ignores new fields cannot be made universally safe retroactively.
 
-Giữ `cultivationJson` và compatibility guards ngay cả khi tắt scheduler/UI; không xóa field để giả lập rollback. Hiện context không bật profile từ chối component khác cấu hình để tránh Save làm mất state. Binary trước guard có thể không hiểu field; không bảo đảm downgrade qua các binary đó. Không copy owned playtest slots vào thư mục player Saves.
+## Clock and configuration
 
-Burning/active debt/charges/receipts vẫn bị gameplay profile từ chối; không xóa nợ để Load. Burning durable settlement, Thiên Kiếp và offline progression chưa được phép mở theo batch này.
+Component2 keeps clockRemainder/clockElapsed/clockNodeId with canonical resources. Every accepted frame publishes its checkpoint, including fractions smaller than0.1s; Save sees the latest published state. Load gets a fresh epoch but restores remainder once. Travel settles pending time at its original source before changing map. Pause/menu/entry/death/offline do not grant time. Bounds and invariant-token double parsing from v0.8 remain.
+
+Production world Qi data is versioned and fingerprinted; production config version advances with world Qi table version. Seed/generator/tier/source changes must not keep the same Save identity/version. Unsupported historical/future configurations are refused instead of auto-rebased. Burning/debt/charges/receipts remain unavailable in this gameplay profile; no outstanding liability is dropped to make a Save load.
+
+Native owned fixtures cover consent reject/accept, byte-exact backup/rollback, repeated upgrade/load, config/future/invalid/template, source mismatch, injected failures, real backup/temp blockers and locked Replace, orphan temp and interrupted metadata. MainGame verifies the actual modal, candidate-before-swap, failure/retry, pause/Travel/Retry/New and independent Level/EXP. All test directories are marker-owned, configured before Awake; no player data is read, written or deleted by automation.
