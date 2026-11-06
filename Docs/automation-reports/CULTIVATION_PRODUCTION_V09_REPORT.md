@@ -2,6 +2,10 @@
 
 06 November 2026 · BÁCH LUYỆN TIÊN ĐỒ · Full consolidated batch.
 
+## Standing authorization update
+
+After the initial v0.9 handoff, the user granted standing approval for confirmation requests within the agreed development scope and requested that actions be recorded in this report instead of asking again. Development and verification can proceed under that authorization; applicable tool access controls remain in effect. The explicit player-facing legacy Save migration consent remains part of the implemented game flow. This authorization update changes documentation only; the accepted code and test results below are unchanged.
+
 ## Result and evidence boundaries
 
 **IMPLEMENTED / VERIFIED in Unity Editor:** default MainGame production cultivation, explicit legacy-slot migration with verified immutable backup and guarded rollback, a deterministic coordinate-derived table for all133 nodes, and one default Hero body across weapon/attack modes. `CultivationIntegrationGate.ProductionEnabled=true` was enabled after preactivation native and MainGame checks; the final default-production MainGame run also passed. Startup still requires valid production configuration and legacy Saves still require consent.
