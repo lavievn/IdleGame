@@ -887,6 +887,9 @@ public partial class UIManager : MonoBehaviour
             foreach(var name in new[]{"DamageOlder","DamageNewer","DamageClose"}) {
                 var button = FindNamedRect(name); float x = name == "DamageOlder" ? 6 : name == "DamageNewer" ? 76 : Mathf.Max(146,w-80);
                 PlaceUI(button,Vector2.zero,Vector2.zero,new Vector2(x,6),new Vector2(64,24));
+                // Compact footer captions must fit one line in the actual Player's24px controls.
+                var caption=button.GetComponentInChildren<TMPro.TextMeshProUGUI>();
+                if(caption!=null){ReadableText(caption,12);caption.enableWordWrapping=false;}
             }
             if (damagePanel.activeSelf) RefreshDamageInfo();
         }
