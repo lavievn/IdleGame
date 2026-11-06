@@ -14,7 +14,7 @@ namespace TuTienCore
             if(!CultivationNumber.NonNegative(currentHp) || !CultivationNumber.NonNegative(maximumHp) || maximumHp<=0 || currentHp<=0 || currentHp>maximumHp || currentHp/maximumHp>=.3)return CultivationReason.HpCondition;
             if(Current.Blood.Charges<1)return CultivationReason.NoCharge;
             if(Realms.Evaluate(Current.Foundation.ActualRealmId,Current.Foundation.Amount).BloodCapacity==0)return CultivationReason.Locked;
-            var burn=new BurningTransaction(attempt,OwnerId,Current.Foundation.Amount,Rules.DebtRatio,1,BloodChargeDurationSeconds,BurningStatus.Active);
+            var burn=new BurningTransaction(attempt,OwnerId,Current.Foundation.Amount,Rules.DebtRatio,1,BloodChargeDurationSeconds,BurningStatus.Active,Current.Foundation.ActualRealmId);
             if(!Commit(Copy(blood:new BloodEssenceState(Current.Blood.Charges-1,Current.Blood.AccumulationProgress),burning:burn,replaceBurning:true)))return CultivationReason.Overflow;
             commands.Add(attempt);hpAfter=maximumHp;return CultivationReason.None;
         }

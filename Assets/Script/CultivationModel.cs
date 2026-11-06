@@ -4,7 +4,7 @@ using System.Collections.ObjectModel;
 
 namespace TuTienCore
 {
-    public enum CultivationReason { None, InvalidValue, UnknownRealm, InvalidThresholds, InvalidCatalog, MissingPolicy, InvalidDelta, DuplicateCommand, OwnerMismatch, Paused, NoCharge, HpCondition, InvalidSession, SettlementRequired, AlreadySettled, InjuryBlocked, NoSuccessor, StaleAttempt, Overflow, UnsupportedVersion, InvalidSnapshot, AtCapacity, Locked, ProgressNotReady }
+    public enum CultivationReason { None, InvalidValue, UnknownRealm, InvalidThresholds, InvalidCatalog, MissingPolicy, InvalidDelta, DuplicateCommand, OwnerMismatch, Paused, NoCharge, HpCondition, InvalidSession, SettlementRequired, AlreadySettled, InjuryBlocked, NoSuccessor, StaleAttempt, Overflow, UnsupportedVersion, InvalidSnapshot, AtCapacity, Locked, ProgressNotReady, LegacyMigrationRequired }
     public enum BloodCapacityOverflowPolicy { Unspecified, HoldExistingStopAccumulation }
     public enum BurningStatus { Active, SettlementPending }
     public enum BurningEndReason { Expired, Death, Retry, Load, Travel, NewGame, Menu, SaveBoundary, CrashRecovery, ExplicitCancel }
@@ -28,13 +28,13 @@ namespace TuTienCore
     public sealed class FoundationInjuryState {public readonly double Severity;public FoundationInjuryState(double severity) {Severity=severity;}}
     public sealed class BurningTransaction
     {
-        public readonly Guid Id,OwnerId;public readonly double ReferenceFoundation,DebtRatio,RemainingSeconds;
+        public readonly Guid Id,OwnerId;public readonly string ActualRealmId;public readonly double ReferenceFoundation,DebtRatio,RemainingSeconds;
         public readonly int ChargesUsed;public readonly BurningStatus Status;public readonly BurningEndReason? EndReason;
         public double TotalDebt {get{return ReferenceFoundation*DebtRatio*ChargesUsed;}}
-        public BurningTransaction(Guid id,Guid owner,double reference,double ratio,int used,double remaining,BurningStatus status,BurningEndReason? reason=null)
-        {Id=id;OwnerId=owner;ReferenceFoundation=reference;DebtRatio=ratio;ChargesUsed=used;RemainingSeconds=remaining;Status=status;EndReason=reason;}
+        public BurningTransaction(Guid id,Guid owner,double reference,double ratio,int used,double remaining,BurningStatus status,string actualRealmId,BurningEndReason? reason=null)
+        {Id=id;OwnerId=owner;ActualRealmId=actualRealmId;ReferenceFoundation=reference;DebtRatio=ratio;ChargesUsed=used;RemainingSeconds=remaining;Status=status;EndReason=reason;}
         internal BurningTransaction Change(int used,double remaining,BurningStatus status,BurningEndReason? reason)
-        {return new BurningTransaction(Id,OwnerId,ReferenceFoundation,DebtRatio,used,remaining,status,reason);}
+        {return new BurningTransaction(Id,OwnerId,ReferenceFoundation,DebtRatio,used,remaining,status,ActualRealmId,reason);}
     }
     public sealed class CultivationSnapshot
     {

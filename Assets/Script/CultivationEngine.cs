@@ -26,7 +26,7 @@ namespace TuTienCore
             if(realm.BloodCapacity==0 && (s.Blood.Charges!=0 || s.Blood.AccumulationProgress!=0))return false;
             var ids=new HashSet<Guid>();foreach(var id in s.SettledTransactions)if(id==Guid.Empty || !ids.Add(id))return false;
             var b=s.Burning;
-            if(b!=null && (b.Id==Guid.Empty || b.OwnerId!=OwnerId || ids.Contains(b.Id) || b.ChargesUsed<1 || !CultivationNumber.NonNegative(b.ReferenceFoundation) ||
+            if(b!=null && (b.Id==Guid.Empty || b.OwnerId!=OwnerId || b.ActualRealmId!=s.Foundation.ActualRealmId || ids.Contains(b.Id) || b.ChargesUsed<1 || !CultivationNumber.NonNegative(b.ReferenceFoundation) ||
                 !CultivationNumber.NonNegative(b.DebtRatio) || b.DebtRatio>1 || !CultivationNumber.NonNegative(b.TotalDebt) || !CultivationNumber.NonNegative(b.RemainingSeconds) ||
                 !Enum.IsDefined(typeof(BurningStatus),b.Status) || (b.Status==BurningStatus.Active && (b.RemainingSeconds<=0 || b.EndReason.HasValue)) ||
                 (b.Status==BurningStatus.SettlementPending && (!b.EndReason.HasValue || !Enum.IsDefined(typeof(BurningEndReason),b.EndReason.Value))) || realm.BloodCapacity==0))return false;
