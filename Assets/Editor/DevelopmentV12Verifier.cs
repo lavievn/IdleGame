@@ -6,6 +6,11 @@ using UnityEditor;
 using UnityEngine;
 public static class DevelopmentV12Verifier
 {
+    public static void Tribulation()
+    {
+        int exit=0;try{var checks=HeavenlyTribulationFixtures.Run();string root=Path.Combine(Environment.GetEnvironmentVariable("IDLEGAME_HOME")??"D:/IdleGame","Automation/v12/stage-b");Directory.CreateDirectory(root);File.WriteAllLines(Path.Combine(root,"native-tribulation.txt"),checks);Debug.Log("V12_TRIBULATION_PASS "+checks.Count);}
+        catch(Exception e){Debug.LogException(e);exit=2;}EditorApplication.Exit(exit);
+    }
     public static void Measure()
     {
         int exit=0;try{

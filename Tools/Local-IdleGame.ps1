@@ -1,5 +1,5 @@
 param(
- [ValidateSet('Editor','Check','Mono','Native','Build','Player','Replay','Observe')][string]$Mode='Editor',
+ [ValidateSet('Editor','Check','Mono','Native','Build','Player','Replay','Observe','MainGame')][string]$Mode='Editor',
  [string]$StorageRoot=$(if($env:IDLEGAME_HOME){$env:IDLEGAME_HOME}else{'D:\IdleGame'}),
  [string]$UnityEditor='C:\Program Files\Unity\Hub\Editor\6000.5.0f1\Editor\Unity.exe',
  [string]$Group='cultivation-related',
@@ -40,9 +40,12 @@ if(Get-Process Unity -ErrorAction SilentlyContinue){throw 'A Unity Editor is alr
 $log=Join-Path $store ('Logs\Unity-'+$Mode+'-'+(Get-Date -Format 'yyyyMMdd-HHmmss')+'.log')
 $argsList=@('-projectPath',('"'+$project+'"'),'-logFile',('"'+$log+'"'))
 if($Mode -eq 'Check'){$argsList+=@('-batchmode','-nographics','-quit')}
-if($Mode -eq 'Native'){
+if($Mode -in @('Native','MainGame')){
+ if($Mode -eq 'MainGame'){$Method='MainGameFoundationProbe.RunIsolated'}
  if($Method -notmatch '^[A-Za-z][A-Za-z0-9_]*\.[A-Za-z][A-Za-z0-9_]*$'){throw 'Explicit static verifier method required'}
- $argsList+=@('-batchmode','-nographics','-executeMethod',$Method)
+ $argsList+=@('-batchmode','-executeMethod',$Method)
+ if($Mode -eq 'Native'){$argsList+='-nographics'}
+ if($Mode -eq 'MainGame'){$argsList+=@('-foundationValidationRun','-foundationCultivationV11C','-foundationSourceHead',(git rev-parse HEAD));if($ReplayProfile){$argsList+=@('-foundationResumeSavedProfile',('˜'+$ReplayProfile+'˜').Replace('˜','"'),'-foundationResumeSlot','ManualSave2')}}
 }
 $process=Start-Process -FilePath $UnityEditor -ArgumentList $argsList -WorkingDirectory $project -WindowStyle Hidden -PassThru
 Write-Output "PROJECT $project";Write-Output "TEMP $env:TEMP";Write-Output "UPM_CACHE_ROOT $env:UPM_CACHE_ROOT";Write-Output "LOG $log";Write-Output "PID $($process.Id)"

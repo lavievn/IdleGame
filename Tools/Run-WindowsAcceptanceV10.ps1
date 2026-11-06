@@ -1,5 +1,5 @@
 param(
- [ValidateSet('Build','Run','Replay','Manual','QiUpgrade','Capacity','Performance')][string]$Mode='Build',
+ [ValidateSet('Build','Run','Replay','Manual','QiUpgrade','Capacity','Performance','Tribulation')][string]$Mode='Build',
  [Parameter(Mandatory=$true)][string]$OutputRoot,
  [string]$ProjectRoot=(Split-Path $PSScriptRoot -Parent),
  [string]$UnityEditor='C:\Program Files\Unity\Hub\Editor\6000.5.0f1\Editor\Unity.exe',
@@ -42,7 +42,7 @@ if($Mode -eq 'Replay'){
  $files=@('ManualSave2.json','ManualSave2.cultivation-migration.json');foreach($pattern in @('ManualSave2.cultivation-*.legacy.bak','ManualSave2.cultivation-*.snapshot.bak','ManualSave2.cultivation-history-*.receipt.json')){$files+=@(Get-ChildItem -LiteralPath (Join-Path $ReplayProfile 'saves') -Filter $pattern -File | ForEach-Object {$_.Name})}
  foreach($file in $files){$source=Join-Path $ReplayProfile ('saves/'+$file);if((Get-Item -LiteralPath $source).Attributes -band [IO.FileAttributes]::ReparsePoint){throw 'Linked replay file refused'};Copy-Item -LiteralPath $source -Destination (Join-Path $dest $file)}
 }
-$head=git -C $project rev-parse HEAD;$runMode=if($Mode -eq 'Replay'){'replay'}elseif($Mode -eq 'Manual'){'observe'}elseif($Mode -eq 'QiUpgrade'){'v11qi'}elseif($Mode -eq 'Capacity'){'v11capacity'}elseif($Mode -eq 'Performance'){'v12performance'}else{'matrix'}
+$head=git -C $project rev-parse HEAD;$runMode=if($Mode -eq 'Replay'){'replay'}elseif($Mode -eq 'Manual'){'observe'}elseif($Mode -eq 'QiUpgrade'){'v11qi'}elseif($Mode -eq 'Capacity'){'v11capacity'}elseif($Mode -eq 'Performance'){'v12performance'}elseif($Mode -eq 'Tribulation'){'v12tribulation'}else{'matrix'}
 $player=Start-Process -FilePath $exe -ArgumentList @('-ownedV10Root',('"'+$ownedProfilePath+'"'),'-ownedV10Mode',$runMode,'-ownedV10Head',$head,'-logFile',('"'+(Join-Path $ownedProfilePath 'player.log')+'"'),'-screen-fullscreen','0') -WindowStyle Hidden -PassThru
 Write-Output "OWNED_PROFILE $ownedProfilePath";Write-Output "OWNED_PLAYER_PID $($player.Id)"
 if($Mode -eq 'Manual'){exit 0}

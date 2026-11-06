@@ -94,6 +94,7 @@ public sealed partial class WindowsDevelopmentAcceptanceV10:MonoBehaviour
             string component,error;Require(CultivationGameplayState.TryReadHeroJson(File.ReadAllText(Path.Combine(SavePath,"ManualSave2.json")),saves.CultivationProfile,out component,out error),"Restart source");
             Require(gm.LoadAndContinue(SaveSlot.ManualSave2),"Separate Player process Load");yield return Ready();Require(gm.HeroData.cultivationJson==component,"Restart exact checkpoint; no offline award");Pass("Separate OS Player process loads migrated ManualSave2 with exact checkpoint and retained compatibility metadata/backup; no offline grant.");yield break;}
         if(result.mode=="observe"){Pass("Observe-only owned Player ready for real manual input; no method-driven gameplay fixture.");WriteResult();while(true)yield return new WaitForSecondsRealtime(2);}
+        if(result.mode=="v12tribulation"){yield return TribulationV12();yield break;}
         if(result.mode=="v12performance"){yield return PerformanceV12();yield break;}
         if(result.mode=="v11capacity"){yield return CapacityV11();yield break;}
         if(result.mode=="v11qi"){yield return QiUpgradeV11();yield break;}

@@ -129,6 +129,7 @@ partial class MotionRegression
 
     static void Main(string[] args)
     {
+        if(args.Length==1 && args[0]=="--tribulation") {Run("v12 Heavenly Tribulation shared domain fixture",()=>{var assertions=HeavenlyTribulationFixtures.Run();Check(assertions.Count>=50,"shared domain assertions executed");Console.WriteLine("TRIBULATION_ASSERTIONS "+assertions.Count);});return;}
         if(args.Length==1 && args[0]=="--cultivation-related") {InventoryEquipmentRegressionTests();MultiSlotEquipmentRegressionTests();SaveRollbackRegressionTests();ForgeRegressionTests();return;}
         if(args.Length==1 && args[0]=="--cultivation-balance") {CultivationBalanceTests();return;}
         if(args.Length==1 && args[0]=="--cultivation-gameplay") {CultivationGameplayTests();return;}
