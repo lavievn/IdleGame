@@ -62,6 +62,8 @@ public partial class SaveManager
     }
 #if UNITY_EDITOR
     public string FailNextCultivationMigration;
+#endif
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
     public long SuccessfulSnapshotWrites {get;private set;}
 #endif
     void MigrationFault(string point)

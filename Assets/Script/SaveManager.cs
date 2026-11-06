@@ -41,6 +41,9 @@ public partial class SaveManager : MonoBehaviour
 
     private void Awake()
     {
+#if DEVELOPMENT_BUILD && UNITY_STANDALONE_WIN && !UNITY_EDITOR
+        WindowsDevelopmentAcceptanceV10.ConfigureBeforeAwake(this);
+#endif
         awakeStarted = true;
         // Singleton pattern chuẩn
         if (Instance != null && Instance != this)
@@ -452,7 +455,7 @@ public partial class SaveManager : MonoBehaviour
 #endif
             TuTienCore.CultivationMigrationTransaction.ReplaceExpected(tempPath,finalPath,expectedFileHash,
                 TuTienCore.CultivationMigrationTransaction.Hash(File.ReadAllBytes(tempPath)));
-#if UNITY_EDITOR
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
             SuccessfulSnapshotWrites++;
 #endif
             return true;

@@ -50,7 +50,13 @@ public partial class GameManager
         var binding=Cultivation;
         if(binding==null || runtimeHeroData==null || !hasDeployed || enteringGameplay ||
             heroController==null || !heroController.IsDeployed || (combatManager!=null && combatManager.CurrentHeroCombatState.Data!=runtimeHeroData))return;
+#if DEVELOPMENT_BUILD && UNITY_STANDALONE_WIN && !UNITY_EDITOR
+        long measured=WindowsDevelopmentAcceptanceV10.BeginAdvance();
+#endif
         var result=binding.Advance(runtimeHeroData,Time.frameCount,Time.deltaTime,Time.timeScale==0f,runtimeHeroData.worldMapId);
+#if DEVELOPMENT_BUILD && UNITY_STANDALONE_WIN && !UNITY_EDITOR
+        WindowsDevelopmentAcceptanceV10.EndAdvance(measured);
+#endif
         if(result!=CultivationReason.None && result!=CultivationReason.Paused && result!=CultivationReason.InvalidDelta)
             Debug.LogWarning("[Cultivation] Tick rejected: "+result);
     }
