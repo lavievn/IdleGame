@@ -25,5 +25,7 @@ mcs "${defines[@]}" -out:"$build_dir/MotionRegression.exe" \
   Assets/Script/BossEncounterCoordinator.cs \
   Assets/Script/CultivationModel.cs \
   Assets/Script/CultivationEngine.cs \
+  Assets/Script/BloodEssenceTransactions.cs \
+  Assets/Script/FoundationRecovery.cs \
   Assets/DataScript/EntityDataSO.cs
 mono "$build_dir/MotionRegression.exe" "$@"

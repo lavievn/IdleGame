@@ -129,6 +129,7 @@ partial class MotionRegression
 
     static void Main(string[] args)
     {
+        if(args.Length==1 && args[0]=="--blood-essence") {BloodEssenceTests();return;}
         if(args.Length==1 && args[0]=="--cultivation-core") {CultivationCoreTests();return;}
         if(args.Length==1 && args[0]=="--realm-related") {SaveRollbackRegressionTests();ManualLoadUiRegressionTests();BalanceTests();return;}
         if(args.Length==1 && args[0]=="--realm-integration") {RealmIntegrationTests();return;}
