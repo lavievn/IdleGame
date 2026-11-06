@@ -1,0 +1,30 @@
+{
+  "schemaVersion": 1,
+  "id": "fixture-refinement-models:v10",
+  "version": 1,
+  "worldQiId": "world-qi:atlas-v2",
+  "worldQiVersion": 2,
+  "models": [
+    {
+      "id": "A",
+      "kind": "reserve-only",
+      "baseCapacity": 1,
+      "bonusMaximum": 0,
+      "bonusScale": 1.5
+    },
+    {
+      "id": "B",
+      "kind": "limited-ambient",
+      "baseCapacity": 1,
+      "bonusMaximum": 0.2,
+      "bonusScale": 1.5
+    },
+    {
+      "id": "C",
+      "kind": "capacity-driven",
+      "baseCapacity": 1,
+      "bonusMaximum": 0,
+      "bonusScale": 1.5
+    }
+  ]
+}
