@@ -1,0 +1,22 @@
+{
+  "HT-17": {
+    "qiTier": 2,
+    "reason": "Approved starting1Qi/s baseline; v2 smooth radius0.14; no starting-selection/topology change."
+  },
+  "TL-16": {
+    "qiTier": 2,
+    "reason": "Approved starting1Qi/s baseline; v2 smooth radius0.14; no starting-selection/topology change."
+  },
+  "TM-12": {
+    "qiTier": 2,
+    "reason": "Approved starting1Qi/s baseline; v2 smooth radius0.14; no starting-selection/topology change."
+  },
+  "TV-20": {
+    "qiTier": 2,
+    "reason": "Approved starting1Qi/s baseline; v2 smooth radius0.14; no starting-selection/topology change."
+  },
+  "XD-11": {
+    "qiTier": 2,
+    "reason": "Approved starting1Qi/s baseline; v2 smooth radius0.14; no starting-selection/topology change."
+  }
+}

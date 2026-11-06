@@ -1,0 +1,245 @@
+{
+  "id": "world-qi:atlas-v2",
+  "version": 2,
+  "seed": 20261106,
+  "generatorVersion": 2,
+  "count": 133,
+  "sha256": "436ce1b997c56d0c8f93c0244b9595e56d602335bd198c5f09dcf31e7a8a93eb",
+  "v1Sha256": "7a7a110f50453ba6730d5aef3e69155caff0e936a5c77510c01cd0a7bcc4eb31",
+  "v1Counts": {
+    "0": 31,
+    "1": 10,
+    "2": 32,
+    "3": 23,
+    "4": 8,
+    "5": 16,
+    "6": 9,
+    "7": 4
+  },
+  "v2Counts": {
+    "0": 12,
+    "1": 6,
+    "2": 22,
+    "3": 21,
+    "4": 29,
+    "5": 15,
+    "6": 24,
+    "7": 4
+  },
+  "regions": {
+    "Hoàng Thổ Nguyên Dã": {
+      "count": 25,
+      "v1": {
+        "0": 4,
+        "1": 1,
+        "2": 4,
+        "3": 12,
+        "4": 4
+      },
+      "v2": {
+        "0": 6,
+        "2": 5,
+        "3": 6,
+        "4": 5,
+        "5": 3
+      }
+    },
+    "Thanh Mộc U Cảnh": {
+      "count": 26,
+      "v1": {
+        "0": 10,
+        "1": 3,
+        "2": 11,
+        "3": 2
+      },
+      "v2": {
+        "2": 5,
+        "3": 5,
+        "4": 7,
+        "5": 3,
+        "6": 5,
+        "7": 1
+      }
+    },
+    "Thương Lam Trung Vực": {
+      "count": 29,
+      "v1": {
+        "0": 15,
+        "1": 2,
+        "2": 2,
+        "3": 5,
+        "4": 3,
+        "5": 2
+      },
+      "v2": {
+        "2": 4,
+        "3": 4,
+        "4": 8,
+        "5": 3,
+        "6": 9,
+        "7": 1
+      }
+    },
+    "Tử Vân Cổ Vực": {
+      "count": 31,
+      "v1": {
+        "2": 1,
+        "3": 2,
+        "4": 1,
+        "5": 14,
+        "6": 9,
+        "7": 4
+      },
+      "v2": {
+        "2": 2,
+        "3": 4,
+        "4": 8,
+        "5": 5,
+        "6": 10,
+        "7": 2
+      }
+    },
+    "Xích Diễm Chi Địa": {
+      "count": 22,
+      "v1": {
+        "0": 2,
+        "1": 4,
+        "2": 14,
+        "3": 2
+      },
+      "v2": {
+        "0": 6,
+        "1": 6,
+        "2": 6,
+        "3": 2,
+        "4": 1,
+        "5": 1
+      }
+    }
+  },
+  "centers": [
+    {
+      "nodeId": "TV-06",
+      "region": "northwest",
+      "catalogRegion": "Tử Vân Cổ Vực",
+      "normalizedX": 0.15331491712707182,
+      "normalizedY": 0.861878453038674
+    },
+    {
+      "nodeId": "TL-18",
+      "region": "central-lake",
+      "catalogRegion": "Thương Lam Trung Vực",
+      "normalizedX": 0.6049723756906077,
+      "normalizedY": 0.6648250460405156
+    },
+    {
+      "nodeId": "TV-40",
+      "region": "southwest",
+      "catalogRegion": "Tử Vân Cổ Vực",
+      "normalizedX": 0.1298342541436464,
+      "normalizedY": 0.39779005524861877
+    },
+    {
+      "nodeId": "TM-25",
+      "region": "southeast",
+      "catalogRegion": "Thanh Mộc U Cảnh",
+      "normalizedX": 0.8466850828729282,
+      "normalizedY": 0.2016574585635359
+    }
+  ],
+  "hotNodes": [
+    "TL-18",
+    "TM-25",
+    "TV-06",
+    "TV-40"
+  ],
+  "largestNearDiscontinuities": [
+    {
+      "a": "HT-03",
+      "b": "TL-27",
+      "distance": 0.0718412789506582,
+      "rateDelta": 1.7,
+      "override": false
+    },
+    {
+      "a": "TL-08",
+      "b": "TL-13",
+      "distance": 0.04768695166196709,
+      "rateDelta": 1.7,
+      "override": false
+    },
+    {
+      "a": "TL-09",
+      "b": "TL-13",
+      "distance": 0.08151641997294236,
+      "rateDelta": 1.7,
+      "override": false
+    },
+    {
+      "a": "TL-21",
+      "b": "TL-22",
+      "distance": 0.07950525212055905,
+      "rateDelta": 1.7,
+      "override": false
+    },
+    {
+      "a": "TL-24",
+      "b": "XD-14",
+      "distance": 0.07580658634724498,
+      "rateDelta": 1.7,
+      "override": false
+    },
+    {
+      "a": "TM-16",
+      "b": "TM-20",
+      "distance": 0.06552044207280712,
+      "rateDelta": 1.7,
+      "override": false
+    },
+    {
+      "a": "TM-16",
+      "b": "TM-21",
+      "distance": 0.06513878800507332,
+      "rateDelta": 1.7,
+      "override": false
+    },
+    {
+      "a": "TM-17",
+      "b": "TM-21",
+      "distance": 0.06386202904014629,
+      "rateDelta": 1.7,
+      "override": false
+    },
+    {
+      "a": "TM-17",
+      "b": "TM-22",
+      "distance": 0.07231292879949405,
+      "rateDelta": 1.7,
+      "override": false
+    },
+    {
+      "a": "TM-23",
+      "b": "TM-24",
+      "distance": 0.07105209197568836,
+      "rateDelta": 1.7,
+      "override": false
+    },
+    {
+      "a": "TV-10",
+      "b": "TV-16",
+      "distance": 0.062435845268643195,
+      "rateDelta": 1.7,
+      "override": false
+    },
+    {
+      "a": "TV-11",
+      "b": "TV-16",
+      "distance": 0.06285837261832791,
+      "rateDelta": 1.7,
+      "override": false
+    }
+  ],
+  "referenceSha256": "35adb6412db808d8a9a44ec629449c5db754d71a76fdf78c1deeb472f636a6bb",
+  "referenceUsage": "Manual regional visual guidance using registered frame; no pixel-to-Qi extraction, no official long-mai designation.",
+  "activation": "V2 READY - ACTIVATION BLOCKED: no supported v1 Save configuration upgrade"
+}
