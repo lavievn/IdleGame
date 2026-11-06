@@ -59,3 +59,14 @@ Character hiển thị Level/EXP riêng, realm/stage, foundation/bar, reserve, d
 Trong Unity chọn **Bach Luyen → Playtests → Cultivation balance v1 - 60 minutes (isolated)**, Chơi mới → xác nhận → Nhân vật. Launcher tạo scene copy ignore và thư mục `.utmp/cultivation-playtest-<GUID>` có marker; Save directory được đặt trước Awake. V0.7 vẫn có menu/profile/schema riêng không đổi asset.
 
 MainGame mặc định tiếp tục tắt tu luyện theo [migration policy](CULTIVATION_SAVE_MIGRATION_POLICY_V1.md). Không phát hành qua một bool true; cần hoàn thiện consent/upgrade commit/rollback và nghiệm thu trước khi thay gate. Rollback tính năng phải giữ field Save, guard version/config và không cho binary cũ ghi mất component.
+
+
+## v1.1 versioned production extension — historical balance above retained
+
+The v0.8 profile and config1 remain unchanged historical authorities; the old rollout/fallback discussion above describes that baseline. Current default production is `production:cultivation-v11-capacity`/3 with all133 frozen WorldQi2 entries and `capacity:cultivation-v1`/1. Config1/2 Saves keep their original rules unless the player consents to a forward upgrade. See [capacity contract](CULTIVATION_CAPACITY_CONTRACT_V1.md) and [v1.1 report](../automation-reports/DEVELOPMENT_V11_REPORT.md).
+
+Thresholds remain `[0,900,2100,3600]`, initial foundation/reserve/energy0. At TV-20/TL-16/XD-11/TM-12/HT-17 supply1Qi/s limits every stage to1foundation/s from zero reserve, despite rising character capacity. Five native3660s simulations reach Viên mãn at≈3600.1s. No epsilon grant, new EXP curve or offline time is used.
+
+Capacity3 absorbs `min(environmental supply, actual-stage absorption capacity)` and independently refines the reserve available after that absorption up to its refinement capacity. Luyện Khí stage capacities are1.2/1,1.35/1.08,1.5/1.16,1.65/1.24. Hotspot5 does not grant5absorbed/s: native runtime reaches Viên mãn≈3304.3s and reserve≈1506.675 after3660s. At.6/.8, final foundations≈2196/2928 with no reserve. Existing old-config reserves are preserved through upgrade; there is no stockpile wipe, decay or new realm unlock. Future major-realm entries remain fixtures, not authored balance.
+
+The eight-rate comparison,30/60/144FPS result and injury/regression/old-clock attribution are actual Unity native session/binding simulations, separately classified from real MainGame short farm, owned stage-boundary setup and Player UI-handler tests. Supply, capacity, actual absorption and actual refinement are shown separately. Blood effective combat realm never grants capacity; Burning/Trial stay OFF in gameplay.

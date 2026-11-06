@@ -1,6 +1,6 @@
 # World Qi Distribution v2 proposal
 
-06/11/2026 · **IMPLEMENTED / VERIFIED data and native validator; V2 READY — ACTIVATION BLOCKED.** Default production remains `production:cultivation-v09` version1 with `world-qi:atlas-v1` version1. The v2 files live in Tools/data, outside Resources. They are not loaded by New/Load/Travel and are not a release or official long-mai/lore designation.
+07/11/2026 · **IMPLEMENTED / VERIFIED / ACTIVATED IN DEFAULT SOURCE v1.1**. The reviewed v1.0 proposal is now frozen runtime data in `Assets/Resources/WorldQiDistributionV2.json`, byte-identical to `Tools/data/WorldQiDistributionV2.json`. Default new Heroes use `production:cultivation-v11-capacity` version3/component3 with WorldQi2 and capacity catalog1. The intermediate config `production:cultivation-v11-qi-v2` version2 preserves v1 refinement1 rules with Qi2. Historical config1 Saves still load as config1; only an explicit selected-slot consent upgrades them. See [v1.1 evidence](../automation-reports/DEVELOPMENT_V11_REPORT.md). No published release or authored long-mai/lore status is claimed.
 
 ## Coordinate and reference authority
 
@@ -15,7 +15,7 @@ The supplied heatmap `15378.png` is1280×960, SHA256 `35adb6412db808d8a9a44ec629
 - Data ID `world-qi:atlas-v2`, configuration version2, generator version2, seed20261106.
 - Data SHA256: `436ce1b997c56d0c8f93c0244b9595e56d602335bd198c5f09dcf31e7a8a93eb`.
 - Inputs: `Tools/data/WorldQiFieldV2.json`, `WorldQiOverridesV2.json`.
-- Runtime-shaped proposal: `Tools/data/WorldQiDistributionV2.json`; complete audit CSV and regional summary beside it.
+- Reviewed source data: `Tools/data/WorldQiDistributionV2.json`; complete audit CSV and regional summary beside it.
 - Offline exporter: `Tools/generate_world_qi_v2.py`. V1 generator/data/overrides are unchanged.
 
 Private seeded Python RNG creates two-scale sinusoidal background and ten medium Gaussian clusters. Four visual target regions select the nearest actual eligible node, with at least0.15 normalized distance from a start and0.2 between centers. No node is moved. Target centers may shift within0.2 to honor available cells and start buffers; this is not a pixel-perfect reconstruction of every illustrated bright spot.
@@ -51,7 +51,7 @@ These four centers are the only5Qi/s nodes:4/133, approximately3.01%. Two are ge
 |Thanh Mộc U Cảnh|26|0|1|
 |Hoàng Thổ Nguyên Dã|25|0|0|
 
-Unweighted node mean rises from1.461654 to1.917293Qi/s, approximately31.2%. This is a data average, not a measured player economy increase: visit time, safety, travel access and refinement capacity matter. Low nodes fall from41 to18 while tier6 rises9→24. The proposal therefore needs a reserve/economy review before activation even though max-tier rarity is unchanged. Cold pockets include the central basin and northeast; the northeast is not automatically high Qi because the artwork is volcanic.
+Unweighted node mean rises from1.461654 to1.917293Qi/s, approximately31.2%. This is a data average, not a measured player economy increase: visit time, safety, travel access and refinement capacity matter. Low nodes fall from41 to18 while tier6 rises9→24. The v1.0 proposal required a reserve/economy review before activation. v1.1 documents preserved old-config reserves and the capacity-limited pipeline below; future stockpile/new-realm economy is not claimed fully balanced. Cold pockets include the central basin and northeast; the northeast is not automatically high Qi because the artwork is volcanic.
 
 Largest sampled near-pair difference at distance<0.085 is1.7Qi/s, versus1.5 in v1. The native validator checks non-override near pairs stay≤2Qi/s. Smooth continuous fields remain quantized and may skip a tier over a sampled interval; measured1.7 transitions are reported rather than described as identical to v1. Manual anomalies require stable ID/provenance and remain visible in export.
 
@@ -65,15 +65,19 @@ Output contains the full JSON/CSV, summary, generator parameters and debug overl
 
 Two fresh exports are byte-identical to the reviewed data. Version3 override fixtures survive regeneration without changing input files. Unknown IDs, noninteger seed, nonfinite field parameters and changed reviewed seed/data under the same version are rejected. A changed field/seed/tier mapping/override must advance the data/config version. The original v1 production files stay byte-identical. All133 entries retain coordinates, tier/rate, versions, seed, override flag and provenance.
 
-Native `WorldCultivationBalanceV10Verifier.RunNative` validates the v2 table and proposed config, coordinates/starts/regions/spatial bounds, and current v1 Save compatibility. It also runs the separate refinement model simulations. This is Unity native evidence; v2 is not a live MainGame configuration.
+Historical native `WorldCultivationBalanceV10Verifier.RunNative` validates the v2 table and proposed config, coordinates/starts/regions/spatial bounds, and current v1 Save compatibility. It also runs the separate refinement model simulations. That historical verifier remains an explicit proposal fixture. v1.1 compatibility, MainGame and Player verifiers separately prove the activated runtime configuration.
 
-## V1→V2 compatibility plan — not implemented
+## V1→V2 compatibility — implemented in v1.1
 
-Stable node IDs give an identity mapping for geography. The per-node CSV records both v1 and v2 rates. Foundation, reserve, energy, Level/EXP, roots, points, inventory/equipment/forge and world/wave data must be preserved exactly. No backdated Qi compensation or foundation-to-new-rate rescaling is justified. Existing v1 partial time must settle under its original source before any approved configuration switch; offline time remains excluded.
+The supported resolver allowlists explicit production ID/version pairs1/2/3. Old Saves retain their original supply/rules when loaded. Unknown/different/future configurations and malformed payloads are rejected. No JSON retagging, foundation rescaling, backdated compensation or mass-slot migration exists.
 
-A supported upgrade would need explicit consent/preflight, a fully validated candidate, immutable verified original backup, guarded transaction/rollback, new config identity/version and committed verification before canonical swap. Existing migration metadata may already protect a legacy→v1 upgrade and must not be overwritten or mistaken for a generic config upgrade receipt. Failure, newer-slot races, old binaries, repeated requests, manual rollback and restart need dedicated fixtures. Supporting v1 reads/writes must remain available alongside an opt-in v2 path.
+The Character action “Nâng cấp & tải ô lưu” targets the selected saved snapshot. Existing consent explains preservation/backup and that unsaved live progress is not silently written. Cancel performs no writes. Accept validates source/candidate and canonical identity, creates a byte-exact immutable snapshot backup, archives previous migration metadata by hash, commits/validates the new component and only then swaps canonical Hero/binding. A failed upgrade keeps the original and live Hero; guarded recovery cannot replace a newer snapshot. Normal manual rollback selects the old snapshot under its own config. AutoSave may mirror the explicitly loaded canonical session, including intentional rollback.
 
-Current production loader deliberately points only to v1. Native tests demonstrate v1 still loads and rejects a v2 component on its writer rather than retagging it. `CultivationProductionV2.proposal.json` validates only when explicitly supplied by the owned native verifier. The transaction above and dual-configuration resolver have not been implemented/accepted, so **activation remains BLOCKED**. No migration was run on player data.
+Schema3 records pending clock configuration ID/version alongside remainder/node. Old fractions settle once under old supply/rules; new time uses new rules. This also supports config3 capacities without changing configs1/2. Foundation, reserve, energy, injury, owner, Level/EXP/stats/roots/inventory/equipment/forge/map/wave state are retained; unsupported Blood/Burning liability fails closed.
+
+Data regeneration in v1.1 reproduces SHA436ce1b9… exactly. Native tests cover consent, immutable history/backup, failure/locked Replace/temp/orphan/source and metadata races, newer-snapshot rollback guard, repeat requests and old/new clock attribution. MainGame default V2 and default capacity V3 tests pass; separate Unity and Windows Player processes restore exact checkpoints without offline grants. Windows actions are method-driven fixtures; native mouse/keyboard remains NOT RUN due to Computer Use initialization failure. These results are recorded separately from native validation and the historical v1.0 proposal/model fixtures.
+
+V1's environmental map is untouched. The31.2% unweighted supply increase above is not a direct cultivation-speed prediction: config2 keeps refinement1; config3 separately caps absorption/refinement by actual stage. Its eight-rate comparison and reserve implications are documented in [Capacity Contract V1](CULTIVATION_CAPACITY_CONTRACT_V1.md). No inferred-coordinate authorship approval is implied by activation. No player Save was migrated by automation.
 
 ## Future world economy boundary
 
