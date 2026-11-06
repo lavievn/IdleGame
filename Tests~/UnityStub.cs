@@ -477,7 +477,7 @@ namespace UnityEngine {
     continue;
    }
    if(f.FieldType==typeof(List<TuTienCore.ElementType>)) {var arr=System.Text.RegularExpressions.Regex.Match(json,"\""+f.Name+"\"\\s*:\\s*\\[([^]]*)\\]");if(arr.Success){var roots=new List<TuTienCore.ElementType>();foreach(var item in arr.Groups[1].Value.Split(','))if(item.Trim().Length>0)roots.Add((TuTienCore.ElementType)int.Parse(item.Trim()));f.SetValue(value,roots);}continue;}
-   var m=System.Text.RegularExpressions.Regex.Match(json,"\""+f.Name+"\"\\s*:\\s*(-?[0-9.]+)");if(!m.Success)continue;
+    var m=System.Text.RegularExpressions.Regex.Match(json,"\""+f.Name+"\"\\s*:\\s*(-?[0-9.]+(?:[eE][+-]?[0-9]+)?)");if(!m.Success)continue;
    if(f.FieldType==typeof(int))f.SetValue(value,int.Parse(m.Groups[1].Value));
    else if(f.FieldType==typeof(float))f.SetValue(value,float.Parse(m.Groups[1].Value,System.Globalization.CultureInfo.InvariantCulture));
    else if(f.FieldType==typeof(double))f.SetValue(value,double.Parse(m.Groups[1].Value,System.Globalization.CultureInfo.InvariantCulture));

@@ -6,7 +6,7 @@ namespace TuTienCore
     // Domain payload; v0.7 stores its JSON in the canonical Hero only for explicit isolated playtest.
     // configurationVersion=0 remains v0.6 domain-fixture-only, never accepted by the gameplay adapter.
     [Serializable]
-    public sealed class CultivationComponentDto
+    public class CultivationComponentDto
     {
         public int version;public int configurationVersion;public string configurationId,ownerId,actualRealmId;
         public double foundation,unrefinedQi,spiritualEnergy,injury,bloodProgress;public int bloodCharges;
@@ -17,12 +17,12 @@ namespace TuTienCore
     public static class CultivationComponentCodec
     {
         public const int ProposedVersion=1;
-        public static CultivationComponentDto Capture(CultivationSession session,string configurationId)
+        public static CultivationComponentDto Capture(CultivationSession session,string configurationId,CultivationComponentDto target=null)
         {
             if(session==null || string.IsNullOrWhiteSpace(configurationId))throw new ArgumentException("Owned session and configuration ID required.");
-            var s=session.Current;var d=new CultivationComponentDto {version=ProposedVersion,configurationId=configurationId,ownerId=session.OwnerId.ToString("N"),
-                actualRealmId=s.Foundation.ActualRealmId,foundation=s.Foundation.Amount,unrefinedQi=s.Reserve.Amount,spiritualEnergy=s.Energy.Current,injury=s.Injury.Severity,
-                bloodCharges=s.Blood.Charges,bloodProgress=s.Blood.AccumulationProgress};
+            var s=session.Current;var d=target??new CultivationComponentDto();d.version=ProposedVersion;d.configurationId=configurationId;d.ownerId=session.OwnerId.ToString("N");
+            d.actualRealmId=s.Foundation.ActualRealmId;d.foundation=s.Foundation.Amount;d.unrefinedQi=s.Reserve.Amount;d.spiritualEnergy=s.Energy.Current;d.injury=s.Injury.Severity;
+            d.bloodCharges=s.Blood.Charges;d.bloodProgress=s.Blood.AccumulationProgress;
             foreach(Guid id in s.SettledTransactions)d.settledTransactions.Add(id.ToString("N"));
             var b=s.Burning;if(b!=null) {
                 d.hasBurn=true;d.burnId=b.Id.ToString("N");d.burnOwnerId=b.OwnerId.ToString("N");d.burnActualRealmId=b.ActualRealmId;

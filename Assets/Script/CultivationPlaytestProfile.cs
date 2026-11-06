@@ -9,6 +9,7 @@ namespace TuTienCore
         public CultivationPlaytestRealm[] realms;public CultivationQiSource[] qiSources;
         public double fallbackDensity,absorptionRate,absorptionEfficiency,refinementRate,refinementEfficiency;
         public double maximumFrameSeconds,stepSeconds,maximumEnergy,recoveryRate;
+        public double initialFoundation,initialReserve,initialEnergy;
     }
     [Serializable] public sealed class CultivationPlaytestRealm
     {public string id,name,successor;public int tier;public double[] thresholds;}
@@ -18,7 +19,8 @@ namespace TuTienCore
     public sealed class CultivationPlaytestProfile
     {
         public readonly string Id,Title,StartingRealm;public readonly int Version;
-        public readonly double FallbackDensity,MaximumFrameSeconds,StepSeconds;
+        public readonly double FallbackDensity,MaximumFrameSeconds,StepSeconds,InitialFoundation,InitialReserve,InitialEnergy;
+        public readonly int SaveVersion;
         public readonly CultivationRealmEvaluator Catalog;public readonly CultivationRules Rules;
         readonly Dictionary<string,string> names=new Dictionary<string,string>(StringComparer.Ordinal);
         readonly Dictionary<string,string> successors=new Dictionary<string,string>(StringComparer.Ordinal);
@@ -27,6 +29,7 @@ namespace TuTienCore
         {
             Id=d.id;Version=d.version;Title=d.title;StartingRealm=d.startingRealm;FallbackDensity=d.fallbackDensity;
             MaximumFrameSeconds=d.maximumFrameSeconds;StepSeconds=d.stepSeconds;Catalog=catalog;Rules=rules;
+            SaveVersion=d.schemaVersion;InitialFoundation=d.initialFoundation;InitialReserve=d.initialReserve;InitialEnergy=d.initialEnergy;
             foreach(var r in d.realms){names.Add(r.id,r.name);successors.Add(r.id,r.successor);}
             foreach(var q in d.qiSources)sources.Add(q.nodeId,q.density);
         }
@@ -36,10 +39,12 @@ namespace TuTienCore
         public static bool TryCreate(CultivationPlaytestDefinition d,Func<string,bool> knownNode,out CultivationPlaytestProfile profile,out string reason)
         {
             profile=null;reason="Invalid playtest configuration.";
-            if(d==null || d.schemaVersion!=1 || d.version<1 || string.IsNullOrWhiteSpace(d.id) || !d.id.StartsWith("playtest:",StringComparison.Ordinal) || d.id!=d.id.Trim() ||
+            if(d==null || (d.schemaVersion!=1 && d.schemaVersion!=2) || d.version<1 || string.IsNullOrWhiteSpace(d.id) || !(d.schemaVersion==1?d.id.StartsWith("playtest:",StringComparison.Ordinal):d.id.StartsWith("balance:",StringComparison.Ordinal)) || d.id!=d.id.Trim() ||
                 string.IsNullOrWhiteSpace(d.title) || d.realms==null || d.qiSources==null ||
                 !CultivationNumber.NonNegative(d.fallbackDensity) || !CultivationNumber.NonNegative(d.maximumFrameSeconds) ||
-                !CultivationNumber.NonNegative(d.stepSeconds) || d.stepSeconds<=0 || d.maximumFrameSeconds<d.stepSeconds || d.maximumFrameSeconds/d.stepSeconds>100)return false;
+                !CultivationNumber.NonNegative(d.stepSeconds) || d.stepSeconds<=0 || d.maximumFrameSeconds<d.stepSeconds || d.maximumFrameSeconds/d.stepSeconds>100 || d.maximumFrameSeconds>1 ||
+                !CultivationNumber.NonNegative(d.initialFoundation) || !CultivationNumber.NonNegative(d.initialReserve) || !CultivationNumber.NonNegative(d.initialEnergy) ||
+                (d.schemaVersion==1 && (d.initialFoundation!=0 || d.initialReserve!=0 || d.initialEnergy!=0)))return false;
             var defs=new List<CultivationRealmDefinition>();var ids=new HashSet<string>(StringComparer.Ordinal);
             foreach(var r in d.realms) {
                 if(r==null || string.IsNullOrWhiteSpace(r.name) || string.IsNullOrWhiteSpace(r.id) || !ids.Add(r.id))return false;
@@ -58,7 +63,11 @@ namespace TuTienCore
             try {
                 var rules=new CultivationRules(d.stepSeconds,d.absorptionRate,d.absorptionEfficiency,d.refinementRate,d.refinementEfficiency,
                     d.maximumEnergy,d.recoveryRate,1,0,0,1,0,0,0,BloodCapacityOverflowPolicy.HoldExistingStopAccumulation);
-                profile=new CultivationPlaytestProfile(d,catalog,rules);reason=null;return true;
+                var candidate=new CultivationPlaytestProfile(d,catalog,rules);
+                var initial=CultivationGameplayState.New(candidate); // Validate initial state against the same runtime rules.
+                foreach(var q in d.qiSources)if(!CultivationNumber.NonNegative(q.density*rules.AbsorptionRate*rules.AbsorptionEfficiency*d.maximumFrameSeconds))return false;
+                if(!CultivationNumber.NonNegative(d.fallbackDensity*rules.AbsorptionRate*rules.AbsorptionEfficiency*d.maximumFrameSeconds))return false;
+                profile=candidate;reason=null;return true;
             } catch(ArgumentException e){reason=e.Message;return false;}
         }
     }

@@ -1,8 +1,9 @@
 public static class CultivationIntegrationGate
 {
-    // Production thresholds/map density/energy/condensation/capacity-loss policy and
-    // durable Burning settlement have not been approved. MainGame defaults remain off.
-    // v0.7 explicitly enables an isolated Editor/Development playtest profile only.
+    // v0.8 balance v1 is independently configured and tested in isolated contexts.
+    // Production remains closed: legacy player consent/upgrade commit and rollback UI
+    // are not implemented. Never silently initialize or rewrite personal Saves.
+    // Blood Essence Burning and Heavenly Trial remain locked independently.
     public const bool ProductionEnabled=false;
     public const string Status="Tu vi chưa cấu hình";
 }

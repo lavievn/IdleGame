@@ -1,0 +1,55 @@
+{
+  "schemaVersion": 2,
+  "version": 1,
+  "id": "balance:cultivation-early-v1",
+  "title": "Luyện Khí — 60 phút tại điểm khởi đầu",
+  "startingRealm": "realm:luyen-khi",
+  "realms": [
+    {
+      "id": "realm:luyen-khi",
+      "name": "Luyện Khí",
+      "successor": "",
+      "tier": 0,
+      "thresholds": [
+        0,
+        900,
+        2100,
+        3600
+      ]
+    }
+  ],
+  "qiSources": [
+    {
+      "nodeId": "TV-20",
+      "density": 1
+    },
+    {
+      "nodeId": "TL-16",
+      "density": 1
+    },
+    {
+      "nodeId": "XD-11",
+      "density": 1
+    },
+    {
+      "nodeId": "TM-12",
+      "density": 1
+    },
+    {
+      "nodeId": "HT-17",
+      "density": 1
+    }
+  ],
+  "fallbackDensity": 1,
+  "absorptionRate": 2,
+  "absorptionEfficiency": 1,
+  "refinementRate": 1,
+  "refinementEfficiency": 1,
+  "initialFoundation": 0,
+  "initialReserve": 0,
+  "initialEnergy": 0,
+  "maximumFrameSeconds": 0.5,
+  "stepSeconds": 0.1,
+  "maximumEnergy": 100,
+  "recoveryRate": 2
+}

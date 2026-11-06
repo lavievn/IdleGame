@@ -1163,6 +1163,7 @@ public partial class GameManager : MonoBehaviour
             return false;
         string reason = WorldMapCatalog.TravelBlockReason(runtimeHeroData, targetId);
         if (reason != null) { UpdateEventLog(reason); return false; }
+        if(Cultivation!=null && Cultivation.SettlePending()!=CultivationReason.None)return false;
 
         // Change only after validation; cancel old wave and all stale projectiles
         // and monsters so they cannot score kills in the destination node.

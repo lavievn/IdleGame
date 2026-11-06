@@ -129,6 +129,8 @@ partial class MotionRegression
 
     static void Main(string[] args)
     {
+        if(args.Length==1 && args[0]=="--cultivation-related") {InventoryEquipmentRegressionTests();MultiSlotEquipmentRegressionTests();SaveRollbackRegressionTests();ForgeRegressionTests();return;}
+        if(args.Length==1 && args[0]=="--cultivation-balance") {CultivationBalanceTests();return;}
         if(args.Length==1 && args[0]=="--cultivation-gameplay") {CultivationGameplayTests();return;}
         if(args.Length==1 && args[0]=="--dual-progression") {CultivationCoreTests();BloodEssenceTests();CultivationBreakthroughTests();CultivationPersistenceTests();return;}
         if(args.Length==1 && args[0]=="--cultivation-persistence") {CultivationPersistenceTests();return;}

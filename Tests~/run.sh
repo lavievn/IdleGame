@@ -30,6 +30,6 @@ mcs "${defines[@]}" -out:"$build_dir/MotionRegression.exe" \
   Assets/Script/CultivationBreakthrough.cs \
   Assets/Script/CultivationPersistence.cs \
   Assets/Script/CultivationIntegrationGate.cs \
-  Assets/Script/CultivationPlaytestProfile.cs Assets/Script/CultivationSaveJson.cs Assets/Script/CultivationGameplayState.cs Assets/Script/SaveManager.Cultivation.cs Assets/Script/GameManager.Cultivation.cs Assets/Script/UIManager.Cultivation.cs \
+  Assets/Script/CultivationPlaytestProfile.cs Assets/Script/CultivationSaveJson.cs Assets/Script/CultivationGameplayState.cs Assets/Script/CultivationBalanceSimulation.cs Assets/Script/SaveManager.Cultivation.cs Assets/Script/GameManager.Cultivation.cs Assets/Script/UIManager.Cultivation.cs \
   Assets/DataScript/EntityDataSO.cs
 mono "$build_dir/MotionRegression.exe" "$@"
