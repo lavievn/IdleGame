@@ -51,6 +51,25 @@ public static class CultivationV07Verifier
             }
             Require(save.SaveGame(source,SaveSlot.ManualSave1),"Next write recovers from orphan temp");
             result.checks.Add("BeforeWrite/AfterTempWrite/BeforeReplace faults retain committed file; loader ignores orphan temp and next atomic write succeeds (process interruption, not power-cut proof).");
+            Dictionary<string,string> initialRoot=null,currentRoot=null;string baselineReason;
+            Require(CultivationSaveJson.TryObject(json,out initialRoot,out baselineReason) && CultivationSaveJson.TryObject(File.ReadAllText(path),out currentRoot,out baselineReason),"Committed snapshot baselines parse");
+            Require(initialRoot["isDirty"]=="true" && currentRoot["isDirty"]=="false","Successful retry serialized the expected dirty-flag transition");
+            Require(initialRoot.Count==currentRoot.Count,"Successful retry preserves the schema");
+            foreach(var field in initialRoot)if(field.Key!="isDirty")Require(currentRoot.ContainsKey(field.Key) && currentRoot[field.Key]==field.Value,"Successful retry changed unrelated field: "+field.Key);
+            stable=File.ReadAllBytes(path); // Compare each fault with the immediately preceding committed snapshot.
+            string temp=Path.Combine(save.SaveDirectory,"ManualSave1.tmp");
+            Require(!File.Exists(temp) && !Directory.Exists(temp),"Successful commit consumed temp");
+            Directory.CreateDirectory(temp); // Owned exact empty directory intentionally prevents temp FileStream.Create.
+            Require(!save.SaveGame(source,SaveSlot.ManualSave1) && Convert.ToBase64String(File.ReadAllBytes(path))==Convert.ToBase64String(stable),"Actual temp creation I/O failure retains final");
+            Require(Directory.GetFileSystemEntries(temp).Length==0,"Only delete the owned empty blocker");Directory.Delete(temp);
+            using(var locked=new FileStream(path,FileMode.Open,FileAccess.Read,FileShare.Read)) {
+                // Reads remain allowed for preflight, but Windows Replace requires delete sharing.
+                Require(!save.SaveGame(source,SaveSlot.ManualSave1) && File.Exists(temp),"Actual destination lock rejects Replace after staging temp");
+                Require(Convert.ToBase64String(File.ReadAllBytes(path))==Convert.ToBase64String(stable),"Failed Replace leaves prior snapshot byte-identical");
+            }
+            Require(save.LoadGame(target,SaveSlot.ManualSave1) && save.SaveGame(source,SaveSlot.ManualSave1),"Recover from actual temp/Replace faults");
+            result.checks.Add("Actual temp creation failure and Windows destination-lock Replace failure retain final bytes; valid Load and next write recover.");
+
             var fields=new Dictionary<string,string>();string error;Require(CultivationSaveJson.TryObject(json,out fields,out error),"Root parse");
             fields.Remove("cultivationJson");var parts=new List<string>();foreach(var f in fields)parts.Add(JsonUtility.ToJson(new KeyName{key=f.Key}).Replace("{\"key\":","").TrimEnd('}')+":"+f.Value);
             string legacy="{"+string.Join(",",parts)+"}";File.WriteAllText(invalidPath,legacy);target.cultivationJson=source.cultivationJson;
