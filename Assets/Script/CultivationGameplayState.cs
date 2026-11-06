@@ -22,6 +22,8 @@ namespace TuTienCore
     {
         public const string SaveField="cultivationJson";
         public static string Capture(CultivationSession session,CultivationPlaytestProfile profile)
+        {using(CultivationPerformance.Measure(CultivationPerformance.Part.CheckpointJson))return CaptureCore(session,profile);}
+        static string CaptureCore(CultivationSession session,CultivationPlaytestProfile profile)
         {
             var dto=CultivationComponentCodec.Capture(session,profile.Id,profile.SaveVersion==3?(CultivationComponentDto)new CultivationGameplayComponentV3():profile.SaveVersion==2?new CultivationGameplayComponentV2():null);dto.configurationVersion=profile.Version;
             if(profile.SaveVersion==1)return JsonUtility.ToJson(dto,false);

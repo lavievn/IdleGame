@@ -658,6 +658,8 @@ public partial class UIManager : MonoBehaviour
         return stats;
     }
     public void RefreshCharacterProgression()
+    {using(TuTienCore.CultivationPerformance.Measure(TuTienCore.CultivationPerformance.Part.CharacterUI))RefreshCharacterProgressionCore();}
+    private void RefreshCharacterProgressionCore()
     {
         if(devSourceCaption==null && devButton!=null)devSourceCaption=devButton.GetComponentInChildren<TMPro.TextMeshProUGUI>(true);
         string label=CombatBalance.HeroDev!=null?"DEVB · Hero override":CombatBalance.MonsterDev!=null?"DEVB · Quái override":"DEVB · Baseline";

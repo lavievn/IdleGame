@@ -60,6 +60,8 @@ namespace TuTienCore
         public CultivationReason Tick(Guid owner,Guid epoch,long step,double dt,bool paused,double worldQiDensity)
         {return TickFromSource(owner,epoch,step,dt,paused,worldQiDensity,Rules);}
         internal CultivationReason TickFromSource(Guid owner,Guid epoch,long step,double dt,bool paused,double worldQiDensity,CultivationRules sourceRules)
+        {using(CultivationPerformance.Measure(CultivationPerformance.Part.Tick))return TickCore(owner,epoch,step,dt,paused,worldQiDensity,sourceRules);}
+        CultivationReason TickCore(Guid owner,Guid epoch,long step,double dt,bool paused,double worldQiDensity,CultivationRules sourceRules)
         {
             var reason=Check(owner,epoch);if(reason!=CultivationReason.None)return reason;
             if(paused)return CultivationReason.Paused;
