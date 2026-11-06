@@ -4,8 +4,8 @@ using TuTienCore;
 partial class MotionRegression
 {
     // These IDs are fixture-only, not production realm content or successor policy.
-    static RealmProgressionEvaluator RealmFixtureEvaluator()
-    { return new RealmProgressionEvaluator(new[]{"fixture:luyen-khi","fixture:truc-co","fixture:last"}); }
+    static LegacyLevelRealmProgressionEvaluator RealmFixtureEvaluator()
+    { return new LegacyLevelRealmProgressionEvaluator(new[]{"fixture:luyen-khi","fixture:truc-co","fixture:last"}); }
     static void RealmProgressionTests()
     {
         Run("v05 realm boundaries preserve raw internal level and never advance realm",()=>{
@@ -37,11 +37,11 @@ partial class MotionRegression
             Check(e.Evaluate("fixture:last",999,999).InternalLevel==1,"cap entry starts one");
         });
         Run("v05 realm catalog is copied and exact with invalid catalogs rejected",()=>{
-            var ids=new[]{"fixture:luyen-khi"};var e=new RealmProgressionEvaluator(ids);ids[0]="mutated";
+            var ids=new[]{"fixture:luyen-khi"};var e=new LegacyLevelRealmProgressionEvaluator(ids);ids[0]="mutated";
             Check(e.Evaluate("fixture:luyen-khi",1,1).IsValid && !e.Evaluate("mutated",1,1).IsValid,"owned catalog copy");
             Check(!e.Evaluate("Fixture:luyen-khi",1,1).IsValid && !e.Evaluate(null,1,1).IsValid,"exact ID");
             foreach(var bad in new[]{new string[0],new[]{"x","x"},new[]{" x"},new string[]{null}}) {
-                bool rejected=false;try {new RealmProgressionEvaluator(bad);}catch(ArgumentException){rejected=true;}
+                bool rejected=false;try {new LegacyLevelRealmProgressionEvaluator(bad);}catch(ArgumentException){rejected=true;}
                 Check(rejected,"invalid catalog rejected");
             }
         });

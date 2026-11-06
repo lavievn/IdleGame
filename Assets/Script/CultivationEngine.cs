@@ -108,6 +108,6 @@ namespace TuTienCore
             Commit(Copy(injury:Math.Max(0,Current.Injury.Severity-amount)));commands.Add(command);return CultivationReason.None;
         }
         public CultivationReason CanAttemptBreakthrough()
-        {if(Current.Burning!=null)return CultivationReason.SettlementRequired;if(Current.Injury.Severity>Rules.MaximumInjuryForTrial)return CultivationReason.InjuryBlocked;return Realms.Evaluate(Current.Foundation.ActualRealmId,Current.Foundation.Amount).AtBottleneck?CultivationReason.None:CultivationReason.StaleAttempt;}
+        {if(Current.Burning!=null)return CultivationReason.SettlementRequired;if(Current.Injury.Severity>Rules.MaximumInjuryForTrial)return CultivationReason.InjuryBlocked;return Realms.Evaluate(Current.Foundation.ActualRealmId,Current.Foundation.Amount).AtBottleneck?CultivationReason.None:CultivationReason.ProgressNotReady;}
     }
 }

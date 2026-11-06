@@ -6,7 +6,7 @@ public static class RealmProgressionAuthority
     public const int ComponentVersion=1;
     public const string LuyenKhiId="realm:luyen-khi";
     public const string LuyenKhiName="Luyện Khí";
-    private static readonly RealmProgressionEvaluator evaluator=new RealmProgressionEvaluator(new[]{LuyenKhiId});
+    private static readonly LegacyLevelRealmProgressionEvaluator evaluator=new LegacyLevelRealmProgressionEvaluator(new[]{LuyenKhiId});
     public static void Initialize(EntityDataSO hero)
     {
         hero.realmComponentVersion=ComponentVersion;hero.realmId=LuyenKhiId;hero.realmEntryLevel=1;hero.isDirty=true;

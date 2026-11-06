@@ -3,13 +3,13 @@ using System.Collections.Generic;
 
 namespace TuTienCore
 {
-    public sealed class RealmProgressionState
+    public sealed class LegacyLevelRealmProgressionState
     {
         public string RealmId { get; private set; }
         public int EntryLevel { get; private set; }
         public int TotalLevel { get; private set; }
         public int Experience { get; private set; }
-        public RealmProgressionState(string realmId,int entryLevel,int totalLevel,int experience)
+        public LegacyLevelRealmProgressionState(string realmId,int entryLevel,int totalLevel,int experience)
         { RealmId=realmId;EntryLevel=entryLevel;TotalLevel=totalLevel;Experience=experience; }
     }
     public enum RealmTransitionReason
@@ -17,13 +17,13 @@ namespace TuTienCore
 
     // Plain-data, in-memory transition session. This is not a trial simulator or
     // a durable ledger. A future adapter must preserve session identity until cancel/load.
-    public sealed class RealmBreakthroughTransition
+    public sealed class LegacyLevelRealmBreakthroughTransition
     {
-        private readonly RealmProgressionEvaluator evaluator;
+        private readonly LegacyLevelRealmProgressionEvaluator evaluator;
         private readonly HashSet<Guid> applied = new HashSet<Guid>();
-        public RealmProgressionState Current { get; private set; }
+        public LegacyLevelRealmProgressionState Current { get; private set; }
         public long Revision { get; private set; }
-        public RealmBreakthroughTransition(RealmProgressionEvaluator evaluator,RealmProgressionState initial)
+        public LegacyLevelRealmBreakthroughTransition(LegacyLevelRealmProgressionEvaluator evaluator,LegacyLevelRealmProgressionState initial)
         {
             if(evaluator==null)throw new ArgumentNullException("evaluator");
             if(initial==null || initial.Experience<0 || !evaluator.Evaluate(initial.RealmId,initial.EntryLevel,initial.TotalLevel).IsValid)
@@ -45,7 +45,7 @@ namespace TuTienCore
             else if(!evaluator.Evaluate(explicitSuccessor,Current.TotalLevel,Current.TotalLevel).IsValid)
                 reason=RealmTransitionReason.UnknownSuccessor;
             if(reason!=RealmTransitionReason.None)return false;
-            Current=new RealmProgressionState(explicitSuccessor,Current.TotalLevel,Current.TotalLevel,Current.Experience);
+            Current=new LegacyLevelRealmProgressionState(explicitSuccessor,Current.TotalLevel,Current.TotalLevel,Current.Experience);
             applied.Add(attemptId);Revision++;
             return true;
         }

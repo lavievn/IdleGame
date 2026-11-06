@@ -6,7 +6,7 @@ partial class MotionRegression
     static void RealmSaveCompatibilityTests()
     {
         Run("v05 realm DTO roundtrip repeated load never grants a breakthrough",()=>{
-            var e=RealmFixtureEvaluator();var original=new RealmProgressionState("fixture:truc-co",45,46,97);
+            var e=RealmFixtureEvaluator();var original=new LegacyLevelRealmProgressionState("fixture:truc-co",45,46,97);
             var fixture=new RealmSaveCompatibilityFixture(e,original);string json=JsonUtility.ToJson(fixture.Capture(),true);
             Check(json.Contains("\"realmEntryLevel\":45") && json.Contains("fixture:truc-co"),"serialized DTO state");
             RealmSaveFixtureReason reason;
@@ -17,7 +17,7 @@ partial class MotionRegression
             }
         });
         Run("v05 realm DTO guards reject before candidate swap and do not infer high-level legacy realm",()=>{
-            var fixture=new RealmSaveCompatibilityFixture(RealmFixtureEvaluator(),new RealmProgressionState("fixture:luyen-khi",1,45,11));
+            var fixture=new RealmSaveCompatibilityFixture(RealmFixtureEvaluator(),new LegacyLevelRealmProgressionState("fixture:luyen-khi",1,45,11));
             var original=fixture.Current;RealmSaveFixtureReason reason;
             Check(!fixture.TryLoad(new RealmSaveCompatibilityDto {totalLevel=45},out reason) && reason==RealmSaveFixtureReason.LegacyMigrationRequired,"no free realm for legacy45");
             foreach(int version in new[]{-1,0,2,int.MaxValue}) {
@@ -33,7 +33,7 @@ partial class MotionRegression
             Check(fixture.Current==original,"all failures preserve live fixture reference");
         });
         Run("v05 realm missing fields never inherit previous state and DTO mutation cannot alter accepted snapshot",()=>{
-            var fixture=new RealmSaveCompatibilityFixture(RealmFixtureEvaluator(),new RealmProgressionState("fixture:truc-co",45,45,7));
+            var fixture=new RealmSaveCompatibilityFixture(RealmFixtureEvaluator(),new LegacyLevelRealmProgressionState("fixture:truc-co",45,45,7));
             RealmSaveFixtureReason reason;var before=fixture.Current;
             Check(!fixture.TryLoadJson("{\"totalLevel\":45}",out reason) && reason==RealmSaveFixtureReason.LegacyMigrationRequired,"missing component blocked");
             Check(!fixture.TryLoadJson("{\"hasRealmComponent\":true,\"realmComponentVersion\":1,\"realmId\":\"fixture:luyen-khi\",\"totalLevel\":45}",out reason),"missing entry not inherited");

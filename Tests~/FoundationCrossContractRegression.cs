@@ -14,7 +14,7 @@ partial class MotionRegression
             string before=JsonUtility.ToJson(hero,true);int physical=WeaponBasicAttack.Physical(hero),magical=WeaponBasicAttack.Magical(hero);
             var evaluator=RealmFixtureEvaluator();var evaluated=evaluator.Evaluate("fixture:luyen-khi",1,hero.currentLevel);
             Check(evaluated.InternalLevel==45 && evaluated.AtBottleneck,"raw progress no automatic realm");
-            var transition=new RealmBreakthroughTransition(evaluator,new RealmProgressionState(evaluated.RealmId,1,hero.currentLevel,hero.currentExp));
+            var transition=new LegacyLevelRealmBreakthroughTransition(evaluator,new LegacyLevelRealmProgressionState(evaluated.RealmId,1,hero.currentLevel,hero.currentExp));
             RealmTransitionReason realmReason;Check(transition.TryApplySuccess(Guid.NewGuid(),0,"fixture:truc-co",out realmReason),"separate explicit transition");
             var art=new MartialDefinition("fixture:cross-passive",1,MartialDefinitionKind.MartialArt,MartialEffectMode.Passive,new[]{WeaponFamily.Unarmed},
                 MartialRootAffinityPolicy.EligibilityOnly,new[]{new MartialRootRequirement(ElementType.Kim,3)});

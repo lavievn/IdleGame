@@ -4,7 +4,7 @@ using System.Collections.ObjectModel;
 
 namespace TuTienCore
 {
-    public enum CultivationReason { None, InvalidValue, UnknownRealm, InvalidThresholds, InvalidCatalog, MissingPolicy, InvalidDelta, DuplicateCommand, OwnerMismatch, Paused, NoCharge, HpCondition, InvalidSession, SettlementRequired, AlreadySettled, InjuryBlocked, NoSuccessor, StaleAttempt, Overflow, UnsupportedVersion, InvalidSnapshot, AtCapacity, Locked }
+    public enum CultivationReason { None, InvalidValue, UnknownRealm, InvalidThresholds, InvalidCatalog, MissingPolicy, InvalidDelta, DuplicateCommand, OwnerMismatch, Paused, NoCharge, HpCondition, InvalidSession, SettlementRequired, AlreadySettled, InjuryBlocked, NoSuccessor, StaleAttempt, Overflow, UnsupportedVersion, InvalidSnapshot, AtCapacity, Locked, ProgressNotReady }
     public enum BloodCapacityOverflowPolicy { Unspecified, HoldExistingStopAccumulation }
     public enum BurningStatus { Active, SettlementPending }
     public enum BurningEndReason { Expired, Death, Retry, Load, Travel, NewGame, Menu, SaveBoundary, CrashRecovery, ExplicitCancel }

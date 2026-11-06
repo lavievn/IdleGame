@@ -22,12 +22,12 @@ namespace TuTienCore
 
     // No built-in official realm catalog exists yet. Callers supply explicit IDs;
     // RankDatabase's legacy level mapping is deliberately not consulted.
-    public sealed class RealmProgressionEvaluator
+    public sealed class LegacyLevelRealmProgressionEvaluator
     {
         // Mirrors the current EntityDataSO.AddExp limit; does not change it.
         public const int CurrentLevelCap = 999;
         private readonly HashSet<string> ids = new HashSet<string>(StringComparer.Ordinal);
-        public RealmProgressionEvaluator(IEnumerable<string> realmIds)
+        public LegacyLevelRealmProgressionEvaluator(IEnumerable<string> realmIds)
         {
             if(realmIds==null)throw new ArgumentNullException("realmIds");
             foreach(string id in realmIds)

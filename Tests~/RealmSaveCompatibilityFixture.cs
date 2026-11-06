@@ -17,9 +17,9 @@ public enum RealmSaveFixtureReason { None, MissingCandidate, LegacyMigrationRequ
 public sealed class RealmSaveCompatibilityFixture
 {
     public const int FixtureVersion=1;
-    readonly RealmProgressionEvaluator evaluator;
-    public RealmProgressionState Current {get;private set;}
-    public RealmSaveCompatibilityFixture(RealmProgressionEvaluator evaluator,RealmProgressionState current)
+    readonly LegacyLevelRealmProgressionEvaluator evaluator;
+    public LegacyLevelRealmProgressionState Current {get;private set;}
+    public RealmSaveCompatibilityFixture(LegacyLevelRealmProgressionEvaluator evaluator,LegacyLevelRealmProgressionState current)
     {this.evaluator=evaluator;Current=current;}
     public bool TryLoad(RealmSaveCompatibilityDto candidate,out RealmSaveFixtureReason reason)
     {
@@ -31,7 +31,7 @@ public sealed class RealmSaveCompatibilityFixture
             reason=RealmSaveFixtureReason.InvalidState;
         if(reason!=RealmSaveFixtureReason.None)return false;
         // Swap only after all guards. Copy values, never retain the caller's DTO.
-        Current=new RealmProgressionState(candidate.realmId,candidate.realmEntryLevel,candidate.totalLevel,candidate.experience);
+        Current=new LegacyLevelRealmProgressionState(candidate.realmId,candidate.realmEntryLevel,candidate.totalLevel,candidate.experience);
         return true;
     }
     public bool TryLoadJson(string json,out RealmSaveFixtureReason reason)
