@@ -437,6 +437,7 @@ public partial class SaveManager : MonoBehaviour
                 if(!ValidateCultivationJson(File.ReadAllText(finalPath),out existingComponent,true)) {
                     Debug.LogWarning("[SaveManager] Preserving incompatible cultivation slot: "+LastCultivationFailure);return false;
                 }
+                if(!CanReplaceCultivationConfiguration(existingComponent,cultivationComponent,slotName))return false;
                 // A context without cultivation may not erase a component from a newer/other game.
                 if(!string.IsNullOrEmpty(existingComponent) && string.IsNullOrEmpty(cultivationComponent)) {
                     LastCultivationFailure="Cannot erase an existing cultivation component.";return false;

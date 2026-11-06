@@ -42,7 +42,7 @@ namespace TuTienCore
         public static bool TryCreate(CultivationPlaytestDefinition d,Func<string,bool> knownNode,out CultivationPlaytestProfile profile,out string reason,bool production=false)
         {
             profile=null;reason="Invalid playtest configuration.";
-            if(d==null || (d.schemaVersion!=1 && d.schemaVersion!=2) || d.version<1 || string.IsNullOrWhiteSpace(d.id) || !(production?d.schemaVersion==2 && d.id.StartsWith("production:",StringComparison.Ordinal):d.schemaVersion==1?d.id.StartsWith("playtest:",StringComparison.Ordinal):d.id.StartsWith("balance:",StringComparison.Ordinal)) || d.id!=d.id.Trim() ||
+            if(d==null || (d.schemaVersion!=1 && d.schemaVersion!=2 && d.schemaVersion!=3) || d.version<1 || string.IsNullOrWhiteSpace(d.id) || !(production?(d.schemaVersion==2 || d.schemaVersion==3) && d.id.StartsWith("production:",StringComparison.Ordinal):d.schemaVersion==1?d.id.StartsWith("playtest:",StringComparison.Ordinal):d.id.StartsWith("balance:",StringComparison.Ordinal)) || d.id!=d.id.Trim() ||
                 string.IsNullOrWhiteSpace(d.title) || d.realms==null || d.qiSources==null ||
                 !CultivationNumber.NonNegative(d.fallbackDensity) || !CultivationNumber.NonNegative(d.maximumFrameSeconds) ||
                 !CultivationNumber.NonNegative(d.stepSeconds) || d.stepSeconds<=0 || d.maximumFrameSeconds<d.stepSeconds || d.maximumFrameSeconds/d.stepSeconds>100 || d.maximumFrameSeconds>1 ||

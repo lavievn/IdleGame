@@ -1,0 +1,42 @@
+{
+  "schemaVersion": 1,
+  "id": "production:cultivation-v11-qi-v2",
+  "version": 2,
+  "worldQiId": "world-qi:atlas-v2",
+  "worldQiVersion": 2,
+  "cultivation": {
+    "schemaVersion": 3,
+    "version": 2,
+    "id": "production:cultivation-v11-qi-v2",
+    "title": "Tu luyện Luyện Khí · Qi v2",
+    "startingRealm": "realm:luyen-khi",
+    "realms": [
+      {
+        "id": "realm:luyen-khi",
+        "name": "Luyện Khí",
+        "successor": "",
+        "tier": 0,
+        "thresholds": [
+          0,
+          900,
+          2100,
+          3600
+        ]
+      }
+    ],
+    "qiSources": [],
+    "fallbackDensity": 0.5,
+    "absorptionRate": 2,
+    "absorptionEfficiency": 1,
+    "refinementRate": 1,
+    "refinementEfficiency": 1,
+    "initialFoundation": 0,
+    "initialReserve": 0,
+    "initialEnergy": 0,
+    "maximumFrameSeconds": 0.5,
+    "stepSeconds": 0.1,
+    "maximumEnergy": 100,
+    "recoveryRate": 2
+  },
+  "worldQiSha256": "436ce1b997c56d0c8f93c0244b9595e56d602335bd198c5f09dcf31e7a8a93eb"
+}

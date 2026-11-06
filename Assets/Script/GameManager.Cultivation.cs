@@ -28,17 +28,21 @@ public partial class GameManager
         ResolveProductionCultivation();
         DisposeCultivation();runtimeHeroData.cultivationJson="";
         if(cultivationProfile!=null)cultivation=new CultivationGameplayBinding(runtimeHeroData,cultivationProfile,CultivationGameplayState.New(cultivationProfile));
+        AuthorizeCultivationAutoSnapshot();
     }
     bool PrepareCultivation(EntityDataSO candidate,out CultivationGameplayBinding binding)
     {
         ResolveProductionCultivation();binding=null;CultivationSession state;string reason;
-        if(!CultivationGameplayState.TryRestore(candidate.cultivationJson,cultivationProfile,out state,out reason))
+        CultivationPlaytestProfile resolved;
+        if(!CultivationProductionConfiguration.TryResolve(candidate.cultivationJson,cultivationProfile,out resolved,out reason) || !CultivationGameplayState.TryRestore(candidate.cultivationJson,resolved,out state,out reason))
         {Debug.LogWarning("[Cultivation] Candidate rejected: "+reason);return false;}
-        if(state!=null)binding=new CultivationGameplayBinding(candidate,cultivationProfile,state);
+        if(state!=null)binding=new CultivationGameplayBinding(candidate,resolved,state);
         return true;
     }
     void ReplaceCultivation(CultivationGameplayBinding prepared)
-    {DisposeCultivation();cultivation=prepared;}
+    {DisposeCultivation();cultivation=prepared;AuthorizeCultivationAutoSnapshot();}
+    void AuthorizeCultivationAutoSnapshot(){if(saveManager!=null && Cultivation!=null)saveManager.AuthorizeCultivationAutoSnapshot(Cultivation.OwnerId,Cultivation.Profile);}
+
     void DisposeCultivation(){if(cultivation!=null)cultivation.Dispose();cultivation=null;}
     void EnsureCultivationBinding()
     {

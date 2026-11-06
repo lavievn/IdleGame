@@ -5,5 +5,6 @@ public static class CultivationIntegrationGate
     // Startup only binds validated config. Legacy slots still require explicit consent.
     // Blood Essence Burning, Heavenly Trial and offline cultivation remain locked.
     public const bool ProductionEnabled=true;
+    public const bool WorldQiV2Enabled=true; // Open only after compatibility/clock/MainGame/Player acceptance.
     public const string Status="Tu vi chưa cấu hình";
 }

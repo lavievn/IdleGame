@@ -70,7 +70,7 @@ public static class CultivationV09Verifier
         result.checks.Add("133/133 seed positions match actual WorldMapCatalog.PreviewPosition and contain their own runtime click cell on registered1448x1086 art; source provenance127 IMAGE_LABEL/6 INFERRED retained, no pin/topology mutation.");
         var randomState=UnityEngine.Random.state;float expected=UnityEngine.Random.value;UnityEngine.Random.state=randomState;
         CultivationPlaytestProfile again;WorldQiDistribution table;CultivationConfigurationReason code;string detail;
-        Require(CultivationProductionConfiguration.TryLoad(out again,out table,out code,out detail) && UnityEngine.Random.value==expected,"Configuration load must not consume global gameplay random");
+        Require(CultivationProductionConfiguration.TryLoadVersion(1,out again,out table,out code,out detail) && UnityEngine.Random.value==expected,"Configuration load must not consume global gameplay random");
         foreach(var n in definition.nodes){double rate;Require(table.TryRate(n.nodeId,out rate) && rate==n.qiPerSecond && again.EnvironmentalQiPerSecond(n.nodeId)==rate,"Stable absolute Qi/s adapter");}
         var ids=new List<string>();var starts=new List<string>();foreach(var n in WorldMapCatalog.All){ids.Add(n.Id);if(n.IsStart)starts.Add(n.Id);}
         foreach(string bad in new[]{"missing","duplicate","unknown","range","coordinates","start","version"}) {
@@ -89,7 +89,7 @@ public static class CultivationV09Verifier
         try {
             for(var p=new DirectoryInfo(root);p!=null;p=p.Parent)Require(!p.Exists || (p.Attributes&FileAttributes.ReparsePoint)==0,"No reparse paths");
             Directory.CreateDirectory(root);File.WriteAllText(Path.Combine(root,".owner"),"cultivation-playtest-v07");CultivationPlaytestBootstrap.VerifyOwnedProfile(root);
-            WorldQiDistribution qi;CultivationConfigurationReason code;string detail;Require(CultivationProductionConfiguration.TryLoad(out profile,out qi,out code,out detail),"Production config "+code+" "+detail);
+            WorldQiDistribution qi;CultivationConfigurationReason code;string detail;Require(CultivationProductionConfiguration.TryLoadVersion(1,out profile,out qi,out code,out detail),"Production config "+code+" "+detail);
             CheckWorld(result);
             legacy=Legacy();string source=JsonUtility.ToJson(legacy,true);source=source.TrimEnd().TrimEnd('}')+",\"unrelatedFutureNote\":{\"keep\":true}}";
             var saves=Fixture("accepted");var plan=Prepare(saves,source);byte[] original=File.ReadAllBytes(PathFor(saves));CultivationMigrationReason reason;

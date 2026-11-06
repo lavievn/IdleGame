@@ -13,7 +13,7 @@ using UnityEngine.UI;
 using TuTienCore;
 using Debug=UnityEngine.Debug;
 // Explicit CLI-only owned acceptance host. Never attached to the production scene.
-public sealed class WindowsDevelopmentAcceptanceV10:MonoBehaviour
+public sealed partial class WindowsDevelopmentAcceptanceV10:MonoBehaviour
 {
     const string Owner="idlegame-owned-windows-v10";
     const BindingFlags Flags=BindingFlags.Instance|BindingFlags.Public|BindingFlags.NonPublic;
@@ -94,7 +94,8 @@ public sealed class WindowsDevelopmentAcceptanceV10:MonoBehaviour
             string component,error;Require(CultivationGameplayState.TryReadHeroJson(File.ReadAllText(Path.Combine(SavePath,"ManualSave2.json")),saves.CultivationProfile,out component,out error),"Restart source");
             Require(gm.LoadAndContinue(SaveSlot.ManualSave2),"Separate Player process Load");yield return Ready();Require(gm.HeroData.cultivationJson==component,"Restart exact checkpoint; no offline award");Pass("Separate OS Player process loads migrated ManualSave2 with exact checkpoint and retained compatibility metadata/backup; no offline grant.");yield break;}
         if(result.mode=="observe"){Pass("Observe-only owned Player ready for real manual input; no method-driven gameplay fixture.");WriteResult();while(true)yield return new WaitForSecondsRealtime(2);}
-        Require(result.mode=="matrix","Explicit matrix/replay/observe mode only");
+        if(result.mode=="v11qi"){yield return QiUpgradeV11();yield break;}
+        Require(result.mode=="matrix","Explicit matrix/replay/observe/v11qi mode only");
         foreach(var size in Sizes)yield return Panel("menu",size.x,size.y);
         gm.OnNewGameClicked();gm.OnConfirmResetClicked();yield return Ready();Require(gm.Cultivation.Current.Foundation.Amount==0 && gm.HeroData.currentLevel==1,"Default New zero cultivation");
         Pass("Startup/New/confirmation invoked through existing methods as a fixture, not native mouse; default production configuration.");
@@ -104,7 +105,7 @@ public sealed class WindowsDevelopmentAcceptanceV10:MonoBehaviour
         Memory("before-loads");var expected=CanonicalExpected(gm.HeroData);string checkpoint=gm.HeroData.cultivationJson;Require(gm.TryManualSave(SaveSlot.ManualSave1),"Current Save");var retired=gm.Cultivation;
         for(int i=0;i<3;i++){var previousHero=gm.HeroData;Require(gm.LoadAndContinue(SaveSlot.ManualSave1),"Repeated Load");yield return Ready();Require(gm.HeroData.cultivationJson==checkpoint && retired.IsDisposed,"Load exact resources/fractions; retire old owner");Matches(expected,"Player Load");Require(previousHero==null,"Old native Hero destroyed after Load");Memory("load-"+i);}
         string path=Path.Combine(SavePath,"ManualSave2.json"),valid=File.ReadAllText(Path.Combine(SavePath,"ManualSave1.json"));
-        foreach(string bad in new[]{valid.Replace("\\\"version\\\":2","\\\"version\\\":3"),valid.Replace("production:cultivation-v09","other:configuration"),"{\"currentLevel\":1,\"cultivationJson\":\"{\"}"}){Require(bad!=valid,"Invalid fixture changes source");File.WriteAllText(path,bad);var current=gm.HeroData;var binding=gm.Cultivation;Require(!gm.LoadAndContinue(SaveSlot.ManualSave2) && gm.HeroData==current && gm.Cultivation==binding,"Failed candidate does not swap Hero/session");}
+        foreach(string bad in new[]{valid.Replace("\\\"version\\\":"+gm.Cultivation.Profile.SaveVersion,"\\\"version\\\":99"),valid.Replace(gm.Cultivation.Profile.Id,"other:configuration"),"{\"currentLevel\":1,\"cultivationJson\":\"{\"}"}){Require(bad!=valid,"Invalid fixture changes source");File.WriteAllText(path,bad);var current=gm.HeroData;var binding=gm.Cultivation;Require(!gm.LoadAndContinue(SaveSlot.ManualSave2) && gm.HeroData==current && gm.Cultivation==binding,"Failed candidate does not swap Hero/session");}
         Pass("Current/repeated Load/full normalized equipment/forge/inventory/stat snapshot/future/config/malformed candidate-before-swap PASS in Player.");
         var legacy=UnityEngine.Object.Instantiate(gm.HeroData);legacy.cultivationJson="";string original=JsonUtility.ToJson(legacy,true);UnityEngine.Object.Destroy(legacy);File.WriteAllText(path,original);var canonical=gm.HeroData;var oldBinding=gm.Cultivation;string live=JsonUtility.ToJson(canonical);
         Require(!gm.LoadAndContinue(SaveSlot.ManualSave2) && gm.IsCultivationMigrationPending,"Legacy opens real consent");foreach(var size in Sizes)yield return Panel("consent",size.x,size.y);

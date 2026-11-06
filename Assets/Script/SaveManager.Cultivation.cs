@@ -16,6 +16,17 @@ public partial class SaveManager
         throw new InvalidOperationException("Cultivation playtest is unavailable here.");
 #endif
     }
+    Guid canonicalCultivationOwner;string canonicalCultivationConfiguration;int canonicalCultivationVersion;
+    internal void AuthorizeCultivationAutoSnapshot(Guid owner,CultivationPlaytestProfile profile){canonicalCultivationOwner=owner;canonicalCultivationConfiguration=profile.Id;canonicalCultivationVersion=profile.Version;}
+    bool CanReplaceCultivationConfiguration(string previous,string incoming,string slot)
+    {
+        if(string.IsNullOrEmpty(previous) || string.IsNullOrEmpty(incoming))return true;
+        CultivationSession a,b;string reason;if(!CultivationGameplayState.TryRestore(previous,CultivationProfile,out a,out reason) || !CultivationGameplayState.TryRestore(incoming,CultivationProfile,out b,out reason))return false;
+        CultivationPlaytestProfile pa,pb;if(!CultivationProductionConfiguration.TryResolve(previous,CultivationProfile,out pa,out reason) || !CultivationProductionConfiguration.TryResolve(incoming,CultivationProfile,out pb,out reason))return false;
+        if(pa.Id==pb.Id && pa.Version==pb.Version)return true;
+        bool canonicalAuto=slot==SaveSlot.AutoSave.ToString() && b.OwnerId==canonicalCultivationOwner && pb.Id==canonicalCultivationConfiguration && pb.Version==canonicalCultivationVersion;
+        if(!canonicalAuto)LastCultivationFailure="Configuration upgrade requires explicit consent; manual slot preserved.";return canonicalAuto;
+    }
     bool ValidateCultivationComponent(string component)
     {
         if(CultivationProfile!=null && string.IsNullOrEmpty(component)){LastCultivationFailure="Missing cultivation component on a playtest Hero.";return false;}

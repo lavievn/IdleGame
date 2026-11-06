@@ -5,7 +5,7 @@ using UnityEngine.UI;
 
 public partial class UIManager
 {
-    Image cultivationTrack,cultivationFill;
+    Image cultivationTrack,cultivationFill;RectTransform cultivationUpgrade;
     bool CultivationVisible {get {var g=GameForUI();return detailKind==1 && g!=null && g.Cultivation!=null;}}
     static string QiNumber(double n){return n.ToString("0.0",CultureInfo.InvariantCulture);}
     string CultivationSummary(GameManager gm)
@@ -26,6 +26,10 @@ public partial class UIManager
     void LayoutCultivationTrack(float width)
     {
         bool show=CultivationVisible;
+        var game=GameForUI();
+        if(show && cultivationUpgrade==null) cultivationUpgrade=SmallButton(progressionSummary.transform.parent,"CultivationConfigurationUpgrade","Nâng cấp & tải ô lưu",Vector2.zero,Vector2.zero,Vector2.zero,new Vector2(220,24),()=>{var current=GameForUI();if(current!=null)current.RequestSelectedCultivationConfigurationUpgrade();});
+        if(cultivationUpgrade!=null){cultivationUpgrade.gameObject.SetActive(show && game!=null && game.CanUpgradeSelectedCultivationSnapshot);PlaceUI(cultivationUpgrade,Vector2.zero,Vector2.zero,new Vector2(148,6),new Vector2(Mathf.Max(120,width-238),24));}
+
         if(show && cultivationTrack==null) {
             var root=new GameObject("CultivationFoundationTrack",typeof(RectTransform),typeof(Image));root.transform.SetParent(progressionSummary.transform.parent,false);
             cultivationTrack=root.GetComponent<Image>();cultivationTrack.color=new Color(.04f,.09f,.1f,1);cultivationTrack.raycastTarget=false;

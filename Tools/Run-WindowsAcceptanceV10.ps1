@@ -1,5 +1,5 @@
 param(
- [ValidateSet('Build','Run','Replay','Manual')][string]$Mode='Build',
+ [ValidateSet('Build','Run','Replay','Manual','QiUpgrade')][string]$Mode='Build',
  [Parameter(Mandatory=$true)][string]$OutputRoot,
  [string]$ProjectRoot=(Split-Path $PSScriptRoot -Parent),
  [string]$UnityEditor='C:\Program Files\Unity\Hub\Editor\6000.5.0f1\Editor\Unity.exe',
@@ -39,10 +39,10 @@ if($Mode -eq 'Replay'){
  Assert-NoReparse $ReplayProfile
  if((Split-Path $ReplayProfile -Leaf) -notmatch '^idlegame-v10-[0-9a-f]{32}$' -or [IO.File]::ReadAllText((Join-Path $ReplayProfile '.owner')) -ne $marker -or [IO.File]::ReadAllText((Join-Path (Split-Path $ReplayProfile -Parent) '.owned-player-root')) -ne $marker){throw 'Unowned replay source'}
  $dest=Join-Path $ownedProfilePath 'saves';New-Item -ItemType Directory -Path $dest | Out-Null
- $files=@('ManualSave2.json','ManualSave2.cultivation-migration.json');$files+=@(Get-ChildItem -LiteralPath (Join-Path $ReplayProfile 'saves') -Filter 'ManualSave2.cultivation-*.legacy.bak' -File | ForEach-Object {$_.Name})
+ $files=@('ManualSave2.json','ManualSave2.cultivation-migration.json');foreach($pattern in @('ManualSave2.cultivation-*.legacy.bak','ManualSave2.cultivation-*.snapshot.bak','ManualSave2.cultivation-history-*.receipt.json')){$files+=@(Get-ChildItem -LiteralPath (Join-Path $ReplayProfile 'saves') -Filter $pattern -File | ForEach-Object {$_.Name})}
  foreach($file in $files){$source=Join-Path $ReplayProfile ('saves/'+$file);if((Get-Item -LiteralPath $source).Attributes -band [IO.FileAttributes]::ReparsePoint){throw 'Linked replay file refused'};Copy-Item -LiteralPath $source -Destination (Join-Path $dest $file)}
 }
-$head=git -C $project rev-parse HEAD;$runMode=if($Mode -eq 'Replay'){'replay'}elseif($Mode -eq 'Manual'){'observe'}else{'matrix'}
+$head=git -C $project rev-parse HEAD;$runMode=if($Mode -eq 'Replay'){'replay'}elseif($Mode -eq 'Manual'){'observe'}elseif($Mode -eq 'QiUpgrade'){'v11qi'}else{'matrix'}
 $player=Start-Process -FilePath $exe -ArgumentList @('-ownedV10Root',('"'+$ownedProfilePath+'"'),'-ownedV10Mode',$runMode,'-ownedV10Head',$head,'-logFile',('"'+(Join-Path $ownedProfilePath 'player.log')+'"'),'-screen-fullscreen','0') -WindowStyle Hidden -PassThru
 Write-Output "OWNED_PROFILE $ownedProfilePath";Write-Output "OWNED_PLAYER_PID $($player.Id)"
 if($Mode -eq 'Manual'){exit 0}

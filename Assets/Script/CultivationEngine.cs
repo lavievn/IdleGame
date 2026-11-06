@@ -55,19 +55,21 @@ namespace TuTienCore
             return new BloodEssenceState(charges,charges>=capacity?0:total-grants);
         }
         public CultivationReason Tick(Guid owner,Guid epoch,long step,double dt,bool paused,double worldQiDensity)
+        {return TickFromSource(owner,epoch,step,dt,paused,worldQiDensity,Rules);}
+        internal CultivationReason TickFromSource(Guid owner,Guid epoch,long step,double dt,bool paused,double worldQiDensity,CultivationRules sourceRules)
         {
             var reason=Check(owner,epoch);if(reason!=CultivationReason.None)return reason;
             if(paused)return CultivationReason.Paused;
-            if(!CultivationNumber.NonNegative(dt) || dt>Rules.MaximumStepSeconds || !CultivationNumber.NonNegative(worldQiDensity))return CultivationReason.InvalidDelta;
+            if(!CultivationNumber.NonNegative(dt) || dt>sourceRules.MaximumStepSeconds || !CultivationNumber.NonNegative(worldQiDensity))return CultivationReason.InvalidDelta;
             if(step<0 || step<=lastStep)return CultivationReason.DuplicateCommand;
             CultivationRealmDefinition realm;Realms.TryGet(Current.Foundation.ActualRealmId,out realm);
-            double absorbed=worldQiDensity*Rules.AbsorptionRate*Rules.AbsorptionEfficiency*dt;
+            double absorbed=worldQiDensity*sourceRules.AbsorptionRate*sourceRules.AbsorptionEfficiency*dt;
             double reserve=Current.Reserve.Amount+absorbed;
-            double yield=Rules.RefinementEfficiency*Rules.RefinementFactor(Current.Injury.Severity);
-            double gain=Math.Min(realm.Thresholds[3]-Current.Foundation.Amount,Math.Min(reserve,Rules.RefinementRate*dt)*yield);
+            double yield=sourceRules.RefinementEfficiency*sourceRules.RefinementFactor(Current.Injury.Severity);
+            double gain=Math.Min(realm.Thresholds[3]-Current.Foundation.Amount,Math.Min(reserve,sourceRules.RefinementRate*dt)*yield);
             double foundation=Current.Foundation.Amount+gain;double consumed=yield>0?gain/yield:0;
-            double progress=Rules.BloodAccumulationRate*dt;
-            double recovery=Rules.SpiritualRecoveryRate*Rules.SpiritualRecoveryModifier*dt;
+            double progress=sourceRules.BloodAccumulationRate*dt;
+            double recovery=sourceRules.SpiritualRecoveryRate*sourceRules.SpiritualRecoveryModifier*dt;
             if(!CultivationNumber.NonNegative(absorbed) || !CultivationNumber.NonNegative(reserve) || !CultivationNumber.NonNegative(gain) || !CultivationNumber.NonNegative(progress) || !CultivationNumber.NonNegative(recovery))return CultivationReason.Overflow;
             var blood=Accumulate(Current.Blood,progress,Realms.Evaluate(realm.Id,foundation).BloodCapacity);
             var burn=Current.Burning;
@@ -75,7 +77,7 @@ namespace TuTienCore
                 double remaining=Math.Max(0,burn.RemainingSeconds-dt);
                 burn=burn.Change(burn.ChargesUsed,remaining,remaining==0?BurningStatus.SettlementPending:BurningStatus.Active,remaining==0?(BurningEndReason?)BurningEndReason.Expired:null);
             }
-            var candidate=Copy(foundation,Math.Max(0,reserve-consumed),Math.Min(Rules.EnergyMaximum(Current.Injury.Severity),Current.Energy.Current+recovery),blood,burning:burn,replaceBurning:true);
+            var candidate=Copy(foundation,Math.Max(0,reserve-consumed),Math.Min(sourceRules.EnergyMaximum(Current.Injury.Severity),Current.Energy.Current+recovery),blood,burning:burn,replaceBurning:true);
             if(!Commit(candidate))return CultivationReason.InvalidSnapshot;lastStep=step;return CultivationReason.None;
         }
         public CultivationReason AccelerateBlood(Guid owner,Guid epoch,Guid command,double progress)

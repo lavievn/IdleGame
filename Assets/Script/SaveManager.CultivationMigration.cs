@@ -50,6 +50,19 @@ public partial class SaveManager
         if(!TryLoadSnapshot(candidate,plan.UpgradedJson,slot,false)){ReleaseMigrationCandidate(candidate);candidate=null;plan=null;reason=CultivationMigrationReason.InvalidSource;return false;}
         return true;
     }
+    public bool NeedsCultivationConfigurationUpgrade(SaveSlot slot)
+    {
+        if(CultivationProfile==null || !CultivationProfile.IsProduction)return false;string component,error;CultivationPlaytestProfile source;
+        return CultivationGameplayState.TryReadHeroJson(LoadGame(slot.ToString()),CultivationProfile,out component,out error) && !string.IsNullOrEmpty(component) && CultivationProductionConfiguration.TryResolve(component,CultivationProfile,out source,out error) && source.Version<CultivationProfile.Version;
+    }
+    public bool TryPrepareCultivationConfigurationUpgrade(SaveSlot slot,out CultivationMigrationPlan plan,out EntityDataSO candidate,out CultivationMigrationReason reason)
+    {
+        plan=null;candidate=null;reason=CultivationMigrationReason.UnsupportedConfiguration;string component,error;CultivationPlaytestProfile source;
+        if(CultivationProfile==null || !CultivationGameplayState.TryReadHeroJson(LoadGame(slot.ToString()),CultivationProfile,out component,out error) || string.IsNullOrEmpty(component) || !CultivationProductionConfiguration.TryResolve(component,CultivationProfile,out source,out error))return false;
+        if(source.Version>=CultivationProfile.Version){reason=CultivationMigrationReason.AlreadyCurrent;return false;}
+        if(!CultivationMigrationTransaction.TryPrepareConfiguration(saveDirectory,slot,source,CultivationProfile,json=>ValidateMigrationSnapshot(json,false),json=>ValidateMigrationSnapshot(json,false),out plan,out reason))return false;
+        candidate=ScriptableObject.CreateInstance<EntityDataSO>();if(!TryLoadSnapshot(candidate,plan.UpgradedJson,slot,false)){ReleaseMigrationCandidate(candidate);candidate=null;plan=null;reason=CultivationMigrationReason.InvalidSource;return false;}return true;
+    }
     public bool CommitCultivationMigration(CultivationMigrationPlan plan,bool explicitConsent,out CultivationMigrationReason reason)
     {
         if(plan==null || plan.Directory!=saveDirectory){reason=CultivationMigrationReason.InvalidSource;return false;}
