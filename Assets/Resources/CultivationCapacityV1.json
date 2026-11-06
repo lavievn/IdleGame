@@ -1,0 +1,26 @@
+{
+  "id": "capacity:cultivation-v1",
+  "version": 1,
+  "maximumRate": 1000,
+  "injuryAbsorptionPenalty": 0.25,
+  "injuryRefinementPenalty": 0.5,
+  "realms": [
+    {
+      "realmId": "realm:luyen-khi",
+      "baseAbsorption": 1.2,
+      "baseRefinement": 1,
+      "absorptionStageFactors": [
+        1,
+        1.125,
+        1.25,
+        1.375
+      ],
+      "refinementStageFactors": [
+        1,
+        1.08,
+        1.16,
+        1.24
+      ]
+    }
+  ]
+}

@@ -5,8 +5,8 @@ namespace TuTienCore
 {
     public static partial class CultivationProductionConfiguration
     {
-        public static string IdentityForVersion(int version){return version==1?"production:cultivation-v09":version==2?"production:cultivation-v11-qi-v2":null;}
-        static string ResourceForVersion(int version){return version==1?"CultivationProductionV1":version==2?"CultivationProductionV2":null;}
+        public static string IdentityForVersion(int version){return version==1?"production:cultivation-v09":version==2?"production:cultivation-v11-qi-v2":version==3?"production:cultivation-v11-capacity":null;}
+        static string ResourceForVersion(int version){return version==1?"CultivationProductionV1":version==2?"CultivationProductionV2":version==3?"CultivationProductionV3":null;}
         public static int SupportedVersion(string id,int version){return IdentityForVersion(version)==id?version:0;}
         public static bool TryResolve(string component,CultivationPlaytestProfile context,out CultivationPlaytestProfile profile,out string reason)
         {

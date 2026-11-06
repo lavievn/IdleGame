@@ -39,7 +39,7 @@ namespace TuTienCore
         public double Density(string nodeId) {double value;return nodeId!=null && sources.TryGetValue(nodeId,out value)?value:FallbackDensity;}
         public bool HasNode(string nodeId){return sources.ContainsKey(nodeId??"");}
         public double EnvironmentalQiPerSecond(string nodeId){return Density(nodeId)*Rules.AbsorptionRate*Rules.AbsorptionEfficiency;}
-        public static bool TryCreate(CultivationPlaytestDefinition d,Func<string,bool> knownNode,out CultivationPlaytestProfile profile,out string reason,bool production=false)
+        public static bool TryCreate(CultivationPlaytestDefinition d,Func<string,bool> knownNode,out CultivationPlaytestProfile profile,out string reason,bool production=false,CultivationCapacityDefinition capacityDefinition=null)
         {
             profile=null;reason="Invalid playtest configuration.";
             if(d==null || (d.schemaVersion!=1 && d.schemaVersion!=2 && d.schemaVersion!=3) || d.version<1 || string.IsNullOrWhiteSpace(d.id) || !(production?(d.schemaVersion==2 || d.schemaVersion==3) && d.id.StartsWith("production:",StringComparison.Ordinal):d.schemaVersion==1?d.id.StartsWith("playtest:",StringComparison.Ordinal):d.id.StartsWith("balance:",StringComparison.Ordinal)) || d.id!=d.id.Trim() ||
@@ -64,8 +64,10 @@ namespace TuTienCore
             CultivationRealmEvaluator catalog;CultivationReason error;
             if(!CultivationRealmEvaluator.TryCreate(defs,out catalog,out error)){reason=error.ToString();return false;}
             try {
+                CultivationCapacityCatalog capacity=null;
+                if(capacityDefinition!=null){if(!CultivationCapacityCatalog.TryCreate(capacityDefinition,out capacity,out reason))return false;foreach(var realm in d.realms)if(!capacity.HasRealm(realm.id)){reason="MissingCapacityRealm";return false;}}
                 var rules=new CultivationRules(d.stepSeconds,d.absorptionRate,d.absorptionEfficiency,d.refinementRate,d.refinementEfficiency,
-                    d.maximumEnergy,d.recoveryRate,1,0,0,1,0,0,0,BloodCapacityOverflowPolicy.HoldExistingStopAccumulation);
+                    d.maximumEnergy,d.recoveryRate,1,0,0,1,0,0,0,BloodCapacityOverflowPolicy.HoldExistingStopAccumulation,capacity);
                 var candidate=new CultivationPlaytestProfile(d,catalog,rules,production);
                 var initial=CultivationGameplayState.New(candidate); // Validate initial state against the same runtime rules.
                 foreach(var q in d.qiSources)if(!CultivationNumber.NonNegative(q.density*rules.AbsorptionRate*rules.AbsorptionEfficiency*d.maximumFrameSeconds))return false;

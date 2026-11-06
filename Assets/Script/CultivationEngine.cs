@@ -7,13 +7,16 @@ namespace TuTienCore
     {
         public readonly Guid OwnerId,Epoch;public readonly CultivationRules Rules;public readonly CultivationRealmEvaluator Realms;
         public CultivationSnapshot Current {get;private set;}public long RealmRevision {get;private set;}
+        public CultivationStepFlow LastStepFlow {get;private set;}
+        public CultivationCapacity Capacity {get{return Rules.CapacityCatalog==null?new CultivationCapacity(Rules.AbsorptionRate*Rules.AbsorptionEfficiency,Rules.RefinementRate,Realms.Evaluate(Current.Foundation.ActualRealmId,Current.Foundation.Amount).MinorStage):Rules.CapacityCatalog.Evaluate(Realms,Current,capacityModifiers);}}
+        readonly System.Collections.ObjectModel.ReadOnlyCollection<CultivationCapacityModifier> capacityModifiers;
         readonly HashSet<Guid> commands=new HashSet<Guid>();long lastStep=-1;
-        public CultivationSession(Guid owner,Guid epoch,CultivationRealmEvaluator realms,CultivationRules rules,CultivationSnapshot initial)
+        public CultivationSession(Guid owner,Guid epoch,CultivationRealmEvaluator realms,CultivationRules rules,CultivationSnapshot initial,IEnumerable<CultivationCapacityModifier> modifiers=null)
         {
             if(owner==Guid.Empty || epoch==Guid.Empty || realms==null || rules==null)throw new ArgumentException("Owner, epoch, catalog and explicit rules required.");
-            OwnerId=owner;Epoch=epoch;Realms=realms;Rules=rules;
+            OwnerId=owner;Epoch=epoch;Realms=realms;Rules=rules;capacityModifiers=modifiers==null?null:new List<CultivationCapacityModifier>(modifiers).AsReadOnly();
             CultivationReason reason;if(!ValidateSnapshot(initial,out reason))throw new ArgumentException("Invalid cultivation snapshot: "+reason);
-            Current=initial;
+            Current=initial;if(Rules.CapacityCatalog!=null)Rules.CapacityCatalog.Evaluate(Realms,Current,capacityModifiers);
         }
         public bool ValidateSnapshot(CultivationSnapshot s,out CultivationReason reason)
         {
@@ -63,10 +66,12 @@ namespace TuTienCore
             if(!CultivationNumber.NonNegative(dt) || dt>sourceRules.MaximumStepSeconds || !CultivationNumber.NonNegative(worldQiDensity))return CultivationReason.InvalidDelta;
             if(step<0 || step<=lastStep)return CultivationReason.DuplicateCommand;
             CultivationRealmDefinition realm;Realms.TryGet(Current.Foundation.ActualRealmId,out realm);
-            double absorbed=worldQiDensity*sourceRules.AbsorptionRate*sourceRules.AbsorptionEfficiency*dt;
+            double supply=worldQiDensity*sourceRules.AbsorptionRate*sourceRules.AbsorptionEfficiency;
+            var capacity=sourceRules.CapacityCatalog==null?new CultivationCapacity(supply,sourceRules.RefinementRate,RealmMinorStage.Invalid):sourceRules.CapacityCatalog.Evaluate(Realms,Current,capacityModifiers);
+            double absorbed=Math.Min(supply,capacity.Absorption)*dt;
             double reserve=Current.Reserve.Amount+absorbed;
             double yield=sourceRules.RefinementEfficiency*sourceRules.RefinementFactor(Current.Injury.Severity);
-            double gain=Math.Min(realm.Thresholds[3]-Current.Foundation.Amount,Math.Min(reserve,sourceRules.RefinementRate*dt)*yield);
+            double gain=Math.Min(realm.Thresholds[3]-Current.Foundation.Amount,Math.Min(reserve,capacity.Refinement*dt)*yield);
             double foundation=Current.Foundation.Amount+gain;double consumed=yield>0?gain/yield:0;
             double progress=sourceRules.BloodAccumulationRate*dt;
             double recovery=sourceRules.SpiritualRecoveryRate*sourceRules.SpiritualRecoveryModifier*dt;
@@ -78,7 +83,7 @@ namespace TuTienCore
                 burn=burn.Change(burn.ChargesUsed,remaining,remaining==0?BurningStatus.SettlementPending:BurningStatus.Active,remaining==0?(BurningEndReason?)BurningEndReason.Expired:null);
             }
             var candidate=Copy(foundation,Math.Max(0,reserve-consumed),Math.Min(sourceRules.EnergyMaximum(Current.Injury.Severity),Current.Energy.Current+recovery),blood,burning:burn,replaceBurning:true);
-            if(!Commit(candidate))return CultivationReason.InvalidSnapshot;lastStep=step;return CultivationReason.None;
+            if(!Commit(candidate))return CultivationReason.InvalidSnapshot;LastStepFlow=new CultivationStepFlow(dt,supply,capacity.Absorption,capacity.Refinement,absorbed,gain);lastStep=step;return CultivationReason.None;
         }
         public CultivationReason AccelerateBlood(Guid owner,Guid epoch,Guid command,double progress)
         {

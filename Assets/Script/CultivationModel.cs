@@ -95,16 +95,16 @@ namespace TuTienCore
         public readonly double MaximumStepSeconds,AbsorptionRate,AbsorptionEfficiency,RefinementRate,RefinementEfficiency;
         public readonly double MaximumSpiritualEnergy,SpiritualRecoveryRate,SpiritualRecoveryModifier,BloodAccumulationRate,DebtRatio,AbsoluteStatFactor;
         public readonly double InjuryRefinementPenalty,InjuryEnergyPenalty,MaximumInjuryForTrial;
-        public readonly BloodCapacityOverflowPolicy ExcessCharges;
+        public readonly BloodCapacityOverflowPolicy ExcessCharges;public readonly CultivationCapacityCatalog CapacityCatalog;
         public CultivationRules(double maximumStep,double absorptionRate,double absorptionEfficiency,double refinementRate,double refinementEfficiency,
             double maximumEnergy,double recoveryRate,double recoveryModifier,double bloodRate,double debtRatio,double absoluteFactor,
-            double injuryRefinePenalty,double injuryEnergyPenalty,double trialInjuryLimit,BloodCapacityOverflowPolicy excessCharges)
+            double injuryRefinePenalty,double injuryEnergyPenalty,double trialInjuryLimit,BloodCapacityOverflowPolicy excessCharges,CultivationCapacityCatalog capacityCatalog=null)
         {
             foreach(double n in new[]{maximumStep,absorptionRate,absorptionEfficiency,refinementRate,refinementEfficiency,maximumEnergy,recoveryRate,recoveryModifier,bloodRate,debtRatio,absoluteFactor,injuryRefinePenalty,injuryEnergyPenalty,trialInjuryLimit})
                 if(!CultivationNumber.NonNegative(n))throw new ArgumentException("Configuration values must be finite/nonnegative.");
             if(maximumStep<=0 || absorptionEfficiency>1 || refinementEfficiency>1 || debtRatio>1 || absoluteFactor<1 || excessCharges!=BloodCapacityOverflowPolicy.HoldExistingStopAccumulation)
                 throw new ArgumentException("Explicit bounded rates and excess-charge policy required.");
-            MaximumStepSeconds=maximumStep;AbsorptionRate=absorptionRate;AbsorptionEfficiency=absorptionEfficiency;RefinementRate=refinementRate;RefinementEfficiency=refinementEfficiency;
+            CapacityCatalog=capacityCatalog;MaximumStepSeconds=maximumStep;AbsorptionRate=absorptionRate;AbsorptionEfficiency=absorptionEfficiency;RefinementRate=refinementRate;RefinementEfficiency=refinementEfficiency;
             MaximumSpiritualEnergy=maximumEnergy;SpiritualRecoveryRate=recoveryRate;SpiritualRecoveryModifier=recoveryModifier;BloodAccumulationRate=bloodRate;DebtRatio=debtRatio;AbsoluteStatFactor=absoluteFactor;
             InjuryRefinementPenalty=injuryRefinePenalty;InjuryEnergyPenalty=injuryEnergyPenalty;MaximumInjuryForTrial=trialInjuryLimit;ExcessCharges=excessCharges;
         }
