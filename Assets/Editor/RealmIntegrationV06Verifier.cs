@@ -50,6 +50,7 @@ public static class RealmIntegrationV06Verifier
             Require(StripRealm(JsonUtility.ToJson(loaded,true),true)==StripRealm(current,true),"Legacy migration preserves all unrelated serialized fields");
             Require(File.ReadAllText(slot)==legacy,"Load does not rewrite legacy file");
             Require(saves.SaveGame(loaded,SaveSlot.ManualSave1),"Save migrated candidate");string migrated=File.ReadAllText(slot);
+            Require(migrated.Contains("\"realmComponentVersion\": 1") && migrated.Contains("\"realmId\": \"realm:luyen-khi\"") && migrated.Contains("\"realmEntryLevel\": 1"),"Migrated component fields actually persisted in JSON");
             for(int i=0;i<3;i++)Require(saves.LoadGame(loaded,SaveSlot.ManualSave1) && loaded.realmEntryLevel==1 && loaded.realmId==RealmProgressionAuthority.LuyenKhiId && loaded.currentLevel==45 && loaded.currentExp==source.currentExp,"Repeated current Load idempotent");
             Require(StripRealm(JsonUtility.ToJson(loaded,true),true)==StripRealm(current,true),"Current roundtrip preserves all other fields/modifiers");
             result.checks.Add("Legacy/current/native JsonUtility, contaminated template, repeated loads, no file rewrite on Load; all unrelated JSON fields preserved.");
@@ -57,6 +58,7 @@ public static class RealmIntegrationV06Verifier
             foreach(string bad in new[]{current.Replace("\"realmComponentVersion\": 1","\"realmComponentVersion\": 2"),
                 current.Replace(RealmProgressionAuthority.LuyenKhiId,"realm:unknown"),current.Replace("\"realmEntryLevel\": 1","\"realmEntryLevel\": 46"),
                 current.Replace("\"realmEntryLevel\": 1","\"realmEntryLevel\": 0"),current.Replace("\"realmComponentVersion\": 1","\"realmComponentVersion\": -2147483648"),
+                current.Replace("\"realmComponentVersion\": 1","\"realmComponentVersion\": -2147483648").Replace("\"realmEntryLevel\": 1","\"realmEntryLevel\": -2147483648").Replace("\"realmId\": \"realm:luyen-khi\"","\"realmId\": null"),
                 System.Text.RegularExpressions.Regex.Replace(current,@"^\s*""realmEntryLevel""\s*:[^\r\n]*\r?\n?","",System.Text.RegularExpressions.RegexOptions.Multiline)})
             {
                 Require(bad!=current,"Negative fixture must change input");File.WriteAllText(slot2,bad);string before=JsonUtility.ToJson(loaded,true);
