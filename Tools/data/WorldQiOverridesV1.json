@@ -1,0 +1,22 @@
+{
+  "HT-17": {
+    "qiTier": 2,
+    "reason": "Approved starting baseline1Qi/s; smooth radius0.19 keeps local transition; refinement cap1/s retains60minutes."
+  },
+  "TL-16": {
+    "qiTier": 2,
+    "reason": "Approved starting baseline1Qi/s; smooth radius0.19 keeps local transition; refinement cap1/s retains60minutes."
+  },
+  "TM-12": {
+    "qiTier": 2,
+    "reason": "Approved starting baseline1Qi/s; smooth radius0.19 keeps local transition; refinement cap1/s retains60minutes."
+  },
+  "TV-20": {
+    "qiTier": 2,
+    "reason": "Approved starting baseline1Qi/s; smooth radius0.19 keeps local transition; refinement cap1/s retains60minutes."
+  },
+  "XD-11": {
+    "qiTier": 2,
+    "reason": "Approved starting baseline1Qi/s; smooth radius0.19 keeps local transition; refinement cap1/s retains60minutes."
+  }
+}

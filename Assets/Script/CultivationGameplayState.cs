@@ -105,6 +105,7 @@ namespace TuTienCore
             if(paused){lastFrame=frame;return CultivationReason.Paused;}
             if(!CultivationNumber.NonNegative(dt) || dt>Profile.MaximumFrameSeconds)return CultivationReason.InvalidDelta;
             if(elapsed+dt>1e12)return CultivationReason.InvalidDelta;
+            if(Profile.IsProduction && !string.IsNullOrEmpty(nodeId) && !Profile.HasNode(nodeId))return CultivationReason.InvalidValue;
             if(Profile.SaveVersion==2 && pendingNode!=nodeId) {
                 var settle=SettlePending();if(settle!=CultivationReason.None)return settle;
             }
