@@ -339,6 +339,79 @@ public sealed class MainGameFoundationProbe : MonoBehaviour
         var corners=new Vector3[4];r.GetWorldCorners(corners);
         foreach(var c in corners){var p=RectTransformUtility.WorldToScreenPoint(null,c);Require(p.x>=-.5f && p.x<=Screen.width+.5f && p.y>=-.5f && p.y<=Screen.height+.5f,"Clipped control "+name+" at "+Screen.width);}
     }
+    string RealmIdentity(EntityDataSO data) {return data.realmComponentVersion+"|"+data.realmId+"|"+data.realmEntryLevel;}
+    void AssertRealm(EntityDataSO data,int entry,int total)
+    {
+        RealmProgressionResult state;
+        Require(data.realmComponentVersion==1 && data.realmId==RealmProgressionAuthority.LuyenKhiId && data.realmEntryLevel==entry && data.currentLevel==total,"Canonical Realm mismatch");
+        Require(RealmProgressionAuthority.TryEvaluate(data,out state) && state.InternalLevel==total-entry+1,"Derived internal level mismatch");
+    }
+    IEnumerator RealmV06()
+    {
+        phase=1;var data=gm.HeroData;AssertRealm(data,1,1);int growth=data.meleeGrowthBonus;
+        foreach(int target in new[]{1,9,10,19,20,29,30,45})
+        {
+            while(data.currentLevel<target)data.AddExp(data.expToNextLevel-data.currentExp);
+            combat.RefreshRegisteredHeroStats(hero,false);AssertRealm(data,1,target);
+            Require(data.currentExp==0 && data.statPoints==target-1,"EXP/points duplicate or reset");
+            Require(target==1?data.meleeGrowthBonus==growth:data.meleeGrowthBonus>=50*(target-1) && data.meleeGrowthBonus<=100*(target-1),"Growth changed outside existing per-level rolls");
+            ui.OpenHeroStats();yield return null;ui.RefreshCharacterProgression();
+            var text=(TMPro.TextMeshProUGUI)Get(ui,"progressionSummary");
+            Require(text.text.Contains("Level "+target) && text.text.Contains("Luyện Khí") && !text.text.Contains("legacy/prototype") && !text.text.Contains("Trúc Cơ"),"Character Realm label wrong at "+target);
+            if(target>=30)Require(text.text.Contains("Viên mãn") && text.text.Contains("Bình cảnh"),"Missing bottleneck label");
+            ui.CloseDamageInfo();
+        }
+        foreach(var size in new[]{new Vector2Int(600,338),new Vector2Int(800,450),new Vector2Int(1150,647),new Vector2Int(1360,680)})
+        {
+            yield return Resize(size.x,size.y);ui.OpenHeroStats();yield return null;ui.RefreshCharacterProgression();
+            var text=(TMPro.TextMeshProUGUI)Get(ui,"progressionSummary");text.ForceMeshUpdate();Require(!text.isTextOverflowing,"Realm summary overflow "+size.x);
+            foreach(string name in new[]{"CharacterAllocateHP","CharacterAllocatePhysical","DamageClose"})Onscreen(name);
+            yield return Capture("v06-realm-"+size.x);ui.CloseDamageInfo();
+        }
+        Pass("V06 real New Hero/AddExp stages1/9/10/19/20/29/30/45, Level/points/growth unchanged by Realm; Character actual Game View four sizes, no overflow; no trial button added. EXP granted by fixture, not natural long farm.");Status(1,"PASS");
+        phase=2;yield return Resize(800,450);
+        AssertIsolated();Require(gm.TryManualSave(SaveSlot.ManualSave1),"Save immediately after level progression");
+        string expectedRealm=RealmIdentity(data);int exp=data.currentExp,points=data.statPoints;growth=data.meleeGrowthBonus;
+        ui.OpenHeroStats();yield return null;var retired=data;
+        Require(gm.LoadAndContinue(SaveSlot.ManualSave1),"Load while Character open");yield return Ready();data=gm.HeroData;
+        AssertRealm(data,1,45);Require(!ReferenceEquals(data,retired) && data.currentExp==exp && data.statPoints==points && data.meleeGrowthBonus==growth,"Load did not replace canonical snapshot faithfully");
+        ui.OpenHeroStats();yield return null;ui.RefreshCharacterProgression();
+        int physical=data.addedDamage;Press("CharacterAllocatePhysical");yield return null;
+        Require(data.statPoints==points-1 && data.addedDamage==physical+1 && retired.statPoints==points && RealmIdentity(data)==expectedRealm,"Allocation changed Realm/retired Hero or duplicated");ui.CloseDamageInfo();
+        var item=EquipmentFoundation.CreateCommon(EquipmentFoundation.DemoSword,1,4);
+        Require(EquipmentRuntime.AddInstance(data,item) && EquipmentInventory.Add(data,EquipmentRefinement.MaterialId,12),"Gear/Forge fixture stock");item=EquipmentRuntime.Find(data,item.instanceId);
+        Require(gm.EquipGear(item.instanceId,EquipmentSlot.Weapon) && RealmIdentity(data)==expectedRealm,"Equip changed Realm");
+        string message;Require(gm.ApplyForgeTest(item.instanceId,EquipmentRefinement.Operation.NormalUp,out message) && RealmIdentity(data)==expectedRealm,"Forge changed Realm");
+        Require(gm.UnequipGear(EquipmentSlot.Weapon) && RealmIdentity(data)==expectedRealm,"Unequip changed Realm");
+        Pass("V06 actual Save/Load after EXP and open Character, canonical replacement, one allocation targets new Hero only; equip/Forge/unequip preserve Realm.");Status(2,"PASS");
+        phase=3;
+        if(Enemies.Count==0)Call(gm,"CallNextWave");Require(Enemies.Count>0,"Need live combat for failed Load");
+        ui.SetPaused(false);yield return null;var live=gm.HeroData;var liveState=combat.CurrentHeroCombatState;int liveLife=liveState.LifeVersion;
+        string bad=JsonUtility.ToJson(live,true).Replace("\"realmComponentVersion\": 1","\"realmComponentVersion\": 2");Require(bad!=JsonUtility.ToJson(live,true),"Future fixture must change source");
+        File.WriteAllText(Path.Combine(SavePath,"ManualSave2.json"),bad);
+        Require(!gm.LoadAndContinue(SaveSlot.ManualSave2) && ReferenceEquals(gm.HeroData,live) && combat.CurrentHeroCombatState==liveState && liveState.LifeVersion==liveLife && Enemies.Count>0,"Failed Load interrupted live canonical combat");
+        ui.SetPaused(true);File.Delete(Path.Combine(SavePath,"ManualSave2.json")); // only owned fixture file
+        WorldMapNode current;Require(WorldMapCatalog.TryGet(data.worldMapId,out current),"Current node");string destination=null;
+        foreach(string id in current.Links){WorldMapNode n;if(WorldMapCatalog.TryGet(id,out n) && !n.IsBoss){destination=id;break;}}
+        Require(destination!=null,"Normal neighbor");if(!data.worldMapCleared.Contains(current.Id))data.worldMapCleared.Add(current.Id); // explicit permission fixture, not five natural waves
+        Require(gm.TryTravelToWorldMap(destination),"Fixture-authorized Travel");yield return Ready();data=gm.HeroData;AssertRealm(data,1,45);
+        Require(gm.TryManualSave(SaveSlot.ManualSave2) && gm.LoadAndContinue(SaveSlot.ManualSave2),"Load after Travel");yield return Ready();data=gm.HeroData;
+        AssertRealm(data,1,45);Require(data.worldMapId==destination,"Travel snapshot not restored");
+        Call(combat,"ApplyIncomingDamage",1000000,"[V06 fixture defeat]",null,null);yield return null;gm.OnRetryClicked();yield return Ready();
+        AssertRealm(gm.HeroData,1,45);Require(combat.CurrentHeroCombatState.Data==gm.HeroData && Get(space,"cameraTarget")==hero,"Retry stale data/camera binding");
+        Pass("V06 future Realm load refused during actual running combat without canonical/life/encounter replacement; fixture-authorized Travel -> Save/Load and fixture defeat -> Retry preserve Realm and binding.");Status(3,"PASS");
+        phase=4;data=gm.HeroData;
+        string legacy=Regex.Replace(JsonUtility.ToJson(data,true),@"^\s*""(realmComponentVersion|realmId|realmEntryLevel)""\s*:[^\r\n]*\r?\n?","",RegexOptions.Multiline);
+        File.WriteAllText(Path.Combine(SavePath,"ManualSave1.json"),legacy);data.realmEntryLevel=45;
+        ui.OpenHeroStats();yield return null;ui.RefreshCharacterProgression();Require(((TMPro.TextMeshProUGUI)Get(ui,"progressionSummary")).text.Contains("Sơ kỳ 1"),"Preload distinct entry fixture");
+        Require(gm.LoadAndContinue(SaveSlot.ManualSave1),"MainGame conservative legacy migration");yield return Ready();AssertRealm(gm.HeroData,1,45);
+        ui.OpenHeroStats();yield return null;ui.RefreshCharacterProgression();Require(((TMPro.TextMeshProUGUI)Get(ui,"progressionSummary")).text.Contains("Viên mãn"),"Stale Realm UI after legacy Load");ui.CloseDamageInfo();
+        var original=gm.heroDataSO;var template=UnityEngine.Object.Instantiate(original);template.realmComponentVersion=99;template.realmId="template:invalid";template.realmEntryLevel=999;
+        gm.heroDataSO=template;Call(gm,"InitHeroData",false);gm.heroDataSO=original;UnityEngine.Object.Destroy(template);
+        AssertRealm(gm.HeroData,1,1);Require(gm.HeroData.currentExp==0 && gm.HeroData.statPoints==0,"New after legacy Load retained progression");
+        Pass("V06 MainGame legacy Load resets entry from distinct live state, UI follows current canonical Hero; New Run after legacy Load overrides contaminated cloned template and starts Level1/LuyenKhi/entry1 without old EXP/points.");Status(4,"PASS");
+    }
+
     IEnumerator DevelopmentV04()
     {
         phase=1;var data=gm.HeroData;
@@ -508,10 +581,11 @@ public sealed class MainGameFoundationProbe : MonoBehaviour
         AssertIsolated();ui.IsolatedValidationProfile=true;
         // A personal DEVB file may otherwise hide the level-1 gear increment.
         // Reset only static state inside this disposable test process; no file write.
-        if(Array.IndexOf(Environment.GetCommandLineArgs(),"-foundationDevelopmentV04")>=0 || Array.IndexOf(Environment.GetCommandLineArgs(),"-foundationRecoveryV03")>=0 || Array.IndexOf(Environment.GetCommandLineArgs(),"-foundationStabilityV03")>=0 || Array.IndexOf(Environment.GetCommandLineArgs(),"-foundationCameraV03")>=0 || Array.IndexOf(Environment.GetCommandLineArgs(),"-foundationGearDropV01")>=0 || Array.IndexOf(Environment.GetCommandLineArgs(),"-foundationProgressionV02")>=0)CombatBalance.ResetDevProfiles();
+        if(Array.IndexOf(Environment.GetCommandLineArgs(),"-foundationRealmV06")>=0 || Array.IndexOf(Environment.GetCommandLineArgs(),"-foundationDevelopmentV04")>=0 || Array.IndexOf(Environment.GetCommandLineArgs(),"-foundationRecoveryV03")>=0 || Array.IndexOf(Environment.GetCommandLineArgs(),"-foundationStabilityV03")>=0 || Array.IndexOf(Environment.GetCommandLineArgs(),"-foundationCameraV03")>=0 || Array.IndexOf(Environment.GetCommandLineArgs(),"-foundationGearDropV01")>=0 || Array.IndexOf(Environment.GetCommandLineArgs(),"-foundationProgressionV02")>=0)CombatBalance.ResetDevProfiles();
         yield return Resize(800,450);Call(gm,"InitHeroData",false);Call(gm,"DeployHero",false);yield return Ready();
         inventory=(InventoryPanelUI)Get(ui,"inventoryUI");Require(inventory!=null,"No Inventory panel.");
         ui.inventoryLayoutDebug=false;ui.inventoryUseArtTheme=false;ui.ApplyHudFromInspector();
+        if(Array.IndexOf(Environment.GetCommandLineArgs(),"-foundationRealmV06")>=0) {yield return RealmV06();yield break;}
         if(Array.IndexOf(Environment.GetCommandLineArgs(),"-foundationDevelopmentV04")>=0) {yield return DevelopmentV04();yield break;}
         if(Array.IndexOf(Environment.GetCommandLineArgs(),"-foundationRecoveryV03")>=0) {yield return RecoveryV03();yield break;}
         if(Array.IndexOf(Environment.GetCommandLineArgs(),"-foundationStabilityV03")>=0) {yield return StabilityV03();yield break;}
