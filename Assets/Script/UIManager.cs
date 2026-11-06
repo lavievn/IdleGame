@@ -398,6 +398,7 @@ public partial class UIManager : MonoBehaviour
     internal bool IsolatedValidationProfile;
     private TMPro.TextMeshProUGUI devSourceCaption;
     private TMPro.TextMeshProUGUI progressionSummary;
+    private float progressionRefreshElapsed;
     private RectTransform allocateHealthButton,allocatePhysicalButton;
     private CustomInteractable allocateHealthInput,allocatePhysicalInput;
     public string CharacterSourceStatus =>
@@ -614,7 +615,7 @@ public partial class UIManager : MonoBehaviour
         LayoutCharacterProgression();RefreshCharacterProgression();
         string title = detailKind == 1 ? "CHỈ SỐ HERO" : detailKind == 2 ? "NHẬT KÝ" : "SÁT THƯƠNG " + (damagePage+1) + "/" + System.Math.Max(1,displayedDamage.Length);
         string content = detailKind != 0 ? detailSnapshot : displayedDamage.Length == 0 ? "Chưa có đòn đánh hoàn tất." : displayedDamage[damagePage];
-        var pages = ReadablePages(content, Mathf.Max(12,ManagementWindowLayout.CombatPixels(Screen.width)-40), Mathf.Max(20,Screen.height-(detailKind==1?196:92)));
+        var pages = ReadablePages(content, Mathf.Max(12,ManagementWindowLayout.CombatPixels(Screen.width)-40), Mathf.Max(20,Screen.height-(detailKind==1?(CultivationVisible?262:196):92)));
         detailSliceCount = pages.Count; detailSlice = Mathf.Clamp(detailSlice,0,pages.Count-1);
         damageText.text = title + " · " + (detailSlice+1) + "/" + pages.Count + "\n" + pages[detailSlice];
     }
@@ -662,7 +663,8 @@ public partial class UIManager : MonoBehaviour
             var gm=GameForUI();var data=gm!=null?gm.HeroData:null;
             var state=CombatManager.Instance!=null?CombatManager.Instance.CurrentHeroCombatState:null;
             string health=state!=null && state.Data==data?state.CurrentHP+"/"+state.MaxHP:"—";
-            if(progressionSummary!=null)progressionSummary.text=(data==null?"Chưa có nhân vật.":"Level "+data.currentLevel+" · "+LegacyRealmSnapshotCompatibility.Describe(data)+
+            if(gm!=null && gm.Cultivation!=null)LayoutCultivationTrack(Mathf.Max(280,ManagementWindowLayout.CombatPixels(Screen.width)-12));
+            if(progressionSummary!=null)progressionSummary.text=gm!=null && gm.Cultivation!=null?CultivationSummary(gm):(data==null?"Chưa có nhân vật.":"Level "+data.currentLevel+" · "+LegacyRealmSnapshotCompatibility.Describe(data)+
                 "\nTu luyện mới chưa kích hoạt · Điểm thuộc tính: "+data.statPoints+
                 "\nHP: "+health+" · Physical Attack: "+WeaponBasicAttack.Physical(data)+" · EXP: "+data.currentExp+"/"+data.expToNextLevel)+"\n"+CharacterSourceStatus;
             bool can=gm!=null && gm.CanAllocateHeroAttribute;
@@ -681,16 +683,18 @@ public partial class UIManager : MonoBehaviour
         if(progressionSummary==null)return;
         bool show=detailKind==1;
         progressionSummary.gameObject.SetActive(show);allocateHealthButton.gameObject.SetActive(show);allocatePhysicalButton.gameObject.SetActive(show);
+        float cultivationWidth=Mathf.Max(280,ManagementWindowLayout.CombatPixels(Screen.width)-12);
+        LayoutCultivationTrack(cultivationWidth);
         if(!show) {
             var ordinary=damageText.rectTransform;ordinary.anchorMin=Vector2.zero;ordinary.anchorMax=Vector2.one;
             ordinary.sizeDelta=new Vector2(-16,-40);ordinary.anchoredPosition=new Vector2(0,16);return;
         }
         float width=Mathf.Max(280,ManagementWindowLayout.CombatPixels(Screen.width)-12);
-        PlaceUI(progressionSummary.rectTransform,new Vector2(0,1),new Vector2(0,1),new Vector2(8,-8),new Vector2(width-16,92));
+        PlaceUI(progressionSummary.rectTransform,new Vector2(0,1),new Vector2(0,1),new Vector2(8,-8),new Vector2(width-16,CultivationVisible?150:92));
         float half=(width-24)*.5f;
         PlaceUI(allocateHealthButton,Vector2.zero,Vector2.zero,new Vector2(8,36),new Vector2(half,28));
         PlaceUI(allocatePhysicalButton,Vector2.zero,Vector2.zero,new Vector2(16+half,36),new Vector2(half,28));
-        var text=damageText.rectTransform;text.anchorMin=Vector2.zero;text.anchorMax=Vector2.one;text.sizeDelta=new Vector2(-16,-172);text.anchoredPosition=new Vector2(0,-18);
+        var text=damageText.rectTransform;text.anchorMin=Vector2.zero;text.anchorMax=Vector2.one;text.sizeDelta=new Vector2(-16,CultivationVisible?-238:-172);text.anchoredPosition=new Vector2(0,CultivationVisible?-51:-18);
     }
     public void OpenLogInfo()
     {
@@ -852,7 +856,8 @@ public partial class UIManager : MonoBehaviour
             LayoutReadableUI();
         RefreshCombatHUDVisibility();
         TickHudW3();
-        RefreshCharacterProgression();
+        progressionRefreshElapsed+=Time.unscaledDeltaTime;
+        if(progressionRefreshElapsed>=.2f){progressionRefreshElapsed=0f;RefreshCharacterProgression();}
     }
     private static void PlaceUI(RectTransform rect,Vector2 anchor,Vector2 pivot,Vector2 position,Vector2 size)
     {

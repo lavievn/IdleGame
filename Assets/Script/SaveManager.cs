@@ -4,7 +4,7 @@ using System.Text.RegularExpressions;
 
 using UnityEngine;
 
-public class SaveManager : MonoBehaviour
+public partial class SaveManager : MonoBehaviour
 {
     public static SaveManager Instance { get; private set; }
 
@@ -92,6 +92,7 @@ public class SaveManager : MonoBehaviour
     public bool SaveGame(EntityDataSO entityData, SaveSlot slot)
     {
         if (entityData == null) return false;
+        if(!ValidateCultivationComponent(entityData.cultivationJson)){Debug.LogWarning("[SaveManager] Refusing cultivation save: "+LastCultivationFailure);return false;}
         string reason;
         if (!EquipmentFoundation.TryValidateSaveVersions(entityData, out reason) ||
             !LegacyRealmSnapshotCompatibility.TryValidate(entityData.realmComponentVersion,entityData.realmId,entityData.realmEntryLevel,entityData.currentLevel,out reason))
@@ -130,7 +131,10 @@ public class SaveManager : MonoBehaviour
                 {
                     Debug.LogWarning("[SaveManager] Refusing Realm load from "+slot+": "+reason);return false;
                 }
+                string cultivationComponent;
+                if(!ValidateCultivationJson(jsonData,out cultivationComponent)){Debug.LogWarning("[SaveManager] Refusing cultivation load: "+LastCultivationFailure);return false;}
                 // Missing Realm fields must not inherit the ScriptableObject template.
+                entityData.cultivationJson=""; // Never inherit an inline template/session snapshot.
                 entityData.realmComponentVersion=0;entityData.realmId=null;entityData.realmEntryLevel=0;
                 // JsonUtility.FromJsonOverwrite leaves template values intact for
                 // missing fields. Clear 0.0.51 lists before loading 0.0.50 saves.
@@ -197,6 +201,7 @@ public class SaveManager : MonoBehaviour
                 {
                     Debug.LogWarning("[SaveManager] Invalid restored Realm: "+reason);return false;
                 }
+                entityData.cultivationJson=CultivationForLoadedCandidate(cultivationComponent);
                 entityData.NormalizeRoots();
                 if (entityData.worldMapVersion > 0)
                 {
@@ -389,6 +394,8 @@ public class SaveManager : MonoBehaviour
             Debug.LogWarning("[SaveManager] Refusing write to " + slotName + ": " + reason);
             return false;
         }
+        string cultivationComponent;
+        if(!ValidateCultivationJson(data,out cultivationComponent)){Debug.LogWarning("[SaveManager] Refusing cultivation write: "+LastCultivationFailure);return false;}
         string finalPath = Path.Combine(saveDirectory, slotName + SAVE_EXTENSION);
         string tempPath = Path.Combine(saveDirectory, slotName + TEMP_EXTENSION);
         try
@@ -416,7 +423,27 @@ public class SaveManager : MonoBehaviour
                     Debug.LogWarning("[SaveManager] Refusing Realm overwrite of "+slotName+": "+reason);return false;
                 }
             }
-            File.WriteAllText(tempPath, data);
+            if(File.Exists(finalPath)) {
+                string existingComponent;
+                if(!ValidateCultivationJson(File.ReadAllText(finalPath),out existingComponent)) {
+                    Debug.LogWarning("[SaveManager] Preserving incompatible cultivation slot: "+LastCultivationFailure);return false;
+                }
+                // A context without cultivation may not erase a component from a newer/other game.
+                if(!string.IsNullOrEmpty(existingComponent) && string.IsNullOrEmpty(cultivationComponent)) {
+                    LastCultivationFailure="Cannot erase an existing cultivation component.";return false;
+                }
+            }
+#if UNITY_EDITOR
+            CheckOwnedWriteFault(OwnedWriteFault.BeforeWrite);
+#endif
+            using(var file=new FileStream(tempPath,FileMode.Create,FileAccess.Write,FileShare.None)) {
+                using(var writer=new StreamWriter(file,System.Text.Encoding.UTF8,1024,true)){writer.Write(data);writer.Flush();}
+                file.Flush(true);
+            }
+#if UNITY_EDITOR
+            CheckOwnedWriteFault(OwnedWriteFault.AfterTempWrite);
+            CheckOwnedWriteFault(OwnedWriteFault.BeforeReplace);
+#endif
             if (File.Exists(finalPath)) File.Replace(tempPath, finalPath, null);
             else File.Move(tempPath, finalPath);
             return true;

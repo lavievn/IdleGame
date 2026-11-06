@@ -405,9 +405,10 @@ namespace UnityEngine {
  }
  // Test JSON double for primitive fields and identity lists; not Unity serialization.
  public static class JsonUtility {
+   static string Quote(string s){return s==null?"null":"\""+s.Replace("\\","\\\\").Replace("\"","\\\"").Replace("\r","\\r").Replace("\n","\\n").Replace("\t","\\t")+"\"";}
    public static T FromJson<T>(string json) where T : new() { return new T(); }
   public static string ToJson(object value,bool pretty){var fields=new List<string>();foreach(var f in value.GetType().GetFields()) {
-   if(f.FieldType==typeof(int)||f.FieldType==typeof(float)||f.FieldType.IsEnum)fields.Add("\""+f.Name+"\":"+Convert.ToString(f.FieldType.IsEnum?(object)Convert.ToInt32(f.GetValue(value)):f.GetValue(value),System.Globalization.CultureInfo.InvariantCulture));
+   if(f.FieldType==typeof(int)||f.FieldType==typeof(float)||f.FieldType==typeof(double)||f.FieldType.IsEnum)fields.Add("\""+f.Name+"\":"+Convert.ToString(f.FieldType.IsEnum?(object)Convert.ToInt32(f.GetValue(value)):f.GetValue(value),System.Globalization.CultureInfo.InvariantCulture));
    else if(f.FieldType==typeof(List<int>) || f.FieldType==typeof(List<float>)) {
     var nums=new List<string>();var items=(System.Collections.IEnumerable)f.GetValue(value);
     if(items!=null)foreach(var item in items)nums.Add(Convert.ToString(item,System.Globalization.CultureInfo.InvariantCulture));
@@ -418,7 +419,7 @@ namespace UnityEngine {
     if(strings!=null)foreach(string item in strings)arr.Add("\""+item.Replace("\\","\\\\").Replace("\"","\\\"")+"\"");
     fields.Add("\""+f.Name+"\":["+string.Join(",",arr.ToArray())+"]");
    }
-   else if(f.FieldType==typeof(string)) fields.Add("\""+f.Name+"\":\""+f.GetValue(value)+"\"");
+   else if(f.FieldType==typeof(string)) fields.Add("\""+f.Name+"\":"+Quote((string)f.GetValue(value)));
    else if(f.FieldType==typeof(bool))
     fields.Add("\""+f.Name+"\":"+((bool)f.GetValue(value)?"true":"false"));
    else if(NestedEquipmentSaveStub.Supports(f.FieldType))
@@ -451,7 +452,10 @@ namespace UnityEngine {
     }
     continue;
    }
-   if(f.FieldType==typeof(string)) {var str=System.Text.RegularExpressions.Regex.Match(json,"\""+f.Name+"\"\\s*:\\s*\"([^\"]*)\"");if(str.Success)f.SetValue(value,str.Groups[1].Value);continue;}
+   if(f.FieldType==typeof(string)) {System.Collections.Generic.Dictionary<string,string> properties;string reason,decoded,token;
+    if(TuTienCore.CultivationSaveJson.TryObject(json,out properties,out reason) && properties.TryGetValue(f.Name,out token)) {
+     if(token=="null")f.SetValue(value,null);else if(TuTienCore.CultivationSaveJson.TryString(token,out decoded))f.SetValue(value,decoded);
+    }continue;}
    if(f.FieldType==typeof(bool)) {
     var flag=System.Text.RegularExpressions.Regex.Match(json,"\""+f.Name+"\"\\s*:\\s*(true|false)");
     if(flag.Success)f.SetValue(value,flag.Groups[1].Value=="true");continue;
@@ -476,6 +480,7 @@ namespace UnityEngine {
    var m=System.Text.RegularExpressions.Regex.Match(json,"\""+f.Name+"\"\\s*:\\s*(-?[0-9.]+)");if(!m.Success)continue;
    if(f.FieldType==typeof(int))f.SetValue(value,int.Parse(m.Groups[1].Value));
    else if(f.FieldType==typeof(float))f.SetValue(value,float.Parse(m.Groups[1].Value,System.Globalization.CultureInfo.InvariantCulture));
+   else if(f.FieldType==typeof(double))f.SetValue(value,double.Parse(m.Groups[1].Value,System.Globalization.CultureInfo.InvariantCulture));
    else if(f.FieldType.IsEnum)f.SetValue(value,Enum.ToObject(f.FieldType,int.Parse(m.Groups[1].Value))); } }
  }
 }

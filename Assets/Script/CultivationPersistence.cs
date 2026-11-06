@@ -3,11 +3,12 @@ using System.Collections.Generic;
 
 namespace TuTienCore
 {
-    // Proposed component DTO, NOT added to EntityDataSO or SaveManager production.
+    // Domain payload; v0.7 stores its JSON in the canonical Hero only for explicit isolated playtest.
+    // configurationVersion=0 remains v0.6 domain-fixture-only, never accepted by the gameplay adapter.
     [Serializable]
     public sealed class CultivationComponentDto
     {
-        public int version;public string configurationId,ownerId,actualRealmId;
+        public int version;public int configurationVersion;public string configurationId,ownerId,actualRealmId;
         public double foundation,unrefinedQi,spiritualEnergy,injury,bloodProgress;public int bloodCharges;
         public bool hasBurn;public string burnId,burnOwnerId,burnActualRealmId;
         public double burnReference,burnDebtRatio,burnRemaining;public int burnChargesUsed,burnStatus,burnEndReason=-1;

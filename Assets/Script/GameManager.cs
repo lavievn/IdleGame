@@ -5,7 +5,7 @@ using UnityEngine.UI;
 using TMPro;
 using TuTienCore;
 
-public class GameManager : MonoBehaviour
+public partial class GameManager : MonoBehaviour
 {
     [Header("UI CỐT LÕI")]
     public Image eventLog;
@@ -478,6 +478,7 @@ public class GameManager : MonoBehaviour
             SynergyMath.GenerateRootProfile(runtimeHeroData);
         }
 
+        InitializeCultivation();
         runtimeHeroData.ApplyHeroBalance();
         if (heroController != null) heroController.SetIdentityVisual(runtimeHeroData);
         if(showMenu)SetupPreGameUI();
@@ -552,6 +553,7 @@ public class GameManager : MonoBehaviour
     {
         if (UIManager.Instance != null) UIManager.Instance.SetPaused(false);
         if (hasDeployed) return;
+        EnsureCultivationBinding();
         CancelNextWave();
         // Only title choices run the long cinematic. Every actual map entry
         // shares the same paused, hidden spawn -> appear -> first-wave pipeline.
@@ -896,6 +898,8 @@ public class GameManager : MonoBehaviour
             Destroy(loaded);
             return false;
         }
+        CultivationGameplayBinding prepared;
+        if(!PrepareCultivation(loaded,out prepared)){Destroy(loaded);return false;}
         CancelGameplayEntry();
         // 1. Dọn dẹp sạch sẽ chiến trường tránh kẹt Coroutine
         hasDeployed = false;
@@ -909,6 +913,7 @@ public class GameManager : MonoBehaviour
         // 2. Nạp dữ liệu mới
         if (runtimeHeroData != null) Destroy(runtimeHeroData);
         runtimeHeroData = loaded;
+        ReplaceCultivation(prepared);
         recentEvents.Clear(); recentDamage.Clear(); fullEventHistory.Clear();
         damageHistory.Clear();
         continueSlot = slot;
@@ -963,6 +968,7 @@ public class GameManager : MonoBehaviour
         CancelGameplayEntry();
         if (UIManager.Instance != null) UIManager.Instance.HideMapTitle();
         hasDeployed = false;
+        DisposeCultivation();
         CancelNextWave();
         activeMonsters.Clear();
         if (runtimeHeroData != null)
@@ -1005,6 +1011,7 @@ public class GameManager : MonoBehaviour
             }
         }
         CancelGameplayEntry();
+        DisposeCultivation();
         hasDeployed=false;
         CancelNextWave();
         ClearTestCompanions();
@@ -1085,8 +1092,11 @@ public class GameManager : MonoBehaviour
             Debug.Log("[SaveLoad] Continue from " + continueSlot +
                 ": level=" + loaded.currentLevel + " EXP=" + loaded.currentExp +
                 " map=" + loaded.mapNumber);
+            CultivationGameplayBinding prepared;
+            if(!PrepareCultivation(loaded,out prepared)){Destroy(loaded);return;}
             if (runtimeHeroData != null) Destroy(runtimeHeroData);
             runtimeHeroData = loaded;
+            ReplaceCultivation(prepared);
             recentEvents.Clear(); recentDamage.Clear(); fullEventHistory.Clear();
             runtimeHeroData.ApplyHeroBalance();
             RestoreSelectedStance();
@@ -1203,6 +1213,7 @@ public class GameManager : MonoBehaviour
 
     void LateUpdate()
     {
+        TickCultivation(); // Sole cultivation clock; runs before entry can release the pause.
         TraceEntryFrame("GameManager.LateUpdate before entry handoff");
         // EnvironmentManager (-200) has already finished its paused LateUpdate.
         // Release entry AFTER camera/actor steps so no camera-only half-frame
@@ -1325,6 +1336,7 @@ public class GameManager : MonoBehaviour
 
     private void OnDisable()
     {
+        DisposeCultivation();
         if(combatManager!=null)combatManager.SuspendLootEncounter();
         var space=environmentManager!=null?environmentManager:EnvironmentManager.Instance;
         if(space!=null)space.CancelCameraEntryHandoff();
@@ -1341,6 +1353,7 @@ public class GameManager : MonoBehaviour
     }
     private void OnEnable()
     {
+        if(hasDeployed)EnsureCultivationBinding();
         if(combatManager!=null)combatManager.ResumeLootEncounter();
         if(!resumeEntryWave)return;
         resumeEntryWave=false;
@@ -1356,6 +1369,7 @@ public class GameManager : MonoBehaviour
     }
     private void OnDestroy()
     {
+        DisposeCultivation();
         if(mapEntryCover!=null)Destroy(mapEntryCover.transform.parent.gameObject);
     }
 }
