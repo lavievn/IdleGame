@@ -10,11 +10,14 @@ public static class CultivationPlaytestLauncher
 {
     public const string ConfigurationPath="Assets/Editor/CultivationPlaytestV07.json";
     [MenuItem("Bach Luyen/Playtests/Cultivation v0.7 (isolated)")]
-    public static void StartInteractive()
+    public static void StartInteractive(){StartProfile(ConfigurationPath);}
+    [MenuItem("Bach Luyen/Playtests/Cultivation balance v1 - 60 minutes (isolated)")]
+    public static void StartBalance(){StartProfile("Assets/Editor/CultivationBalanceV1.json");}
+    static void StartProfile(string configurationPath)
     {
         if(EditorApplication.isPlayingOrWillChangePlaymode)throw new InvalidOperationException("Stop the current Play session first.");
         for(int i=0;i<SceneManager.sceneCount;i++)if(SceneManager.GetSceneAt(i).isDirty)throw new InvalidOperationException("Save scene work before opening the playtest.");
-        string json=File.ReadAllText(ConfigurationPath);CultivationPlaytestBootstrap.ReadProfile(json);
+        string json=File.ReadAllText(configurationPath);CultivationPlaytestBootstrap.ReadProfile(json);
         var scene=EditorSceneManager.OpenScene("Assets/Scenes/MainGame.unity");
         var owners=UnityEngine.Object.FindObjectsByType<SaveManager>(FindObjectsInactive.Include,FindObjectsSortMode.None);
         if(owners.Length!=1)throw new InvalidOperationException("Expected one MainGame SaveManager.");
