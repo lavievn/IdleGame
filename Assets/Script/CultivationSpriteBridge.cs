@@ -5,6 +5,8 @@ using TuTienCore;
 // W2 sprite-preview bridge. Presentation only; it never changes movement, AI or combat state.
 public sealed class CultivationSpriteBridge : MonoBehaviour
 {
+    public const string DefaultHeroVisualKey="Swordsman";
+    public const string DefaultHeroTexturePath="CultivationSprites/Swordsman_Normal";
     public enum Pose { Normal, Attack, Hit }
     // Presentation windows only. CombatManager owns damage, projectiles and
     // attack cadence; these durations never grant damage immunity or delay a hit.
@@ -67,7 +69,7 @@ public sealed class CultivationSpriteBridge : MonoBehaviour
         var bridge = controller.heroRect.GetComponent<CultivationSpriteBridge>();
         if (bridge == null) bridge = controller.heroRect.gameObject.AddComponent<CultivationSpriteBridge>();
         bridge.healthFill = controller.hpFillImage;
-        bridge.Init(false, ToClass(controller.attackMode));
+        bridge.Init(false, DefaultHeroVisualKey); // Character identity is independent of weapon/combat mode.
     }
     public static void AttachMonster(MonsterController controller)
     {
@@ -129,14 +131,9 @@ public sealed class CultivationSpriteBridge : MonoBehaviour
             // red overlay. Keep white Image tint so that it is not applied twice.
             string prefix = enemy ? "Enemy_" : "";
             string path = "CultivationSprites/" + prefix + type;
-            // Three-frame Archer animations. Other roles keep the existing
-            // single-frame presentation without any behavior change.
-            if(!enemy && type=="Archer")
-            {
-                normalFrames=LoadSequence(path+"_Normal");
-                attackFrames=LoadSequence(path+"_Attack");
-                hitFrames=LoadSequence(path+"_Hit");
-            }
+            // Hero uses the existing default Normal bitmap for every action request.
+            // Old Archer/Mage sample sheets remain assets (including enemy fallback references).
+            // Combat owns timing; a future animation adapter can consume action metadata here.
             // Load each fallback only if its complete sequence is unavailable.
             // Loading it first leaked a created Sprite when frame[0] replaced it.
             normalFoot=attackFoot=hitFoot=SourceFeet;
@@ -149,9 +146,8 @@ public sealed class CultivationSpriteBridge : MonoBehaviour
             }
             else
             {
-                normal=normalFrames!=null?normalFrames[0]:LoadFrame(path+"_Normal");
-                attack=attackFrames!=null?attackFrames[0]:LoadFrame(path+"_Attack");
-                hit=hitFrames!=null?hitFrames[0]:LoadFrame(path+"_Hit");
+                normal=LoadFrame(DefaultHeroTexturePath);
+                attack=hit=null; // No attack/weapon-specific replacement of the Hero body.
             }
         }
         if (normal == null)

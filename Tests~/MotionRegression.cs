@@ -154,6 +154,7 @@ partial class MotionRegression
         if(args.Length==1 && args[0]=="--actor-presentation") {ActorPresentationTests();return;}
         if(args.Length==1 && args[0]=="--monster-awareness") {MonsterAwarenessTests();return;}
         if(args.Length==1 && args[0]=="--loot-visuals") {LootDropPresentationTests();CombatLootTests();return;}
+        if(args.Length==1 && args[0]=="--unified-hero") {UnifiedHeroVisualTests();return;}
         if(args.Length==1 && args[0]=="--weapon-basic") {WeaponBasicAttackTests();return;}
         if(args.Length==1 && args[0]=="--combat-loot") {
             CombatLootTests();BalanceTests();Patch54bTests();return;

@@ -77,7 +77,11 @@ partial class MotionRegression
     {
         var image=SpriteBody(rect);
         Check(image!=null&&image.sprite!=null,"sprite body exists");
-        Check(image.sprite.texture==resources.Texture("CultivationSprites/"+key+"_"+pose),key+" must show "+pose);
+        bool enemy=key.StartsWith("Enemy_",StringComparison.Ordinal);
+        var bridge=rect.GetComponent<CultivationSpriteBridge>();
+        Check(bridge.CurrentPose.ToString()==pose,"Action request/expiry remains "+pose);
+        string path=enemy?"CultivationSprites/"+key+"_"+pose:CultivationSpriteBridge.DefaultHeroTexturePath;
+        Check(image.sprite.texture==resources.Texture(path),enemy?key+" must show "+pose:"Hero action request retains its one default bitmap");
         Near(image.sprite.rect.width,900,"full canvas width, not automatic fragment");
         Near(image.sprite.rect.height,600,"full canvas height");
     }
@@ -172,7 +176,7 @@ partial class MotionRegression
                 });
             }
 
-            Run("sprites Hero mode change resets Attack/Hit and binds correct class",()=>{
+            Run("sprites Hero mode change resets action request while retaining default identity",()=>{
                 var s=new SpriteSubject(false,AttackMode.Melee);
                 var body=SpriteBody(s.rect);
                 for (int i=0;i<3;i++)
