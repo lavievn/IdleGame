@@ -25,19 +25,22 @@ partial class MotionRegression
             CombatStep(f,.2f);
             Near(f.combat.CurrentHeroHP,hp,"unaware monster did not damage Hero");
         });
+        foreach(var mode in new[]{AttackMode.Melee,AttackMode.RangedPhysical,AttackMode.RangedMagic})
         foreach(bool right in new[]{false,true})
-        Run("sight uses facing half-plane, 500-unit Ground distance and living Heroes / "+right,()=>{
-            var f=new Field();var m=IdleMonster(f,0);f.Battle(m);Look(m,right);
+        Run("sight uses facing half-plane, mode-specific Ground distance and living Heroes / "+mode+" / "+right,()=>{
+            var f=new Field();var m=IdleMonster(f,0,mode);f.Battle(m);Look(m,right);
             float sign=right?1:-1;
+            float range=mode==AttackMode.Melee?550f:800f;
+            Near(m.SightRange,range,"melee550 and both ranged modes800");
             f.space.SetPosition(f.hero.heroRect,new Vector2(-sign*100,0));
             f.combat.TickMonsterAwareness(f.space,0f);Check(!m.HasDetectedHero,"behind cannot be seen");
-            f.space.SetPosition(f.hero.heroRect,new Vector2(sign*501,0));
-            f.combat.TickMonsterAwareness(f.space,0f);Check(!m.HasDetectedHero,"outside 500");
-            f.space.SetPosition(f.hero.heroRect,new Vector2(sign*500,90));
+            f.space.SetPosition(f.hero.heroRect,new Vector2(sign*(range+1),0));
+            f.combat.TickMonsterAwareness(f.space,0f);Check(!m.HasDetectedHero,"outside mode-specific radius");
+            f.space.SetPosition(f.hero.heroRect,new Vector2(sign*range,90));
             f.combat.TickMonsterAwareness(f.space,0f);Check(!m.HasDetectedHero,"distance includes Ground Y");
-            f.space.SetPosition(f.hero.heroRect,new Vector2(sign*500,0));
+            f.space.SetPosition(f.hero.heroRect,new Vector2(sign*range,0));
             f.combat.TickMonsterAwareness(f.space,0f);
-            Check(m.Awareness==MonsterAwareness.Suspicious,"inclusive 500 boundary");
+            Check(m.Awareness==MonsterAwareness.Suspicious,"inclusive mode-specific boundary");
         });
         Run("idle facing flips only after 1.5 to 5 seconds and never consumes combat RNG",()=>{
             var f=new Field();var m=IdleMonster(f,0);f.Battle(m);f.hero.HideHero();

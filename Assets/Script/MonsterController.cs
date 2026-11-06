@@ -22,7 +22,7 @@ public class MonsterController : MonoBehaviour
     public bool IsAlive => isActiveAndEnabled && currentState != MonsterState.Dead;
     // The same pooled GameObject can represent multiple monster lives.
     public int SpawnVersion { get; private set; }
-    public const float SightRange = 500f;
+    public float SightRange => attackMode == AttackMode.Melee ? 550f : 800f;
     public const float AlertDuration = .5f;
     public MonsterAwareness Awareness { get; private set; }
     public bool HasDetectedHero => Awareness != MonsterAwareness.Unaware;
