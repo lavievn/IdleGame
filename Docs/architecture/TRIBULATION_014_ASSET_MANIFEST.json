@@ -32,6 +32,13 @@
       "asset": "Assets/Resources/Environment/Tribulation/HeavenlyGateTheme.ogg",
       "sha256": "c7eb52220348150cb09625b1c873b2ffa10e6689275bb4b61a9ccca8adfd8cc9",
       "conversion": "FFmpeg Vorbis q7; stereo 44100 Hz, 197.207007 s; Unity Streaming"
+    },
+    {
+      "source": "逆天破劫.wav",
+      "sourceSha256": "2de5cf2af9cee0432cba7d2b8cfb10361cfaad231347140c9100cc415ef7f7f9",
+      "asset": "Assets/Resources/Environment/Tribulation/HeavenlyGateThemeAlternate.ogg",
+      "sha256": "9f7e32a98aaa6302b8590a73b7736873c7a805f9b499f6440173bc5871dc9e3d",
+      "conversion": "FFmpeg Vorbis q7; stereo 44100 Hz, 153.527007 s; Unity Streaming"
     }
   ]
 }

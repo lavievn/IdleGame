@@ -22,7 +22,7 @@ Bốn tệp Desktop gốc giữ nguyên byte. PNG dự phòng được trích t�
 
 ## Nhạc riêng
 
-Bản “逆天而行” dùng Ogg Vorbis streaming từ WAV do người dùng cung cấp. BGM dùng âm lượng nhạc chung và phát lặp khi ải hoạt động, kể cả khi tạm dừng. Hai kênh nhạc bản đồ tạm dừng tại vị trí phát hiện tại. Khi rời ải, bài riêng dừng và controller tiếp tục nhạc theo bản đồ.
+Hai bài “逆天而行” và “逆天破劫” dùng Ogg Vorbis streaming từ WAV do người dùng cung cấp. Mỗi lần vào ải chọn ngẫu nhiên một bài với xác suất bằng nhau, rồi lặp bài đã chọn ở âm lượng nhạc chung, kể cả khi tạm dừng. Hai lần vào liên tiếp có thể chọn cùng bài. Bộ sinh ngẫu nhiên của nhạc tách riêng khỏi Combat. Hai kênh nhạc bản đồ tạm dừng tại vị trí phát hiện tại. Khi rời ải, bài riêng dừng và controller tiếp tục nhạc theo bản đồ.
 
 ## Hợp đồng strike và Save
 

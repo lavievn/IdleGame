@@ -16,6 +16,9 @@ public sealed class MapBgmController : MonoBehaviour
     private float elapsed, outgoingWeight;
     private bool missingCatalogWarned;
     private AudioSource trialSource;
+    private AudioClip[] trialTracks;
+    // Choosing music must not advance Unity's combat random sequence.
+    private System.Random trialTrackRandom = new System.Random();
     private bool trialMusicActive;
     private int pausedMapSources;
 
@@ -238,16 +241,23 @@ public sealed class MapBgmController : MonoBehaviour
 
     private void StartTrialMusic()
     {
+        if (trialTracks == null)
+            trialTracks = new[]
+            {
+                Resources.Load<AudioClip>("Environment/Tribulation/HeavenlyGateTheme"),
+                Resources.Load<AudioClip>("Environment/Tribulation/HeavenlyGateThemeAlternate")
+            };
+        var clip = trialTracks[trialTrackRandom.Next(trialTracks.Length)] ?? trialTracks[0] ?? trialTracks[1];
+        if (clip == null) return;
+
         if (trialSource == null)
         {
-            var clip = Resources.Load<AudioClip>("Environment/Tribulation/HeavenlyGateTheme");
-            if (clip == null) return;
             trialSource = gameObject.AddComponent<AudioSource>();
             trialSource.playOnAwake = false;
             trialSource.spatialBlend = 0f;
             trialSource.loop = true;
-            trialSource.clip = clip;
         }
+        trialSource.clip = clip;
 
         // Leave both regional channels at their playback positions, including
         // any crossfade in progress, while the encounter owns the music.

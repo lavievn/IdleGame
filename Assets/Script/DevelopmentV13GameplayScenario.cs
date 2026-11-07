@@ -50,6 +50,14 @@ namespace TuTienCore
    pass("16 native basic cases: one release, one accepted hit and kill for 2/3 enemies overlap/spread; deliberate legacy AoE control kills three. No reproduced basic multi-kill.");
    var rows=new List<string>{"fixture,family,outcome,combat_seconds,hero_hp_start,hero_hp_before_respawn,first_incoming_damage,reserve,penalty,hero_releases,accepted_hero_hits,saw_projectile"};
    var approaches=new List<string>{"fixture,family,exploration_at_reveal,wall_x_at_reveal,world_pan_before_combat"};
+   var music=MapBgmController.Instance;
+   const int musicSeed=42;
+   Set(music,"trialTrackRandom",new System.Random(musicSeed));
+   var expectedMusicRandom=new System.Random(musicSeed);
+   var trackNames=new[]{"HeavenlyGateTheme","HeavenlyGateThemeAlternate"};
+   var observedTracks=new HashSet<string>();
+   var musicRows=new List<string>{"fixture,clip"};
+   AudioSource dedicatedMusicSource=null;
    foreach(string name in new[]{"weak","sword","bow","staff","unarmed","same-hp-armor"}){
     var family=name=="sword"?WeaponFamily.Sword:name=="bow"?WeaponFamily.Bow:name=="staff"?WeaponFamily.Staff:WeaponFamily.Unarmed;
     Weapon(gm,family);var h=UnityEngine.Object.Instantiate(gm.HeroData);h.name="V13 owned "+name;h.tribulationJson="";h.currentLevel=1;h.currentExp=0;h.gold=777;h.professionProgress=new List<ProfessionProgress>{new ProfessionProgress{profession=SupportProfession.Forging,level=2,experience=7}};
@@ -138,12 +146,16 @@ namespace TuTienCore
        "the camera moved the fixed wall by exactly the same amount as the terrain");
     approaches.Add(FormattableString.Invariant($"{name},{family},{explored:0.###},{firstWallX:0.###},{worldPan:0.###}"));
     bool projectile=combat.PendingProjectileCount>0;
-    var music=MapBgmController.Instance;
     var trialTrack=(AudioSource)Get(music,"trialSource");
-    R(trialTrack!=null&&trialTrack.clip.name=="HeavenlyGateTheme"&&trialTrack.loop&&trialTrack.isPlaying&&
+    string expectedTrack=trackNames[expectedMusicRandom.Next(trackNames.Length)];
+    R(trialTrack!=null&&trialTrack.clip!=null&&trialTrack.clip.name==expectedTrack&&trialTrack.loop&&trialTrack.isPlaying&&
        Mathf.Abs(trialTrack.volume-MapBgmController.CurrentVolume)<.001f&&
        Array.TrueForAll(music.GetComponents<AudioSource>(),a=>a==trialTrack||!a.isPlaying),
-       "only the dedicated trial track plays, looping at the global BGM volume");
+       "each trial selects one dedicated track to loop at the global BGM volume");
+    if(dedicatedMusicSource==null)dedicatedMusicSource=trialTrack;
+    R(dedicatedMusicSource==trialTrack,"reuse one audio source across all trials");
+    observedTracks.Add(trialTrack.clip.name);
+    musicRows.Add(name+","+trialTrack.clip.name);
     if(name=="sword"){
      R(capturedEntry,"wall entered the frame while Hero was still approaching");
      yield return Wait(()=>Mathf.Abs(space.Position(gateArt).x-
@@ -240,7 +252,8 @@ namespace TuTienCore
       finalIncoming>incomingStart && !combat.TrialWarning &&
       GameObject.Find("Heavenly Trial Environment")==null && GameObject.Find("Trial lightning")==null,
       "environment, decoder, lightning and pending strike retired on result "+name);
-    R(!trialTrack.isPlaying,"dedicated music stopped on returning from the trial");
+    R(!trialTrack.isPlaying&&trialTrack.clip.name==expectedTrack,
+      "the selected clip stayed assigned until the dedicated source stopped on leaving");
     R(!success||b.Capacity.Absorption==3&&b.Capacity.Refinement==2,"new realm capacities derived immediately");
     R((family!=WeaponFamily.Bow&&family!=WeaponFamily.Staff)||projectile,"actual ranged projectile observed");
     if(!success){R(!gm.RequestTribulation()&&gm.TryManualSave(SaveSlot.ManualSave1),"failed Hero must regain bottleneck; save terminal failure for restart");ui.RefreshCharacterProgression();yield return capture("v13-failure-hud");}
@@ -257,6 +270,9 @@ namespace TuTienCore
    R(gm.TryTravelToWorldMap(travel),"real Travel after settled trial");yield return Ready(gm,ui);
    R(gm.HeroData.worldMapId==travel&&gm.Cultivation==bound&&bound.PendingSeconds==0&&saves.TrialSnapshotHash(SaveSlot.ManualSave2)==selectedHash,"Travel settles old fraction; terminal manual snapshot intact");
    File.WriteAllLines(Path.Combine(evidence,"gate-approach.csv"),approaches);
+   R(observedTracks.Count==trackNames.Length,"seeded encounter sequence actually played both tracks");
+   File.WriteAllLines(Path.Combine(evidence,"trial-music.csv"),musicRows);
+   pass("Both trial tracks played across seeded entries, one looping source per entry, stopped at exit.");
    pass("All trial Heroes explored 800 units before the wall spawned outside the left edge. Camera scrolled wall and ground together. Wall is 100 pixels lower at four sizes; the dedicated track stopped after each result.");
    File.WriteAllLines(Path.Combine(evidence,"trial-combat.csv"),rows);ui.OpenHeroStats();ui.RefreshCharacterProgression();yield return capture("v13-result-character");ui.CloseDamageInfo();pass("Save failure/retry, repeated Load, pause, four native Character/trial HUD sizes and fixture-only lifecycle PASS; native input NOT RUN.");
   }
