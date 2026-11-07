@@ -25,7 +25,7 @@ public partial class UIManager
             (p.IsProduction?" · Qi map: "+QiNumber(p.EnvironmentalQiPerSecond(h.worldMapId))+"/s":" · Mật độ: "+QiNumber(p.Density(h.worldMapId)))+
             rates+
             "\nLinh lực: "+QiNumber(s.Energy.Current)+" / "+QiNumber(p.Rules.EnergyMaximum(s.Injury.Severity))+
-            "\nHuyết/kiếp khóa · Điểm: "+h.statPoints+(p.Rules.CapacityCatalog!=null?" · thực = bước gần nhất":"");
+            "\nHuyết khóa · Điểm: "+h.statPoints+(p.Rules.CapacityCatalog!=null?" · thực = bước gần nhất":"")+"\nĐộ Kiếp: "+(gm.TribulationLockedReason==""?"[FIXTURE] sẵn sàng":gm.TribulationLockedReason);
     }
     void LayoutCultivationTrack(float width)
     {

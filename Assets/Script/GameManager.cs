@@ -732,6 +732,7 @@ public partial class GameManager : MonoBehaviour
     // V2 individual gear: all 8 positions share one canonical inventory.
     public bool GrantDemoSword()
     {
+        if(HasTribulationLiability)return false;
         if(!DevelopmentItemGrantsEnabled)return false;
         if (!IsGameplayHUDVisible || runtimeHeroData == null) return false;
         if (!EquipmentRuntime.GrantDemoSword(runtimeHeroData)) return false;
@@ -742,6 +743,7 @@ public partial class GameManager : MonoBehaviour
     // fixed latent affixes and a demonstrative quality ceiling.
     public bool GrantForgeTestSword()
     {
+        if(HasTribulationLiability)return false;
         if(!DevelopmentItemGrantsEnabled)return false;
         if(!IsGameplayHUDVisible || runtimeHeroData==null)return false;
         if(!EquipmentRuntime.AddInstance(runtimeHeroData,
@@ -752,6 +754,7 @@ public partial class GameManager : MonoBehaviour
 
     public bool GrantForgeMaterials()
     {
+        if(HasTribulationLiability)return false;
         if(!DevelopmentItemGrantsEnabled)return false;
         if(!IsGameplayHUDVisible || runtimeHeroData==null)return false;
         if(!EquipmentInventory.Add(runtimeHeroData,EquipmentRefinement.MaterialId,100))
@@ -763,6 +766,7 @@ public partial class GameManager : MonoBehaviour
     public bool ApplyForgeTest(string instanceId,
         EquipmentRefinement.Operation operation,out string message)
     {
+        if(HasTribulationLiability){message="Đang Độ Kiếp";return false;}
         message="Chưa thể rèn lúc này.";
         if(!IsGameplayHUDVisible || runtimeHeroData==null)return false;
         bool success=EquipmentRefinement.TryApply(runtimeHeroData,instanceId,
@@ -774,7 +778,7 @@ public partial class GameManager : MonoBehaviour
         return true;
     }
 
-    public bool CanAllocateHeroAttribute => IsGameplayHUDVisible && !HasPendingConfirmation &&
+    public bool CanAllocateHeroAttribute => !HasTribulationLiability && IsGameplayHUDVisible && !HasPendingConfirmation &&
         runtimeHeroData!=null && runtimeHeroData.statPoints>0 && combatManager!=null && heroController!=null &&
         combatManager.CurrentHeroCombatState!=null &&
         combatManager.CurrentHeroCombatState.Data==runtimeHeroData && combatManager.CurrentHeroCombatState.CanFight;
@@ -794,6 +798,7 @@ public partial class GameManager : MonoBehaviour
 
     public bool EquipGear(string instanceId,EquipmentSlot slot)
     {
+        if(HasTribulationLiability)return false;
         if (!IsGameplayHUDVisible || runtimeHeroData == null ||
             !EquipmentRuntime.Equip(runtimeHeroData,instanceId,slot)) return false;
         if (combatManager != null)
@@ -806,6 +811,7 @@ public partial class GameManager : MonoBehaviour
     }
     public bool UnequipGear(EquipmentSlot slot)
     {
+        if(HasTribulationLiability)return false;
         if (!IsGameplayHUDVisible || runtimeHeroData == null ||
             !EquipmentRuntime.Unequip(runtimeHeroData,slot)) return false;
         if (combatManager != null)
@@ -821,6 +827,7 @@ public partial class GameManager : MonoBehaviour
     // HP is recalculated by the existing CombatManager ratio-preserving path.
     public bool EquipInventoryItem(string itemId)
     {
+        if(HasTribulationLiability)return false;
         if (!IsGameplayHUDVisible || runtimeHeroData == null) return false;
         if (!EquipmentInventory.Equip(runtimeHeroData,itemId)) return false;
         if (combatManager != null) combatManager.RefreshRegisteredHeroStats(heroController,true);
@@ -830,6 +837,7 @@ public partial class GameManager : MonoBehaviour
 
     public bool UnequipInventoryItem()
     {
+        if(HasTribulationLiability)return false;
         if (!IsGameplayHUDVisible || runtimeHeroData == null) return false;
         if (!EquipmentInventory.Unequip(runtimeHeroData)) return false;
         if (combatManager != null) combatManager.RefreshRegisteredHeroStats(heroController,true);
@@ -839,6 +847,7 @@ public partial class GameManager : MonoBehaviour
 
     public bool GrantInventorySamples()
     {
+        if(HasTribulationLiability)return false;
         if(!DevelopmentItemGrantsEnabled)return false;
         if (!IsGameplayHUDVisible || runtimeHeroData == null) return false;
         if (!EquipmentInventory.GrantSamples(runtimeHeroData)) return false;
@@ -851,6 +860,7 @@ public partial class GameManager : MonoBehaviour
     // The result must come from actual IO rather than assuming a file was written.
     public bool TryManualSave(SaveSlot slot)
     {
+        if(HasTribulationLiability)return false;
         if (slot != SaveSlot.ManualSave1 && slot != SaveSlot.ManualSave2)
             return false;
         if (!hasDeployed || HasPendingConfirmation || runtimeHeroData == null ||
@@ -883,6 +893,7 @@ public partial class GameManager : MonoBehaviour
     public bool LoadAndContinue(SaveSlot slot) { return TryLoadSlot(slot, true); }
     private bool TryLoadSlot(SaveSlot slot, bool deploy)
     {
+        if(HasTribulationLiability)return false;
         if (HasPendingConfirmation) return false;
         if (saveManager == null || !saveManager.HasSave(slot)) { UpdateEventLog("Ô lưu này chưa có dữ liệu."); return false; }
         if(saveManager.NeedsCultivationMigration(slot)){RequestCultivationMigration(slot,deploy,false);return false;}
@@ -958,7 +969,7 @@ public partial class GameManager : MonoBehaviour
         while (true)
         {
             yield return new WaitForSeconds(10f);
-            if (hasDeployed && !HasPendingConfirmation && runtimeHeroData != null && saveManager != null)
+            if (!HasTribulationLiability && hasDeployed && !HasPendingConfirmation && runtimeHeroData != null && saveManager != null)
             {
                 CaptureSelectedStance();
                 if (runtimeHeroData.isDirty)
@@ -993,6 +1004,7 @@ public partial class GameManager : MonoBehaviour
 
     public void OnRetryClicked()
     {
+        if(HasTribulationLiability){RetryTribulationCommit();return;}
         if (hasDeployed || HasPendingConfirmation || runtimeHeroData == null) return;
         if (gameOverPanel != null) gameOverPanel.SetActive(false);
         DeployHero();
@@ -1004,6 +1016,7 @@ public partial class GameManager : MonoBehaviour
     // destroying progress. Opening music resumes when preGameUI is visible.
     public bool ReturnToMainMenu()
     {
+        if(HasTribulationLiability)return false;
         if (HasPendingConfirmation) return false;
         if (hasDeployed && runtimeHeroData != null)
         {
@@ -1039,6 +1052,7 @@ public partial class GameManager : MonoBehaviour
 
     public void OnContinueClicked()
     {
+        if(HasTribulationLiability)return;
         if (hasDeployed || HasPendingConfirmation) return;
         if (!CanContinue) { UpdateEventLog("Không tìm thấy bản lưu để tiếp tục."); return; }
         pendingChoice = MenuChoice.Continue;
@@ -1053,6 +1067,7 @@ public partial class GameManager : MonoBehaviour
     }
     public void OnNewGameClicked()
     {
+        if(HasTribulationLiability)return;
         if (HasPendingConfirmation) return;
         pendingChoice = MenuChoice.NewGame;
         ShowConfirmation("Chơi mới sẽ đặt lại ô lưu tự động để bắt đầu nhân vật mới. Hai ô lưu thủ công được giữ nguyên. Bạn có muốn tiếp tục?");
@@ -1064,12 +1079,14 @@ public partial class GameManager : MonoBehaviour
     }
     public void OnResetClicked()
     {
+        if(HasTribulationLiability)return;
         if (HasPendingConfirmation) return;
         OnNewGameClicked();
         ShowConfirmation("Đặt lại nhân vật sẽ tạo nhân vật cấp 1 mới và thay ô lưu tự động. Hai ô lưu thủ công được giữ nguyên. Bạn có muốn tiếp tục?");
     }
     public void OnConfirmResetClicked()
     {
+        if(HasTribulationLiability)return;
         var choice = pendingChoice;
         if(choice==MenuChoice.CultivationUpgrade){ConfirmCultivationMigration();return;}
         if (choice == MenuChoice.None) return;
@@ -1151,6 +1168,7 @@ public partial class GameManager : MonoBehaviour
 
     public bool GrantDevWeaponSamples()
     {
+        if(HasTribulationLiability)return false;
         if(!IsGameplayHUDVisible || runtimeHeroData==null)return false;
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
         bool bow=EquipmentRuntime.AddInstance(runtimeHeroData,EquipmentFoundation.CreateDemoBow());
@@ -1167,6 +1185,7 @@ public partial class GameManager : MonoBehaviour
     // Explicit/manual world navigation. The wave loop never changes map.
     public bool TryTravelToWorldMap(string targetId)
     {
+        if(HasTribulationLiability)return false;
         if (!hasDeployed || runtimeHeroData == null || !WorldMapCatalog.Enabled(runtimeHeroData))
             return false;
         string reason = WorldMapCatalog.TravelBlockReason(runtimeHeroData, targetId);
@@ -1194,7 +1213,7 @@ public partial class GameManager : MonoBehaviour
 
     private void CallNextWave()
     {
-        if (!hasDeployed || enteringGameplay || monsterSpawner == null || activeMonsters.Count>0) return;
+        if (HasTribulationLiability || !hasDeployed || enteringGameplay || monsterSpawner == null || activeMonsters.Count>0) return;
         waitingForExploration=false;explorationDistance=0d;
         foreach(var hero in HeroController.ActiveHeroes)
             if(hero!=null)hero.TracePosition("CallNextWave before spawn");
@@ -1222,6 +1241,7 @@ public partial class GameManager : MonoBehaviour
 
     void LateUpdate()
     {
+        if(HasTribulationLiability)return; // Isolated trial owns world/combat until durable result.
         TickCultivation(); // Sole cultivation clock; runs before entry can release the pause.
         TraceEntryFrame("GameManager.LateUpdate before entry handoff");
         // EnvironmentManager (-200) has already finished its paused LateUpdate.
@@ -1345,6 +1365,7 @@ public partial class GameManager : MonoBehaviour
 
     private void OnDisable()
     {
+        if(HasTribulationLiability){trialInterrupted=true;LastTribulationNotice="Trial bị gián đoạn · checkpoint giữ nguyên, cần kiểm tra";}
         CancelCultivationMigration(false);
         DisposeCultivation();
         if(combatManager!=null)combatManager.SuspendLootEncounter();
@@ -1373,12 +1394,13 @@ public partial class GameManager : MonoBehaviour
 
     private void OnApplicationQuit()
     {
-        if (saveManager == null || !hasDeployed || runtimeHeroData == null) return;
+        if (HasTribulationLiability || saveManager == null || !hasDeployed || runtimeHeroData == null) return;
         CaptureSelectedStance();
         saveManager.SaveGame(runtimeHeroData, SaveSlot.AutoSave);
     }
     private void OnDestroy()
     {
+        trialPrepared?.Dispose();if(trialCandidate!=null)Destroy(trialCandidate);
         CancelCultivationMigration(false);
         DisposeCultivation();
         if(mapEntryCover!=null)Destroy(mapEntryCover.transform.parent.gameObject);

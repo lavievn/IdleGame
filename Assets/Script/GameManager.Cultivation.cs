@@ -26,7 +26,7 @@ public partial class GameManager
     void InitializeCultivation()
     {
         ResolveProductionCultivation();
-        DisposeCultivation();runtimeHeroData.cultivationJson="";
+        DisposeCultivation();runtimeHeroData.cultivationJson="";runtimeHeroData.tribulationJson="";
         if(cultivationProfile!=null)cultivation=new CultivationGameplayBinding(runtimeHeroData,cultivationProfile,CultivationGameplayState.New(cultivationProfile));
         AuthorizeCultivationAutoSnapshot();
     }
@@ -52,7 +52,7 @@ public partial class GameManager
     void TickCultivation()
     {
         var binding=Cultivation;
-        if(binding==null || runtimeHeroData==null || !hasDeployed || enteringGameplay ||
+        if(HasTribulationLiability || binding==null || runtimeHeroData==null || !hasDeployed || enteringGameplay ||
             heroController==null || !heroController.IsDeployed || (combatManager!=null && combatManager.CurrentHeroCombatState.Data!=runtimeHeroData))return;
 #if DEVELOPMENT_BUILD && UNITY_STANDALONE_WIN && !UNITY_EDITOR
         long measured=WindowsDevelopmentAcceptanceV10.BeginAdvance();

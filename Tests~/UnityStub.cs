@@ -254,7 +254,7 @@ namespace UnityEngine
       public static event System.Action willRenderCanvases;
       public static void InvokeWillRenderCanvases() { if(willRenderCanvases!=null)willRenderCanvases(); }
     }
-    public static class Time { public static float deltaTime=1f/60f,unscaledDeltaTime=1f/60f,time,timeScale=1f; public static int frameCount; }
+    public static class Time { public static float deltaTime=1f/60f,unscaledDeltaTime=1f/60f,time,timeScale=1f; public static float realtimeSinceStartup=>time; public static int frameCount; }
     public class AudioClip : Object { public string name;public float length = 180f; }
     public class AudioSource : MonoBehaviour
     {

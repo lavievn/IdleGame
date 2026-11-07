@@ -661,6 +661,7 @@ public partial class UIManager : MonoBehaviour
     {using(TuTienCore.CultivationPerformance.Measure(TuTienCore.CultivationPerformance.Part.CharacterUI))RefreshCharacterProgressionCore();}
     private void RefreshCharacterProgressionCore()
     {
+        RefreshTribulationUI();
         if(devSourceCaption==null && devButton!=null)devSourceCaption=devButton.GetComponentInChildren<TMPro.TextMeshProUGUI>(true);
         string label=CombatBalance.HeroDev!=null?"DEVB · Hero override":CombatBalance.MonsterDev!=null?"DEVB · Quái override":"DEVB · Baseline";
         if(devSourceCaption!=null && devSourceCaption.text!=label)devSourceCaption.text=label;
@@ -696,11 +697,11 @@ public partial class UIManager : MonoBehaviour
             ordinary.sizeDelta=new Vector2(-16,-40);ordinary.anchoredPosition=new Vector2(0,16);return;
         }
         float width=Mathf.Max(280,ManagementWindowLayout.CombatPixels(Screen.width)-12);
-        PlaceUI(progressionSummary.rectTransform,new Vector2(0,1),new Vector2(0,1),new Vector2(8,-8),new Vector2(width-16,CultivationVisible?150:92));
+        PlaceUI(progressionSummary.rectTransform,new Vector2(0,1),new Vector2(0,1),new Vector2(8,-8),new Vector2(width-16,CultivationVisible?166:92));
         float half=(width-24)*.5f;
         PlaceUI(allocateHealthButton,Vector2.zero,Vector2.zero,new Vector2(8,36),new Vector2(half,28));
         PlaceUI(allocatePhysicalButton,Vector2.zero,Vector2.zero,new Vector2(16+half,36),new Vector2(half,28));
-        var text=damageText.rectTransform;text.anchorMin=Vector2.zero;text.anchorMax=Vector2.one;text.sizeDelta=new Vector2(-16,CultivationVisible?-238:-172);text.anchoredPosition=new Vector2(0,CultivationVisible?-51:-18);
+        var text=damageText.rectTransform;text.anchorMin=Vector2.zero;text.anchorMax=Vector2.one;text.sizeDelta=new Vector2(-16,CultivationVisible?-254:-172);text.anchoredPosition=new Vector2(0,CultivationVisible?-59:-18);
     }
     public void OpenLogInfo()
     {
