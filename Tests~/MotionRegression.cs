@@ -129,6 +129,42 @@ partial class MotionRegression
 
     static void Main(string[] args)
     {
+        if(args.Length==1 && args[0]=="--lightning-014")
+        {
+            Run("Warning is non-damaging and frozen at zero elapsed",()=>
+            {
+                var s = new HeavenlyLightningSchedule(1, .25);
+                if (s.Advance(.5) != HeavenlyLightningSchedule.Event.None ||
+                    s.Advance(.25) != HeavenlyLightningSchedule.Event.Warning ||
+                    s.Advance(0) != HeavenlyLightningSchedule.Event.None || !s.IsWarning ||
+                    s.Advance(.25) != HeavenlyLightningSchedule.Event.Impact ||
+                    s.IsWarning || s.StrikeId != 1 ||
+                    s.Advance(0) != HeavenlyLightningSchedule.Event.None)
+                    throw new Exception("warning/impact timeline");
+            });
+            Run("Hitch does not skip warning, repeat impact or queue backlog",()=>
+            {
+                var s = new HeavenlyLightningSchedule(1, .25);
+                if (s.Advance(6) != HeavenlyLightningSchedule.Event.Warning ||
+                    s.Advance(.1) != HeavenlyLightningSchedule.Event.None ||
+                    s.Advance(5) != HeavenlyLightningSchedule.Event.Impact ||
+                    s.Advance(.1) != HeavenlyLightningSchedule.Event.None ||
+                    s.Advance(1) != HeavenlyLightningSchedule.Event.Warning ||
+                    s.Advance(.25) != HeavenlyLightningSchedule.Event.Impact ||
+                    s.StrikeId != 2)
+                    throw new Exception("hitch/unique sequence");
+            });
+            Run("Warning durations are isolated by encounter",()=>
+            {
+                var shortLead = new HeavenlyLightningSchedule(1,.1);
+                var longLead = new HeavenlyLightningSchedule(1,.4);
+                if (shortLead.Advance(.65) != HeavenlyLightningSchedule.Event.None ||
+                    longLead.Advance(.65) != HeavenlyLightningSchedule.Event.Warning ||
+                    shortLead.StrikeId != 0 || longLead.StrikeId != 1)
+                    throw new Exception("warning config or encounter state leaked");
+            });
+            return;
+        }
         if(args.Length==1 && args[0]=="--gate-v13") {Run("v13 Heavenly Gate domain",()=>{var c=HeavenlyGateV13Fixtures.Run();Console.WriteLine("V13_DOMAIN_ASSERTIONS "+c.Count);});return;}
         if(args.Length==1 && args[0]=="--single-target-v13") {SingleTargetV13Tests();return;}
         if(args.Length==1 && args[0]=="--tribulation") {Run("v12 Heavenly Tribulation shared domain fixture",()=>{var assertions=HeavenlyTribulationFixtures.Run();Check(assertions.Count>=50,"shared domain assertions executed");Console.WriteLine("TRIBULATION_ASSERTIONS "+assertions.Count);});return;}

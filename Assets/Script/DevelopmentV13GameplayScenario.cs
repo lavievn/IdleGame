@@ -60,6 +60,8 @@ namespace TuTienCore
     if(name=="same-hp-armor")h.combatStatModifiers.Add(new CombatStatModifier{sourceId="fixture:gate:armor",stat=CombatStatId.Armor,flat=900});
     var profile=saves.CultivationProfile;using(var binding=new CultivationGameplayBinding(h,profile,HeavenlyGateV13Fixtures.Session(profile))){R(binding.Advance(h,0,.037,false,h.worldMapId)==CultivationReason.None,"fractional source fixture");}
     R(saves.SaveGame(h,SaveSlot.ManualSave2),"fixture seed slot");UnityEngine.Object.Destroy(h);R(gm.LoadAndContinue(SaveSlot.ManualSave2),"load canonical bottleneck fixture");yield return Ready(gm,ui);
+    var skyVariant=name=="bow"?HeavenlyTrialView.SkyVariant.B:name=="staff"?HeavenlyTrialView.SkyVariant.Still:HeavenlyTrialView.SkyVariant.A;
+    Set(combat,"trialSky",skyVariant);
     var source=gm.HeroData;var bindingBefore=gm.Cultivation;var body=hero.heroRect.GetComponent<CultivationSpriteBridge>().BodyGraphic.sprite;
     string map=source.worldMapId,inventory=JsonUtility.ToJson(new Bag(source));int wave=source.worldMapWaveProgress,level=source.currentLevel;float exp=source.currentExp;int hpStart=combat.CurrentHeroHP;R(hpStart==wantedHP&&WeaponBasicAttack.DamageSource(source)==power,"fixture exact HP/attack provenance "+name+" HP="+hpStart+" ATK="+WeaponBasicAttack.DamageSource(source));
     long releaseStart=combat.HeroReleaseCount,hitStart=combat.AcceptedHeroHitCount;int life=combat.CurrentHeroCombatState.LifeVersion;
@@ -72,23 +74,117 @@ namespace TuTienCore
      R(ui.HitControl(point)!=null&&ui.HitControl(point).GetRect()==btn,"real Character trial button hit region");ui.HandleMouseClick(point);R(gm.HasTribulationLiability,"trial UI handler started owned combat "+gm.LastTribulationNotice);
     }else R(gm.RequestTribulation(),"start real owned trial "+name+" "+gm.LastTribulationNotice);R(gm.HeroData==source&&combat.HeavenlyGateHP==300&&combat.RegisteredHeroCount==1&&gm.activeMonsters.Count==0&&Lives(combat).Count==1&&Lives(combat)[0].controller.Rect.GetComponent<CultivationSpriteBridge>()==null,"same Hero, one fixed seal, isolated normal wave");
     R(!gm.RequestTribulation()&&!gm.TryManualSave(SaveSlot.ManualSave1)&&!gm.LoadAndContinue(SaveSlot.ManualSave2)&&!gm.TryTravelToWorldMap(map)&&!gm.ReturnToMainMenu(),"single active attempt blocks competing lifecycle transitions");
+    var view=combat.TrialView;
+    var gate=Lives(combat)[0];
+    var gateRect=gate.controller.Rect;
+    var gateArt=(RectTransform)gateRect.GetChild(0);
+    R(view!=null && view.IsShowingStill && view.transform.GetSiblingIndex()==0 &&
+      space.Position(gateRect).x<space.Position(hero.heroRect).x &&
+      Mathf.Abs(space.Position(gateRect).y-view.GroundY)<.01f &&
+      gateRect.rect.height>hero.heroRect.rect.height &&
+      gateRect.GetChild(0).GetComponent<UnityEngine.UI.Image>().sprite!=null &&
+      gateArt.rect.width>gateRect.rect.width*2 && gateArt.rect.height>288*2,
+      "fallback at entry, layer order, gate to the left of Hero and compact body receiver "+name);
+    long incomingStart=combat.TrialStrikeCount;
+    int firstIncoming=0;
     if(name=="weak")File.Copy(Path.Combine(saves.SaveDirectory,"AutoSave.json"),Path.Combine(saves.SaveDirectory,"V13InterruptedFixture.json"),true);
     if(name=="sword"){
      ui.SetPaused(true);int seal=combat.HeavenlyGateHP;double clock=bindingBefore.ActiveSeconds;
      foreach(var size in new[]{new Vector2Int(600,338),new Vector2Int(800,450),new Vector2Int(1150,647),new Vector2Int(1360,680)}){yield return resize(size.x,size.y);ui.RefreshCharacterProgression();Fit((TextMeshProUGUI)Get(ui,"trialHud"),"trial HUD "+size.x);yield return capture("v13-trial-"+size.x);}
-     R(combat.HeavenlyGateHP==seal&&bindingBefore.ActiveSeconds==clock,"paused trial has no damage or clock awards");saves.FailNextTrialWrite="BeforeReplace";ui.SetPaused(false);
+     R(combat.HeavenlyGateHP==seal&&bindingBefore.ActiveSeconds==clock,"paused trial has no damage or clock awards");
+     // This fixture holds the normal basic windup so we can observe a full
+     // video loop and capture a live strike at all sizes on one encounter.
+     combat.CurrentHeroCombatState.AttackTimer=999;
+     ui.SetPaused(false);
+     yield return Wait(()=>view.IsShowingVideo,8,"A decoded first frame");
+     var decoder=(UnityEngine.Video.VideoPlayer)Get(view,"video");
+     R(decoder.url.EndsWith("TribulationSky_A.mp4")&&decoder.isLooping&&
+        decoder.audioOutputMode==UnityEngine.Video.VideoAudioOutputMode.None&&
+        decoder.targetTexture.width==640&&decoder.targetTexture.height==360&&
+        view.GetComponents<UnityEngine.Video.VideoPlayer>().Length==1,"A source, one silent decoder and 640x360 target");
+     bool pauseChecked=false;
+     var proof=new List<string>{"width,height,frame,encounter,strike,target_life,target_spawn,hero_life,battle_version,hp_before,hp_after"};
+     var activeReceipt=TribulationSaveTransaction.Read(gm.HeroData.tribulationJson);
+     foreach(var size in new[]{new Vector2Int(600,338),new Vector2Int(800,450),new Vector2Int(1150,647),new Vector2Int(1360,680)})
+     {
+      yield return resize(size.x,size.y);
+      ui.RefreshCharacterProgression();
+      Fit((TextMeshProUGUI)Get(ui,"trialHud"),"live trial HUD "+size.x);
+      var heroPoint=RectTransformUtility.WorldToScreenPoint(null,hero.heroRect.position);
+      var gatePoint=RectTransformUtility.WorldToScreenPoint(null,gateArt.position);
+      R(heroPoint.x<size.x*.8f&&Mathf.Abs(gatePoint.x-size.x*.35f)<2&&
+        gatePoint.x<heroPoint.x,"gate visual center at 35%, Hero approaches from the right at "+size.x);
+      yield return Wait(()=>combat.TrialWarning&&view.Lightning.HasWarning,4,"live warning "+size.x);
+      long last=combat.TrialStrikeCount;
+      int hp=combat.CurrentHeroHP;
+      if(!pauseChecked)
+      {
+       ui.SetPaused(true);yield return null;
+       yield return Wait(()=>view.VideoPaused,2,"paused decoder");
+       long frame=view.VideoFrame;
+       yield return capture("v014-warning-"+size.x);
+       yield return new WaitForSecondsRealtime(.4f);
+       R(combat.TrialStrikeCount==last&&combat.CurrentHeroHP==hp&&combat.TrialWarning&&
+         view.Lightning.HasWarning&&view.VideoFrame==frame,"Pause freezes warning, combat HP and video frame");
+       ui.SetPaused(false);
+       pauseChecked=true;
+      }
+      yield return Wait(()=>combat.TrialStrikeCount>last,4,"real lightning impact "+size.x);
+      var strike=combat.LastTrialStrike;
+      R(combat.TrialStrikeCount==last+1 && strike.Encounter.ToString("N")==activeReceipt.encounterId &&
+        strike.Strike>0 && strike.TargetLife==gate.lifeId && strike.TargetSpawn==gate.controller.SpawnVersion &&
+        strike.HeroLife==life && strike.HPBefore==hp && strike.HPAfter==combat.CurrentHeroHP &&
+        strike.HPAfter<hp && view.Lightning.HasImpact && !view.Lightning.HasWarning,"one accepted impact with active identities and actual HP loss");
+      if(firstIncoming==0)firstIncoming=hp-strike.HPAfter;
+      Canvas.ForceUpdateCanvases();
+      ui.RefreshCharacterProgression();
+      R(view.Lightning.transform.GetSiblingIndex()==space.BattleArea.childCount-1&&
+        !view.Lightning.canvasRenderer.cull&&view.Lightning.DrawnVertices>=100,
+        "live lightning mesh actually built and paints after actors");
+      proof.Add(string.Join(",",new[]{size.x.ToString(),size.y.ToString(),view.VideoFrame.ToString(),activeReceipt.encounterId,
+        strike.Strike.ToString(),strike.TargetLife.ToString(),strike.TargetSpawn.ToString(),strike.HeroLife.ToString(),
+        strike.BattleVersion.ToString(),strike.HPBefore.ToString(),strike.HPAfter.ToString()}));
+      yield return capture("v014-impact-"+size.x);
+     }
+     yield return Wait(()=>view.Loops>0,12,"A loop point");
+     File.WriteAllLines(Path.Combine(evidence,"lightning-impacts.csv"),proof);
+     pass("A decoded and looped silently with one 640x360 RenderTexture. Four live impact sizes show actual HP loss. Pause froze warning and video frame.");
+     combat.CurrentHeroCombatState.AttackTimer=0;
+     saves.FailNextTrialWrite="BeforeReplace";
     }
-    bool projectile=false;int firstIncoming=0;float end=Time.realtimeSinceStartup+30;
+    if(name=="bow"){
+     yield return Wait(()=>view.IsShowingVideo,8,"B decoded first frame");
+     var decoder=(UnityEngine.Video.VideoPlayer)Get(view,"video");
+     R(decoder.url.EndsWith("TribulationSky_B.mp4")&&view.GetComponents<UnityEngine.Video.VideoPlayer>().Length==1,"B selected with one decoder");
+     yield return capture("v014-video-b");
+     pass("B selected and decoded in the actual Bow trial.");
+    }
+    if(name=="staff"){
+     R(view.IsShowingStill&&view.GetComponents<UnityEngine.Video.VideoPlayer>().Length==0,"still mode needs no decoder");
+     yield return capture("v014-fallback");
+     pass("PNG fallback visible in the actual Staff trial, with no decoder or RenderTexture.");
+    }
+    bool projectile=name=="bow"&&combat.PendingProjectileCount>0;float end=Time.realtimeSinceStartup+30;
     while(gm.TribulationFighting){R(Time.realtimeSinceStartup<end,"combat timeout "+name);projectile|=combat.PendingProjectileCount>0;if(combat.CurrentHeroHP<hpStart&&firstIncoming==0)firstIncoming=hpStart-combat.CurrentHeroHP;R(hero.heroRect.GetComponent<CultivationSpriteBridge>().BodyGraphic.sprite==body,"same Hero sprite in every weapon mode");yield return null;}
+    long finalIncoming=combat.TrialStrikeCount;
     if(name=="sword"){
      R(gm.HasTribulationLiability&&gm.HeroData==source&&gm.Cultivation==bindingBefore&&gm.LastTribulationNotice.StartsWith("Chưa ghi kết quả"),"save fault keeps original canonical Hero; no false success");
      string expected=saves.TrialSnapshotHash(SaveSlot.AutoSave);R(gm.RetryTribulationCommit()&&!gm.RetryTribulationCommit()&&saves.TrialSnapshotHash(SaveSlot.AutoSave)!=expected,"one accepted terminal retry");
+     var flare=GameObject.Find("Committed seal break");
+     Canvas.ForceUpdateCanvases();
+     R(flare!=null&&flare.GetComponent<HeavenlyLightningVisual>().DrawnVertices>0,
+       "committed break flare draws through entry transition");
+     yield return capture("v014-seal-break");
     }
     yield return Ready(gm,ui);var receipt=TribulationSaveTransaction.Read(gm.HeroData.tribulationJson);var b=gm.Cultivation;
     bool success=name!="weak";
     R(receipt.outcome==(success?"Success":"Failure")&&b.Current.Foundation.Amount==(success?0:3100)&&b.Current.Foundation.ActualRealmId==(success?"fixture:truc-co":"realm:luyen-khi"),"real combat outcome, stage and loss "+name+" outcome="+receipt.outcome+" HP="+hpStart+" endHP="+gm.LastTribulationHeroHP+" foundation="+b.Current.Foundation.Amount);
     R(b.Current.Reserve.Amount==1234&&b.Current.Injury.Severity==0&&b.Current.Blood.Charges==0&&b.PendingSeconds==.037&&gm.HeroData.currentLevel==level&&gm.HeroData.currentExp==exp&&gm.HeroData.worldMapId==map&&gm.HeroData.worldMapWaveProgress==wave&&JsonUtility.ToJson(new Bag(gm.HeroData))==inventory,"exact reserve/clock/injury/EXP/equipment/map preserved");
     R(source==null&&bindingBefore.IsDisposed&&combat.CurrentHeroCombatState.Data==gm.HeroData&&combat.CurrentHeroCombatState.LifeVersion!=life&&Get(space,"cameraTarget")==hero&&combat.RegisteredHeroCount==1&&!combat.HeavenlyGateActive&&combat.PendingProjectileCount==0&&combat.CurrentHeroHP>0,"candidate swap, old Hero destroyed, fresh life and camera/wave restored");
+    R(view==null && combat.TrialView==null && combat.TrialStrikeCount==finalIncoming &&
+      finalIncoming>incomingStart && !combat.TrialWarning &&
+      GameObject.Find("Heavenly Trial Environment")==null && GameObject.Find("Trial lightning")==null,
+      "environment, decoder, lightning and pending strike retired on result "+name);
     R(!success||b.Capacity.Absorption==3&&b.Capacity.Refinement==2,"new realm capacities derived immediately");
     R((family!=WeaponFamily.Bow&&family!=WeaponFamily.Staff)||projectile,"actual ranged projectile observed");
     if(!success){R(!gm.RequestTribulation()&&gm.TryManualSave(SaveSlot.ManualSave1),"failed Hero must regain bottleneck; save terminal failure for restart");ui.RefreshCharacterProgression();yield return capture("v13-failure-hud");}
