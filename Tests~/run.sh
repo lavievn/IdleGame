@@ -23,6 +23,7 @@ mcs "${defines[@]}" -out:"$build_dir/MotionRegression.exe" \
   Assets/Script/RealmBreakthroughTransition.cs \
   Assets/Script/MartialArtsRegistry.cs \
   Assets/Script/BossEncounterCoordinator.cs \
+  Assets/Script/HeavenlyGateModel.cs Assets/Script/CombatManager.HeavenlyGate.cs \
   Assets/Script/HeavenlyTribulation.cs Assets/Script/HeavenlyTribulationFixtures.cs Assets/Script/TribulationFixtureCombatBridge.cs \
   Assets/Script/CultivationPerformance.cs \
   Assets/Script/CultivationCapacity.cs \

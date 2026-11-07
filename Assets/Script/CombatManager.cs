@@ -4,7 +4,7 @@ using TuTienCore;
 
 // EnvironmentManager moves actors first; damage uses their final positions this frame.
 [DefaultExecutionOrder(100)]
-public class CombatManager : MonoBehaviour
+public partial class CombatManager : MonoBehaviour
 {
     public static CombatManager Instance { get; private set; }
     [Header("HIỆU ỨNG ĐÒN ĐÁNH")]
@@ -28,7 +28,7 @@ public class CombatManager : MonoBehaviour
         public ActiveMonsterInfo monster;
         public HeroCombatState hero; // Shooter if fromHero, target if monster-fired.
         public int heroLife, heroSpawn;
-        public int monsterLife, monsterSpawn;
+        public int monsterLife, monsterSpawn;public long releaseId;
         public int battleVersion,stepTick;
         public bool fromHero, magic;
         public Vector2 start, end;
@@ -347,7 +347,7 @@ public class CombatManager : MonoBehaviour
     }
     private bool CurrentMonsterLife(ActiveMonsterInfo info)
     {
-        return info.controller != null && info.controller.IsAlive && info.currentHP > 0 &&
+        return info!=gateTarget && info.controller != null && info.controller.IsAlive && info.currentHP > 0 &&
             info.controller.SpawnVersion == info.lootKey.Spawn && lootRewards.IsCurrent(info.lootKey, LootRecipient);
     }
     private void AlertEncounter(HeroController hero, bool immediate)
@@ -416,6 +416,7 @@ public class CombatManager : MonoBehaviour
             if (projectiles.Count>0 || magicFlights.Count>0) ClearProjectiles();
             return;
         }
+        if(HeavenlyGateActive && !CanRunGateCombat)return;
         if(!AnyFightingHero())
         {
             DiscardCombatProjectiles(true,false);
@@ -433,6 +434,7 @@ public class CombatManager : MonoBehaviour
                 TickPassiveRegeneration(state,dt);
                 TickRegisteredHeroAttack(state,space,dt);
             }
+        if(HeavenlyGateActive){TickHeavenlyGate(dt);return;}
         if (!isBattling) return;
         for (int i=activeMonsters.Count-1;i>=0;i--)
         {
@@ -571,6 +573,7 @@ public class CombatManager : MonoBehaviour
         actor.AttackTimer=!basic && mode==AttackMode.RangedMagic?0f:duration;
         hero.UpdateChargeBar(!basic && mode==AttackMode.RangedMagic,0f);
         hero.PlayAttackFeedback();
+        impactRelease=++HeroReleaseCount;
         var trace=basic?SynergyMath.EvaluateBasicDamage(actor.Data,target.data,mode,Random.Range(.85f,1f)):
             RollDamageTrace(actor.Data,target.data,actor.WindupMode);
         if (mode==AttackMode.Melee)
@@ -634,16 +637,17 @@ public class CombatManager : MonoBehaviour
     {
         if (target==null || !activeMonsters.Contains(target) || target.controller==null ||
             !target.controller.IsAlive || !IsRegistered(attacker) ||
-            target.controller.SpawnVersion!=target.lootKey.Spawn ||
-            !lootRewards.IsCurrent(target.lootKey,LootRecipient)) return;
+            (target!=gateTarget && target.controller.SpawnVersion!=target.lootKey.Spawn) ||
+            (target!=gateTarget && !lootRewards.IsCurrent(target.lootKey,LootRecipient))) return;
         if (damage <= 0) return;
-        bool surprise = !target.controller.HasDetectedHero;
+        bool surprise = target!=gateTarget && !target.controller.HasDetectedHero;
         if (surprise) damage = (int)System.Math.Min(int.MaxValue, (long)damage * 2L);
         // Resolve at the accepted impact, after defense. A stale/missed shot
         // cannot consume surprise or wake this encounter; a lethal ambush still
         // alerts the other living members before the victim leaves the pool.
         AlertEncounter(attacker.Controller, true);
         target.currentHP=Mathf.Max(0,target.currentHP-damage);
+        AcceptedHeroHitCount++;LastImpactRelease=impactRelease;
         if (gameManager!=null)
         {
             gameManager.RecordDamageEvent(attacker.Data!=null?attacker.Data.entityName:"Hero",
@@ -662,6 +666,7 @@ public class CombatManager : MonoBehaviour
         }
         target.controller.ShowDamage(damage,away);
         if (target.currentHP==0) {
+            if(target==gateTarget)return; // No ordinary kill/reward/despawn or wave completion.
             target.acceptedLethalDamage=true;
             HandleMonsterDeathBy(target,attacker);
         }
@@ -799,6 +804,7 @@ public class CombatManager : MonoBehaviour
         hero.Die();
         // Do not GameOver or clear projectiles when teammates remain alive.
         if (AnyFightingHero()) return;
+        if(HeavenlyGateActive)return; // Trial transaction owns death/respawn, not normal map defeat.
         ClearBattle(false,true); // Game Over cancels combat; existing Magic finishes visually.
         if (gameManager!=null) gameManager.OnHeroDied();
     }
@@ -818,7 +824,7 @@ public class CombatManager : MonoBehaviour
         Vector2 start=BodyPosition(fromHero?actor.Controller.heroRect:monster.controller.Rect,space);
         Vector2 end=BodyPosition(fromHero?monster.controller.Rect:actor.Controller.heroRect,space);
         var shot=new Projectile {
-            monster=monster,monsterLife=monster.lifeId,
+            releaseId=impactRelease,monster=monster,monsterLife=monster.lifeId,
             battleVersion=battleVersion,stepTick=projectileTick,
             monsterSpawn=monster.controller.SpawnVersion,
             hero=actor,heroLife=actor.LifeVersion,
@@ -884,6 +890,7 @@ public class CombatManager : MonoBehaviour
             }
             if (t<1f) continue;
             RemoveProjectile(i); // Death callbacks may clear the remaining volley.
+            impactRelease=shot.releaseId;
             if(!shot.staffBasic)Impact(end,shot.magic);
             bool hit=false;
             if (shot.fromHero && shot.magic)
@@ -1050,9 +1057,9 @@ public class CombatManager : MonoBehaviour
         foreach (var info in activeMonsters)
         {
             if (info.controller != null) info.controller.MarkDead();
-            if (info.go != null) monsterSpawner.DespawnMonster(info.go);
+            if (info.go != null){if(info==gateTarget)Destroy(info.go);else monsterSpawner.DespawnMonster(info.go);}
             if (info.data != null) Destroy(info.data);
         }
-        activeMonsters.Clear();
+        activeMonsters.Clear();ClearGateIdentity();
     }
 }

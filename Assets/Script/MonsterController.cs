@@ -19,6 +19,7 @@ public class MonsterController : MonoBehaviour
     public static List<MonsterController> ActiveMonsters = new List<MonsterController>();
     public HeroController CurrentTarget { get; private set; }
     public RectTransform Rect => rect;
+    public bool IsHeavenlyGate;public float HeavenlyGateRange;
     public bool IsAlive => isActiveAndEnabled && currentState != MonsterState.Dead;
     // The same pooled GameObject can represent multiple monster lives.
     public int SpawnVersion { get; private set; }
@@ -84,6 +85,7 @@ public class MonsterController : MonoBehaviour
         SpawnVersion++;
         if (rect == null) rect = GetComponent<RectTransform>();
         ResetFeedback();
+        if(IsHeavenlyGate){currentState=MonsterState.PassiveScroll;CurrentTarget=null;Awareness=MonsterAwareness.Engaged;HideAwarenessLabel();if(!ActiveMonsters.Contains(this))ActiveMonsters.Add(this);return;}
         // Exactly one random roll per activation (including pooled respawns).
         InitRandomAttackMode();
         awarenessBody = rect.GetComponent<CultivationSpriteBridge>();
@@ -116,6 +118,7 @@ public class MonsterController : MonoBehaviour
     public void TickMovement(EnvironmentManager space, float dt, float groundMinusCamera)
     {
         if (!IsAlive) return;
+        if(IsHeavenlyGate)return; // Fixed seal; no ordinary AI or scroll.
         attackRange = space.AttackRange(attackMode, false);
         if (!IsAggressive)
         {
@@ -272,7 +275,7 @@ public class MonsterController : MonoBehaviour
         labelRect.sizeDelta = new Vector2(40f / scale, 32f / scale);
         awarenessLabel.fontSize = 24f / scale;
     }
-    void LateUpdate() { if (HasDetectedHero) RefreshAwarenessLabel(); }
+    void LateUpdate() { if (!IsHeavenlyGate && HasDetectedHero) RefreshAwarenessLabel(); }
 
     public void InitRandomAttackMode()
     {

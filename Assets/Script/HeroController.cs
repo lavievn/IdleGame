@@ -271,8 +271,9 @@ public class HeroController : MonoBehaviour
         }
 
         Vector2 target = space.Position(CurrentTarget.Rect);
-        p.x = BattleMotion.ForwardApproach(p.x, target.x, attackRange, EffectiveMoveSpeed(), dt, -1);
-        if (attackMode == AttackMode.Melee && Mathf.Abs(target.x - p.x) > attackRange + .1f)
+        float reach=CurrentTarget.IsHeavenlyGate?Mathf.Min(attackRange,CurrentTarget.HeavenlyGateRange):attackRange;
+        p.x = BattleMotion.ForwardApproach(p.x, target.x, reach, EffectiveMoveSpeed(), dt, -1);
+        if (attackMode == AttackMode.Melee && Mathf.Abs(target.x - p.x) > reach + .1f)
             p.y = Mathf.MoveTowards(p.y, target.y, laneSpeed * dt);
         MovementDistanceThisFrame = Mathf.Abs(p.x - startX);
         LastMovementSpeed=dt>0f?MovementDistanceThisFrame/dt:0f;
@@ -292,7 +293,7 @@ public class HeroController : MonoBehaviour
     {
         if (!IsDeployed || target == null || !target.IsAlive || space == null || space.BattleArea == null) return false;
         Vector2 delta = space.Position(target.Rect) - space.Position(heroRect);
-        float range = space.AttackRange(attackMode, true);
+        float range = space.AttackRange(attackMode, true);if(target.IsHeavenlyGate)range=Mathf.Min(range,target.HeavenlyGateRange);
         return Mathf.Abs(delta.x) <= range + 0.1f;
     }
 
