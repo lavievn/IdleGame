@@ -569,7 +569,6 @@ public class StartMenuUI : MonoBehaviour
     {
         if(confirmChoiceButton!=null)confirmChoiceButton.GetComponentInChildren<TextMeshProUGUI>(true).text=confirm;
         if(cancelChoiceButton!=null)cancelChoiceButton.GetComponentInChildren<TextMeshProUGUI>(true).text=cancel;
-        if(message!=null)UIManager.ReadableText(message,16);
     }
     public void ShowConfirmation(string text)
     {

@@ -95,6 +95,14 @@ partial class MotionRegression
                     Near(message.fontSizeMax,size,"HUD never overwrites popup font");
                     Near(p.anchoredPosition.y,position.y,"HUD never moves popup message independently");
                     Check(message.enableAutoSizing && message.enableWordWrapping && message.fontSizeMin>=16,"message wrapping/font bounds retained");
+                    f.menu.SetConfirmationLabels("Đồng ý nâng cấp","Hủy / quay lại");
+                    Near(message.fontSizeMax,size,"changing consent button labels preserves message typography immediately");
+                    Check(message.enableAutoSizing&&message.enableWordWrapping,"consent labels preserve message wrapping and autosizing");
+                    Call(f.ui,"LayoutReadableUI");
+                    var choices=f.manager.confirmationPopup.GetComponentsInChildren<Button>(true);
+                    Check(Array.Exists(choices,b=>b.GetComponentInChildren<TextMeshProUGUI>(true).text=="Đồng ý nâng cấp") &&
+                          Array.Exists(choices,b=>b.GetComponentInChildren<TextMeshProUGUI>(true).text=="Hủy / quay lại"),
+                          "consent captions remain after opening layout");
                     foreach(var button in f.manager.confirmationPopup.GetComponentsInChildren<Button>(true)) {
                         CheckOpeningButtonText(button);
                         var b=(RectTransform)button.transform;
