@@ -7,12 +7,12 @@ Môi trường gắn với encounter đang chạy trong MainGame. Cấu hình pr
 ## Các lớp hiển thị
 
 1. Bầu trời giông sét ở nền trong vùng gameplay. Video A mặc định, B và Still là tùy chọn của trường `trialSky` trong CombatManager. Hai MP4 dùng `StreamingAssets/Tribulation`.
-2. Một tấm địa hình PNG giữ tỷ lệ gốc. Núi và mặt đất đá đến từ cùng ảnh alpha. Hàng tiếp xúc trong ảnh được căn ở 34,4% chiều cao tính từ dưới, tại cùng cao độ chân với trial. Ảnh phủ toàn chiều ngang gameplay một lần.
-3. Hero và Thiên Quan trên BattleArea hiện hữu. Tâm ảnh đá tại 35% chiều ngang từ trái. Chiều cao 864 đơn vị canvas, bằng 300% kích thước gốc 288 đơn vị. Hạ riêng ảnh tường 100 pixel màn hình. Hero bắt đầu ở phía phải và đi 800 đơn vị BattleArea để vào tầm đánh theo vũ khí đang trang bị. Điểm nhận đòn giữ cao độ chiến đấu và nằm ở phía phải trong thân đá. Target rect rộng 116 đơn vị và dùng cùng đường xác thực mục tiêu, tầm đánh và projectile của 0.1.3.
+2. Địa hình dùng PNG giữ tỷ lệ gốc. Núi và mặt đất đá đến từ cùng ảnh alpha. Hàng tiếp xúc trong ảnh ở 34,4% tính từ dưới, tại cao độ chân của trial. Các bản kề nhau phản chiếu để mép ảnh trùng khi cuộn và được cắt theo khung gameplay.
+3. Hero và Thiên Quan trên BattleArea hiện hữu. Tâm ảnh đá ổn định tại 35% chiều ngang từ trái sau khi camera đưa tường vào khung. Chiều cao 864 đơn vị canvas, bằng 300% kích thước gốc 288 đơn vị. Hạ riêng ảnh tường 100 pixel màn hình. Hero đi thăm dò đủ 800 đơn vị BattleArea trước khi tường xuất hiện ngoài mép trái. Sau đó Hero tiếp tục áp sát từ bên phải bằng tầm đánh theo vũ khí đang trang bị. Điểm nhận đòn giữ cao độ chiến đấu và nằm ở phía phải trong thân đá. Target rect rộng 116 đơn vị và dùng cùng đường xác thực mục tiêu, tầm đánh và projectile của 0.1.3.
 4. Lưới cảnh báo, sét và sparks của Combat được vẽ trên các actor, dưới HUD. Hiệu ứng vỡ phong ấn chỉ liên kết với đòn kết liễu và kết quả đã ghi. Lớp kết quả tồn tại ngắn qua chuyển cảnh.
 5. HUD hiện hữu hiển thị Hero HP, Thiên Quan HP và kết quả. Các panel quản lý dùng đường render hiện có.
 
-Hình nền thường được ẩn qua từng Image. Khi dọn trial, hệ thống bật lại đúng các Image đã ẩn. Trial giữ khung camera ngang cố định để tâm tường luôn ở đúng vị trí khi Hero áp sát. Thay đổi kích thước cửa sổ chỉ đổi phép chiếu của BattleArea. Sau trial, entry/camera/spawn quay lại vòng đời MainGame.
+Hình nền thường được ẩn qua từng Image. Khi dọn trial, hệ thống bật lại đúng các Image đã ẩn. Pha thăm dò dùng camera và bộ đếm bước chân giống luồng vào wave. Sau khi đạt mốc 800, camera tiếp tục dịch tường và địa hình cùng một lượng, cho đến khi tường vào vị trí giao chiến. Tường cố định so với địa hình trong suốt pha này. Thay đổi kích thước cửa sổ chỉ đổi phép chiếu của BattleArea. Sau trial, entry/camera/spawn quay lại vòng đời MainGame.
 
 ## Video và asset
 

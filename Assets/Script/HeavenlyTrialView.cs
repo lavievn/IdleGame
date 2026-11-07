@@ -15,7 +15,8 @@ internal sealed class HeavenlyTrialView : MonoBehaviour
     private const float GroundSurface = .344f; // Contact line in the supplied ground PNG.
     private static readonly Color Dark = new Color(.032f, .009f, .017f);
     private EnvironmentManager space;
-    private RectTransform area, backdrop, terrain;
+    private RectTransform area, backdrop;
+    private readonly RectTransform[] terrain = new RectTransform[3];
     private RawImage sky;
     private Texture still;
     private VideoPlayer video;
@@ -23,6 +24,7 @@ internal sealed class HeavenlyTrialView : MonoBehaviour
     private bool hasFrame, failed, released;
     private int width, height;
     private float prepareDeadline, groundY, unitsPerScreenPixel;
+    internal float GroundScroll { get; private set; }
     private Image seal;
     private float hitRemaining;
     private bool broken;
@@ -56,12 +58,19 @@ internal sealed class HeavenlyTrialView : MonoBehaviour
         root.sky.enabled = root.still != null;
         Stretch(root.sky.rectTransform);
 
-        var ground = Layer<RawImage>((RectTransform)root.transform, "Trial ground");
-        ground.raycastTarget = false;
-        ground.texture = Resources.Load<Texture2D>(Art + "TribulationGround");
-        ground.enabled = ground.texture != null;
-        root.terrain = ground.rectTransform;
-        root.terrain.pivot = new Vector2(.5f, GroundSurface);
+        root.backdrop.gameObject.AddComponent<RectMask2D>();
+        var groundTexture = Resources.Load<Texture2D>(Art + "TribulationGround");
+        for (int i = 0; i < root.terrain.Length; i++)
+        {
+            var ground = Layer<RawImage>(root.backdrop, "Trial ground");
+            ground.raycastTarget = false;
+            ground.texture = groundTexture;
+            ground.enabled = groundTexture != null;
+            // Mirror the adjacent tile so the actual edge pixels join.
+            if (i == 1) ground.uvRect = new Rect(1, 0, -1, 1);
+            root.terrain[i] = ground.rectTransform;
+            ground.rectTransform.pivot = new Vector2(.5f, GroundSurface);
+        }
 
         root.Lightning = CreateLightning(root.area, "Trial lightning");
         root.Layout();
@@ -142,8 +151,25 @@ internal sealed class HeavenlyTrialView : MonoBehaviour
         float u = Mathf.Min(1, aspect / source);
         float v = Mathf.Min(1, source / aspect);
         sky.uvRect = new Rect((1-u)/2, (1-v)/2, u, v);
-        terrain.sizeDelta = new Vector2(viewWidth, viewWidth * 941f / 1672);
-        terrain.anchoredPosition = new Vector2(area.rect.center.x, groundY);
+        foreach (var tile in terrain)
+            tile.sizeDelta = new Vector2(viewWidth, viewWidth * 941f / 1672);
+        PositionGround();
+    }
+
+    internal void PanGround(float amount)
+    {
+        if (amount == 0 || released) return;
+        GroundScroll += amount;
+        PositionGround();
+    }
+
+    private void PositionGround()
+    {
+        float span = area.rect.width;
+        if (span <= 0) return;
+        float phase = Mathf.Repeat(GroundScroll, 2 * span);
+        for (int i = 0; i < terrain.Length; i++)
+            terrain[i].anchoredPosition = new Vector2(phase - i * span, groundY - backdrop.anchoredPosition.y);
     }
 
     private void StartVideo(SkyVariant variant)

@@ -141,9 +141,11 @@ public class EnvironmentManager : MonoBehaviour
     }
     private void PlanPresentationPan(out float pan,out float background)
     {
-        if (trialFraming)
+        var combat = CombatManager.Instance;
+        if (combat != null && combat.TryPlanGateCamera(this,
+            Mathf.Min(maxCameraStep, maxFollowSpeed * Time.deltaTime), out pan))
         {
-            pan = background = 0f;
+            background = pan;
             return;
         }
         if(traceEntryPlanFrame!=Time.frameCount)traceEntryPlanCount=0;
@@ -320,10 +322,8 @@ public class EnvironmentManager : MonoBehaviour
             battleVerticalOffsetPixels / Mathf.Max(.01f, battleCanvas.scaleFactor));
     }
 
-    private bool trialFraming;
     internal void SetTrialTerrainHidden(bool hidden)
     {
-        trialFraming = hidden;
         hasPlannedPan = false;
         if (hidden) EnsureGroundPresentation();
         if (groundPresentation != null) groundPresentation.SetTrialHidden(hidden);
@@ -715,7 +715,11 @@ public class EnvironmentManager : MonoBehaviour
         // 0.0.50: fallen Hero visuals are hidden, and must not be panned.
         foreach (var monster in MonsterController.ActiveMonsters)
             if (monster != null && monster.IsAlive) monster.Rect.position += worldDelta;
-        if (CombatManager.Instance != null) CombatManager.Instance.PanEffects(amount);
+        if (CombatManager.Instance != null)
+        {
+            CombatManager.Instance.PanEffects(amount);
+            CombatManager.Instance.PanGateGround(amount);
+        }
     }
 
     public void PanEnvironment(float amount)

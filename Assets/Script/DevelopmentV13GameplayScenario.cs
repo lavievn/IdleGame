@@ -49,7 +49,7 @@ namespace TuTienCore
    R(combat.HeroReleaseCount-legacyRelease==1&&combat.AcceptedHeroHitCount-legacyHits==3&&Array.TrueForAll(legacy,x=>x.currentHP==0),"legacy spell intentionally has multi-target explosion");audit.Add("LegacyAoE,3,True,1,3,3");hero.BindBasicAttackData(gm.HeroData,false);File.WriteAllLines(Path.Combine(evidence,"single-target.csv"),audit);
    pass("16 native basic cases: one release, one accepted hit and kill for 2/3 enemies overlap/spread; deliberate legacy AoE control kills three. No reproduced basic multi-kill.");
    var rows=new List<string>{"fixture,family,outcome,combat_seconds,hero_hp_start,hero_hp_before_respawn,first_incoming_damage,reserve,penalty,hero_releases,accepted_hero_hits,saw_projectile"};
-   var approaches=new List<string>{"fixture,family,walked_units"};
+   var approaches=new List<string>{"fixture,family,exploration_at_reveal,wall_x_at_reveal,world_pan_before_combat"};
    foreach(string name in new[]{"weak","sword","bow","staff","unarmed","same-hp-armor"}){
     var family=name=="sword"?WeaponFamily.Sword:name=="bow"?WeaponFamily.Bow:name=="staff"?WeaponFamily.Staff:WeaponFamily.Unarmed;
     Weapon(gm,family);var h=UnityEngine.Object.Instantiate(gm.HeroData);h.name="V13 owned "+name;h.tribulationJson="";h.currentLevel=1;h.currentExp=0;h.gold=777;h.professionProgress=new List<ProfessionProgress>{new ProfessionProgress{profession=SupportProfession.Forging,level=2,experience=7}};
@@ -70,48 +70,74 @@ namespace TuTienCore
     if(name=="sword"){
      foreach(var size in new[]{new Vector2Int(600,338),new Vector2Int(800,450),new Vector2Int(1150,647),new Vector2Int(1360,680)}){yield return resize(size.x,size.y);ui.RefreshCharacterProgression();Fit((TextMeshProUGUI)Get(ui,"progressionSummary"),"character "+size.x);R(!((TextMeshProUGUI)Get(ui,"trialHud")).isActiveAndEnabled,"result HUD never covers Character");yield return capture("v13-character-"+size.x);}
     }
+    var heroBeforeTrial=space.Position(hero.heroRect);
     if(name=="sword"){
      var btn=(RectTransform)Get(ui,"trialButton");Vector2 point=RectTransformUtility.WorldToScreenPoint(null,btn.TransformPoint(btn.rect.center));
      R(ui.HitControl(point)!=null&&ui.HitControl(point).GetRect()==btn,"real Character trial button hit region");ui.HandleMouseClick(point);R(gm.HasTribulationLiability,"trial UI handler started owned combat "+gm.LastTribulationNotice);
-    }else R(gm.RequestTribulation(),"start real owned trial "+name+" "+gm.LastTribulationNotice);R(gm.HeroData==source&&combat.HeavenlyGateHP==300&&combat.RegisteredHeroCount==1&&gm.activeMonsters.Count==0&&Lives(combat).Count==1&&Lives(combat)[0].controller.Rect.GetComponent<CultivationSpriteBridge>()==null,"same Hero, one fixed seal, isolated normal wave");
+    }else R(gm.RequestTribulation(),"start real owned trial "+name+" "+gm.LastTribulationNotice);R(gm.HeroData==source&&combat.HeavenlyGateHP==300&&combat.RegisteredHeroCount==1&&gm.activeMonsters.Count==0&&Lives(combat).Count==0&&Vector2.Distance(heroBeforeTrial,space.Position(hero.heroRect))<.01f,"same Hero stays in place, no enemies before exploration");
     R(!gm.RequestTribulation()&&!gm.TryManualSave(SaveSlot.ManualSave1)&&!gm.LoadAndContinue(SaveSlot.ManualSave2)&&!gm.TryTravelToWorldMap(map)&&!gm.ReturnToMainMenu(),"single active attempt blocks competing lifecycle transitions");
     var view=combat.TrialView;
-    var gate=Lives(combat)[0];
-    var gateRect=gate.controller.Rect;
-    var gateArt=(RectTransform)gateRect.GetChild(0);
-    float approachStart=space.Position(hero.heroRect).x;
-    R(combat.HeavenlyGateApproaching && !hero.CanAttack(gate.controller,space),"Hero starts outside gate reach");
-    R(view!=null && view.IsShowingStill && view.transform.GetSiblingIndex()==0 &&
-      space.Position(gateRect).x<space.Position(hero.heroRect).x &&
-      Mathf.Abs(space.Position(gateRect).y-view.GroundY)<.01f &&
-      gateRect.rect.height>hero.heroRect.rect.height &&
-      gateRect.GetChild(0).GetComponent<UnityEngine.UI.Image>().sprite!=null &&
-      gateArt.rect.width>gateRect.rect.width*2 && Mathf.Abs(gateArt.rect.height-864)<.01f,
-      "fallback at entry, layer order, gate to the left of Hero and compact body receiver "+name);
+    var targets=Lives(combat);
+    R(combat.HeavenlyGateApproaching && view!=null && view.IsShowingStill &&
+      view.transform.GetSiblingIndex()==0, "exploration starts with the trial backdrop before any gate is spawned");
     long incomingStart=combat.TrialStrikeCount;
     int firstIncoming=0;
     if(name=="weak")File.Copy(Path.Combine(saves.SaveDirectory,"AutoSave.json"),Path.Combine(saves.SaveDirectory,"V13InterruptedFixture.json"),true);
     if(name=="sword"){
      ui.SetPaused(true);int seal=combat.HeavenlyGateHP;double clock=bindingBefore.ActiveSeconds;
      foreach(var size in new[]{new Vector2Int(600,338),new Vector2Int(800,450),new Vector2Int(1150,647),new Vector2Int(1360,680)}){yield return resize(size.x,size.y);ui.RefreshCharacterProgression();Fit((TextMeshProUGUI)Get(ui,"trialHud"),"trial HUD "+size.x);yield return capture("v13-trial-"+size.x);}
-     R(combat.HeavenlyGateHP==seal&&bindingBefore.ActiveSeconds==clock,"paused trial has no damage or clock awards");
+     R(combat.HeavenlyGateHP==seal&&bindingBefore.ActiveSeconds==clock&&
+       combat.GateExplorationDistance==0&&targets.Count==0,"pause does not bank exploration or spawn a gate");
      // This fixture holds the normal basic windup so we can observe a full
      // video loop and capture a live strike at all sizes on one encounter.
      combat.CurrentHeroCombatState.AttackTimer=999;
      ui.SetPaused(false);
     }
     float walkDeadline=Time.realtimeSinceStartup+30;
-    while(combat.HeavenlyGateApproaching)
+    while(targets.Count==0)
     {
-     R(Time.realtimeSinceStartup<walkDeadline && gm.TribulationFighting,"walk in to seal "+name);
-     R(combat.TrialStrikeCount==incomingStart && !combat.TrialWarning && combat.CurrentHeroHP==hpStart &&
-       combat.HeavenlyGateHP==300 && combat.HeroReleaseCount==releaseStart,"both sides wait during the approach");
+     R(Time.realtimeSinceStartup<walkDeadline && gm.TribulationFighting,"explore before seal "+name);
+     R(combat.GateExplorationDistance<800 && combat.TrialStrikeCount==incomingStart &&
+       !combat.TrialWarning && combat.CurrentHeroHP==hpStart && combat.HeroReleaseCount==releaseStart,
+       "no gate, attacks or lightning during exploration");
      yield return null;
     }
-    float walked=approachStart-space.Position(hero.heroRect).x;
-    R(Mathf.Abs(walked-800)<.2f && hero.CanAttack(gate.controller,space),
-       "walked 800 BattleArea units left to enter the real attack range "+name+": "+walked);
-    approaches.Add(name+","+family+","+walked.ToString("0.###",System.Globalization.CultureInfo.InvariantCulture));
+    double explored=combat.GateExplorationDistance;
+    R(targets.Count==1 && explored>=800 && explored<=800+hero.MovementBudgetThisFrame+.1f &&
+       view.GroundScroll>0,"one gate spawns on the first real movement step reaching 800");
+    var gate=targets[0];
+    var gateRect=gate.controller.Rect;
+    var gateArt=(RectTransform)gateRect.GetChild(0);
+    float firstWallX=space.Position(gateArt).x;
+    float firstGroundScroll=view.GroundScroll;
+    float rightStoneEdge=firstWallX+gateArt.rect.width*(1047f/1672f-gateArt.pivot.x);
+    R(rightStoneEdge<space.BattleArea.rect.xMin && !hero.CanAttack(gate.controller,space) &&
+      space.Position(gateRect).x<space.Position(hero.heroRect).x &&
+      Mathf.Abs(space.Position(gateRect).y-view.GroundY)<.01f &&
+      gateRect.GetComponent<CultivationSpriteBridge>()==null &&
+      gateArt.GetComponent<UnityEngine.UI.Image>().sprite!=null &&
+      gateArt.rect.width>gateRect.rect.width*2 && Mathf.Abs(gateArt.rect.height-864)<.01f,
+      "large fixed gate starts completely offscreen to the left with a compact receiver");
+    bool capturedEntry=false;
+    while(combat.HeavenlyGateApproaching)
+    {
+     R(Time.realtimeSinceStartup<walkDeadline && gm.TribulationFighting,"approach revealed seal "+name);
+     R(combat.TrialStrikeCount==incomingStart && !combat.TrialWarning && combat.CurrentHeroHP==hpStart &&
+       combat.HeavenlyGateHP==300 && combat.HeroReleaseCount==releaseStart,"both sides wait until Hero reaches the seal");
+     if(name=="sword" && !capturedEntry && space.Position(gateArt).x>space.BattleArea.rect.xMin)
+     {
+      capturedEntry=true;
+      yield return capture("v014-wall-enters");
+     }
+     yield return null;
+    }
+    float worldPan=view.GroundScroll-firstGroundScroll;
+    R(hero.CanAttack(gate.controller,space) && worldPan>0 &&
+       Mathf.Abs(space.Position(gateArt).x-firstWallX-worldPan)<.15f &&
+       space.Position(gateArt).x>space.BattleArea.rect.xMin,
+       "the camera moved the fixed wall by exactly the same amount as the terrain");
+    approaches.Add(FormattableString.Invariant($"{name},{family},{explored:0.###},{firstWallX:0.###},{worldPan:0.###}"));
+    bool projectile=combat.PendingProjectileCount>0;
     var music=MapBgmController.Instance;
     var trialTrack=(AudioSource)Get(music,"trialSource");
     R(trialTrack!=null&&trialTrack.clip.name=="HeavenlyGateTheme"&&trialTrack.loop&&trialTrack.isPlaying&&
@@ -119,6 +145,9 @@ namespace TuTienCore
        Array.TrueForAll(music.GetComponents<AudioSource>(),a=>a==trialTrack||!a.isPlaying),
        "only the dedicated trial track plays, looping at the global BGM volume");
     if(name=="sword"){
+     R(capturedEntry,"wall entered the frame while Hero was still approaching");
+     yield return Wait(()=>Mathf.Abs(space.Position(gateArt).x-
+       (space.BattleArea.rect.xMin+space.BattleArea.rect.width*.35f))<1,5,"camera settles on gate");
      yield return Wait(()=>view.IsShowingVideo,8,"A decoded first frame");
      var decoder=(UnityEngine.Video.VideoPlayer)Get(view,"video");
      R(decoder.url.EndsWith("TribulationSky_A.mp4")&&decoder.isLooping&&
@@ -189,7 +218,8 @@ namespace TuTienCore
      yield return capture("v014-fallback");
      pass("PNG fallback visible in the actual Staff trial, with no decoder or RenderTexture.");
     }
-    bool projectile=name=="bow"&&combat.PendingProjectileCount>0;float end=Time.realtimeSinceStartup+30;
+    projectile|=combat.PendingProjectileCount>0;
+    float end=Time.realtimeSinceStartup+30;
     while(gm.TribulationFighting){R(Time.realtimeSinceStartup<end,"combat timeout "+name);projectile|=combat.PendingProjectileCount>0;if(combat.CurrentHeroHP<hpStart&&firstIncoming==0)firstIncoming=hpStart-combat.CurrentHeroHP;R(hero.heroRect.GetComponent<CultivationSpriteBridge>().BodyGraphic.sprite==body,"same Hero sprite in every weapon mode");yield return null;}
     long finalIncoming=combat.TrialStrikeCount;
     if(name=="sword"){
@@ -227,7 +257,7 @@ namespace TuTienCore
    R(gm.TryTravelToWorldMap(travel),"real Travel after settled trial");yield return Ready(gm,ui);
    R(gm.HeroData.worldMapId==travel&&gm.Cultivation==bound&&bound.PendingSeconds==0&&saves.TrialSnapshotHash(SaveSlot.ManualSave2)==selectedHash,"Travel settles old fraction; terminal manual snapshot intact");
    File.WriteAllLines(Path.Combine(evidence,"gate-approach.csv"),approaches);
-   pass("All trial Heroes walked 800 units from the right before combat. The wall was lowered 100 screen pixels at four sizes. Dedicated loop stopped after each result.");
+   pass("All trial Heroes explored 800 units before the wall spawned outside the left edge. Camera scrolled wall and ground together. Wall is 100 pixels lower at four sizes; the dedicated track stopped after each result.");
    File.WriteAllLines(Path.Combine(evidence,"trial-combat.csv"),rows);ui.OpenHeroStats();ui.RefreshCharacterProgression();yield return capture("v13-result-character");ui.CloseDamageInfo();pass("Save failure/retry, repeated Load, pause, four native Character/trial HUD sizes and fixture-only lifecycle PASS; native input NOT RUN.");
   }
   static void Fit(TextMeshProUGUI label,string caption){R(label!=null&&label.isActiveAndEnabled,caption+" visible");label.ForceMeshUpdate();R(!label.isTextOverflowing,caption+" overflow: "+label.text);}
