@@ -3,6 +3,7 @@ using System.IO;
 using System.Text.RegularExpressions;
 
 using UnityEngine;
+using TuTienCore;
 
 public partial class SaveManager : MonoBehaviour
 {
@@ -85,6 +86,7 @@ public partial class SaveManager : MonoBehaviour
     public void DeleteSave(SaveSlot slot)
     {
         string finalPath = Path.Combine(saveDirectory, slot.ToString() + SAVE_EXTENSION);
+        if(ExistingTrialBlocks(finalPath))return;
         if (File.Exists(finalPath))
         {
             File.Delete(finalPath);
@@ -96,6 +98,7 @@ public partial class SaveManager : MonoBehaviour
     public bool SaveGame(EntityDataSO entityData, SaveSlot slot)
     {
         if (entityData == null) return false;
+        string trialReason;if(!ValidateTrial(entityData,out trialReason)||(!string.IsNullOrEmpty(entityData.tribulationJson)&&TribulationSaveTransaction.Read(entityData.tribulationJson).outcome=="Active")){Debug.LogWarning("[SaveManager] Trial save refused: "+trialReason);return false;}
         if(!ValidateCultivationComponent(entityData.cultivationJson)){Debug.LogWarning("[SaveManager] Refusing cultivation save: "+LastCultivationFailure);return false;}
         string reason;
         if (!EquipmentFoundation.TryValidateSaveVersions(entityData, out reason) ||
@@ -141,6 +144,9 @@ public partial class SaveManager : MonoBehaviour
                 }
                 string cultivationComponent;
                 if(!ValidateCultivationJson(jsonData,out cultivationComponent,allowLegacy)){Debug.LogWarning("[SaveManager] Refusing cultivation load: "+LastCultivationFailure);return false;}
+                string trialComponent;if(!ReadTrialRoot(jsonData,out trialComponent,out reason)||!TribulationSaveTransaction.Validate(trialComponent,cultivationComponent,CultivationProfile,TrialConfiguration,TrialPenalty,out reason))return false;
+                if(!string.IsNullOrEmpty(trialComponent)&&TribulationSaveTransaction.Read(trialComponent).outcome=="Active"){Debug.LogWarning("[SaveManager] TrialRecoveryRequired; checkpoint retained without award or penalty.");return false;}
+                entityData.tribulationJson="";
                 // Missing Realm fields must not inherit the ScriptableObject template.
                 entityData.cultivationJson=""; // Never inherit an inline template/session snapshot.
                 entityData.realmComponentVersion=0;entityData.realmId=null;entityData.realmEntryLevel=0;
@@ -191,6 +197,7 @@ public partial class SaveManager : MonoBehaviour
                 entityData.rootWeights = new System.Collections.Generic.List<float>();
                 entityData.hybridSecondaryRace = TuTienCore.RaceType.YeuThu;
                 JsonUtility.FromJsonOverwrite(jsonData, entityData);
+                entityData.tribulationJson=trialComponent;
                 // A partial load of only inventory/equipment must NEVER count
                 // as a successful progress rollback. Verify ALL present
                 // authoritative progression fields before normalization.
@@ -311,6 +318,7 @@ public partial class SaveManager : MonoBehaviour
         {
             string finalPath = Path.Combine(saveDirectory, SaveSlot.AutoSave + SAVE_EXTENSION);
             string tempPath = Path.Combine(saveDirectory, SaveSlot.AutoSave + TEMP_EXTENSION);
+            if(ExistingTrialBlocks(finalPath))return false;
             if (File.Exists(finalPath)) File.Delete(finalPath);
             if (File.Exists(tempPath)) File.Delete(tempPath);
             return true;
@@ -412,6 +420,8 @@ public partial class SaveManager : MonoBehaviour
             // existing slot (for example, after refusing to load that slot).
             // Unreadable-version/corrupt JSON is not a detected future schema;
             // preserve the existing ability to explicitly replace corrupt saves.
+            if(ExistingTrialBlocks(finalPath))return false;
+            string incomingTrial;if(!ReadTrialRoot(data,out incomingTrial,out reason)||!TribulationSaveTransaction.Validate(incomingTrial,cultivationComponent,CultivationProfile,TrialConfiguration,TrialPenalty,out reason)||(!string.IsNullOrEmpty(incomingTrial)&&TribulationSaveTransaction.Read(incomingTrial).outcome=="Active"))return false;
             string expectedFileHash=File.Exists(finalPath)?TuTienCore.CultivationMigrationTransaction.Hash(File.ReadAllBytes(finalPath)):null;
             EquipmentVersionProbe existing;
             if (File.Exists(finalPath) &&
