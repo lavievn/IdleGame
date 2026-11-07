@@ -128,6 +128,7 @@ public sealed partial class MainGameFoundationProbe : MonoBehaviour
         Require(File.ReadAllText(Path.Combine(profileRoot,".owner"))==Marker,"Missing ownership marker.");
         Require(saveOwner!=null && !saveOwner.activeSelf,"Save owner must be inactive before Awake.");
         saves=saveOwner.GetComponent<SaveManager>();saves.ConfigureSaveDirectoryBeforeAwake(SavePath);
+        if(Array.IndexOf(Environment.GetCommandLineArgs(),"-foundationTribulationV13")>=0){var trialProfile=HeavenlyGateV13Fixtures.Profile();saves.ConfigureCultivationPlaytestBeforeAwake(trialProfile,false);saves.ConfigureTribulationFixtureBeforeAwake(HeavenlyGateV13Fixtures.Configuration(),HeavenlyGateV13Fixtures.Penalty());saveOwner.GetComponent<GameManager>().ConfigureCultivationPlaytest(trialProfile);CombatBalance.ResetDevProfiles();}
         if(Array.IndexOf(Environment.GetCommandLineArgs(),"-foundationCultivationV07")>=0 || Array.IndexOf(Environment.GetCommandLineArgs(),"-foundationCultivationV08")>=0) {
             bool balance=Array.IndexOf(Environment.GetCommandLineArgs(),"-foundationCultivationV08")>=0;
             var profile=CultivationPlaytestBootstrap.ReadProfile(File.ReadAllText(balance?"Assets/Editor/CultivationBalanceV1.json":"Assets/Editor/CultivationPlaytestV07.json"));
@@ -645,6 +646,7 @@ public sealed partial class MainGameFoundationProbe : MonoBehaviour
         Call(gm,"DeployHero",false);yield return Ready();
         inventory=(InventoryPanelUI)Get(ui,"inventoryUI");Require(inventory!=null,"No Inventory panel.");
         ui.inventoryLayoutDebug=false;ui.inventoryUseArtTheme=false;ui.ApplyHudFromInspector();
+        if(Array.IndexOf(Environment.GetCommandLineArgs(),"-foundationTribulationV13")>=0){phase=1;yield return DevelopmentV13GameplayScenario.Run(gm,saves,ui,combat,hero,space,Evidence,Resize,Capture,Pass);Status(1,"PASS");Status(2,"PASS");Status(3,"PASS");Status(4,"PASS");yield break;}
         if(Array.IndexOf(Environment.GetCommandLineArgs(),"-foundationCultivationV11C")>=0) {yield return CultivationV11C();yield break;}
         if(Array.IndexOf(Environment.GetCommandLineArgs(),"-foundationCultivationV11B")>=0) {yield return CultivationV11B();yield break;}
         if(Array.IndexOf(Environment.GetCommandLineArgs(),"-foundationCultivationV09UICap")>=0) {yield return CultivationV09UICap();yield break;}

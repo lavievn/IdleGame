@@ -1,10 +1,11 @@
 param(
- [ValidateSet('Editor','Check','Mono','Native','Build','Player','Replay','Observe','MainGame')][string]$Mode='Editor',
+ [ValidateSet('Editor','Check','Mono','Native','Build','Player','Replay','Observe','MainGame','MainGameTrial')][string]$Mode='Editor',
  [string]$StorageRoot=$(if($env:IDLEGAME_HOME){$env:IDLEGAME_HOME}else{'D:\IdleGame'}),
  [string]$UnityEditor='C:\Program Files\Unity\Hub\Editor\6000.5.0f1\Editor\Unity.exe',
  [string]$Group='cultivation-related',
  [string]$Method='CultivationV11CapacityVerifier.RunNative',
- [ValidateSet('Run','Capacity')][string]$PlayerMode='Run',
+ [ValidateSet('Run','Capacity','TrialV13','TrialReplay')][string]$PlayerMode='Run',
+ [string]$WindowsOutputRoot='',
  [string]$ReplayProfile=''
 )
 $ErrorActionPreference='Stop'
@@ -16,10 +17,11 @@ if($store.StartsWith('C:\',[StringComparison]::OrdinalIgnoreCase)){throw 'IdleGa
 foreach($name in @('Temp','Logs','Caches\upm','Tools\mono-bin','Builds')){New-Item -ItemType Directory -Path (Join-Path $store $name) -Force|Out-Null}
 $env:IDLEGAME_HOME=$store;$env:TEMP=Join-Path $store 'Temp';$env:TMP=$env:TEMP
 $bashTemp=(& 'C:\Program Files\Git\usr\bin\cygpath.exe' -u $env:TEMP).Trim()
-$env:TMPDIR=$bashTemp;$env:UPM_CACHE_ROOT=Join-Path $store 'Caches\upm'
+$env:TMPDIR=$env:TEMP;$env:UPM_CACHE_ROOT=Join-Path $store 'Caches\upm'
 foreach($legacy in @('UPM_CACHE_PATH','UPM_NPM_CACHE_PATH')){[Environment]::SetEnvironmentVariable($legacy,$null,'Process')}
 Set-Location -LiteralPath $project
 if($Mode -eq 'Mono'){
+ $env:TMPDIR=$bashTemp # Git Bash only; Unity/Burst needs the native Windows path.
  if($Group -notmatch '^[a-z0-9-]+$'){throw 'Invalid test group'}
  $mono=Join-Path (Split-Path $UnityEditor -Parent) 'Data\MonoBleedingEdge'
  $monoUnix=(& 'C:\Program Files\Git\usr\bin\cygpath.exe' -u $mono).Trim()
@@ -33,18 +35,21 @@ if($Mode -eq 'Mono'){
 }
 if($Mode -in @('Build','Player','Replay','Observe')){
  $task=if($Mode -eq 'Build'){'Build'}elseif($Mode -eq 'Replay'){'Replay'}elseif($Mode -eq 'Observe'){'Manual'}else{$PlayerMode}
- & (Join-Path $project 'Tools\Run-WindowsAcceptanceV10.ps1') -Mode $task -OutputRoot (Join-Path $store 'Builds\WindowsAcceptance') -ProjectRoot $project -UnityEditor $UnityEditor -ReplayProfile $ReplayProfile
+ $buildOut=if($WindowsOutputRoot){[IO.Path]::GetFullPath($WindowsOutputRoot)}else{Join-Path $store 'Builds\WindowsAcceptance'}
+ if(!$buildOut.StartsWith($store.TrimEnd('\')+'\',[StringComparison]::OrdinalIgnoreCase)){throw 'Windows output must be under the IdleGame data root'}
+ & (Join-Path $project 'Tools\Run-WindowsAcceptanceV10.ps1') -Mode $task -OutputRoot $buildOut -ProjectRoot $project -UnityEditor $UnityEditor -ReplayProfile $ReplayProfile
  exit $LASTEXITCODE
 }
 if(Get-Process Unity -ErrorAction SilentlyContinue){throw 'A Unity Editor is already running; close it before this launch'}
 $log=Join-Path $store ('Logs\Unity-'+$Mode+'-'+(Get-Date -Format 'yyyyMMdd-HHmmss')+'.log')
 $argsList=@('-projectPath',('"'+$project+'"'),'-logFile',('"'+$log+'"'))
 if($Mode -eq 'Check'){$argsList+=@('-batchmode','-nographics','-quit')}
-if($Mode -in @('Native','MainGame')){
- if($Mode -eq 'MainGame'){$Method='MainGameFoundationProbe.RunIsolated'}
+if($Mode -in @('Native','MainGame','MainGameTrial')){
+ if($Mode -in @('MainGame','MainGameTrial')){$Method='MainGameFoundationProbe.RunIsolated'}
  if($Method -notmatch '^[A-Za-z][A-Za-z0-9_]*\.[A-Za-z][A-Za-z0-9_]*$'){throw 'Explicit static verifier method required'}
  $argsList+=@('-batchmode','-executeMethod',$Method)
  if($Mode -eq 'Native'){$argsList+='-nographics'}
+ if($Mode -eq 'MainGameTrial'){$argsList+=@('-foundationValidationRun','-foundationTribulationV13','-foundationSourceHead',(git rev-parse HEAD))}
  if($Mode -eq 'MainGame'){$argsList+=@('-foundationValidationRun','-foundationCultivationV11C','-foundationSourceHead',(git rev-parse HEAD));if($ReplayProfile){$argsList+=@('-foundationResumeSavedProfile',('˜'+$ReplayProfile+'˜').Replace('˜','"'),'-foundationResumeSlot','ManualSave2')}}
 }
 $process=Start-Process -FilePath $UnityEditor -ArgumentList $argsList -WorkingDirectory $project -WindowStyle Hidden -PassThru
