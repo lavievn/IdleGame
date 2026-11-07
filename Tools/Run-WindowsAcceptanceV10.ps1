@@ -48,7 +48,8 @@ $style=if($Mode -eq 'TrialManual'){'Normal'}else{'Hidden'}
 $player=Start-Process -FilePath $exe -ArgumentList @('-ownedV10Root',('"'+$ownedProfilePath+'"'),'-ownedV10Mode',$runMode,'-ownedV10Head',$head,'-logFile',('"'+(Join-Path $ownedProfilePath 'player.log')+'"'),'-screen-fullscreen','0') -WindowStyle $style -PassThru
 Write-Output "OWNED_PROFILE $ownedProfilePath";Write-Output "OWNED_PLAYER_PID $($player.Id)"
 if($Mode -eq 'Manual'){exit 0}
-if(!$player.WaitForExit(240000)){
+$timeoutMs=if($Mode -eq 'TrialBalance'){420000}else{240000}
+if(!$player.WaitForExit($timeoutMs)){
  if([IO.Path]::GetFullPath($player.MainModule.FileName) -ne [IO.Path]::GetFullPath($exe)){throw 'Refusing to stop unexpected process'}
  $player.Kill();$player.WaitForExit();throw 'Owned acceptance timed out; stopped only the process launched above'
 }

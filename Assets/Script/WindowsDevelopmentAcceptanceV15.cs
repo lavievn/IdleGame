@@ -207,6 +207,10 @@ public sealed partial class WindowsDevelopmentAcceptanceV10
 
     private IEnumerator BalanceTrialV15()
     {
+        QualitySettings.vSyncCount=0;
+        Application.targetFrameRate=60;
+        Application.runInBackground=true;
+        UnityEngine.Random.InitState(15015);
         gm.OnNewGameClicked();
         gm.OnConfirmResetClicked();
         yield return Ready();
@@ -215,7 +219,7 @@ public sealed partial class WindowsDevelopmentAcceptanceV10
         var levels=new[]{1,1,10,10,25,25,40,40};
         var weapons=new[]{WeaponFamily.Unarmed,WeaponFamily.Sword,WeaponFamily.Bow,WeaponFamily.Staff,
             WeaponFamily.Unarmed,WeaponFamily.Sword,WeaponFamily.Bow,WeaponFamily.Staff};
-        var rows=new List<string>{"level,weapon,weapon_template,hp,attack,armor,magic_resistance,attack_interval_s,outcome,fight_s,strikes,first_incoming_hp,hero_hp_end,gate_hp_last,accepted_hits"};
+        var rows=new List<string>{"level,weapon,weapon_template,map,hp,attack,armor,magic_resistance,attack_interval_s,outcome,fight_s,strikes,first_incoming_hp,hero_hp_end,gate_hp_last,accepted_hits"};
         for(int i=0;i<levels.Length;i++)
         {
             int level=levels[i];
@@ -248,8 +252,13 @@ public sealed partial class WindowsDevelopmentAcceptanceV10
             int firstDamage=0, gateHP=combat.HeavenlyGateHP;
             while(gm.TribulationFighting)
             {
-                Require(Time.timeAsDouble-started<45,"balance sample settles through actual damage");
                 gateHP=combat.HeavenlyGateHP;
+                if(Time.timeAsDouble-started>=120)
+                {
+                    rows.Add(FormattableString.Invariant($"{level},{family},{template},{data.worldMapId},{hp},{attack},{armor:0.###},{mr:0.###},{interval:0.###},Censored,120,{combat.TrialStrikeCount-strikes},{firstDamage},{combat.CurrentHeroHP},{gateHP},{combat.AcceptedHeroHitCount-hits}"));
+                    File.WriteAllLines(Path.Combine(Evidence,"trial-balance.csv"),rows);
+                    throw new InvalidOperationException("Balance sample remained Active at 120 s. The observation was preserved.");
+                }
                 if(firstDamage==0 && combat.TrialStrikeCount>strikes)
                     firstDamage=combat.LastTrialStrike.HPBefore-combat.LastTrialStrike.HPAfter;
                 yield return null;
@@ -262,7 +271,7 @@ public sealed partial class WindowsDevelopmentAcceptanceV10
             Require(gm.Cultivation.Current.Reserve.Amount==1234 && gm.HeroData.currentLevel==level &&
                 gm.HeroData.currentExp==0 && !gm.HasTribulationLiability,"balance outcome real and preserves progression");
             if(receipt.outcome=="Success")gateHP=0;
-            rows.Add(FormattableString.Invariant($"{level},{family},{template},{hp},{attack},{armor:0.###},{mr:0.###},{interval:0.###},{receipt.outcome},{fight:0.###},{combat.TrialStrikeCount-strikes},{firstDamage},{gm.LastTribulationHeroHP},{gateHP},{combat.AcceptedHeroHitCount-hits}"));
+            rows.Add(FormattableString.Invariant($"{level},{family},{template},{data.worldMapId},{hp},{attack},{armor:0.###},{mr:0.###},{interval:0.###},{receipt.outcome},{fight:0.###},{combat.TrialStrikeCount-strikes},{firstDamage},{gm.LastTribulationHeroHP},{gateHP},{combat.AcceptedHeroHitCount-hits}"));
             File.WriteAllLines(Path.Combine(Evidence,"trial-balance.csv"),rows);
         }
         Pass("Eight normal stat/weapon samples used real combat and terminal Save. Level and demo weapon are fixture inputs; outcomes are observed.");
