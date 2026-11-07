@@ -99,3 +99,21 @@ Nhạc “逆天而行” được đóng gói thành Ogg Vorbis streaming từ 
 - **PASS** Sáu nhóm Mono liên quan, gồm âm lượng, chuyển động, camera, lịch sét, gate domain và basic hit.
 - **PASS** Windows Player mới khôi phục kết quả thắng/thua và giữ nguyên checkpoint Active bị chặn. Chính sách Save và gate production của batch áp dụng như trên.
 - Bằng chứng của lượt bổ sung tại `D:/IdleGame/Automation/v014-gate-tuning/evidence`. Build tại `D:/IdleGame/Builds/Development014GateTuning/build/IdleGameV10.exe`. Commit bàn giao tại `D:/IdleGame/Automation/v014-gate-tuning/handoff.json`.
+
+## 8. Chọn nhạc ngẫu nhiên khi vào ải
+
+Kiểm tra bản hiện tại từ baseline `da1b6c0`, nhánh `development_0.1.3`. Thay đổi nhạc và kiểm thử ở commit `6338e85`. Kết quả các mục trên là bằng chứng của những lượt nghiệm thu tương ứng.
+
+Mỗi lần vào Thiên Quan, game chọn một bài trong **逆天而行** và **逆天破劫** với xác suất bằng nhau. Bài đã chọn lặp suốt ải bằng một nguồn âm thanh và dùng thanh âm lượng BGM chung. Khi rời ải, bài riêng dừng và nhạc bản đồ tiếp tục. Hai lượt liên tiếp có thể chọn cùng bài. File mới được chuyển từ WAV sang Ogg Vorbis streaming, stereo 44,1 kHz, dài 153,527 giây. [Nguồn và SHA-256](../architecture/TRIBULATION_014_ASSET_MANIFEST.json)
+
+| Hạng mục | Kết quả lượt này |
+| --- | --- |
+| Mono | **PASS** 9 kiểm tra âm lượng, 37 assertion domain Thiên Quan và 3 kiểm tra lịch Thiên Lôi |
+| MainGame Play Mode | **PASS** Sáu encounter với seed kiểm thử. Cả hai bài đã phát qua một AudioSource duy nhất, với chế độ loop bật. Nguồn dừng khi rời ải. Kiểm tra vị trí, video, Thiên Lôi và HUD ở bốn độ phân giải đi cùng fixture |
+| Windows Development Player | **PASS** Sáu encounter qua fixture với cùng chuỗi chọn nhạc. Video A/B, PNG, thắng/thua, chuyển vùng và rời ải đều qua kiểm tra |
+| Windows restart | **PASS** Save thắng/thua khôi phục chính xác, giữ checkpoint Active và chặn resume |
+| Chuột/phím thật và nghe bằng tai | **NOT RUN** Phát nhạc được kiểm tra qua clip và trạng thái AudioSource trong Unity |
+| Farm và profiling riêng | **NOT RUN** Số liệu lượt trước nằm ở mục 5 |
+| Production gate | **OFF** Thiên Quan tiếp tục chạy trong fixture |
+
+Bằng chứng ở `D:/IdleGame/Automation/v014-trial-music/evidence`. File `trial-music.csv` có ở cả `main-game` và `windows/trial`. Build Windows Development ở `D:/IdleGame/Builds/Development014TrialMusic/build/IdleGameV10.exe`. SHA-256 Assembly-CSharp `61794da8289c2f6bfd377bb4fa08bd085c2913f0a0cbc7f74af80aabc521694a`. Commit báo cáo và trạng thái Git được ghi trong `D:/IdleGame/Automation/v014-trial-music/handoff.json`.
