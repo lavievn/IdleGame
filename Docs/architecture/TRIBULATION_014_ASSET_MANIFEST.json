@@ -1,0 +1,30 @@
+{
+  "provenance": "Four loose Desktop originals authorized by user; no upstream manifest supplied.",
+  "files": [
+    {
+      "source": "ground_wall.png",
+      "asset": "Assets/Resources/Environment/Tribulation/TribulationGround.png",
+      "sha256": "3bb53ace4ac1e927dd0bb2936db0b06a4ed107974053536c921e4056013ba107"
+    },
+    {
+      "source": "wall.png",
+      "asset": "Assets/Resources/Environment/Tribulation/HeavenlyGate.png",
+      "sha256": "5c43416f6e6d7ccb0130d505601056ef36838b5b7b1e8e5599ae243761a247ee"
+    },
+    {
+      "source": "vid_wall1.mp4",
+      "asset": "Assets/StreamingAssets/Tribulation/TribulationSky_A.mp4",
+      "sha256": "600c9a79225f70e49b404b7a44fd2b2c54f30f21bec436c10ec5a37b9e157590"
+    },
+    {
+      "source": "vid_wall2.mp4",
+      "asset": "Assets/StreamingAssets/Tribulation/TribulationSky_B.mp4",
+      "sha256": "b129087f2cd6f58845d55b00f7943b4761ebe98ff5e76ea51b696d0856c6a122"
+    },
+    {
+      "source": "vid_wall1.mp4 decoded at 2.000 s",
+      "asset": "Assets/Resources/Environment/Tribulation/TribulationSkyOriginal.png",
+      "sha256": "c8c4ca14eea81b8e8153b504ea1ea94f4734cdb70b265b367f9aed93ad5b7480"
+    }
+  ]
+}
