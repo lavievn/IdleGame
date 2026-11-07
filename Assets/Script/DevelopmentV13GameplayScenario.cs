@@ -32,11 +32,11 @@ namespace TuTienCore
   }
   static void TrackTrialResources(List<string> rows,string fixture,string phase,bool active)
   {
-   var views=UnityEngine.Object.FindObjectsByType<HeavenlyTrialView>(FindObjectsInactive.Include,FindObjectsSortMode.None);
+   var views=UnityEngine.Object.FindObjectsByType<HeavenlyTrialView>(FindObjectsInactive.Include);
    int decoders=0;
    foreach(var view in views)decoders+=view.GetComponents<UnityEngine.Video.VideoPlayer>().Length;
    int targets=Array.FindAll(Resources.FindObjectsOfTypeAll<RenderTexture>(),rt=>rt.name=="Heavenly Trial Sky Target").Length;
-   int vfx=UnityEngine.Object.FindObjectsByType<HeavenlyLightningVisual>(FindObjectsInactive.Include,FindObjectsSortMode.None).Length;
+   int vfx=UnityEngine.Object.FindObjectsByType<HeavenlyLightningVisual>(FindObjectsInactive.Include).Length;
    R(views.Length==(active?1:0)&&vfx==(active?1:0)&&decoders==targets&&decoders<=(active?1:0),
      "owned trial presentation resources at "+phase+"/"+fixture);
    rows.Add(FormattableString.Invariant($"{fixture},{phase},{views.Length},{decoders},{targets},{vfx},{UnityEngine.Profiling.Profiler.GetMonoUsedSizeLong()},{UnityEngine.Profiling.Profiler.GetTotalAllocatedMemoryLong()}"));

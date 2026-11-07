@@ -31,15 +31,23 @@ public sealed partial class WindowsDevelopmentAcceptanceV10
         public int frames, gen0, videoPlayers, renderTargets, vfxObjects, meshBuilds, peakVertices;
         public long strikes, monoBefore, monoAfter, memoryBefore, memoryAfter, videoFrameBefore, videoFrameAfter;
         public double seconds, frameMeanMs, frameP95Ms, frameP99Ms, mainMeanMs, mainP95Ms, mainP99Ms;
-        public double playerLoopMeanMs, gcBytesPerFrame, meshMeanUs, strikeVisualMeanUs;
+        public double playerLoopMeanMs, processCpuMsPerFrame, gcBytesPerFrame, meshMeanUs, strikeVisualMeanUs;
     }
 
     private static double Percentile(List<double> sorted, double p) =>
         sorted.Count == 0 ? -1 : sorted[(int)Math.Ceiling(sorted.Count*p)-1];
 
-    private IEnumerator PrepareTrialV15()
+    private IEnumerator PrepareTrialV15(bool recordOpening = false)
     {
         gm.OnNewGameClicked();
+        if(recordOpening)
+        {
+            yield return Resize(800,450);
+            var message=(TMPro.TextMeshProUGUI)Get(gm.GetComponent<StartMenuUI>(),"message");
+            Require(message.enableAutoSizing && message.enableWordWrapping &&
+                message.fontSizeMin==16 && message.fontSizeMax==18,"opening confirmation typography in Player");
+            yield return Capture("opening-confirmation");
+        }
         gm.OnConfirmResetClicked();
         yield return Ready();
         DevelopmentV13GameplayScenario.SeedHero(gm,saves,"sword",WeaponFamily.Sword);
@@ -136,6 +144,7 @@ public sealed partial class WindowsDevelopmentAcceptanceV10
         var frameTimes=new List<double>(1024);
         var mainTimes=new List<double>(1024);
         double allocated=0,loopTime=0;
+        using(var process=Process.GetCurrentProcess())
         using(var gc=ProfilerRecorder.StartNew(ProfilerCategory.Memory,"GC Allocated In Frame"))
         using(var main=ProfilerRecorder.StartNew(ProfilerCategory.Internal,"Main Thread"))
         using(var loop=ProfilerRecorder.StartNew(ProfilerCategory.Internal,"PlayerLoop"))
@@ -150,6 +159,7 @@ public sealed partial class WindowsDevelopmentAcceptanceV10
             row.videoFrameBefore=view.VideoFrame;
             row.monoBefore=Profiler.GetMonoUsedSizeLong();
             row.memoryBefore=Profiler.GetTotalAllocatedMemoryLong();
+            double cpuAtStart=process.TotalProcessorTime.TotalMilliseconds;
             double begin=Time.realtimeSinceStartupAsDouble;
             do
             {
@@ -161,6 +171,7 @@ public sealed partial class WindowsDevelopmentAcceptanceV10
                 if(loop.Valid)loopTime+=loop.LastValue/1e6;
             } while(Time.realtimeSinceStartupAsDouble-begin<TrialWindowSeconds);
             row.seconds=Time.realtimeSinceStartupAsDouble-begin;
+            row.processCpuMsPerFrame=(process.TotalProcessorTime.TotalMilliseconds-cpuAtStart)/frameTimes.Count;
             visual.ProbeTiming=false;
             row.strikes=combat.TrialStrikeCount-firstStrike;
             row.gen0=GC.CollectionCount(0)-collections;
@@ -191,7 +202,7 @@ public sealed partial class WindowsDevelopmentAcceptanceV10
 
     private IEnumerator ManualTrialV15()
     {
-        yield return PrepareTrialV15();
+        yield return PrepareTrialV15(true);
         Pass("Native mode ready with seeded owned Hero. Open Character and click the trial button.");
         File.WriteAllText(Path.Combine(Evidence,"native-ready.txt"),"800x450; waiting for Windows input");
         yield return Until(()=>gm.HasTribulationLiability,120,"Windows input started trial");
