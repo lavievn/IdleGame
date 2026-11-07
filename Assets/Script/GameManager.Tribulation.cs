@@ -43,6 +43,9 @@ public partial class GameManager
         var current=combatManager.CurrentHeroCombatState;
         if(current.Data!=runtimeHeroData||current.LifeVersion!=trial.HeroLife||Cultivation==null||Cultivation.OwnerId!=trial.Owner||Cultivation.Epoch!=Guid.ParseExact(trialReceipt.epoch,"N")){TribulationCombatInvalidated();return;}
         trial.Advance(++trialStep,Math.Min(1,dt),false);
+        // A live HP sample updates the trial clock only. Creating a receipt
+        // every frame grows the deduplication set for the entire attempt.
+        if (heroHP > 0 && gateHP > 0) return;
         trial.Accept(trial.Owner,trial.Epoch,trial.AttemptId,trial.TargetId,current.LifeVersion,Guid.NewGuid(),trial.Step,heroHP,gateHP);
         if(trial.Outcome==HeavenlyGateOutcome.Fighting)return;
         UIManager.Instance?.SetPaused(true); // Keep the entry-time expected hash, never adopt a competing snapshot.

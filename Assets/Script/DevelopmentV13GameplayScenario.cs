@@ -103,7 +103,12 @@ namespace TuTienCore
      var btn=(RectTransform)Get(ui,"trialButton");Vector2 point=RectTransformUtility.WorldToScreenPoint(null,btn.TransformPoint(btn.rect.center));
      R(ui.HitControl(point)!=null&&ui.HitControl(point).GetRect()==btn,"real Character trial button hit region");ui.HandleMouseClick(point);R(gm.HasTribulationLiability,"trial UI handler started owned combat "+gm.LastTribulationNotice);
     }else R(gm.RequestTribulation(),"start real owned trial "+name+" "+gm.LastTribulationNotice);R(gm.HeroData==source&&combat.HeavenlyGateHP==300&&combat.RegisteredHeroCount==1&&gm.activeMonsters.Count==0&&Lives(combat).Count==0&&Vector2.Distance(heroBeforeTrial,space.Position(hero.heroRect))<.01f,"same Hero stays in place, no enemies before exploration");
+    string activeHash=saves.TrialSnapshotHash(SaveSlot.AutoSave);
     R(!gm.RequestTribulation()&&!gm.TryManualSave(SaveSlot.ManualSave1)&&!gm.LoadAndContinue(SaveSlot.ManualSave2)&&!gm.TryTravelToWorldMap(map)&&!gm.ReturnToMainMenu(),"single active attempt blocks competing lifecycle transitions");
+    gm.OnRetryClicked();
+    gm.OnNewGameClicked();
+    R(gm.HeroData==source && gm.TribulationFighting && !gm.HasPendingConfirmation &&
+      activeHash==saves.TrialSnapshotHash(SaveSlot.AutoSave),"Retry and New retain the exact Active checkpoint");
     var view=combat.TrialView;
     var targets=Lives(combat);
     R(combat.HeavenlyGateApproaching && view!=null && view.IsShowingStill &&
@@ -165,6 +170,10 @@ namespace TuTienCore
        space.Position(gateArt).x>space.BattleArea.rect.xMin,
        "the camera moved the fixed wall by exactly the same amount as the terrain");
     approaches.Add(FormattableString.Invariant($"{name},{family},{explored:0.###},{firstWallX:0.###},{worldPan:0.###}"));
+    var activeAttempt=(HeavenlyGateEncounter)Get(gm,"trial");
+    R(activeAttempt.Step>0 && activeAttempt.Seconds>0 &&
+      ((HashSet<Guid>)Get(activeAttempt,"receipts")).Count==0,
+      "live frame observations advance time without retaining receipts");
     TrackTrialResources(resourceRows,name,"engaged",true);
     bool projectile=combat.PendingProjectileCount>0;
     var trialTrack=(AudioSource)Get(music,"trialSource");
