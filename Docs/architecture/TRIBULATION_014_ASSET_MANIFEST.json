@@ -25,6 +25,13 @@
       "source": "vid_wall1.mp4 decoded at 2.000 s",
       "asset": "Assets/Resources/Environment/Tribulation/TribulationSkyOriginal.png",
       "sha256": "c8c4ca14eea81b8e8153b504ea1ea94f4734cdb70b265b367f9aed93ad5b7480"
+    },
+    {
+      "source": "逆天而行 - usesuno.com.wav",
+      "sourceSha256": "e50908ee127397f4749fd1eea0c69e3a533db8ec3dae1d20b6f22eade233bda7",
+      "asset": "Assets/Resources/Environment/Tribulation/HeavenlyGateTheme.ogg",
+      "sha256": "c7eb52220348150cb09625b1c873b2ffa10e6689275bb4b61a9ccca8adfd8cc9",
+      "conversion": "FFmpeg Vorbis q7; stereo 44100 Hz, 197.207007 s; Unity Streaming"
     }
   ]
 }

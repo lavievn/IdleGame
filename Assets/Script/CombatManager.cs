@@ -419,7 +419,7 @@ public partial class CombatManager : MonoBehaviour
         if(HeavenlyGateActive && (!CanRunGateCombat || !ValidateGateLives()))return;
         if(!AnyFightingHero())
         {
-            if (HeavenlyGateActive) { TickHeavenlyGate(dt); return; }
+            if (HeavenlyGateActive) { TickHeavenlyGate(space,dt); return; }
             DiscardCombatProjectiles(true,false);
             TickMagicFlights(dt);
             return;
@@ -435,7 +435,7 @@ public partial class CombatManager : MonoBehaviour
                 TickPassiveRegeneration(state,dt);
                 TickRegisteredHeroAttack(state,space,dt);
             }
-        if(HeavenlyGateActive){TickHeavenlyGate(dt);return;}
+        if(HeavenlyGateActive){TickHeavenlyGate(space,dt);return;}
         if (!isBattling) return;
         for (int i=activeMonsters.Count-1;i>=0;i--)
         {

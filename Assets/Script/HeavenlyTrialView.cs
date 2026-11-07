@@ -11,6 +11,7 @@ internal sealed class HeavenlyTrialView : MonoBehaviour
 {
     internal enum SkyVariant { A, B, Still }
     private const string Art = "Environment/Tribulation/";
+    internal const float SealDropPixels = 100f;
     private const float GroundSurface = .344f; // Contact line in the supplied ground PNG.
     private static readonly Color Dark = new Color(.032f, .009f, .017f);
     private EnvironmentManager space;
@@ -21,7 +22,7 @@ internal sealed class HeavenlyTrialView : MonoBehaviour
     private RenderTexture target;
     private bool hasFrame, failed, released;
     private int width, height;
-    private float prepareDeadline, groundY;
+    private float prepareDeadline, groundY, unitsPerScreenPixel;
     private Image seal;
     private float hitRemaining;
     private bool broken;
@@ -33,6 +34,8 @@ internal sealed class HeavenlyTrialView : MonoBehaviour
     internal int Loops { get; private set; }
     internal float SkyTop { get; private set; }
     internal float GroundY => groundY;
+    internal Vector2 SealBreakPosition => area.InverseTransformPoint(seal.rectTransform.TransformPoint(
+        new Vector3(0, seal.rectTransform.rect.height * .55f, 0)));
 
     internal static HeavenlyTrialView Install(EnvironmentManager space, float groundY, SkyVariant variant)
     {
@@ -74,13 +77,20 @@ internal sealed class HeavenlyTrialView : MonoBehaviour
         seal.raycastTarget = false;
         seal.enabled = seal.sprite != null;
         seal.transform.SetAsFirstSibling();
-        // Align the seal and base, while leaving the target rect at body size.
+        // Only the artwork sinks into the ground. The target stays at combat height.
         seal.rectTransform.anchorMin = seal.rectTransform.anchorMax = new Vector2(.5f, 0);
         seal.rectTransform.pivot = new Vector2(.49f, .0064f);
-        seal.rectTransform.anchoredPosition = new Vector2(CombatManager.TrialGateArtworkOffset, 0);
+        PositionSeal();
         float height = CombatManager.TrialGateArtworkHeight;
         float aspect = seal.sprite != null ? seal.sprite.rect.width / seal.sprite.rect.height : 1;
         seal.rectTransform.sizeDelta = new Vector2(height * aspect, height);
+    }
+
+    private void PositionSeal()
+    {
+        if (seal != null)
+            seal.rectTransform.anchoredPosition = new Vector2(CombatManager.TrialGateArtworkOffset,
+                -SealDropPixels * unitsPerScreenPixel);
     }
 
     internal void HitSeal(bool lethal)
@@ -122,6 +132,8 @@ internal sealed class HeavenlyTrialView : MonoBehaviour
         RectTransformUtility.ScreenPointToLocalPointInRectangle(area, new Vector2(width,height), null, out var top);
         float viewWidth = area.rect.width;
         float viewHeight = Mathf.Max(1, top.y - bottom.y);
+        unitsPerScreenPixel = viewHeight / Mathf.Max(1, height);
+        PositionSeal();
         SkyTop = top.y;
         backdrop.sizeDelta = new Vector2(viewWidth, viewHeight + 2);
         backdrop.anchoredPosition = new Vector2(area.rect.center.x, (top.y + bottom.y) / 2);

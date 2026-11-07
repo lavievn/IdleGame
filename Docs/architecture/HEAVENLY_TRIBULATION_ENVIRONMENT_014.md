@@ -8,7 +8,7 @@ Môi trường gắn với encounter đang chạy trong MainGame. Cấu hình pr
 
 1. Bầu trời giông sét ở nền trong vùng gameplay. Video A mặc định, B và Still là tùy chọn của trường `trialSky` trong CombatManager. Hai MP4 dùng `StreamingAssets/Tribulation`.
 2. Một tấm địa hình PNG giữ tỷ lệ gốc. Núi và mặt đất đá đến từ cùng ảnh alpha. Hàng tiếp xúc trong ảnh được căn ở 34,4% chiều cao tính từ dưới, tại cùng cao độ chân với trial. Ảnh phủ toàn chiều ngang gameplay một lần.
-3. Hero và Thiên Quan trên BattleArea hiện hữu. Tâm ảnh đá tại 35% chiều ngang từ trái. Chiều cao 633,6 đơn vị canvas, bằng 220% kích thước 288 đơn vị trong lượt bố cục đầu. Hero ở phía phải và dùng logic di chuyển hướng trái hiện có. Điểm nhận đòn đặt 105 đơn vị về bên phải tâm ảnh, ở trong đá. Target rect rộng 116 đơn vị và dùng cùng đường xác thực mục tiêu, tầm đánh và projectile của 0.1.3.
+3. Hero và Thiên Quan trên BattleArea hiện hữu. Tâm ảnh đá tại 35% chiều ngang từ trái. Chiều cao 864 đơn vị canvas, bằng 300% kích thước gốc 288 đơn vị. Hạ riêng ảnh tường 100 pixel màn hình. Hero bắt đầu ở phía phải và đi 800 đơn vị BattleArea để vào tầm đánh theo vũ khí đang trang bị. Điểm nhận đòn giữ cao độ chiến đấu và nằm ở phía phải trong thân đá. Target rect rộng 116 đơn vị và dùng cùng đường xác thực mục tiêu, tầm đánh và projectile của 0.1.3.
 4. Lưới cảnh báo, sét và sparks của Combat được vẽ trên các actor, dưới HUD. Hiệu ứng vỡ phong ấn chỉ liên kết với đòn kết liễu và kết quả đã ghi. Lớp kết quả tồn tại ngắn qua chuyển cảnh.
 5. HUD hiện hữu hiển thị Hero HP, Thiên Quan HP và kết quả. Các panel quản lý dùng đường render hiện có.
 
@@ -20,9 +20,13 @@ Sử dụng một decoder và một RenderTexture ARGB32 640×360 cho encounter 
 
 Bốn tệp Desktop gốc giữ nguyên byte. PNG dự phòng được trích từ A ở 2,000 giây. SHA-256 và đường dẫn được lưu cùng asset trong [manifest của batch](TRIBULATION_014_ASSET_MANIFEST.json). Manifest này ghi nguồn nhập thực tế. Hình 640×360 nhìn mềm hơn ở cửa sổ lớn. Cảnh sét nằm trong video giữ nguyên màu đen và chi tiết mây.
 
+## Nhạc riêng
+
+Bản “逆天而行” dùng Ogg Vorbis streaming từ WAV do người dùng cung cấp. BGM dùng âm lượng nhạc chung và phát lặp khi ải hoạt động, kể cả khi tạm dừng. Hai kênh nhạc bản đồ tạm dừng tại vị trí phát hiện tại. Khi rời ải, bài riêng dừng và controller tiếp tục nhạc theo bản đồ.
+
 ## Hợp đồng strike và Save
 
-- Tích lũy thời gian Combat, hiện warning, sau đó chấp nhận impact. Cấu hình warning fixture mặc định 0,26 giây, tối đa nửa chu kỳ. Sau hitch bỏ backlog thay vì dồn nhiều lần trừ HP, và luôn dành một khoảng warning trước impact.
+- Khi Hero đi vào tầm Thiên Quan, bắt đầu tích lũy thời gian Combat cho lịch sét, hiện warning, sau đó chấp nhận impact. Cấu hình warning fixture mặc định 0,26 giây, tối đa nửa chu kỳ. Sau hitch bỏ backlog thay vì dồn nhiều lần trừ HP, và luôn dành một khoảng warning trước impact.
 - Mỗi lịch có strike ID tăng dần. Impact dùng encounter ID, life và spawn của target, life và data của Hero cùng battle version đã đăng ký. Dữ liệu debug chỉ giữ receipt impact gần nhất và bộ đếm tổng. Khi life đổi, combat bị vô hiệu hóa, giữ liability và dọn môi trường.
 - Combat lấy vị trí Hero tại impact. Sét thủ tục dùng seed từ strike ID, mảng đỉnh tái sử dụng và màu cảnh báo/va chạm. Video không tham gia lịch Combat. Sau khi phát lệnh vẽ, cùng bước Combat gọi đường `SynergyMath.EvaluateDamage` → `ApplyDamageToHeroState` một lần. Phòng ngự, map scale và HP vẫn qua pipeline hiện hữu.
 - Hero tấn công và đạn cũ được xử lý trước bước phản kích trong cùng frame. Nếu impact đã tới hạn và cả hai về 0, outcome hiện hữu xét Hero chết trước. Save kết quả dùng candidate-before-swap và kiểm tra snapshot của 0.1.3. UI không ghi Save theo frame. Retry kết quả, Load và restart dùng lại quy tắc idempotency cũ. [Hợp đồng Save](TRIBULATION_SAVE_TRANSACTION_V1.md)

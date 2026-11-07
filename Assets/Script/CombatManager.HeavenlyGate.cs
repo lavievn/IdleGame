@@ -6,13 +6,15 @@ using TuTienCore;
 public partial class CombatManager
 {
     internal const float TrialGateFraming = .35f;
-    internal const float TrialGateArtworkHeight = 288f * 2.2f;
-    internal const float TrialGateArtworkOffset = -105f; // Receiver sits on the right side of the stone.
+    internal const float TrialGateArtworkHeight = 288f * 3f;
+    internal const float TrialGateApproachDistance = 800f;
+    internal const float TrialGateArtworkOffset = -105f * (3f / 2.2f); // Receiver stays in the right side of the stone.
 
     private ActiveMonsterInfo gateTarget;
     private HeavenlyGateConfiguration gateConfig;
     private HeavenlyLightningSchedule gateSchedule;
     private Guid gateEncounter;
+    private bool gateEngaged;
     private int gateHeroLife, gateTargetSpawn, gateBattleVersion;
     private EntityDataSO gateHeroData;
     private Func<bool> gateFighting;
@@ -28,8 +30,7 @@ public partial class CombatManager
     internal Vector2? CaptureGateBreak()
     {
         if (gateTarget == null || gateTarget.currentHP != 0 || trialView == null) return null;
-        var foot = EnvironmentManager.Instance.Position(gateTarget.controller.Rect);
-        return foot + new Vector2(TrialGateArtworkOffset, TrialGateArtworkHeight * .55f);
+        return trialView.SealBreakPosition;
     }
 
     internal void ShowCommittedGateBreak(Vector2 point, int sortingOrder)
@@ -57,6 +58,7 @@ public partial class CombatManager
 #endif
 
     public bool HeavenlyGateActive => gateTarget != null;
+    internal bool HeavenlyGateApproaching => HeavenlyGateActive && !gateEngaged;
     public int HeavenlyGateHP => gateTarget == null ? 0 : gateTarget.currentHP;
     public int HeavenlyGateMaxHP => gateTarget == null ? 0 : gateTarget.maxHP;
     public string HeavenlyGateName => gateConfig?.title;
@@ -98,10 +100,10 @@ public partial class CombatManager
         var space = EnvironmentManager.Instance;
         var heroRect = primaryHeroState.Controller.heroRect;
         var foot = space.Position(heroRect);
-        float gap = Mathf.Min(180, (float)config.targetRange * .8f);
         var area = space.BattleArea.rect;
         float receiverX = area.xMin + area.width * TrialGateFraming - TrialGateArtworkOffset;
-        foot.x = receiverX + gap;
+        float reach = Mathf.Min(space.AttackRange(primaryHeroState.SelectedMode, true), (float)config.targetRange);
+        foot.x = receiverX + reach + TrialGateApproachDistance;
         space.SetPosition(heroRect, foot);
         var go = new GameObject("Heavenly Gate target", typeof(RectTransform), typeof(Image));
         go.SetActive(false);
@@ -158,7 +160,7 @@ public partial class CombatManager
         return false;
     }
 
-    private void TickHeavenlyGate(float dt)
+    private void TickHeavenlyGate(EnvironmentManager space, float dt)
     {
         if (!CanRunGateCombat || !ValidateGateLives()) return;
 #if UNITY_5_3_OR_NEWER
@@ -167,9 +169,13 @@ public partial class CombatManager
 #endif
         if (primaryHeroState.CanFight)
         {
+            if (!gateEngaged)
+                gateEngaged = primaryHeroState.Controller.CanAttack(gateTarget.controller, space);
+        }
+        if (gateEngaged && primaryHeroState.CanFight)
+        {
             var action = gateSchedule.Advance(dt);
 #if UNITY_5_3_OR_NEWER
-            var space = EnvironmentManager.Instance;
             var heroRect = primaryHeroState.Controller.heroRect;
             if (lightning != null && gateSchedule.IsWarning && gateTarget.currentHP > 0)
                 lightning.Warn(space.Position(heroRect));
@@ -222,6 +228,7 @@ public partial class CombatManager
         gateConfig = null;
         gateHeroData = null;
         gateSchedule = null;
+        gateEngaged = false;
         gateEncounter = Guid.Empty;
         gateFighting = null;
         gateObserve = null;

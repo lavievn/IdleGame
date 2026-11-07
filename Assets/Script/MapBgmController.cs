@@ -15,6 +15,9 @@ public sealed class MapBgmController : MonoBehaviour
     private bool fading;
     private float elapsed, outgoingWeight;
     private bool missingCatalogWarned;
+    private AudioSource trialSource;
+    private bool trialMusicActive;
+    private int pausedMapSources;
 
     public static MapBgmController Instance { get; private set; }
     [Range(0f, 1f)] public float musicVolume = .6f;
@@ -159,6 +162,7 @@ public sealed class MapBgmController : MonoBehaviour
     private void Update()
     {
         musicVolume=CurrentVolume; // Inspector mirror, not a second settings store.
+        if (UpdateTrialMusic()) return;
         if (catalog == null)
         {
             catalog = Resources.Load<MapBgmCatalog>("MapBgmCatalog");
@@ -208,8 +212,60 @@ public sealed class MapBgmController : MonoBehaviour
         fading = false;
     }
 
+    private bool UpdateTrialMusic()
+    {
+        var combat = CombatManager.Instance;
+        bool inTrial = gameManager != null && gameManager.HasTribulationLiability &&
+            combat != null && combat.HeavenlyGateActive;
+        if (inTrial != trialMusicActive)
+        {
+            trialMusicActive = inTrial;
+            if (inTrial)
+                StartTrialMusic();
+            else if (trialSource != null)
+            {
+                trialSource.Stop();
+                for (int i = 0; i < sources.Length; i++)
+                    if ((pausedMapSources & (1 << i)) != 0) sources[i].UnPause();
+                pausedMapSources = 0;
+            }
+        }
+
+        if (!trialMusicActive || trialSource == null) return false;
+        trialSource.volume = musicVolume;
+        return true;
+    }
+
+    private void StartTrialMusic()
+    {
+        if (trialSource == null)
+        {
+            var clip = Resources.Load<AudioClip>("Environment/Tribulation/HeavenlyGateTheme");
+            if (clip == null) return;
+            trialSource = gameObject.AddComponent<AudioSource>();
+            trialSource.playOnAwake = false;
+            trialSource.spatialBlend = 0f;
+            trialSource.loop = true;
+            trialSource.clip = clip;
+        }
+
+        // Leave both regional channels at their playback positions, including
+        // any crossfade in progress, while the encounter owns the music.
+        for (int i = 0; i < sources.Length; i++)
+            if (sources[i].isPlaying)
+            {
+                sources[i].Pause();
+                pausedMapSources |= 1 << i;
+            }
+        trialSource.volume = musicVolume;
+        trialSource.Play();
+    }
+
     private void OnDisable()
     {
+        if (trialSource != null) trialSource.Stop();
+        trialMusicActive = false;
+        pausedMapSources = 0;
         foreach (AudioSource source in sources)
             if (source != null) source.Stop();
     }

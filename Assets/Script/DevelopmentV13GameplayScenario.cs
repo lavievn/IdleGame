@@ -49,6 +49,7 @@ namespace TuTienCore
    R(combat.HeroReleaseCount-legacyRelease==1&&combat.AcceptedHeroHitCount-legacyHits==3&&Array.TrueForAll(legacy,x=>x.currentHP==0),"legacy spell intentionally has multi-target explosion");audit.Add("LegacyAoE,3,True,1,3,3");hero.BindBasicAttackData(gm.HeroData,false);File.WriteAllLines(Path.Combine(evidence,"single-target.csv"),audit);
    pass("16 native basic cases: one release, one accepted hit and kill for 2/3 enemies overlap/spread; deliberate legacy AoE control kills three. No reproduced basic multi-kill.");
    var rows=new List<string>{"fixture,family,outcome,combat_seconds,hero_hp_start,hero_hp_before_respawn,first_incoming_damage,reserve,penalty,hero_releases,accepted_hero_hits,saw_projectile"};
+   var approaches=new List<string>{"fixture,family,walked_units"};
    foreach(string name in new[]{"weak","sword","bow","staff","unarmed","same-hp-armor"}){
     var family=name=="sword"?WeaponFamily.Sword:name=="bow"?WeaponFamily.Bow:name=="staff"?WeaponFamily.Staff:WeaponFamily.Unarmed;
     Weapon(gm,family);var h=UnityEngine.Object.Instantiate(gm.HeroData);h.name="V13 owned "+name;h.tribulationJson="";h.currentLevel=1;h.currentExp=0;h.gold=777;h.professionProgress=new List<ProfessionProgress>{new ProfessionProgress{profession=SupportProfession.Forging,level=2,experience=7}};
@@ -78,12 +79,14 @@ namespace TuTienCore
     var gate=Lives(combat)[0];
     var gateRect=gate.controller.Rect;
     var gateArt=(RectTransform)gateRect.GetChild(0);
+    float approachStart=space.Position(hero.heroRect).x;
+    R(combat.HeavenlyGateApproaching && !hero.CanAttack(gate.controller,space),"Hero starts outside gate reach");
     R(view!=null && view.IsShowingStill && view.transform.GetSiblingIndex()==0 &&
       space.Position(gateRect).x<space.Position(hero.heroRect).x &&
       Mathf.Abs(space.Position(gateRect).y-view.GroundY)<.01f &&
       gateRect.rect.height>hero.heroRect.rect.height &&
       gateRect.GetChild(0).GetComponent<UnityEngine.UI.Image>().sprite!=null &&
-      gateArt.rect.width>gateRect.rect.width*2 && gateArt.rect.height>288*2,
+      gateArt.rect.width>gateRect.rect.width*2 && Mathf.Abs(gateArt.rect.height-864)<.01f,
       "fallback at entry, layer order, gate to the left of Hero and compact body receiver "+name);
     long incomingStart=combat.TrialStrikeCount;
     int firstIncoming=0;
@@ -96,6 +99,26 @@ namespace TuTienCore
      // video loop and capture a live strike at all sizes on one encounter.
      combat.CurrentHeroCombatState.AttackTimer=999;
      ui.SetPaused(false);
+    }
+    float walkDeadline=Time.realtimeSinceStartup+30;
+    while(combat.HeavenlyGateApproaching)
+    {
+     R(Time.realtimeSinceStartup<walkDeadline && gm.TribulationFighting,"walk in to seal "+name);
+     R(combat.TrialStrikeCount==incomingStart && !combat.TrialWarning && combat.CurrentHeroHP==hpStart &&
+       combat.HeavenlyGateHP==300 && combat.HeroReleaseCount==releaseStart,"both sides wait during the approach");
+     yield return null;
+    }
+    float walked=approachStart-space.Position(hero.heroRect).x;
+    R(Mathf.Abs(walked-800)<.2f && hero.CanAttack(gate.controller,space),
+       "walked 800 BattleArea units left to enter the real attack range "+name+": "+walked);
+    approaches.Add(name+","+family+","+walked.ToString("0.###",System.Globalization.CultureInfo.InvariantCulture));
+    var music=MapBgmController.Instance;
+    var trialTrack=(AudioSource)Get(music,"trialSource");
+    R(trialTrack!=null&&trialTrack.clip.name=="HeavenlyGateTheme"&&trialTrack.loop&&trialTrack.isPlaying&&
+       Mathf.Abs(trialTrack.volume-MapBgmController.CurrentVolume)<.001f&&
+       Array.TrueForAll(music.GetComponents<AudioSource>(),a=>a==trialTrack||!a.isPlaying),
+       "only the dedicated trial track plays, looping at the global BGM volume");
+    if(name=="sword"){
      yield return Wait(()=>view.IsShowingVideo,8,"A decoded first frame");
      var decoder=(UnityEngine.Video.VideoPlayer)Get(view,"video");
      R(decoder.url.EndsWith("TribulationSky_A.mp4")&&decoder.isLooping&&
@@ -112,6 +135,8 @@ namespace TuTienCore
       Fit((TextMeshProUGUI)Get(ui,"trialHud"),"live trial HUD "+size.x);
       var heroPoint=RectTransformUtility.WorldToScreenPoint(null,hero.heroRect.position);
       var gatePoint=RectTransformUtility.WorldToScreenPoint(null,gateArt.position);
+      var receiverPoint=RectTransformUtility.WorldToScreenPoint(null,gateRect.position);
+      R(Mathf.Abs(receiverPoint.y-gatePoint.y-100)<1f,"wall is 100 physical pixels lower at "+size.x);
       R(heroPoint.x<size.x*.8f&&Mathf.Abs(gatePoint.x-size.x*.35f)<2&&
         gatePoint.x<heroPoint.x,"gate visual center at 35%, Hero approaches from the right at "+size.x);
       yield return Wait(()=>combat.TrialWarning&&view.Lightning.HasWarning,4,"live warning "+size.x);
@@ -185,6 +210,7 @@ namespace TuTienCore
       finalIncoming>incomingStart && !combat.TrialWarning &&
       GameObject.Find("Heavenly Trial Environment")==null && GameObject.Find("Trial lightning")==null,
       "environment, decoder, lightning and pending strike retired on result "+name);
+    R(!trialTrack.isPlaying,"dedicated music stopped on returning from the trial");
     R(!success||b.Capacity.Absorption==3&&b.Capacity.Refinement==2,"new realm capacities derived immediately");
     R((family!=WeaponFamily.Bow&&family!=WeaponFamily.Staff)||projectile,"actual ranged projectile observed");
     if(!success){R(!gm.RequestTribulation()&&gm.TryManualSave(SaveSlot.ManualSave1),"failed Hero must regain bottleneck; save terminal failure for restart");ui.RefreshCharacterProgression();yield return capture("v13-failure-hud");}
@@ -200,6 +226,8 @@ namespace TuTienCore
    if(!gm.HeroData.worldMapCleared.Contains(node.Id))gm.HeroData.worldMapCleared.Add(node.Id); // Explicit fixture permission, no trial reward.
    R(gm.TryTravelToWorldMap(travel),"real Travel after settled trial");yield return Ready(gm,ui);
    R(gm.HeroData.worldMapId==travel&&gm.Cultivation==bound&&bound.PendingSeconds==0&&saves.TrialSnapshotHash(SaveSlot.ManualSave2)==selectedHash,"Travel settles old fraction; terminal manual snapshot intact");
+   File.WriteAllLines(Path.Combine(evidence,"gate-approach.csv"),approaches);
+   pass("All trial Heroes walked 800 units from the right before combat. The wall was lowered 100 screen pixels at four sizes. Dedicated loop stopped after each result.");
    File.WriteAllLines(Path.Combine(evidence,"trial-combat.csv"),rows);ui.OpenHeroStats();ui.RefreshCharacterProgression();yield return capture("v13-result-character");ui.CloseDamageInfo();pass("Save failure/retry, repeated Load, pause, four native Character/trial HUD sizes and fixture-only lifecycle PASS; native input NOT RUN.");
   }
   static void Fit(TextMeshProUGUI label,string caption){R(label!=null&&label.isActiveAndEnabled,caption+" visible");label.ForceMeshUpdate();R(!label.isTextOverflowing,caption+" overflow: "+label.text);}
