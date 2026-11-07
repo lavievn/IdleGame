@@ -11,6 +11,17 @@ internal sealed class HeavenlyLightningVisual : MaskableGraphic
     public HeavenlyLightningVisual() { useLegacyMeshGeneration = false; }
 
     internal int DrawnVertices { get; private set; }
+#if DEVELOPMENT_BUILD && UNITY_STANDALONE_WIN && !UNITY_EDITOR
+    internal bool ProbeTiming;
+    internal long ProbeMeshTicks, ProbeStrikeTicks;
+    internal int ProbeMeshBuilds, ProbePeakVertices;
+
+    internal void ResetProbeTiming()
+    {
+        ProbeMeshTicks = ProbeStrikeTicks = 0;
+        ProbeMeshBuilds = ProbePeakVertices = 0;
+    }
+#endif
     private readonly Vector2[] trunk = new Vector2[10];
     private readonly Vector2[] branches = new Vector2[9];
     private readonly Vector2[] sparks = new Vector2[10];
@@ -51,6 +62,9 @@ internal sealed class HeavenlyLightningVisual : MaskableGraphic
 
     internal void Strike(Vector2 body, Vector2 footPosition, float top, long id)
     {
+#if DEVELOPMENT_BUILD && UNITY_STANDALONE_WIN && !UNITY_EDITOR
+        long began = ProbeTiming ? System.Diagnostics.Stopwatch.GetTimestamp() : 0;
+#endif
         warning = false;
         life = ImpactSeconds;
         foot = footPosition;
@@ -75,6 +89,9 @@ internal sealed class HeavenlyLightningVisual : MaskableGraphic
         for (int i = 0; i < sparks.Length; i++)
             sparks[i] = new Vector2(RandomSigned(ref seed)*110, 15 + Mathf.Abs(RandomSigned(ref seed))*90);
         SetVerticesDirty();
+#if DEVELOPMENT_BUILD && UNITY_STANDALONE_WIN && !UNITY_EDITOR
+        if (began != 0) ProbeStrikeTicks += System.Diagnostics.Stopwatch.GetTimestamp() - began;
+#endif
     }
 
     internal void BreakSeal(Vector2 center)
@@ -92,6 +109,9 @@ internal sealed class HeavenlyLightningVisual : MaskableGraphic
 
     protected override void OnPopulateMesh(VertexHelper mesh)
     {
+#if DEVELOPMENT_BUILD && UNITY_STANDALONE_WIN && !UNITY_EDITOR
+        long began = ProbeTiming ? System.Diagnostics.Stopwatch.GetTimestamp() : 0;
+#endif
         mesh.Clear();
         if (warning)
         {
@@ -123,6 +143,14 @@ internal sealed class HeavenlyLightningVisual : MaskableGraphic
             Line(mesh,seal+new Vector2(-9,-80),seal+new Vector2(9,80),4,flare);
         }
         DrawnVertices = mesh.currentVertCount;
+#if DEVELOPMENT_BUILD && UNITY_STANDALONE_WIN && !UNITY_EDITOR
+        if (began != 0)
+        {
+            ProbeMeshTicks += System.Diagnostics.Stopwatch.GetTimestamp() - began;
+            ProbeMeshBuilds++;
+            ProbePeakVertices = Mathf.Max(ProbePeakVertices, DrawnVertices);
+        }
+#endif
     }
 
     private static void Ring(VertexHelper mesh, Vector2 center, float x, float y, float width, Color color)

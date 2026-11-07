@@ -22,7 +22,7 @@ public sealed partial class WindowsDevelopmentAcceptanceV10:MonoBehaviour
     string fault;bool measuring;long advanceTicks,advanceCount,advanceBytes,allocationStart;bool allocationSupported;
     ProfilerRecorder allocation,cpu;readonly List<double> frames=new List<double>(12000),allocations=new List<double>(12000),cpus=new List<double>(12000);
     [Serializable] sealed class Result {public string unity,platform,mode,saveDirectory,profile,sourceHead,failure="",nativeInput="NOT RUN";public bool development;public List<string> checks=new List<string>(),uiIssues=new List<string>();}
-    [Serializable] sealed class Performance {public int frames,gen0Collections;public bool allocationRecorderValid,cpuRecorderValid,advanceAllocationSupported;public long allocationControl,advanceCalls,heapBefore,heapAfter;public double seconds,frameMeanMs,frameP95Ms,cpuMeanMs,allocationMeanBytes,advanceMeanMicroseconds,advanceMeanAllocatedBytes;public long snapshotWrites;}
+    [Serializable] sealed class Performance {public int frames,gen0Collections;public bool allocationRecorderValid,cpuRecorderValid,advanceAllocationSupported;public long allocationControl,advanceCalls,heapBefore,heapAfter;public double seconds,frameMeanMs,frameP95Ms,frameP99Ms,cpuMeanMs,cpuP95Ms,cpuP99Ms,allocationMeanBytes,advanceMeanMicroseconds,advanceMeanAllocatedBytes;public long snapshotWrites;}
     [Serializable] sealed class Snapshot {public int level,wave,progress,damage,maxHP,points,hpAdded,physicalAdded;public float exp;public long gold;public string map,gear,gearCore,inventory,legacyEquipped,weapon,roots;}
     readonly Result result=new Result();string Evidence=>Path.Combine(root,"evidence");string SavePath=>Path.Combine(root,"saves");
     static string Arg(string key){var a=Environment.GetCommandLineArgs();for(int i=0;i+1<a.Length;i++)if(a[i]==key)return a[i+1];return null;}
@@ -43,10 +43,14 @@ public sealed partial class WindowsDevelopmentAcceptanceV10:MonoBehaviour
         if(RootArgument==null)return false;
         VerifyRoot();CombatBalance.ResetDevProfiles();Debug.Log("[WINDOWS V10] OWNED_DEFAULT_BALANCE no personal DEVB read/write");return true;
     }
+    static bool IsOwnedGateMode(string mode) =>
+        mode=="v13trial" || mode=="v13trialreplay" || mode=="v15trialprofile" ||
+        mode=="v15trialbalance" || mode=="v15trialmanual";
+
     public static void ConfigureBeforeAwake(SaveManager manager)
     {
         if(RootArgument==null)return;
-        try{VerifyRoot();manager.ConfigureSaveDirectoryBeforeAwake(Path.Combine(root,"saves"));if(Arg("-ownedV10Mode")=="v13trial"||Arg("-ownedV10Mode")=="v13trialreplay"){var p=HeavenlyGateV13Fixtures.Profile();manager.ConfigureCultivationPlaytestBeforeAwake(p,false);manager.ConfigureTribulationFixtureBeforeAwake(HeavenlyGateV13Fixtures.Configuration(),HeavenlyGateV13Fixtures.Penalty());manager.GetComponent<GameManager>().ConfigureCultivationPlaytest(p);}Debug.Log("[WINDOWS V10] SAVE_DIRECTORY_BEFORE_AWAKE "+manager.SaveDirectory);}
+        try{VerifyRoot();manager.ConfigureSaveDirectoryBeforeAwake(Path.Combine(root,"saves"));if(IsOwnedGateMode(Arg("-ownedV10Mode"))){var p=HeavenlyGateV13Fixtures.Profile();manager.ConfigureCultivationPlaytestBeforeAwake(p,false);manager.ConfigureTribulationFixtureBeforeAwake(HeavenlyGateV13Fixtures.Configuration(),HeavenlyGateV13Fixtures.Penalty());manager.GetComponent<GameManager>().ConfigureCultivationPlaytest(p);}Debug.Log("[WINDOWS V10] SAVE_DIRECTORY_BEFORE_AWAKE "+manager.SaveDirectory);}
         catch{Application.Quit(2);throw;}
     }
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)] static void Boot()
@@ -90,6 +94,9 @@ public sealed partial class WindowsDevelopmentAcceptanceV10:MonoBehaviour
         gm=UnityEngine.Object.FindFirstObjectByType<GameManager>();saves=SaveManager.Instance;ui=UIManager.Instance;hero=UnityEngine.Object.FindFirstObjectByType<HeroController>();combat=UnityEngine.Object.FindFirstObjectByType<CombatManager>();space=UnityEngine.Object.FindFirstObjectByType<EnvironmentManager>();
         Require(gm!=null && saves!=null && ui!=null && Debug.isDebugBuild,"Real development Player managers");Require(!ui.inventoryLayoutDebug,"Player Inventory debug layout is off by default");AssertIsolated();result.saveDirectory=saves.SaveDirectory;
         if(result.mode=="v13trialreplay"){yield return DevelopmentV13GameplayScenario.Replay(gm,saves,ui,Pass);yield break;}
+        if(result.mode=="v15trialprofile"){yield return ProfileTrialV15();yield break;}
+        if(result.mode=="v15trialbalance"){yield return BalanceTrialV15();yield break;}
+        if(result.mode=="v15trialmanual"){yield return ManualTrialV15();yield break;}
         if(result.mode=="v13trial"){gm.OnNewGameClicked();gm.OnConfirmResetClicked();yield return Ready();yield return DevelopmentV13GameplayScenario.Run(gm,saves,ui,combat,hero,space,Evidence,Resize,Capture,Pass);Require(result.uiIssues.Count==0,"V13 UI sizes");yield break;}
         Require(saves.CultivationProfile!=null && saves.CultivationProfile.IsProduction && Resources.Load<TextAsset>("WorldQiDistributionV1")!=null,"Packaged default production resources");
         if(result.mode=="replay"){
@@ -144,7 +151,7 @@ public sealed partial class WindowsDevelopmentAcceptanceV10:MonoBehaviour
         var p=new Performance{allocationRecorderValid=allocation.Valid,cpuRecorderValid=cpu.Valid,advanceAllocationSupported=allocationSupported,allocationControl=delta,heapBefore=UnityEngine.Profiling.Profiler.GetMonoUsedSizeLong()};
         int gen0=GC.CollectionCount(0);long writes=saves.SuccessfulSnapshotWrites;var binding=gm.Cultivation;double active=binding.ActiveSeconds;float began=Time.realtimeSinceStartup;measuring=true;ui.SetPaused(false);
         while(Time.realtimeSinceStartup-began<30 && gm.Cultivation!=null){yield return new WaitForEndOfFrame();frames.Add(Time.unscaledDeltaTime*1000);if(allocation.Valid)allocations.Add(allocation.LastValue);if(cpu.Valid)cpus.Add(cpu.LastValue*1e-6);}
-        ui.SetPaused(true);measuring=false;p.seconds=Time.realtimeSinceStartup-began;p.frames=frames.Count;p.gen0Collections=GC.CollectionCount(0)-gen0;p.snapshotWrites=saves.SuccessfulSnapshotWrites-writes;p.heapAfter=UnityEngine.Profiling.Profiler.GetMonoUsedSizeLong();p.frameMeanMs=Mean(frames);frames.Sort();p.frameP95Ms=frames.Count==0?-1:frames[(int)((frames.Count-1)*.95)];p.cpuMeanMs=Mean(cpus);p.allocationMeanBytes=Mean(allocations);p.advanceCalls=advanceCount;p.advanceMeanMicroseconds=advanceCount==0?-1:advanceTicks*1e6/Stopwatch.Frequency/advanceCount;p.advanceMeanAllocatedBytes=allocationSupported && advanceCount>0?(double)advanceBytes/advanceCount:-1;
+        ui.SetPaused(true);measuring=false;p.seconds=Time.realtimeSinceStartup-began;p.frames=frames.Count;p.gen0Collections=GC.CollectionCount(0)-gen0;p.snapshotWrites=saves.SuccessfulSnapshotWrites-writes;p.heapAfter=UnityEngine.Profiling.Profiler.GetMonoUsedSizeLong();p.frameMeanMs=Mean(frames);frames.Sort();p.frameP95Ms=frames.Count==0?-1:frames[(int)((frames.Count-1)*.95)];p.frameP99Ms=Percentile(frames,.99);p.cpuMeanMs=Mean(cpus);cpus.Sort();p.cpuP95Ms=Percentile(cpus,.95);p.cpuP99Ms=Percentile(cpus,.99);p.allocationMeanBytes=Mean(allocations);p.advanceCalls=advanceCount;p.advanceMeanMicroseconds=advanceCount==0?-1:advanceTicks*1e6/Stopwatch.Frequency/advanceCount;p.advanceMeanAllocatedBytes=allocationSupported && advanceCount>0?(double)advanceBytes/advanceCount:-1;
         File.WriteAllText(Path.Combine(Evidence,"player-performance.json"),JsonUtility.ToJson(p,true));
         Require(binding.ActiveSeconds>active && gm.DamageHistory.Length>0,"Player natural combat/cultivation observed");
         Pass("Unmodified Player farm after method-driven New: seconds="+p.seconds+" active="+(binding.ActiveSeconds-active)+" damageEvents="+gm.DamageHistory.Length+" level="+gm.HeroData.currentLevel+" exp="+gm.HeroData.currentExp+" survived="+(gm.Cultivation!=null)+"; no gear/HP/EXP/monster overrides during interval. Not native-input acceptance.");yield return Capture("natural-farm");

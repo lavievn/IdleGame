@@ -4,7 +4,7 @@ param(
  [string]$UnityEditor='C:\Program Files\Unity\Hub\Editor\6000.5.0f1\Editor\Unity.exe',
  [string]$Group='cultivation-related',
  [string]$Method='CultivationV11CapacityVerifier.RunNative',
- [ValidateSet('Run','Capacity','TrialV13','TrialReplay')][string]$PlayerMode='Run',
+ [ValidateSet('Run','Capacity','TrialV13','TrialReplay','TrialProfile','TrialBalance','TrialManual')][string]$PlayerMode='Run',
  [string]$WindowsOutputRoot='',
  [string]$ReplayProfile=''
 )

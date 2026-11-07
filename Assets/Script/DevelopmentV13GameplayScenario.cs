@@ -19,7 +19,7 @@ namespace TuTienCore
   static IEnumerator Ready(GameManager gm,UIManager ui){yield return Wait(()=>!gm.IsEnteringGameplay,30,"entry");ui.SetPaused(true);yield return null;}
   static void Clear(GameManager gm,CombatManager combat){Call(gm,"CancelNextWave");combat.ForceClearAllMonsters();gm.activeMonsters.Clear();}
   static List<CombatManager.ActiveMonsterInfo> Lives(CombatManager combat)=>(List<CombatManager.ActiveMonsterInfo>)Get(combat,"activeMonsters");
-  static void Weapon(GameManager gm,WeaponFamily f)
+  internal static void Weapon(GameManager gm,WeaponFamily f)
   {
    if(f==WeaponFamily.Unarmed){if(WeaponBasicAttack.Equipped(gm.HeroData)!=null)R(gm.UnequipGear(EquipmentSlot.Weapon),"fixture unequip");return;}
    var gear=f==WeaponFamily.Sword?EquipmentFoundation.CreateDemoSword():f==WeaponFamily.Bow?EquipmentFoundation.CreateDemoBow():EquipmentFoundation.CreateDemoStaff();
@@ -29,6 +29,30 @@ namespace TuTienCore
   {
    Clear(gm,combat);Set(gm,"retryWaveSize",count);Call(gm,"CallNextWave");R(Lives(combat).Count==count,"real pooled wave "+count);
    Vector2 p=space.Position(hero.heroRect);int i=0;foreach(var m in Lives(combat)){m.currentHP=1;m.maxHP=1;m.attackTimer=1000;m.controller.moveSpeed=0;m.controller.ReceiveAlert(hero,true);space.SetPosition(m.controller.Rect,p+new Vector2(-8-(overlap?0:4*i++),0));m.controller.UpdateHealthBar(1,1);}
+  }
+  static void TrackTrialResources(List<string> rows,string fixture,string phase,bool active)
+  {
+   var views=UnityEngine.Object.FindObjectsByType<HeavenlyTrialView>(FindObjectsInactive.Include,FindObjectsSortMode.None);
+   int decoders=0;
+   foreach(var view in views)decoders+=view.GetComponents<UnityEngine.Video.VideoPlayer>().Length;
+   int targets=Array.FindAll(Resources.FindObjectsOfTypeAll<RenderTexture>(),rt=>rt.name=="Heavenly Trial Sky Target").Length;
+   int vfx=UnityEngine.Object.FindObjectsByType<HeavenlyLightningVisual>(FindObjectsInactive.Include,FindObjectsSortMode.None).Length;
+   R(views.Length==(active?1:0)&&vfx==(active?1:0)&&decoders==targets&&decoders<=(active?1:0),
+     "owned trial presentation resources at "+phase+"/"+fixture);
+   rows.Add(FormattableString.Invariant($"{fixture},{phase},{views.Length},{decoders},{targets},{vfx},{UnityEngine.Profiling.Profiler.GetMonoUsedSizeLong()},{UnityEngine.Profiling.Profiler.GetTotalAllocatedMemoryLong()}"));
+  }
+
+  internal static void SeedHero(GameManager gm,SaveManager saves,string name,WeaponFamily family)
+  {
+    Weapon(gm,family);var h=UnityEngine.Object.Instantiate(gm.HeroData);h.name="V13 owned "+name;h.tribulationJson="";h.currentLevel=1;h.currentExp=0;h.gold=777;h.professionProgress=new List<ProfessionProgress>{new ProfessionProgress{profession=SupportProfession.Forging,level=2,experience=7}};
+    h.combatStatModifiers.RemoveAll(x=>x.sourceId!=null&&x.sourceId.StartsWith("fixture:gate:"));
+    h.ApplyHeroBalance();int power=name=="weak"||name=="same-hp-armor"?78:185;int wantedHP=name=="weak"||name=="same-hp-armor"?24:600;
+    h.combatStatModifiers.Add(new CombatStatModifier{sourceId="fixture:gate:power",stat=CombatStatId.Attack,flat=power-WeaponBasicAttack.Physical(h)});
+    h.combatStatModifiers.Add(new CombatStatModifier{sourceId="fixture:gate:magic",stat=CombatStatId.MagicalAttack,flat=power-WeaponBasicAttack.Magical(h)});
+    h.combatStatModifiers.Add(new CombatStatModifier{sourceId="fixture:gate:hp",stat=CombatStatId.MaxHealth,flat=wantedHP-h.GetCalculatedHealth(WeaponBasicAttack.Resolve(h))});
+    if(name=="same-hp-armor")h.combatStatModifiers.Add(new CombatStatModifier{sourceId="fixture:gate:armor",stat=CombatStatId.Armor,flat=900});
+    var profile=saves.CultivationProfile;using(var binding=new CultivationGameplayBinding(h,profile,HeavenlyGateV13Fixtures.Session(profile))){R(binding.Advance(h,0,.037,false,h.worldMapId)==CultivationReason.None,"fractional source fixture");}
+    R(saves.SaveGame(h,SaveSlot.ManualSave2),"fixture seed slot");UnityEngine.Object.Destroy(h);R(gm.LoadAndContinue(SaveSlot.ManualSave2),"load canonical bottleneck fixture");
   }
   public static IEnumerator Run(GameManager gm,SaveManager saves,UIManager ui,CombatManager combat,HeroController hero,EnvironmentManager space,string evidence,Func<int,int,IEnumerator> resize,Func<string,IEnumerator> capture,Action<string> pass)
   {
@@ -58,17 +82,13 @@ namespace TuTienCore
    var observedTracks=new HashSet<string>();
    var musicRows=new List<string>{"fixture,clip"};
    AudioSource dedicatedMusicSource=null;
+   var resourceRows=new List<string>{"fixture,phase,views,video_players,render_targets,vfx_objects,mono_used,unity_allocated"};
    foreach(string name in new[]{"weak","sword","bow","staff","unarmed","same-hp-armor"}){
     var family=name=="sword"?WeaponFamily.Sword:name=="bow"?WeaponFamily.Bow:name=="staff"?WeaponFamily.Staff:WeaponFamily.Unarmed;
-    Weapon(gm,family);var h=UnityEngine.Object.Instantiate(gm.HeroData);h.name="V13 owned "+name;h.tribulationJson="";h.currentLevel=1;h.currentExp=0;h.gold=777;h.professionProgress=new List<ProfessionProgress>{new ProfessionProgress{profession=SupportProfession.Forging,level=2,experience=7}};
-    h.combatStatModifiers.RemoveAll(x=>x.sourceId!=null&&x.sourceId.StartsWith("fixture:gate:"));
-    h.ApplyHeroBalance();int power=name=="weak"||name=="same-hp-armor"?78:185;int wantedHP=name=="weak"||name=="same-hp-armor"?24:600;
-    h.combatStatModifiers.Add(new CombatStatModifier{sourceId="fixture:gate:power",stat=CombatStatId.Attack,flat=power-WeaponBasicAttack.Physical(h)});
-    h.combatStatModifiers.Add(new CombatStatModifier{sourceId="fixture:gate:magic",stat=CombatStatId.MagicalAttack,flat=power-WeaponBasicAttack.Magical(h)});
-    h.combatStatModifiers.Add(new CombatStatModifier{sourceId="fixture:gate:hp",stat=CombatStatId.MaxHealth,flat=wantedHP-h.GetCalculatedHealth(WeaponBasicAttack.Resolve(h))});
-    if(name=="same-hp-armor")h.combatStatModifiers.Add(new CombatStatModifier{sourceId="fixture:gate:armor",stat=CombatStatId.Armor,flat=900});
-    var profile=saves.CultivationProfile;using(var binding=new CultivationGameplayBinding(h,profile,HeavenlyGateV13Fixtures.Session(profile))){R(binding.Advance(h,0,.037,false,h.worldMapId)==CultivationReason.None,"fractional source fixture");}
-    R(saves.SaveGame(h,SaveSlot.ManualSave2),"fixture seed slot");UnityEngine.Object.Destroy(h);R(gm.LoadAndContinue(SaveSlot.ManualSave2),"load canonical bottleneck fixture");yield return Ready(gm,ui);
+    SeedHero(gm,saves,name,family);yield return Ready(gm,ui);
+    int power=name=="weak"||name=="same-hp-armor"?78:185;
+    int wantedHP=name=="weak"||name=="same-hp-armor"?24:600;
+    TrackTrialResources(resourceRows,name,"before",false);
     var skyVariant=name=="bow"?HeavenlyTrialView.SkyVariant.B:name=="staff"?HeavenlyTrialView.SkyVariant.Still:HeavenlyTrialView.SkyVariant.A;
     Set(combat,"trialSky",skyVariant);
     var source=gm.HeroData;var bindingBefore=gm.Cultivation;var body=hero.heroRect.GetComponent<CultivationSpriteBridge>().BodyGraphic.sprite;
@@ -145,6 +165,7 @@ namespace TuTienCore
        space.Position(gateArt).x>space.BattleArea.rect.xMin,
        "the camera moved the fixed wall by exactly the same amount as the terrain");
     approaches.Add(FormattableString.Invariant($"{name},{family},{explored:0.###},{firstWallX:0.###},{worldPan:0.###}"));
+    TrackTrialResources(resourceRows,name,"engaged",true);
     bool projectile=combat.PendingProjectileCount>0;
     var trialTrack=(AudioSource)Get(music,"trialSource");
     string expectedTrack=trackNames[expectedMusicRandom.Next(trackNames.Length)];
@@ -252,6 +273,7 @@ namespace TuTienCore
       finalIncoming>incomingStart && !combat.TrialWarning &&
       GameObject.Find("Heavenly Trial Environment")==null && GameObject.Find("Trial lightning")==null,
       "environment, decoder, lightning and pending strike retired on result "+name);
+    TrackTrialResources(resourceRows,name,"after",false);
     R(!trialTrack.isPlaying&&trialTrack.clip.name==expectedTrack,
       "the selected clip stayed assigned until the dedicated source stopped on leaving");
     R(!success||b.Capacity.Absorption==3&&b.Capacity.Refinement==2,"new realm capacities derived immediately");
@@ -272,6 +294,7 @@ namespace TuTienCore
    File.WriteAllLines(Path.Combine(evidence,"gate-approach.csv"),approaches);
    R(observedTracks.Count==trackNames.Length,"seeded encounter sequence actually played both tracks");
    File.WriteAllLines(Path.Combine(evidence,"trial-music.csv"),musicRows);
+   File.WriteAllLines(Path.Combine(evidence,"trial-resources.csv"),resourceRows);
    pass("Both trial tracks played across seeded entries, one looping source per entry, stopped at exit.");
    pass("All trial Heroes explored 800 units before the wall spawned outside the left edge. Camera scrolled wall and ground together. Wall is 100 pixels lower at four sizes; the dedicated track stopped after each result.");
    File.WriteAllLines(Path.Combine(evidence,"trial-combat.csv"),rows);ui.OpenHeroStats();ui.RefreshCharacterProgression();yield return capture("v13-result-character");ui.CloseDamageInfo();pass("Save failure/retry, repeated Load, pause, four native Character/trial HUD sizes and fixture-only lifecycle PASS; native input NOT RUN.");

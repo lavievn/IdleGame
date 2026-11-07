@@ -172,13 +172,27 @@ internal sealed class HeavenlyTrialView : MonoBehaviour
             terrain[i].anchoredPosition = new Vector2(phase - i * span, groundY - backdrop.anchoredPosition.y);
     }
 
-    private void StartVideo(SkyVariant variant)
+#if DEVELOPMENT_BUILD && UNITY_STANDALONE_WIN && !UNITY_EDITOR
+    internal int ProbeVideoErrors { get; private set; }
+    internal bool ProbeHasRenderTarget => target != null && target.IsCreated();
+
+    internal void SetProbeSky(SkyVariant variant, string ownedInvalidFile = null)
+    {
+        UseStill();
+        failed = hasFrame = false;
+        Loops = 0;
+        StartVideo(variant, ownedInvalidFile);
+    }
+#endif
+
+    private void StartVideo(SkyVariant variant, string overridePath = null)
     {
         if (variant == SkyVariant.Still || SystemInfo.graphicsDeviceType == UnityEngine.Rendering.GraphicsDeviceType.Null) return;
         string name = variant == SkyVariant.B ? "TribulationSky_B.mp4" : "TribulationSky_A.mp4";
-        string path = Path.Combine(Application.streamingAssetsPath, "Tribulation", name);
+        string path = overridePath ?? Path.Combine(Application.streamingAssetsPath, "Tribulation", name);
         if (!File.Exists(path)) return;
         target = new RenderTexture(640, 360, 0, RenderTextureFormat.ARGB32);
+        target.name = "Heavenly Trial Sky Target";
         target.Create();
         video = gameObject.AddComponent<VideoPlayer>();
         video.playOnAwake = false;
@@ -215,6 +229,9 @@ internal sealed class HeavenlyTrialView : MonoBehaviour
     private void OnVideoError(VideoPlayer source, string message)
     {
         if (source != video || released) return;
+#if DEVELOPMENT_BUILD && UNITY_STANDALONE_WIN && !UNITY_EDITOR
+        ProbeVideoErrors++;
+#endif
         Debug.LogWarning("[Trial sky] " + message);
         UseStill();
     }
