@@ -416,9 +416,10 @@ public partial class CombatManager : MonoBehaviour
             if (projectiles.Count>0 || magicFlights.Count>0) ClearProjectiles();
             return;
         }
-        if(HeavenlyGateActive && !CanRunGateCombat)return;
+        if(HeavenlyGateActive && (!CanRunGateCombat || !ValidateGateLives()))return;
         if(!AnyFightingHero())
         {
+            if (HeavenlyGateActive) { TickHeavenlyGate(dt); return; }
             DiscardCombatProjectiles(true,false);
             TickMagicFlights(dt);
             return;
@@ -665,6 +666,7 @@ public partial class CombatManager : MonoBehaviour
             away=DamagePopupMotion.AwaySign(space.Position(target.controller.Rect).x,fromX,-1f);
         }
         target.controller.ShowDamage(damage,away);
+        if (target == gateTarget) ShowGateHit(target.currentHP == 0);
         if (target.currentHP==0) {
             if(target==gateTarget)return; // No ordinary kill/reward/despawn or wave completion.
             target.acceptedLethalDamage=true;
@@ -1012,6 +1014,14 @@ public partial class CombatManager : MonoBehaviour
     }
     void OnDisable()
     {
+#if UNITY_5_3_OR_NEWER
+        ClearCommittedGateBreak();
+#endif
+        if (HeavenlyGateActive)
+        {
+            gateInvalidated?.Invoke();
+            ClearBattle(false);
+        }
         SuspendLootEncounter();
         if(heroSfx!=null)heroSfx.StopAll();ClearProjectiles();ResetAllHeroAttacks();
     }
@@ -1046,6 +1056,9 @@ public partial class CombatManager : MonoBehaviour
     public void ClearWaveKeepingMagicVisuals() {ClearBattle(false,true);}
     private void ClearBattle(bool preserveHeroAttack,bool keepMagicVisuals=false)
     {
+#if UNITY_5_3_OR_NEWER
+        ClearCommittedGateBreak();
+#endif
         if(!keepMagicVisuals && lootPresentation!=null)lootPresentation.Clear();
         resumeEncounterAfterEnable=false;
         lootRewards.Invalidate();
@@ -1057,7 +1070,15 @@ public partial class CombatManager : MonoBehaviour
         foreach (var info in activeMonsters)
         {
             if (info.controller != null) info.controller.MarkDead();
-            if (info.go != null){if(info==gateTarget)Destroy(info.go);else monsterSpawner.DespawnMonster(info.go);}
+            if (info.go != null)
+            {
+                if (info == gateTarget)
+                {
+                    info.go.SetActive(false);
+                    Destroy(info.go);
+                }
+                else monsterSpawner.DespawnMonster(info.go);
+            }
             if (info.data != null) Destroy(info.data);
         }
         activeMonsters.Clear();ClearGateIdentity();

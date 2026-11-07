@@ -141,6 +141,11 @@ public class EnvironmentManager : MonoBehaviour
     }
     private void PlanPresentationPan(out float pan,out float background)
     {
+        if (trialFraming)
+        {
+            pan = background = 0f;
+            return;
+        }
         if(traceEntryPlanFrame!=Time.frameCount)traceEntryPlanCount=0;
         traceEntryPlanFrame=Time.frameCount;traceEntryPlanCount++;
         traceEntryWasActive=IsCameraEntryHandoff;
@@ -313,6 +318,15 @@ public class EnvironmentManager : MonoBehaviour
         battleArea.anchoredPosition=new Vector2(
             ManagementWindowLayout.BattleLocalOffsetX(Screen.width,logicalWidth),
             battleVerticalOffsetPixels / Mathf.Max(.01f, battleCanvas.scaleFactor));
+    }
+
+    private bool trialFraming;
+    internal void SetTrialTerrainHidden(bool hidden)
+    {
+        trialFraming = hidden;
+        hasPlannedPan = false;
+        if (hidden) EnsureGroundPresentation();
+        if (groundPresentation != null) groundPresentation.SetTrialHidden(hidden);
     }
 
     public bool HasLoopingTerrain => groundPresentation != null;

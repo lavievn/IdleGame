@@ -670,6 +670,35 @@ public class GroundPresentation : MonoBehaviour
             previousDepthOrder.Add(depthVisuals[i].Rect);
     }
 
+    private readonly List<Image> hiddenTrialLayers = new List<Image>();
+
+    internal void SetTrialHidden(bool hidden)
+    {
+        if (!hidden)
+        {
+            foreach (var image in hiddenTrialLayers)
+                if (image != null) image.enabled = true;
+            hiddenTrialLayers.Clear();
+            return;
+        }
+        HideTrialLayers(skyTiles);
+        HideTrialLayers(distantTiles);
+        HideTrialLayers(farTiles);
+        HideTrialLayers(tiles);
+        HideTrialLayers(decorations);
+    }
+
+    private void HideTrialLayers(List<RectTransform> layer)
+    {
+        foreach (var rect in layer)
+        {
+            var image = rect != null ? rect.GetComponent<Image>() : null;
+            if (image == null || !image.enabled) continue;
+            image.enabled = false;
+            hiddenTrialLayers.Add(image);
+        }
+    }
+
     void LateUpdate()
     {
         Scroll(0f);

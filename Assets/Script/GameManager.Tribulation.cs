@@ -34,7 +34,7 @@ public partial class GameManager
         bool committed=saveManager.CommitTrialCandidate(staged,sourceHash,out why);if(!committed){Destroy(staged);LastTribulationNotice="Chưa bắt đầu: "+why;UpdateEventLog(LastTribulationNotice);return false;}
         runtimeHeroData.tribulationJson=staged.tribulationJson;Destroy(staged);trial=attempt;trialReceipt=r;trialExpectedHash=activeHash;trialStep=0;trialInterrupted=false;LastTribulationNotice=null;
         CancelNextWave();ClearTestCompanions();combatManager.ForceClearAllMonsters();activeMonsters.Clear();waitingForExploration=false;
-        combatManager.BeginHeavenlyGate(c,()=>TribulationFighting,ObserveTribulationCombat,TribulationCombatInvalidated);UIManager.Instance?.CloseDamageInfo();UIManager.Instance?.SetPaused(false);UpdateEventLog("[FIXTURE v1.3] Phá Thiên Quan · không EXP/loot");return true;
+        combatManager.BeginHeavenlyGate(c,attempt.EncounterId,()=>TribulationFighting,ObserveTribulationCombat,TribulationCombatInvalidated);UIManager.Instance?.CloseDamageInfo();UIManager.Instance?.SetPaused(false);UpdateEventLog("[FIXTURE v1.3] Phá Thiên Quan · không EXP/loot");return true;
     }
     internal void TribulationCombatInvalidated(){if(trial==null)return;trialInterrupted=true;UIManager.Instance?.SetPaused(true);LastTribulationNotice="Đời Hero đã đổi · giữ checkpoint chờ kiểm tra";}
     internal void ObserveTribulationCombat(int heroHP,int gateHP,double dt)
@@ -70,6 +70,18 @@ public partial class GameManager
         LastTribulationNotice=receipt.outcome=="Success"?"Đột phá · "+prepared.Profile.RealmName(state.Foundation.ActualRealmId)+" "+stageLabel+" · căn cơ 0":"Thất bại · trừ "+receipt.penalty.ToString("0.##",System.Globalization.CultureInfo.InvariantCulture)+" căn cơ · "+stageLabel;
         LastTribulationNotice+="\nQi dự trữ giữ nguyên: "+state.Reserve.Amount.ToString("0.##",System.Globalization.CultureInfo.InvariantCulture);trialNoticeUntil=Time.realtimeSinceStartup+10;
         trial=null;trialCandidate=null;trialPrepared=null;trialReceipt=null;trialExpectedHash=null;
-        bool restored=ApplyLoadedCandidate(loaded,SaveSlot.AutoSave,true,prepared);if(restored)UpdateEventLog(LastTribulationNotice);return restored;
+#if UNITY_5_3_OR_NEWER
+        var breakPoint = receipt.outcome == "Success" ? combatManager.CaptureGateBreak() : null;
+#endif
+        bool restored=ApplyLoadedCandidate(loaded,SaveSlot.AutoSave,true,prepared);
+        if (restored)
+        {
+#if UNITY_5_3_OR_NEWER
+            if (breakPoint.HasValue && mapEntryCover != null)
+                combatManager.ShowCommittedGateBreak(breakPoint.Value, mapEntryCover.canvas.sortingOrder + 1);
+#endif
+            UpdateEventLog(LastTribulationNotice);
+        }
+        return restored;
     }
 }
