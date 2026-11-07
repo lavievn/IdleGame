@@ -88,3 +88,14 @@ Hai Hero đều sống hết cửa sổ. Combat tự nhiên có 30 và 11 sự k
 - Đề xuất 0.1.5 là duyệt điều kiện production trước, sau đó làm pass đo chi phí decoder riêng và nghiệm thu thao tác native. Chưa triển khai 0.1.5.
 
 Build, log, screenshot, profile fixture và cache nằm ngoài commit. Handoff `D:/IdleGame/Automation/v014/handoff.json` ghi commit cuối và trạng thái thực tế.
+
+## 7. Tinh chỉnh đường vào ải và nhạc riêng
+
+Bổ sung trên `172bbde` qua `9a40289` và `92fdff3`. Khi vào ải, Hero giữ vị trí hiện tại và đi thăm dò như khi chuẩn bị vào wave. Ở bước đầu tiên đạt 800 đơn vị đi bộ, Thiên Quan xuất hiện hoàn toàn ngoài mép trái. Camera đưa tường cố định và địa hình vào khung cùng nhau. Hero tiếp tục áp sát từ phải. Tâm ảnh tường dừng ở 35%, kích thước 300% so với mẫu 288 đơn vị, ảnh hạ 100 pixel màn hình. Phản kích chỉ bắt đầu khi Hero vào tầm.
+
+Nhạc “逆天而行” được đóng gói thành Ogg Vorbis streaming từ WAV người dùng cung cấp. Phép thử kiểm tra clip phát lặp ở âm lượng BGM chung, các kênh map tạm dừng trong ải và clip riêng dừng sau khi trả kết quả. [Manifest](../architecture/TRIBULATION_014_ASSET_MANIFEST.json)
+
+- **PASS** MainGame và Windows Development Player method-driven, sáu fixture, bốn kích thước. Trace `gate-approach.csv` ghi khoảng cách tại thời điểm tường xuất hiện, tọa độ ngoài khung và lượng cuộn chung của tường với mặt đất. `v014-wall-enters.png` ghi hình khi Hero vẫn đang áp sát.
+- **PASS** Sáu nhóm Mono liên quan, gồm âm lượng, chuyển động, camera, lịch sét, gate domain và basic hit.
+- **PASS** Windows Player mới khôi phục kết quả thắng/thua và giữ nguyên checkpoint Active bị chặn. Chính sách Save và gate production của batch áp dụng như trên.
+- Bằng chứng của lượt bổ sung tại `D:/IdleGame/Automation/v014-gate-tuning/evidence`. Build tại `D:/IdleGame/Builds/Development014GateTuning/build/IdleGameV10.exe`. Commit bàn giao tại `D:/IdleGame/Automation/v014-gate-tuning/handoff.json`.
