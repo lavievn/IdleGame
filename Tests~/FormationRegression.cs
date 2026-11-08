@@ -152,24 +152,26 @@ partial class MotionRegression
             Near(f.space.Position(mage.heroRect).x-f.space.Position(f.hero.heroRect).x,120,"configured spacing",2f);
             Near(Formation(f).MarchSpeed,200,"new member changes march speed");
         });
-        Run("formation W2 defaults and stance changes preserve passive/equipment speed modifiers and data",()=>{
+        Run("formation uniform base100 across stances preserves passive/equipment speed modifiers and data",()=>{
             var f=new Field();f.hero.useStanceMoveSpeeds=true;f.hero.moveSpeed=300;
             var data=f.combat.CurrentHeroCombatState.Data;data.combatStatModifiers.Clear();data.isDirty=false;
             foreach(var mode in new[]{AttackMode.Melee,AttackMode.RangedPhysical,AttackMode.RangedMagic}) {
                 f.hero.ChangeAttackMode((int)mode);
-                Near(f.hero.EffectiveMoveSpeed(),mode==AttackMode.RangedMagic?200:450,"stance default");
+                Near(f.hero.EffectiveMoveSpeed(),100,"every stance defaults to100");
             }
             data.combatStatModifiers.Add(new CombatStatModifier { sourceId="equipment:probe",stat=CombatStatId.MovementSpeed,flat=30,percent=.1f });
             data.combatStatModifiers.Add(new CombatStatModifier { sourceId="passive:probe",stat=CombatStatId.MovementSpeed,flat=5 });
-            Near(f.hero.EffectiveMoveSpeed(),255,"gear and passive preserved on mage");
-            f.hero.ChangeAttackMode(0);Near(f.hero.EffectiveMoveSpeed(),530,"mode updates base before modifiers");
+            Near(f.hero.EffectiveMoveSpeed(),145,"base100 plus gear/passive and10percent bonus");
+            f.hero.ChangeAttackMode(0);Near(f.hero.EffectiveMoveSpeed(),145,"melee also uses100 before modifiers");
             Check(!data.isDirty && data.combatStatModifiers.Count==2 && f.hero.moveSpeed==300,"no mutation to save data or serialized legacy base");
             CombatBalance.SetDevProfile(false,DevBalanceProfile.Defaults(false,f.space,300));
             Near(f.hero.EffectiveMoveSpeed(),365,"existing explicit DEVB base remains effective");
             CombatBalance.ResetDevProfiles();
         });
         Run("formation speed changes recompute slowest without moving another actor immediately",()=>{
-            var f=new Field();f.hero.useStanceMoveSpeeds=true;f.space.SetPosition(f.hero.heroRect,Vector2.zero);
+            var f=new Field();f.hero.useStanceMoveSpeeds=true;
+            // Explicit unequal-speed fixture; production stance defaults are all100.
+            f.hero.meleeMoveSpeed=450;f.hero.magicMoveSpeed=200;f.space.SetPosition(f.hero.heroRect,Vector2.zero);
             var other=FormationHero(f,100,450,AttackMode.RangedPhysical);
             FormationTick(f,.1f,f.hero,other);Near(Formation(f).MarchSpeed,450,"initial march");
             float x=f.space.Position(other.heroRect).x;f.hero.ChangeAttackMode(2);
@@ -199,7 +201,7 @@ partial class MotionRegression
             }
             Check(pan>0,"exercise real pan path");
         });
-        Run("formation real B2 creation uses independent mode bases, rear spacing and original camera subject",()=>{
+        Run("formation real B2 creation uses base100 for every actor with rear spacing and original camera subject",()=>{
             using(var f=new DesktopHotfixFixture(800,true)) {
                 Set(f.manager,"environmentManager",f.field.space); // Normally resolved by GameManager.Start.
                 EntryBody(f);EntryTitle(f,false);EntryReveal(f);EntryTick(f,1.3f);
@@ -210,7 +212,7 @@ partial class MotionRegression
                 f.manager.CycleTestCompanions();f.manager.CycleTestCompanions();
                 Check(f.manager.TestCompanionCount==2 && HeroController.ActiveHeroes.Count==3,"real 3-Hero B2 path: "+f.manager.TestCompanionCount+" companions, "+HeroController.ActiveHeroes.Count+" active; "+f.manager.FullEventHistory);
                 foreach(var hero in HeroController.ActiveHeroes) {
-                    Near(hero.EffectiveMoveSpeed(),hero.attackMode==AttackMode.RangedMagic?200:450,"B2 role base");
+                    Near(hero.EffectiveMoveSpeed(),100,"all B2 actors use base100");
                     if(hero!=f.field.hero)Check(hero.heroRect!=f.field.hero.heroRect,"independent actor");
                 }
                 Check(Get<HeroController>(f.field.space,"cameraTarget")==target,"B2 does not steal camera");

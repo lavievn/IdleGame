@@ -4,7 +4,7 @@ using System.Text.RegularExpressions;
 
 using UnityEngine;
 
-public class SaveManager : MonoBehaviour
+public partial class SaveManager : MonoBehaviour
 {
     public static SaveManager Instance { get; private set; }
 
@@ -58,6 +58,7 @@ public class SaveManager : MonoBehaviour
             // Preserve the existing gameplay default exactly.
             saveDirectory = Application.persistentDataPath + "/Saves/";
         }
+        ConfigureDefaultCultivation();
         Instance = this;
         DontDestroyOnLoad(gameObject);
 
@@ -92,8 +93,10 @@ public class SaveManager : MonoBehaviour
     public bool SaveGame(EntityDataSO entityData, SaveSlot slot)
     {
         if (entityData == null) return false;
+        if(!ValidateCultivationComponent(entityData.cultivationJson)){Debug.LogWarning("[SaveManager] Refusing cultivation save: "+LastCultivationFailure);return false;}
         string reason;
-        if (!EquipmentFoundation.TryValidateSaveVersions(entityData, out reason))
+        if (!EquipmentFoundation.TryValidateSaveVersions(entityData, out reason) ||
+            !LegacyRealmSnapshotCompatibility.TryValidate(entityData.realmComponentVersion,entityData.realmId,entityData.realmEntryLevel,entityData.currentLevel,out reason))
         {
             Debug.LogWarning("[SaveManager] Refusing save: " + reason);
             return false;
@@ -111,8 +114,12 @@ public class SaveManager : MonoBehaviour
     public bool LoadGame(EntityDataSO entityData, SaveSlot slot)
     {
         if (entityData == null) return false;
-
-        string jsonData = LoadGame(slot.ToString());
+        if(CultivationProfile!=null && CultivationProfile.IsProduction && NeedsMigrationReceiptRecovery(slot))return false;
+        return TryLoadSnapshot(entityData,LoadGame(slot.ToString()),slot,false);
+    }
+    private bool TryLoadSnapshot(EntityDataSO entityData,string jsonData,SaveSlot slot,bool allowLegacy)
+    {
+        if(entityData==null)return false;
         if (!string.IsNullOrEmpty(jsonData))
         {
             try
@@ -124,6 +131,16 @@ public class SaveManager : MonoBehaviour
                     Debug.LogWarning("[SaveManager] Refusing load from " + slot + ": " + reason);
                     return false;
                 }
+                RealmVersionProbe realm;bool legacyRealm;
+                if(!TryValidateRealmJson(jsonData,out realm,out legacyRealm,out reason))
+                {
+                    Debug.LogWarning("[SaveManager] Refusing Realm load from "+slot+": "+reason);return false;
+                }
+                string cultivationComponent;
+                if(!ValidateCultivationJson(jsonData,out cultivationComponent,allowLegacy)){Debug.LogWarning("[SaveManager] Refusing cultivation load: "+LastCultivationFailure);return false;}
+                // Missing Realm fields must not inherit the ScriptableObject template.
+                entityData.cultivationJson=""; // Never inherit an inline template/session snapshot.
+                entityData.realmComponentVersion=0;entityData.realmId=null;entityData.realmEntryLevel=0;
                 // JsonUtility.FromJsonOverwrite leaves template values intact for
                 // missing fields. Clear 0.0.51 lists before loading 0.0.50 saves.
                 // Old saves lack a stance field; do not inherit the
@@ -180,6 +197,16 @@ public class SaveManager : MonoBehaviour
                         slot + "; refusing to resume a mixed-era character.");
                     return false;
                 }
+                if(legacyRealm)LegacyRealmSnapshotCompatibility.Initialize(entityData);
+                else if(entityData.realmComponentVersion!=realm.realmComponentVersion || entityData.realmId!=realm.realmId || entityData.realmEntryLevel!=realm.realmEntryLevel)
+                {
+                    Debug.LogError("[SaveManager] Incomplete Realm restore; refusing mixed state.");return false;
+                }
+                if(!LegacyRealmSnapshotCompatibility.TryValidate(entityData.realmComponentVersion,entityData.realmId,entityData.realmEntryLevel,entityData.currentLevel,out reason))
+                {
+                    Debug.LogWarning("[SaveManager] Invalid restored Realm: "+reason);return false;
+                }
+                entityData.cultivationJson=CultivationForLoadedCandidate(cultivationComponent);
                 entityData.NormalizeRoots();
                 if (entityData.worldMapVersion > 0)
                 {
@@ -334,16 +361,46 @@ public class SaveManager : MonoBehaviour
         }
     }
 
+    [Serializable]
+    private sealed class RealmVersionProbe
+    {
+        public int realmComponentVersion=int.MinValue;
+        public string realmId=null;
+        public int realmEntryLevel=int.MinValue;
+        public int currentLevel=0;
+    }
+    private static bool TryValidateRealmJson(string json,out RealmVersionProbe probe,out bool legacy,out string reason)
+    {
+        probe=null;legacy=false;reason=null;
+        if(string.IsNullOrEmpty(json) || !json.TrimStart().StartsWith("{")) {reason="Expected JSON object.";return false;}
+        try
+        {
+            probe=new RealmVersionProbe();JsonUtility.FromJsonOverwrite(json,probe);
+            // Presence is distinct from an explicitly serialized sentinel/null.
+            bool hasVersion=Regex.IsMatch(json,"\\\"realmComponentVersion\\\"\\s*:");
+            bool hasId=Regex.IsMatch(json,"\\\"realmId\\\"\\s*:");
+            bool hasEntry=Regex.IsMatch(json,"\\\"realmEntryLevel\\\"\\s*:");
+            legacy=!hasVersion && !hasId && !hasEntry;
+            if(!legacy && !(hasVersion && hasId && hasEntry)) {reason="Incomplete Realm component.";return false;}
+            if(legacy)return true; // Conservative migration happens only on the loaded candidate.
+            return LegacyRealmSnapshotCompatibility.TryValidate(probe.realmComponentVersion,probe.realmId,probe.realmEntryLevel,probe.currentLevel,out reason);
+        }
+        catch(Exception ex) {probe=null;reason="Cannot read Realm component: "+ex.Message;return false;}
+    }
+
     // Small JSON saves are serialized on the main thread. No queued old write
     // can recreate a deleted save after the player confirms New Game.
     private bool WriteToFile(string slotName, string data)
     {
         string reason;
-        if (!TryValidateEquipmentJson(data, out reason))
+        RealmVersionProbe realm;bool legacyRealm;
+        if (!TryValidateEquipmentJson(data, out reason) || !TryValidateRealmJson(data,out realm,out legacyRealm,out reason))
         {
             Debug.LogWarning("[SaveManager] Refusing write to " + slotName + ": " + reason);
             return false;
         }
+        string cultivationComponent;
+        if(!ValidateCultivationJson(data,out cultivationComponent)){Debug.LogWarning("[SaveManager] Refusing cultivation write: "+LastCultivationFailure);return false;}
         string finalPath = Path.Combine(saveDirectory, slotName + SAVE_EXTENSION);
         string tempPath = Path.Combine(saveDirectory, slotName + TEMP_EXTENSION);
         try
@@ -352,6 +409,7 @@ public class SaveManager : MonoBehaviour
             // existing slot (for example, after refusing to load that slot).
             // Unreadable-version/corrupt JSON is not a detected future schema;
             // preserve the existing ability to explicitly replace corrupt saves.
+            string expectedFileHash=File.Exists(finalPath)?TuTienCore.CultivationMigrationTransaction.Hash(File.ReadAllBytes(finalPath)):null;
             EquipmentVersionProbe existing;
             if (File.Exists(finalPath) &&
                 TryReadEquipmentVersions(File.ReadAllText(finalPath), out existing, out reason) &&
@@ -361,9 +419,42 @@ public class SaveManager : MonoBehaviour
                 Debug.LogWarning("[SaveManager] Refusing overwrite of " + slotName + ": " + reason);
                 return false;
             }
-            File.WriteAllText(tempPath, data);
-            if (File.Exists(finalPath)) File.Replace(tempPath, finalPath, null);
-            else File.Move(tempPath, finalPath);
+            // Preserve an existing unknown/future Realm snapshot independently
+            // of equipment versions. Parsed invalid Realm data must not be overwritten.
+            if(File.Exists(finalPath))
+            {
+                RealmVersionProbe existingRealm;bool existingLegacy;
+                if(!TryValidateRealmJson(File.ReadAllText(finalPath),out existingRealm,out existingLegacy,out reason) && existingRealm!=null)
+                {
+                    Debug.LogWarning("[SaveManager] Refusing Realm overwrite of "+slotName+": "+reason);return false;
+                }
+            }
+            if(File.Exists(finalPath)) {
+                string existingComponent;
+                if(!ValidateCultivationJson(File.ReadAllText(finalPath),out existingComponent,true)) {
+                    Debug.LogWarning("[SaveManager] Preserving incompatible cultivation slot: "+LastCultivationFailure);return false;
+                }
+                // A context without cultivation may not erase a component from a newer/other game.
+                if(!string.IsNullOrEmpty(existingComponent) && string.IsNullOrEmpty(cultivationComponent)) {
+                    LastCultivationFailure="Cannot erase an existing cultivation component.";return false;
+                }
+            }
+#if UNITY_EDITOR
+            CheckOwnedWriteFault(OwnedWriteFault.BeforeWrite);
+#endif
+            using(var file=new FileStream(tempPath,FileMode.Create,FileAccess.Write,FileShare.None)) {
+                using(var writer=new StreamWriter(file,System.Text.Encoding.UTF8,1024,true)){writer.Write(data);writer.Flush();}
+                file.Flush(true);
+            }
+#if UNITY_EDITOR
+            CheckOwnedWriteFault(OwnedWriteFault.AfterTempWrite);
+            CheckOwnedWriteFault(OwnedWriteFault.BeforeReplace);
+#endif
+            TuTienCore.CultivationMigrationTransaction.ReplaceExpected(tempPath,finalPath,expectedFileHash,
+                TuTienCore.CultivationMigrationTransaction.Hash(File.ReadAllBytes(tempPath)));
+#if UNITY_EDITOR
+            SuccessfulSnapshotWrites++;
+#endif
             return true;
         }
         catch (Exception e) { Debug.LogError("Không ghi được bản lưu: " + e.Message); return false; }

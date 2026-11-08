@@ -5,7 +5,8 @@ using UnityEngine.UI;
 using TMPro;
 using TuTienCore;
 
-public enum MonsterState { PassiveScroll, Approaching, Attacking, Dead }
+public enum MonsterState { PassiveScroll, Approaching, Attacking, Dead, Suspicious }
+public enum MonsterAwareness { Unaware, Suspicious, Engaged }
 
 public class MonsterController : MonoBehaviour
 {
@@ -13,7 +14,7 @@ public class MonsterController : MonoBehaviour
     public TextMeshProUGUI dmgTextPrototype;
     public AttackMode attackMode;
     public float attackRange;
-    [Min(0f)] public float moveSpeed = 150f;
+    [Min(0f)] public float moveSpeed = 100f;
     public MonsterState currentState = MonsterState.PassiveScroll;
     public static List<MonsterController> ActiveMonsters = new List<MonsterController>();
     public HeroController CurrentTarget { get; private set; }
@@ -21,6 +22,18 @@ public class MonsterController : MonoBehaviour
     public bool IsAlive => isActiveAndEnabled && currentState != MonsterState.Dead;
     // The same pooled GameObject can represent multiple monster lives.
     public int SpawnVersion { get; private set; }
+    public float SightRange => attackMode == AttackMode.Melee ? 550f : 800f;
+    public const float AlertDuration = .5f;
+    public MonsterAwareness Awareness { get; private set; }
+    public bool HasDetectedHero => Awareness != MonsterAwareness.Unaware;
+    public bool IsAggressive => Awareness == MonsterAwareness.Engaged;
+    public bool FacingRight { get; private set; }
+    // Looking around is independent of combat/damage/spawn RNG.
+    private static readonly System.Random awarenessRandom = new System.Random();
+    private float nextLook, alertElapsed;
+    private TextMeshProUGUI awarenessLabel;
+    private Canvas awarenessCanvas;
+    private CultivationSpriteBridge awarenessBody;
 
     private RectTransform rect;
     public string SpriteIdentityKey { get; private set; }
@@ -73,8 +86,20 @@ public class MonsterController : MonoBehaviour
         ResetFeedback();
         // Exactly one random roll per activation (including pooled respawns).
         InitRandomAttackMode();
+        awarenessBody = rect.GetComponent<CultivationSpriteBridge>();
+        awarenessCanvas = null;
+        for (Transform p = rect; p != null; p = p.parent)
+        {
+            awarenessCanvas = p.GetComponent<Canvas>();
+            if (awarenessCanvas != null) break;
+        }
         currentState = MonsterState.PassiveScroll;
         CurrentTarget = null;
+        Awareness = MonsterAwareness.Unaware;
+        alertElapsed = 0f;
+        nextLook = NextLookInterval();
+        SetFacing(awarenessRandom.Next(2) == 0);
+        HideAwarenessLabel();
         if (!ActiveMonsters.Contains(this)) ActiveMonsters.Add(this);
     }
 
@@ -82,6 +107,8 @@ public class MonsterController : MonoBehaviour
     {
         ActiveMonsters.Remove(this);
         CurrentTarget = null;
+        Awareness = MonsterAwareness.Unaware;
+        HideAwarenessLabel();
         ResetFeedback();
     }
 
@@ -90,6 +117,17 @@ public class MonsterController : MonoBehaviour
     {
         if (!IsAlive) return;
         attackRange = space.AttackRange(attackMode, false);
+        if (!IsAggressive)
+        {
+            // Still on the floor: LateUpdate adds camera pan, so this
+            // compensation produces exactly the same displacement as Ground.
+            Vector2 idle = space.Position(rect);
+            idle.x += groundMinusCamera;
+            space.SetPosition(rect, idle);
+            currentState = HasDetectedHero ? MonsterState.Suspicious : MonsterState.PassiveScroll;
+            UpdateChargeBar(false, 0f);
+            return;
+        }
         if (CurrentTarget == null || !CanAttack(CurrentTarget, space)) {
             CurrentTarget = null;
             FindTarget(space);
@@ -105,6 +143,7 @@ public class MonsterController : MonoBehaviour
         }
 
         Vector2 p = space.Position(rect);
+        SetFacing(space.Position(CurrentTarget.heroRect).x >= p.x);
         // Ranged enemies spawned off the LEFT edge must enter the actual
         // viewport before they can plant their feet and start an attack.
         // The ordinary range test alone would stop them outside the screen.
@@ -126,7 +165,7 @@ public class MonsterController : MonoBehaviour
 
     public bool CanAttack(HeroController target, EnvironmentManager space)
     {
-        if (!IsAlive || target == null || !target.IsDeployed || space == null || space.BattleArea == null) return false;
+        if (!IsAlive || !IsAggressive || target == null || !target.IsDeployed || space == null || space.BattleArea == null) return false;
         // Prevent ranged attacks from offscreen enemies, even when their
         // long attack ranges already overlap the Hero.
         if (attackMode != AttackMode.Melee && !space.IsVisible(rect)) return false;
@@ -144,11 +183,96 @@ public class MonsterController : MonoBehaviour
             if (hero == null || !hero.IsDeployed) continue;
             float heroX = space.Position(hero.heroRect).x;
             float monsterX = space.Position(rect).x;
-            if (heroX < monsterX && !CanAttack(hero, space)) continue;
             float distance = Mathf.Abs(monsterX - heroX);
             if (distance < nearest) { nearest = distance; CurrentTarget = hero; }
         }
     }
+
+    private static float NextLookInterval() { return 1.5f + (float)awarenessRandom.NextDouble() * 3.5f; }
+    private void SetFacing(bool right)
+    {
+        if (FacingRight == right) return;
+        FacingRight = right;
+        CultivationSpriteBridge.SetMonsterFacing(rect, right);
+    }
+    // CombatManager advances ALL members before broadcasting a new alert. No
+    // member gets an extra tick of the 0.5s delay due to iteration order.
+    internal HeroController TickAwareness(EnvironmentManager space, float dt)
+    {
+        if (!IsAlive || space == null || Time.timeScale == 0f) return null;
+        dt = Mathf.Max(0f, dt);
+        if (Awareness == MonsterAwareness.Suspicious)
+        {
+            alertElapsed += dt;
+            if (alertElapsed >= AlertDuration) Awareness = MonsterAwareness.Engaged;
+            RefreshAwarenessLabel();
+            return null;
+        }
+        if (Awareness != MonsterAwareness.Unaware) return null;
+        nextLook -= dt;
+        while (nextLook <= 0f)
+        {
+            SetFacing(!FacingRight);
+            nextLook += NextLookInterval();
+        }
+        HeroController seen = null;
+        float nearest = SightRange;
+        foreach (var hero in HeroController.ActiveHeroes)
+        {
+            if (hero == null || !hero.IsDeployed || hero.heroRect == null) continue;
+            Vector2 delta = space.Position(hero.heroRect) - space.Position(rect);
+            if ((FacingRight && delta.x < 0f) || (!FacingRight && delta.x > 0f)) continue;
+            float distance = delta.magnitude;
+            if (distance <= nearest) { nearest = distance; seen = hero; }
+        }
+        return seen;
+    }
+    internal void ReceiveAlert(HeroController hero, bool immediate)
+    {
+        if (!IsAlive || hero == null || !hero.IsDeployed) return;
+        if (!HasDetectedHero)
+        {
+            Awareness = MonsterAwareness.Suspicious;
+            alertElapsed = 0f;
+        }
+        if (immediate) Awareness = MonsterAwareness.Engaged;
+        if (CurrentTarget == null || !CurrentTarget.IsDeployed) CurrentTarget = hero;
+        var space = EnvironmentManager.Instance;
+        if (space != null) SetFacing(space.Position(CurrentTarget.heroRect).x >= space.Position(rect).x);
+        RefreshAwarenessLabel();
+    }
+    private void HideAwarenessLabel()
+    {
+        if (awarenessLabel != null) awarenessLabel.gameObject.SetActive(false);
+    }
+    private void RefreshAwarenessLabel()
+    {
+        if (!IsAlive || !HasDetectedHero || rect == null) { HideAwarenessLabel(); return; }
+        if (awarenessLabel == null)
+        {
+            var go = new GameObject("Monster Awareness", typeof(RectTransform), typeof(CanvasRenderer), typeof(TextMeshProUGUI));
+            go.transform.SetParent(rect, false);
+            awarenessLabel = go.GetComponent<TextMeshProUGUI>();
+            if (dmgTextPrototype != null) awarenessLabel.font = dmgTextPrototype.font;
+            awarenessLabel.raycastTarget = false;
+            awarenessLabel.alignment = TextAlignmentOptions.Center;
+            awarenessLabel.fontStyle = FontStyles.Bold;
+            awarenessLabel.enableWordWrapping = false;
+            awarenessLabel.overflowMode = TextOverflowModes.Overflow;
+        }
+        awarenessLabel.gameObject.SetActive(true);
+        awarenessLabel.text = IsAggressive ? "!" : "?";
+        awarenessLabel.color = IsAggressive ? new Color(1f, .12f, .08f, 1f) : new Color(1f, .82f, .08f, 1f);
+        float scale = awarenessCanvas != null ? Mathf.Max(.01f, awarenessCanvas.scaleFactor) : 1f;
+        var labelRect = (RectTransform)awarenessLabel.transform;
+        labelRect.anchorMin = labelRect.anchorMax = rect.pivot;
+        labelRect.pivot = new Vector2(.5f, 0f);
+        float height = awarenessBody != null ? awarenessBody.VisibleBodySize.y : rect.rect.height;
+        labelRect.anchoredPosition = new Vector2(0f, height + 6f / scale);
+        labelRect.sizeDelta = new Vector2(40f / scale, 32f / scale);
+        awarenessLabel.fontSize = 24f / scale;
+    }
+    void LateUpdate() { if (HasDetectedHero) RefreshAwarenessLabel(); }
 
     public void InitRandomAttackMode()
     {
@@ -161,6 +285,7 @@ public class MonsterController : MonoBehaviour
     public void MarkDead()
     {
         currentState = MonsterState.Dead;
+        HideAwarenessLabel();
         CultivationSpriteBridge.ResetPose(rect);
         UpdateChargeBar(false, 0f);
         CurrentTarget = null;

@@ -18,62 +18,50 @@ partial class MotionRegression
         static string Path(int p,int i) {return "CultivationSprites/Archer_"+new[]{"Normal","Attack","Hit"}[p]+"_"+(i+1);}
         public void Dispose() {for(int p=0;p<3;p++)for(int i=0;i<3;i++)Resources.Unregister(Path(p,i));}
     }
-    static void ArcherFrame(SpriteSubject s,ArcherFrames frames,int pose,int frame)
+    // Historical CLI name retained for harness compatibility. V0.9 retires the weapon-linked Archer samples.
+    static void ArcherAnimationTests() {UnifiedHeroVisualTests();}
+    static void UnifiedHeroVisualTests()
     {
-        Check(s.bridge.BodyGraphic.sprite.texture==frames.Frames[pose,frame],"ordered frame "+pose+"/"+frame);
-        CheckRenderFeet(s.hero,"Archer animation frame",false);
-        Near(s.bridge.BodyGraphic.rectTransform.rect.width,150,"stable canvas width");
-        Near(s.bridge.BodyGraphic.rectTransform.rect.height,100,"stable canvas height");
-    }
-    static void ArcherAnimationTests()
-    {
-        using(var resources=new SpriteResources())using(var frames=new ArcherFrames())
-        {
-            Run("Archer Normal loops 1-2-3 without changing registered feet",()=>{
-                var s=new SpriteSubject(false,AttackMode.RangedPhysical);
-                foreach(float t in new[]{10f,10.15f,10.29f,10.43f,10.57f,10.71f}) {
-                    s.At(t);ArcherFrame(s,frames,0,Mathf.FloorToInt((t-10f)/.14f)%3);
+        using(var resources=new SpriteResources())using(var oldSamples=new ArcherFrames()) {
+            Run("v09 one Hero bitmap and Image survive every attack-mode action request",()=>{
+                var s=new SpriteSubject(false,AttackMode.Melee);var body=s.bridge.BodyGraphic;var sprite=body.sprite;var texture=resources.Texture(CultivationSpriteBridge.DefaultHeroTexturePath);
+                Check(sprite.texture==texture,"Existing default Swordsman Normal selected, no new art");
+                foreach(var mode in new[]{AttackMode.RangedPhysical,AttackMode.RangedMagic,AttackMode.Melee}) {
+                    s.hero.ChangeAttackMode((int)mode);s.hero.SpawnHero();s.Attack();s.Hit();s.At(Time.time+.3f);
+                    Check(s.bridge.BodyGraphic==body && body.sprite==sprite && body.sprite.texture==texture,"Same Image AND Sprite instance regardless of mode/action");
+                    Check(Get<Sprite[]>(s.bridge,"normalFrames")==null && Get<Sprite[]>(s.bridge,"attackFrames")==null && Get<Sprite[]>(s.bridge,"hitFrames")==null,"No legacy mode sequence drives Hero");
                 }
             });
-            Run("Archer Attack and Hit play 1-2-3 and return cleanly to Normal",()=>{
-                var s=new SpriteSubject(false,AttackMode.RangedPhysical);
-                s.Attack();ArcherFrame(s,frames,1,0);
-                s.At(10.06f);ArcherFrame(s,frames,1,1);
-                s.At(10.12f);ArcherFrame(s,frames,1,2);
-                s.At(10.161f);ArcherFrame(s,frames,0,0);
-                s.Hit();ArcherFrame(s,frames,2,0);
-                s.At(10.24f);ArcherFrame(s,frames,2,1);
-                s.At(10.31f);ArcherFrame(s,frames,2,2);
-                s.At(10.362f);ArcherFrame(s,frames,0,0);
-            });
-            Run("Archer rapid attack callbacks cannot reset or indefinitely extend animation",()=>{
-                var s=new SpriteSubject(false,AttackMode.RangedPhysical);s.Attack();
-                float end=Get<float>(s.bridge,"returnAt");
-                for(int i=1;i<=15;i++) {
-                    s.At(10f+i*.01f);s.Attack();s.Hit();
-                    Near(Get<float>(s.bridge,"returnAt"),end,"visual window never extends");
-                    ArcherFrame(s,frames,1,Mathf.Min(2,Mathf.FloorToInt(i*.01f/(.16f/3f))));
+            Run("v09 real equipment Sword Bow Staff Unarmed retains bitmap and distinct behavior",()=>{
+                GameManager gm;var f=WeaponField(out gm);f.hero.heroRect.gameObject.AddComponent<Image>();CultivationSpriteBridge.AttachHero(f.hero);
+                var body=f.hero.heroRect.GetComponent<CultivationSpriteBridge>().BodyGraphic;var sprite=body.sprite;var start=f.space.Position(f.hero.heroRect);
+                foreach(var family in new[]{WeaponFamily.Sword,WeaponFamily.Bow,WeaponFamily.Staff}) {
+                    WearWeapon(gm,WeaponInBag(gm,family));
+                    Check(f.hero.attackMode==WeaponBasicAttack.Mode(family),"Weapon behavior remains "+family);
+                    Near(f.hero.attackRange,f.space.AttackRange(f.hero.attackMode,true),"Same combat range authority");
+                    Check(f.hero.heroRect.GetComponent<CultivationSpriteBridge>().BodyGraphic==body && body.sprite==sprite,"Equip does not select another character");
+                    Check(f.space.Position(f.hero.heroRect).Equals(start),"No positioning workaround");
                 }
-                s.At(10.17f);ArcherFrame(s,frames,0,0);s.Hit();s.Attack();ArcherFrame(s,frames,1,0);
+                Check(gm.UnequipGear(EquipmentSlot.Weapon) && f.hero.attackMode==AttackMode.Melee && body.sprite==sprite,"Unarmed returns mechanics only");
+                WearWeapon(gm,WeaponInBag(gm,WeaponFamily.Sword));Check(body.sprite==sprite,"Unarmed to Sword still same character");
             });
-            Run("Archer pause/reset/mode change/death clear visual state and preserve other roles",()=>{
-                var s=new SpriteSubject(false,AttackMode.RangedPhysical);s.Attack();s.At(10.07f);
-                var image=s.bridge.BodyGraphic;Time.timeScale=0;Call(s.bridge,"Update");ArcherFrame(s,frames,1,1);
-                Time.timeScale=1;s.hero.ChangeAttackMode(2);SpritePose(s.rect,resources,"Mage","Normal");
-                s.hero.ChangeAttackMode(1);ArcherFrame(s,frames,0,0);s.Attack();s.hero.Die();
-                Check(s.bridge.CurrentPose==CultivationSpriteBridge.Pose.Normal,"dead Attack canceled");
-                s.hero.SpawnHero();ArcherFrame(s,frames,0,0);Check(s.bridge.BodyGraphic==image,"body reused");
-                var monster=new SpriteSubject(true,AttackMode.RangedPhysical);monster.Attack();
-                SpritePose(monster.rect,resources,"Enemy_Archer","Attack");
+            Run("v09 Hero lifecycle retires action state without extra body or legacy texture load",()=>{
+                var s=new SpriteSubject(false,AttackMode.RangedMagic);var image=s.bridge.BodyGraphic;var sprite=image.sprite;
+                for(int i=0;i<20;i++){s.Attack();s.hero.Die();s.hero.SpawnHero();s.hero.ChangeAttackMode(i%3);}
+                Check(s.bridge.BodyGraphic==image && image.sprite==sprite && s.bridge.CurrentPose==CultivationSpriteBridge.Pose.Normal,"No stale pose or visual after Retry/mode bind");
+                int bodies=0;foreach(var child in s.rect.GetComponentsInChildren<Image>(true))if(child.gameObject.name=="Cultivation Sprite Body")bodies++;
+                Check(bodies==1,"Exactly one owned Hero body Image");
             });
-            Run("partial Archer sequence falls back per-pose without loading incomplete animation",()=>{
-                Resources.Unregister("CultivationSprites/Archer_Attack_2");
-                try {
-                    var s=new SpriteSubject(false,AttackMode.RangedPhysical);s.Attack();
-                    SpritePose(s.rect,resources,"Archer","Attack");
-                    s.At(10.161f);ArcherFrame(s,frames,0,0);
+            Run("v09 Monster role pose assets remain independent",()=>{
+                foreach(var mode in new[]{AttackMode.Melee,AttackMode.RangedPhysical,AttackMode.RangedMagic}) {
+                    var enemy=new SpriteSubject(true,mode);enemy.Attack();SpritePose(enemy.rect,resources,"Enemy_"+SpriteClass(mode),"Attack");
+                    enemy.At(10.17f);enemy.Hit();SpritePose(enemy.rect,resources,"Enemy_"+SpriteClass(mode),"Hit");
                 }
-                finally {Resources.Register("CultivationSprites/Archer_Attack_2",frames.Frames[1,1]);}
+            });
+            Run("v09 missing legacy Archer samples cannot hide or replace the default Hero",()=>{
+                Resources.Unregister("CultivationSprites/Archer_Attack_2");Resources.Unregister("CultivationSprites/Mage_Normal");
+                var s=new SpriteSubject(false,AttackMode.RangedPhysical);s.Attack();s.hero.ChangeAttackMode(2);
+                Check(s.bridge.BodyGraphic.sprite.texture==resources.Texture(CultivationSpriteBridge.DefaultHeroTexturePath),"Hero no longer depends on class sample presence");
             });
         }
     }

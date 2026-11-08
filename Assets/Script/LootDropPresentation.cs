@@ -32,11 +32,14 @@ public sealed class LootDropPresentation : MonoBehaviour
     private bool missingSpriteReported;
     public IReadOnlyList<RectTransform> Roots => roots;
     public int Count => drops.Count;
+    public void SetInventoryTarget(RectTransform target) { inventoryTarget=target; }
 
     public static LootDropPresentation Install(CombatManager owner)
     {
         var existing = owner.GetComponent<LootDropPresentation>();
-        return existing != null ? existing : owner.gameObject.AddComponent<LootDropPresentation>();
+        var view=existing != null ? existing : owner.gameObject.AddComponent<LootDropPresentation>();
+        if(UIManager.Instance!=null)view.SetInventoryTarget(UIManager.Instance.InventoryLootTarget);
+        return view;
     }
 
     public void Show(RectTransform battlefield, Vector2 foot, string templateId,

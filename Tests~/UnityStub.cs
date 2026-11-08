@@ -22,6 +22,7 @@ namespace UnityEngine
         public static T FindObjectOfType<T>() where T : Object { return FindFirstObjectByType<T>(); }
         public static void DontDestroyOnLoad(Object o) { }
         public static void Destroy(Object value) { objects.Remove(value); }
+        public static void DestroyImmediate(Object value) { Destroy(value); }
     }
     public class Component : Object
     {
@@ -44,7 +45,7 @@ namespace UnityEngine
     public class WaitForSeconds { public float seconds; public WaitForSeconds(float seconds) { this.seconds = seconds; } }
     public class WaitForSecondsRealtime { public float seconds; public WaitForSecondsRealtime(float seconds) { this.seconds = seconds; } }
     public class WaitForEndOfFrame { }
-    public class ScriptableObject : Object { }
+    public class ScriptableObject : Object { public static T CreateInstance<T>() where T:ScriptableObject,new() {return new T();} }
     public class GameObject : Object
     {
         public int layer;
@@ -183,6 +184,7 @@ namespace UnityEngine
     {
         public Texture2D texture = new Texture2D(2,2,TextureFormat.RGBA32,false);
         public Rect textureRect = new Rect(0,0,2,2);
+        public Vector4 border;
         public Rect rect = new Rect(0,0,2,2);
         public static Sprite Create(Texture2D texture,Rect rect,Vector2 pivot,float pixelsPerUnit,
             uint extrude=0,SpriteMeshType meshType=SpriteMeshType.Tight)
@@ -230,6 +232,11 @@ namespace UnityEngine
     public struct Vector4
     {
         public float x,y,z,w;
+        public static Vector4 zero => new Vector4(0,0,0,0);
+        public static bool operator ==(Vector4 a,Vector4 b)=>a.x==b.x&&a.y==b.y&&a.z==b.z&&a.w==b.w;
+        public static bool operator !=(Vector4 a,Vector4 b)=>!(a==b);
+        public override bool Equals(object o)=>o is Vector4 && this==(Vector4)o;
+        public override int GetHashCode()=>x.GetHashCode()^y.GetHashCode()^z.GetHashCode()^w.GetHashCode();
         public Vector4(float a,float b,float c,float d){x=a;y=b;z=c;w=d;}
     }
     public enum RenderTextureFormat { ARGB32 }
@@ -318,6 +325,7 @@ namespace UnityEngine.UI
       public float fillAmount;public UnityEngine.Sprite sprite;public Type type;public bool preserveAspect;
       public UnityEngine.Material material;
     }
+    public class Outline : UnityEngine.MonoBehaviour { public UnityEngine.Vector2 effectDistance; public bool useGraphicAlpha; public UnityEngine.Color effectColor; }
     public class GraphicRaycaster : UnityEngine.Component { }
     public class RectMask2D : UnityEngine.Component { }
     public class Button : UnityEngine.MonoBehaviour { public bool interactable=true; public class ButtonClickedEvent:UnityEngine.Events.UnityEvent {} public ButtonClickedEvent onClick=new ButtonClickedEvent(); }
@@ -360,7 +368,7 @@ namespace TMPro {
   public void ActivateInputField(){isFocused=true;}
  }
  public enum TextAlignmentOptions { Center, TopLeft, Left, BottomRight, TopRight, MidlineLeft }
- public class TextMeshProUGUI : UnityEngine.UI.MaskableGraphic { public TMP_FontAsset font=new TMP_FontAsset(); public object fontSharedMaterial; public FontStyles fontStyle; public FontWeight fontWeight;public TextOverflowModes overflowMode;public bool enableWordWrapping; public string text; public float alpha,fontSize,fontSizeMin,fontSizeMax; public bool enableAutoSizing; public TextAlignmentOptions alignment; public UnityEngine.Vector4 margin; }
+ public class TextMeshProUGUI : UnityEngine.UI.MaskableGraphic { public TMP_FontAsset font=new TMP_FontAsset(); public object fontSharedMaterial; public FontStyles fontStyle; public FontWeight fontWeight;public TextOverflowModes overflowMode;public bool enableWordWrapping; public string text; public float alpha,fontSize,fontSizeMin,fontSizeMax; public bool enableAutoSizing,richText; public TextAlignmentOptions alignment; public UnityEngine.Vector4 margin; }
 }
 namespace UnityEngine.Pool
 {
@@ -381,7 +389,7 @@ namespace UnityEngine.Events {
 namespace UnityEngine {
  public enum LogType { Log }
  public enum LogOption { NoStacktrace }
- public static class Application { public static string persistentDataPath=System.IO.Path.Combine(System.IO.Path.GetTempPath(),"idle-tests-"+Guid.NewGuid());public static string streamingAssetsPath=System.IO.Path.GetTempPath();public static void Quit(){} }
+ public static class Application { public static bool isPlaying;public static string persistentDataPath=System.IO.Path.Combine(System.IO.Path.GetTempPath(),"idle-tests-"+Guid.NewGuid());public static string streamingAssetsPath=System.IO.Path.GetTempPath();public static void Quit(){} }
  public static class Debug {
      // Opt-in observation for diagnostics regressions; silent by default.
      public static System.Action<string> LogObserver;
@@ -398,9 +406,10 @@ namespace UnityEngine {
  }
  // Test JSON double for primitive fields and identity lists; not Unity serialization.
  public static class JsonUtility {
+   static string Quote(string s){return s==null?"null":"\""+s.Replace("\\","\\\\").Replace("\"","\\\"").Replace("\r","\\r").Replace("\n","\\n").Replace("\t","\\t")+"\"";}
    public static T FromJson<T>(string json) where T : new() { return new T(); }
-  public static string ToJson(object value,bool pretty){var fields=new List<string>();foreach(var f in value.GetType().GetFields()) {
-   if(f.FieldType==typeof(int)||f.FieldType==typeof(float)||f.FieldType.IsEnum)fields.Add("\""+f.Name+"\":"+Convert.ToString(f.FieldType.IsEnum?(object)Convert.ToInt32(f.GetValue(value)):f.GetValue(value),System.Globalization.CultureInfo.InvariantCulture));
+    public static string ToJson(object value,bool pretty=false){var fields=new List<string>();foreach(var f in value.GetType().GetFields()) {
+   if(f.FieldType==typeof(int)||f.FieldType==typeof(float)||f.FieldType==typeof(double)||f.FieldType.IsEnum)fields.Add("\""+f.Name+"\":"+Convert.ToString(f.FieldType.IsEnum?(object)Convert.ToInt32(f.GetValue(value)):f.GetValue(value),System.Globalization.CultureInfo.InvariantCulture));
    else if(f.FieldType==typeof(List<int>) || f.FieldType==typeof(List<float>)) {
     var nums=new List<string>();var items=(System.Collections.IEnumerable)f.GetValue(value);
     if(items!=null)foreach(var item in items)nums.Add(Convert.ToString(item,System.Globalization.CultureInfo.InvariantCulture));
@@ -411,7 +420,7 @@ namespace UnityEngine {
     if(strings!=null)foreach(string item in strings)arr.Add("\""+item.Replace("\\","\\\\").Replace("\"","\\\"")+"\"");
     fields.Add("\""+f.Name+"\":["+string.Join(",",arr.ToArray())+"]");
    }
-   else if(f.FieldType==typeof(string)) fields.Add("\""+f.Name+"\":\""+f.GetValue(value)+"\"");
+   else if(f.FieldType==typeof(string)) fields.Add("\""+f.Name+"\":"+Quote((string)f.GetValue(value)));
    else if(f.FieldType==typeof(bool))
     fields.Add("\""+f.Name+"\":"+((bool)f.GetValue(value)?"true":"false"));
    else if(NestedEquipmentSaveStub.Supports(f.FieldType))
@@ -444,7 +453,10 @@ namespace UnityEngine {
     }
     continue;
    }
-   if(f.FieldType==typeof(string)) {var str=System.Text.RegularExpressions.Regex.Match(json,"\""+f.Name+"\"\\s*:\\s*\"([^\"]*)\"");if(str.Success)f.SetValue(value,str.Groups[1].Value);continue;}
+   if(f.FieldType==typeof(string)) {System.Collections.Generic.Dictionary<string,string> properties;string reason,decoded,token;
+    if(TuTienCore.CultivationSaveJson.TryObject(json,out properties,out reason) && properties.TryGetValue(f.Name,out token)) {
+     if(token=="null")f.SetValue(value,null);else if(TuTienCore.CultivationSaveJson.TryString(token,out decoded))f.SetValue(value,decoded);
+    }continue;}
    if(f.FieldType==typeof(bool)) {
     var flag=System.Text.RegularExpressions.Regex.Match(json,"\""+f.Name+"\"\\s*:\\s*(true|false)");
     if(flag.Success)f.SetValue(value,flag.Groups[1].Value=="true");continue;
@@ -466,9 +478,10 @@ namespace UnityEngine {
     continue;
    }
    if(f.FieldType==typeof(List<TuTienCore.ElementType>)) {var arr=System.Text.RegularExpressions.Regex.Match(json,"\""+f.Name+"\"\\s*:\\s*\\[([^]]*)\\]");if(arr.Success){var roots=new List<TuTienCore.ElementType>();foreach(var item in arr.Groups[1].Value.Split(','))if(item.Trim().Length>0)roots.Add((TuTienCore.ElementType)int.Parse(item.Trim()));f.SetValue(value,roots);}continue;}
-   var m=System.Text.RegularExpressions.Regex.Match(json,"\""+f.Name+"\"\\s*:\\s*(-?[0-9.]+)");if(!m.Success)continue;
+    var m=System.Text.RegularExpressions.Regex.Match(json,"\""+f.Name+"\"\\s*:\\s*(-?[0-9.]+(?:[eE][+-]?[0-9]+)?)");if(!m.Success)continue;
    if(f.FieldType==typeof(int))f.SetValue(value,int.Parse(m.Groups[1].Value));
    else if(f.FieldType==typeof(float))f.SetValue(value,float.Parse(m.Groups[1].Value,System.Globalization.CultureInfo.InvariantCulture));
+   else if(f.FieldType==typeof(double))f.SetValue(value,double.Parse(m.Groups[1].Value,System.Globalization.CultureInfo.InvariantCulture));
    else if(f.FieldType.IsEnum)f.SetValue(value,Enum.ToObject(f.FieldType,int.Parse(m.Groups[1].Value))); } }
  }
 }

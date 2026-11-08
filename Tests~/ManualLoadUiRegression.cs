@@ -150,7 +150,8 @@ partial class MotionRegression
         Run("W1.9a paused combat load clears old shots and pending wave",()=>{
             using(var f=new ManualLoadUiFixture())
             {
-                f.field.hero.ChangeAttackMode(1);
+                // Primary attack mode follows equipped weapon, not the old stance toggle.
+                WearWeapon(f.manager,WeaponInBag(f.manager,WeaponFamily.Bow));
                 var monster=f.field.Monster(-200);
                 f.field.Battle(monster);f.field.hero.TickMovement(f.field.space,0);
                 CombatStep(f.field,1);

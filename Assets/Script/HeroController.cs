@@ -52,13 +52,13 @@ public class HeroController : MonoBehaviour
         if(!IsDead)CurrentState=HeroState.Idle;
     }
     public float attackRange = 30f;
-    [Min(0f)] public float moveSpeed = 150f;
+    [Min(0f)] public float moveSpeed = 100f;
     [Min(0f)] public float laneSpeed = 150f;
     [Header("W2 MOVEMENT TEST DEFAULTS (not saved)")]
     public bool useStanceMoveSpeeds;
-    [Min(0f)] public float meleeMoveSpeed=450f;
-    [Min(0f)] public float physicalMoveSpeed=450f;
-    [Min(0f)] public float magicMoveSpeed=200f;
+    [Min(0f)] public float meleeMoveSpeed=100f;
+    [Min(0f)] public float physicalMoveSpeed=100f;
+    [Min(0f)] public float magicMoveSpeed=100f;
     [Header("RANGED FOOT LANES — BattleArea units; not saved")]
     public bool enableRangedLaneMotion=true;
     [Min(0f)] public float rangedFootMargin=12f;

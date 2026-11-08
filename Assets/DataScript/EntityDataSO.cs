@@ -7,6 +7,12 @@ public class EntityDataSO : ScriptableObject
 {
     public string entityName = "Vô Danh";
     public int currentLevel = 1;
+    // Retained v1 Save metadata only; NOT authority for the revised cultivation system.
+    public int realmComponentVersion = LegacyRealmSnapshotCompatibility.ComponentVersion;
+    public string realmId = LegacyRealmSnapshotCompatibility.LuyenKhiId;
+    public int realmEntryLevel = 1;
+    // Versioned component JSON: empty is deliberately absent. Avoids Unity inline-class null/template inheritance.
+    public string cultivationJson = "";
     public int currentExp = 0;
     public int expToNextLevel = 100;
     public int baseHealth = 400;

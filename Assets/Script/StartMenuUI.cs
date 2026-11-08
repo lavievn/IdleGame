@@ -9,7 +9,7 @@ using TMPro;
 public class StartMenuUI : MonoBehaviour
 {
     private GameManager manager;
-    private Button continueButton;
+    private Button continueButton,confirmChoiceButton,cancelChoiceButton;
     private Button[] menuButtons;
     private GameObject menuPage, settingsPage;
     private TextMeshProUGUI message, sizeLabel, musicLabel, volumeValueLabel, logoFallback;
@@ -105,8 +105,8 @@ public class StartMenuUI : MonoBehaviour
         popup.GetComponent<Image>().raycastTarget = false;
         menu.message=menu.Label(textTemplate,popRect,"",
             new Vector2(0,55),new Vector2(410,145),21);
-        menu.MakeButton(template,popRect,"Xác nhận",new Vector2(-110,-66),gm.OnConfirmResetClicked,true);
-        menu.MakeButton(template,popRect,"Hủy",new Vector2(110,-66),gm.OnCancelResetClicked,true);
+        menu.confirmChoiceButton=menu.MakeButton(template,popRect,"Xác nhận",new Vector2(-110,-66),gm.OnConfirmResetClicked,true);
+        menu.cancelChoiceButton=menu.MakeButton(template,popRect,"Hủy",new Vector2(110,-66),gm.OnCancelResetClicked,true);
         gm.confirmationPopup=popup;
         popup.SetActive(false);
 
@@ -565,8 +565,15 @@ public class StartMenuUI : MonoBehaviour
         if(continueButton!=null)
             continueButton.interactable=!entryLocked&&openingMenuReady&&manager.CanContinue;
     }
+    public void SetConfirmationLabels(string confirm,string cancel)
+    {
+        if(confirmChoiceButton!=null)confirmChoiceButton.GetComponentInChildren<TextMeshProUGUI>(true).text=confirm;
+        if(cancelChoiceButton!=null)cancelChoiceButton.GetComponentInChildren<TextMeshProUGUI>(true).text=cancel;
+        if(message!=null)UIManager.ReadableText(message,16);
+    }
     public void ShowConfirmation(string text)
     {
+        SetConfirmationLabels("Xác nhận","Hủy");
         message.text=text;
         manager.confirmationPopup.transform.SetAsLastSibling();
         manager.confirmationPopup.SetActive(true);

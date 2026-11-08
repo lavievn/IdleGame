@@ -68,8 +68,10 @@ partial class MotionRegression
         public RectTransform ground,grass;
         public MonsterSpawner spawner;
         public CombatManager combat;
-        public Field(float scale=1f,bool limitRenderMovement=false)
+        private readonly bool legacySpriteScale;
+        public Field(float scale=1f,bool limitRenderMovement=false,bool largeActors=false)
         {
+            legacySpriteScale=!largeActors;
             // A fresh simulated scene cannot inherit the previous scene's
             // asynchronous map-entry pause. Individual pause cases set it later.
             Time.timeScale=1f;
@@ -94,15 +96,24 @@ partial class MotionRegression
             // Dedicated lane cases enable the production setting explicitly.
             hero.enableRangedLaneMotion=false;
             hero.heroRect=(RectTransform)new GameObject(true).transform;hero.heroRect.parent=ground;hero.heroRect.anchorMin=hero.heroRect.anchorMax=new Vector2(1,0);hero.heroRect.pivot=new Vector2(1,0);Call(hero,"Awake");hero.SpawnHero();
+            // Historical geometry suites deliberately fit a 1x alpha-padded
+            // frame inside a 100-unit floor. Preserve that explicit reference;
+            // production 2x bodies have separate native scale/foot-lane tests.
+            if(legacySpriteScale){var bridge=hero.heroRect.GetComponent<CultivationSpriteBridge>();bridge.heroScale=1f;Call(bridge,"ApplyLayout");}
             spawner=new GameObject().AddComponent<MonsterSpawner>();Set(spawner,"monsterPool",new ObjectPool<GameObject>(()=>new GameObject(),m=>{},m=>m.SetActive(false),m=>{},5,20));
             combat=new GameObject().AddComponent<CombatManager>();Call(combat,"Start");combat.SetupHeroInfo(new EntityDataSO { baseHealth=10000,baseDamage=10,expToNextLevel=1000000 });
             // Historical attack-mode cases exercise the explicit temporary-B2 fallback.
             // Weapon regressions rebind through SetupHeroInfo to exercise the primary path.
             hero.BindBasicAttackData(combat.CurrentHeroCombatState.Data,true);
         }
-        public MonsterController Monster(float x,AttackMode mode=AttackMode.Melee,float y=0)
+        public MonsterController Monster(float x,AttackMode mode=AttackMode.Melee,float y=0,bool aware=true)
         {
-            var g=new GameObject(true);g.transform.parent=ground;var m=g.AddComponent<MonsterController>();Call(m,"Awake");Call(m,"OnEnable");m.attackMode=mode;space.SetPosition(m.Rect,new Vector2(x,y));return m;
+            var g=new GameObject(true);g.transform.parent=ground;var m=g.AddComponent<MonsterController>();Call(m,"Awake");Call(m,"OnEnable");m.attackMode=mode;space.SetPosition(m.Rect,new Vector2(x,y));
+            if(legacySpriteScale){var bridge=m.Rect.GetComponent<CultivationSpriteBridge>();bridge.monsterScale=1f;Call(bridge,"ApplyLayout");}
+            // Legacy combat/movement suites start in an already engaged fight.
+            // Awareness scenarios opt into the production unaware spawn below.
+            if(aware)m.ReceiveAlert(hero,true);
+            return m;
         }
         public void Step(float dt=0.1f,bool damage=false)
         {
@@ -118,7 +129,32 @@ partial class MotionRegression
 
     static void Main(string[] args)
     {
+        if(args.Length==1 && args[0]=="--cultivation-related") {InventoryEquipmentRegressionTests();MultiSlotEquipmentRegressionTests();SaveRollbackRegressionTests();ForgeRegressionTests();return;}
+        if(args.Length==1 && args[0]=="--cultivation-balance") {CultivationBalanceTests();return;}
+        if(args.Length==1 && args[0]=="--cultivation-gameplay") {CultivationGameplayTests();return;}
+        if(args.Length==1 && args[0]=="--dual-progression") {CultivationCoreTests();BloodEssenceTests();CultivationBreakthroughTests();CultivationPersistenceTests();return;}
+        if(args.Length==1 && args[0]=="--cultivation-persistence") {CultivationPersistenceTests();return;}
+        if(args.Length==1 && args[0]=="--cultivation-breakthrough") {CultivationBreakthroughTests();return;}
+        if(args.Length==1 && args[0]=="--blood-essence") {BloodEssenceTests();return;}
+        if(args.Length==1 && args[0]=="--cultivation-core") {CultivationCoreTests();return;}
+        if(args.Length==1 && args[0]=="--realm-related") {SaveRollbackRegressionTests();ManualLoadUiRegressionTests();BalanceTests();return;}
+        if(args.Length==1 && args[0]=="--legacy-realm-integration") {RealmIntegrationTests();return;}
+        if(args.Length==1 && args[0]=="--foundation-contracts") {RealmProgressionTests();RealmTransitionTests();RealmSaveCompatibilityTests();MartialArtsRegistryTests();BossEncounterCoordinatorTests();FoundationCrossContractTests();return;}
+        if(args.Length==1 && args[0]=="--boss-coordinator") {BossEncounterCoordinatorTests();return;}
+        if(args.Length==1 && args[0]=="--martial-registry") {MartialArtsRegistryTests();return;}
+        if(args.Length==1 && args[0]=="--realm-save-fixture") {RealmSaveCompatibilityTests();return;}
+        if(args.Length==1 && args[0]=="--realm-transition") {RealmTransitionTests();return;}
+        if(args.Length==1 && args[0]=="--realm-progression") {RealmProgressionTests();return;}
+        if(args.Length==1 && args[0]=="--progression-ui") {ProgressionUiTests();return;}
+        if(args.Length==1 && args[0]=="--gear-drop") {GearDropPrototypeTests();return;}
+        if(args.Length==1 && args[0]=="--production-rewards") {ProductionRewardTests();return;}
+        if(args.Length==2 && args[0]=="--production-rewards") {ProductionRewardTests(args[1]);return;}
+        if(args.Length==1 && args[0]=="--forge") {ForgeRegressionTests();return;}
+        if(args.Length==1 && args[0]=="--manual-load-ui") {ManualLoadUiRegressionTests();return;}
+        if(args.Length==1 && args[0]=="--actor-presentation") {ActorPresentationTests();return;}
+        if(args.Length==1 && args[0]=="--monster-awareness") {MonsterAwarenessTests();return;}
         if(args.Length==1 && args[0]=="--loot-visuals") {LootDropPresentationTests();CombatLootTests();return;}
+        if(args.Length==1 && args[0]=="--unified-hero") {UnifiedHeroVisualTests();return;}
         if(args.Length==1 && args[0]=="--weapon-basic") {WeaponBasicAttackTests();return;}
         if(args.Length==1 && args[0]=="--combat-loot") {
             CombatLootTests();BalanceTests();Patch54bTests();return;
@@ -130,6 +166,7 @@ partial class MotionRegression
         if(args.Length==1 && args[0]=="--plains") {PlainsPresentationTests();return;}
         if(args.Length==1 && args[0]=="--terrain-art") {MultiTerrainTests();return;}
         if(args.Length==1 && args[0]=="--terrain-seams") {TerrainSeamTests();return;}
+        if(args.Length==1 && args[0]=="--escape-legacy-magic") {EscapeLegacyMagicTests();return;}
         if(args.Length==1 && args[0]=="--magic-persistence") {MagicPersistenceTests();return;}
         if(args.Length==1 && args[0]=="--audio-volumes") {DualVolumeTests();MusicVolumeRegressionTests();OpeningSettingsRegressionTests();return;}
         if(args.Length==1 && args[0]=="--enemy-sprites") { EnemySpriteTests();return; }
@@ -146,6 +183,10 @@ partial class MotionRegression
         if(args.Length==1 && args[0]=="--movement-spike") { HeroMovementSpikeTests();return; }
         if(args.Length==1 && args[0]=="--render-trace") { HeroRenderTraceTests();return; }
         if(args.Length==1 && args[0]=="--position-hotfix") { B2SpawnPositionTests();return; }
+        if(args.Length==1 && args[0]=="--stabilization-lifecycle") {StabilizationLifecycleTests();return;}
+        if(args.Length==1 && args[0]=="--stabilization-camera-soak") {StabilizationCameraSoakTests();return;}
+        if(args.Length==1 && args[0]=="--stabilization-farm") {StabilizationFarmTests();return;}
+        if(args.Length==1 && args[0]=="--camera-framing") {CameraFramingTests();return;}
         if(args.Length==1 && args[0]=="--multi-zone") { MultiZoneCameraTests();return; }
         if(args.Length==1 && args[0]=="--map-entry") { UnifiedMapEntryTests();return; }
         if(args.Length==1 && args[0]=="--distance-waves") { DistanceWaveTests();return; }
@@ -153,6 +194,7 @@ partial class MotionRegression
         if(args.Length==1 && args[0]=="--camera-entry") { CameraEntryHandoffTests();return; }
         if(args.Length==1 && args[0]=="--world-trace") { WorldEntryTraceTests();return; }
         if(args.Length==1 && args[0]=="--wave-entry") { WaveEntryTests();return; }
+        if(args.Length==1 && args[0]=="--basic-movement") {BasicMovementTests();return;}
         if(args.Length==1 && args[0]=="--formation") { FormationTests();B2CombatRoutingTests();B2TestPartyTests();return; }
         if(args.Length==1 && args[0]=="--spawn") { SpawnEntryTests();return; }
         if (args.Length == 1 && args[0] == "--desktop-ui") {
@@ -248,39 +290,7 @@ partial class MotionRegression
             Check(!WorldMapPolygons.ValidPolygon(tooFew),
                 "two corners cannot form a clickable map");
         });
-        Run("clamp approach in both directions, including long frame",()=>{
-            Near(BattleMotion.Approach(0,100,30,1000,1),70,"right");Near(BattleMotion.Approach(0,-100,30,1000,1),-70,"left");Near(BattleMotion.Approach(0,10,30,1000,1),0,"already in range");
-        });
-        Run("equal melee range at 0.2/0.5/1/2 Canvas scale",()=>{
-            foreach(float scale in new[]{0.2f,0.5f,1f,2f}) { var f=new Field(scale);var m=f.Monster(-35);Check(f.hero.CanAttack(m,f.space),"hero scale "+scale);Check(m.CanAttack(f.hero,f.space),"monster scale "+scale);f.space.SetPosition(m.Rect,new Vector2(-36,0));Check(!f.hero.CanAttack(m,f.space)&&!m.CanAttack(f.hero,f.space),"outside range"); }
-        });
-        Run("camera pans all actors and ground equally",()=>{
-            foreach(float scale in new[]{0.2f,1f,2f}) { var f=new Field(scale);var m=f.Monster(-300);f.hero.TickMovement(f.space,0);m.TickMovement(f.space,0);float h=f.space.Position(f.hero.heroRect).x,b=f.space.Position(m.Rect).x,g=f.space.Position(f.grass).x;Time.deltaTime=0.1f;Call(f.space,"LateUpdate");float pan=f.space.Position(f.hero.heroRect).x-h;Check(pan>0,"base camera pan continues");Near(f.space.Position(m.Rect).x-b,pan,"monster pan");Near(f.space.Position(f.grass).x-g,pan,"ground pan"); }
-        });
-        Run("offscreen monster advances right independently of world pan",()=>{
-            var f=new Field();var m=f.Monster(-550);f.Step();Near(f.space.Position(m.Rect).x+550,f.space.Position(f.grass).x-100+15,"forward movement plus camera");Check(m.CurrentTarget==f.hero,"scans hero at spawn");
-        });
-        Run("ranged hero stops while melee monster keeps approaching",()=>{
-            var f=new Field();f.hero.ChangeAttackMode(1);var m=f.Monster(-300);f.hero.TickMovement(f.space,0.1f);float before=f.space.Position(f.hero.heroRect).x;f.hero.TickMovement(f.space,0.1f);Near(f.space.Position(f.hero.heroRect).x,before,"hero stays");m.TickMovement(f.space,0.1f);Near(f.space.Position(m.Rect).x,-285,"monster independent speed");
-        });
-        Run("another attacker cannot halve approaching monster speed",()=>{
-            var f=new Field();f.hero.ChangeAttackMode(1);var close=f.Monster(-20,AttackMode.RangedMagic);var far=f.Monster(-300);close.TickMovement(f.space,0.1f);far.TickMovement(f.space,0.1f);Check(close.currentState==MonsterState.Attacking,"attacker ready");Near(f.space.Position(far.Rect).x,-285,"far speed stays 150");
-        });
-        Run("melee hero approaches a stationary ranged monster",()=>{
-            var f=new Field();var m=f.Monster(-200,AttackMode.RangedMagic);f.hero.TickMovement(f.space,0.1f);m.TickMovement(f.space,0.1f);Near(f.space.Position(f.hero.heroRect).x,-15,"hero advances");Near(f.space.Position(m.Rect).x,-200,"ranged monster stays");
-        });
-        Run("nearest target rescanned while approaching and retained during attack",()=>{
-            var f=new Field();var a=f.Monster(-100);var b=f.Monster(-101);f.hero.TickMovement(f.space,0);f.space.SetPosition(b.Rect,new Vector2(-90,0));f.hero.TickMovement(f.space,0);Check(f.hero.CurrentTarget==b,"closer target selected while approaching");f.space.SetPosition(b.Rect,new Vector2(-30,0));f.hero.TickMovement(f.space,0);f.space.SetPosition(a.Rect,new Vector2(-20,0));f.hero.TickMovement(f.space,0);Check(f.hero.CurrentTarget==b,"in-range target retained during strike");b.MarkDead();f.hero.TickMovement(f.space,0);Check(f.hero.CurrentTarget==a,"reacquires on death");
-        });
-        Run("hidden hero freezes exploration; respawn recovers",()=>{
-            var f=new Field();var m=f.Monster(-550);f.hero.HideHero();float x=f.space.Position(m.Rect).x;f.Step();Near(f.space.Position(m.Rect).x,x,"no hidden camera");Check(HeroController.ActiveHeroes.Count==0,"unregistered");f.hero.SpawnHero();Check(f.hero.IsDeployed,"respawn");Near(f.space.Position(f.hero.heroRect).x,f.space.HomeX,"spawn centre");
-        });
-        Run("hero death stops AI and retry clears dead state",()=>{
-            var f=new Field();f.hero.Die();f.Step();Check(f.hero.IsDead&&!f.hero.IsDeployed,"dead stopped");f.hero.SpawnHero();Check(f.hero.IsDeployed&&!f.hero.IsDead,"retry alive");
-        });
-        Run("no crossing at low frame rate",()=>{
-            var f=new Field();var m=f.Monster(-100);f.hero.TickMovement(f.space,2);m.TickMovement(f.space,2);Near(f.space.Position(f.hero.heroRect).x-f.space.Position(m.Rect).x,35,"stop at range");
-        });
+        BasicMovementTests();
         Run("zone camera holds speed across 30/60/144 FPS",()=>{
             foreach(int fps in new[]{30,60,144}) {
                 var f=new Field(); f.space.scrollSpeed=1000; f.hero.moveSpeed=1000;
@@ -487,4 +497,41 @@ partial class MotionRegression
         BalanceSimulations();
         Console.WriteLine("PASS: "+tests+" regression scenarios (Unity test doubles; not Play Mode).");
     }
+    static void BasicMovementTests()
+    {
+        Run("clamp approach in both directions, including long frame",()=>{
+            Near(BattleMotion.Approach(0,100,30,1000,1),70,"right");Near(BattleMotion.Approach(0,-100,30,1000,1),-70,"left");Near(BattleMotion.Approach(0,10,30,1000,1),0,"already in range");
+        });
+        Run("equal melee range at 0.2/0.5/1/2 Canvas scale",()=>{
+            foreach(float scale in new[]{0.2f,0.5f,1f,2f}) { var f=new Field(scale);var m=f.Monster(-35);Check(f.hero.CanAttack(m,f.space),"hero scale "+scale);Check(m.CanAttack(f.hero,f.space),"monster scale "+scale);f.space.SetPosition(m.Rect,new Vector2(-36,0));Check(!f.hero.CanAttack(m,f.space)&&!m.CanAttack(f.hero,f.space),"outside range"); }
+        });
+        Run("camera pans all actors and ground equally",()=>{
+            foreach(float scale in new[]{0.2f,1f,2f}) { var f=new Field(scale);var m=f.Monster(-300);f.hero.TickMovement(f.space,0);m.TickMovement(f.space,0);float h=f.space.Position(f.hero.heroRect).x,b=f.space.Position(m.Rect).x,g=f.space.Position(f.grass).x;Time.deltaTime=0.1f;Call(f.space,"LateUpdate");float pan=f.space.Position(f.hero.heroRect).x-h;Check(pan>0,"base camera pan continues");Near(f.space.Position(m.Rect).x-b,pan,"monster pan");Near(f.space.Position(f.grass).x-g,pan,"ground pan"); }
+        });
+        Run("offscreen monster advances right independently of world pan",()=>{
+            var f=new Field();var m=f.Monster(-550);f.Step();Near(f.space.Position(m.Rect).x+550,f.space.Position(f.grass).x-100+10,"forward movement plus camera");Check(m.CurrentTarget==f.hero,"scans hero at spawn");
+        });
+        Run("ranged hero stops while melee monster keeps approaching",()=>{
+            var f=new Field();f.hero.ChangeAttackMode(1);var m=f.Monster(-300);f.hero.TickMovement(f.space,0.1f);float before=f.space.Position(f.hero.heroRect).x;f.hero.TickMovement(f.space,0.1f);Near(f.space.Position(f.hero.heroRect).x,before,"hero stays");m.TickMovement(f.space,0.1f);Near(f.space.Position(m.Rect).x,-290,"monster independent speed100");
+        });
+        Run("another attacker cannot halve approaching monster speed",()=>{
+            var f=new Field();f.hero.ChangeAttackMode(1);var close=f.Monster(-20,AttackMode.RangedMagic);var far=f.Monster(-300);close.TickMovement(f.space,0.1f);far.TickMovement(f.space,0.1f);Check(close.currentState==MonsterState.Attacking,"attacker ready");Near(f.space.Position(far.Rect).x,-290,"far speed stays100");
+        });
+        Run("melee hero approaches a stationary ranged monster",()=>{
+            var f=new Field();var m=f.Monster(-200,AttackMode.RangedMagic);f.hero.TickMovement(f.space,0.1f);m.TickMovement(f.space,0.1f);Near(f.space.Position(f.hero.heroRect).x,-10,"hero advances at base100");Near(f.space.Position(m.Rect).x,-200,"ranged monster stays");
+        });
+        Run("nearest target rescanned while approaching and retained during attack",()=>{
+            var f=new Field();var a=f.Monster(-100);var b=f.Monster(-101);f.hero.TickMovement(f.space,0);f.space.SetPosition(b.Rect,new Vector2(-90,0));f.hero.TickMovement(f.space,0);Check(f.hero.CurrentTarget==b,"closer target selected while approaching");f.space.SetPosition(b.Rect,new Vector2(-30,0));f.hero.TickMovement(f.space,0);f.space.SetPosition(a.Rect,new Vector2(-20,0));f.hero.TickMovement(f.space,0);Check(f.hero.CurrentTarget==b,"in-range target retained during strike");b.MarkDead();f.hero.TickMovement(f.space,0);Check(f.hero.CurrentTarget==a,"reacquires on death");
+        });
+        Run("hidden hero freezes exploration; respawn recovers",()=>{
+            var f=new Field();var m=f.Monster(-550);f.hero.HideHero();float x=f.space.Position(m.Rect).x;f.Step();Near(f.space.Position(m.Rect).x,x,"no hidden camera");Check(HeroController.ActiveHeroes.Count==0,"unregistered");f.hero.SpawnHero();Check(f.hero.IsDeployed,"respawn");Near(f.space.Position(f.hero.heroRect).x,f.space.HomeX,"spawn centre");
+        });
+        Run("hero death stops AI and retry clears dead state",()=>{
+            var f=new Field();f.hero.Die();f.Step();Check(f.hero.IsDead&&!f.hero.IsDeployed,"dead stopped");f.hero.SpawnHero();Check(f.hero.IsDeployed&&!f.hero.IsDead,"retry alive");
+        });
+        Run("no crossing at low frame rate",()=>{
+            var f=new Field();var m=f.Monster(-100);f.hero.TickMovement(f.space,2);m.TickMovement(f.space,2);Near(f.space.Position(f.hero.heroRect).x-f.space.Position(m.Rect).x,35,"stop at range");
+        });
+    }
+
 }

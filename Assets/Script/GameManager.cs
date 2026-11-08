@@ -5,7 +5,7 @@ using UnityEngine.UI;
 using TMPro;
 using TuTienCore;
 
-public class GameManager : MonoBehaviour
+public partial class GameManager : MonoBehaviour
 {
     [Header("UI CỐT LÕI")]
     public Image eventLog;
@@ -32,6 +32,19 @@ public class GameManager : MonoBehaviour
     [Header("DEV ONLY — Controlled Loot Test A (default Off)")]
     [Tooltip("Editor/Development Build only: accepted kills give the primary Hero one Common demo sword. Not official progression.")]
     [SerializeField] private bool controlledLootTest;
+    [Header("Production Loot v0.1 — prototype balance, configured explicitly in MainGame")]
+    [SerializeField] private ProductionLootConfig productionLoot = new ProductionLootConfig();
+    public ProductionLootConfig ProductionLoot => productionLoot;
+    public static bool DevelopmentItemGrantsEnabled
+    {
+        get {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            return true;
+#else
+            return false;
+#endif
+        }
+    }
     public bool ControlledLootTestEnabled
     {
         get {
@@ -55,6 +68,9 @@ public class GameManager : MonoBehaviour
     }
     private readonly List<TestCompanion> testCompanions = new List<TestCompanion>();
     public int TestCompanionCount => testCompanions.Count;
+    // Presentation-only access to existing B2 slots; includes a defeated actor.
+    public HeroController TestCompanionAt(int index) => index>=0 && index<testCompanions.Count
+        ? testCompanions[index].Controller : null;
     public const int TestCompanionLimit = 2;
     [Header("W2 MOVEMENT TEST")]
     public bool useW2StanceMoveSpeeds=true;
@@ -358,7 +374,7 @@ public class GameManager : MonoBehaviour
             ?"Chưa có sát thương":string.Join("\n",recentDamage.ToArray());
     }
     public EntityDataSO HeroData => runtimeHeroData;
-    private enum MenuChoice { None, Continue, NewGame }
+    private enum MenuChoice { None, Continue, NewGame , CultivationUpgrade }
     private MenuChoice pendingChoice;
     private SaveSlot continueSlot;
     private bool manualSelection;
@@ -435,6 +451,7 @@ public class GameManager : MonoBehaviour
         runtimeHeroData.currentLevel = 1;
         runtimeHeroData.currentExp = 0;
         runtimeHeroData.expToNextLevel = 100;
+        LegacyRealmSnapshotCompatibility.Initialize(runtimeHeroData);
         runtimeHeroData.addedHealth = runtimeHeroData.addedDamage = runtimeHeroData.statPoints = 0;
         // New characters start with the established melee test stance.
         // Randomized combat aptitudes belong to future character generation.
@@ -461,6 +478,7 @@ public class GameManager : MonoBehaviour
             SynergyMath.GenerateRootProfile(runtimeHeroData);
         }
 
+        InitializeCultivation();
         runtimeHeroData.ApplyHeroBalance();
         if (heroController != null) heroController.SetIdentityVisual(runtimeHeroData);
         if(showMenu)SetupPreGameUI();
@@ -535,6 +553,7 @@ public class GameManager : MonoBehaviour
     {
         if (UIManager.Instance != null) UIManager.Instance.SetPaused(false);
         if (hasDeployed) return;
+        EnsureCultivationBinding();
         CancelNextWave();
         // Only title choices run the long cinematic. Every actual map entry
         // shares the same paused, hidden spawn -> appear -> first-wave pipeline.
@@ -713,6 +732,7 @@ public class GameManager : MonoBehaviour
     // V2 individual gear: all 8 positions share one canonical inventory.
     public bool GrantDemoSword()
     {
+        if(!DevelopmentItemGrantsEnabled)return false;
         if (!IsGameplayHUDVisible || runtimeHeroData == null) return false;
         if (!EquipmentRuntime.GrantDemoSword(runtimeHeroData)) return false;
         UpdateEventLog("Đã nhận Thiết Kiếm thử nghiệm.");
@@ -722,6 +742,7 @@ public class GameManager : MonoBehaviour
     // fixed latent affixes and a demonstrative quality ceiling.
     public bool GrantForgeTestSword()
     {
+        if(!DevelopmentItemGrantsEnabled)return false;
         if(!IsGameplayHUDVisible || runtimeHeroData==null)return false;
         if(!EquipmentRuntime.AddInstance(runtimeHeroData,
             EquipmentRefinement.CreateForgeDemoSword()))return false;
@@ -731,6 +752,7 @@ public class GameManager : MonoBehaviour
 
     public bool GrantForgeMaterials()
     {
+        if(!DevelopmentItemGrantsEnabled)return false;
         if(!IsGameplayHUDVisible || runtimeHeroData==null)return false;
         if(!EquipmentInventory.Add(runtimeHeroData,EquipmentRefinement.MaterialId,100))
             return false;
@@ -749,6 +771,24 @@ public class GameManager : MonoBehaviour
         if(combatManager!=null)
             combatManager.RefreshRegisteredHeroStats(heroController,true);
         UpdateEventLog(message);
+        return true;
+    }
+
+    public bool CanAllocateHeroAttribute => IsGameplayHUDVisible && !HasPendingConfirmation &&
+        runtimeHeroData!=null && runtimeHeroData.statPoints>0 && combatManager!=null && heroController!=null &&
+        combatManager.CurrentHeroCombatState!=null &&
+        combatManager.CurrentHeroCombatState.Data==runtimeHeroData && combatManager.CurrentHeroCombatState.CanFight;
+
+    public bool AllocateHeroHealth() { return AllocateHeroAttribute(true); }
+    public bool AllocateHeroPhysicalAttack() { return AllocateHeroAttribute(false); }
+    private bool AllocateHeroAttribute(bool health)
+    {
+        if(!CanAllocateHeroAttribute || (health ? runtimeHeroData.addedHealth>int.MaxValue-6 : runtimeHeroData.addedDamage==int.MaxValue))return false;
+        if(health)runtimeHeroData.AllocateHealth();else runtimeHeroData.AllocateDamage();
+        // Existing ratio-preserving refresh; leave attack timer, target and life intact.
+        combatManager.RefreshRegisteredHeroStats(heroController,false);
+        UpdateEventLog(health?"Đã dùng 1 điểm: +6 HP.":"Đã dùng 1 điểm: +1 Physical Attack.");
+        if(UIManager.Instance!=null)UIManager.Instance.RefreshCharacterProgression();
         return true;
     }
 
@@ -799,6 +839,7 @@ public class GameManager : MonoBehaviour
 
     public bool GrantInventorySamples()
     {
+        if(!DevelopmentItemGrantsEnabled)return false;
         if (!IsGameplayHUDVisible || runtimeHeroData == null) return false;
         if (!EquipmentInventory.GrantSamples(runtimeHeroData)) return false;
         UpdateEventLog("Đã nhận hai hộ phù thử nghiệm.");
@@ -844,6 +885,7 @@ public class GameManager : MonoBehaviour
     {
         if (HasPendingConfirmation) return false;
         if (saveManager == null || !saveManager.HasSave(slot)) { UpdateEventLog("Ô lưu này chưa có dữ liệu."); return false; }
+        if(saveManager.NeedsCultivationMigration(slot)){RequestCultivationMigration(slot,deploy,false);return false;}
 
         var loaded = Instantiate(heroDataSO != null ? heroDataSO : runtimeHeroData);
         if (!saveManager.LoadGame(loaded, slot)) { Destroy(loaded); UpdateEventLog("Không đọc được bản lưu."); return false; }
@@ -857,6 +899,12 @@ public class GameManager : MonoBehaviour
             Destroy(loaded);
             return false;
         }
+        CultivationGameplayBinding prepared;
+        if(!PrepareCultivation(loaded,out prepared)){Destroy(loaded);return false;}
+        return ApplyLoadedCandidate(loaded,slot,deploy,prepared);
+    }
+    bool ApplyLoadedCandidate(EntityDataSO loaded,SaveSlot slot,bool deploy,CultivationGameplayBinding prepared,bool fromTitle=false)
+    {
         CancelGameplayEntry();
         // 1. Dọn dẹp sạch sẽ chiến trường tránh kẹt Coroutine
         hasDeployed = false;
@@ -870,10 +918,11 @@ public class GameManager : MonoBehaviour
         // 2. Nạp dữ liệu mới
         if (runtimeHeroData != null) Destroy(runtimeHeroData);
         runtimeHeroData = loaded;
+        ReplaceCultivation(prepared);
         recentEvents.Clear(); recentDamage.Clear(); fullEventHistory.Clear();
         damageHistory.Clear();
         continueSlot = slot;
-        manualSelection = true;
+        manualSelection = !fromTitle;
 
         // Only the legacy non-deploying load returns to the waiting menu.
         // Immediate loads must not restart the opening/black curtain first.
@@ -886,7 +935,7 @@ public class GameManager : MonoBehaviour
             ", EXP " + loaded.currentExp + ", map " + loaded.mapNumber + ".");
         if (deploy)
         {
-            DeployHero();
+            DeployHero(fromTitle);
             if (combatManager != null)
             {
                 var state = combatManager.CurrentHeroCombatState;
@@ -924,6 +973,7 @@ public class GameManager : MonoBehaviour
         CancelGameplayEntry();
         if (UIManager.Instance != null) UIManager.Instance.HideMapTitle();
         hasDeployed = false;
+        DisposeCultivation();
         CancelNextWave();
         activeMonsters.Clear();
         if (runtimeHeroData != null)
@@ -966,6 +1016,7 @@ public class GameManager : MonoBehaviour
             }
         }
         CancelGameplayEntry();
+        DisposeCultivation();
         hasDeployed=false;
         CancelNextWave();
         ClearTestCompanions();
@@ -1020,12 +1071,14 @@ public class GameManager : MonoBehaviour
     public void OnConfirmResetClicked()
     {
         var choice = pendingChoice;
+        if(choice==MenuChoice.CultivationUpgrade){ConfirmCultivationMigration();return;}
         if (choice == MenuChoice.None) return;
         bool fromTitle=preGameUI!=null && preGameUI.activeInHierarchy;
         pendingChoice = MenuChoice.None;
         if (confirmationPopup != null) confirmationPopup.SetActive(false);
         if (choice == MenuChoice.Continue)
         {
+            if(saveManager!=null && saveManager.NeedsCultivationMigration(continueSlot)){RequestCultivationMigration(continueSlot,true,fromTitle);return;}
             var loaded = Instantiate(heroDataSO);
             if (saveManager == null || !saveManager.LoadGame(loaded, continueSlot))
             {
@@ -1046,8 +1099,11 @@ public class GameManager : MonoBehaviour
             Debug.Log("[SaveLoad] Continue from " + continueSlot +
                 ": level=" + loaded.currentLevel + " EXP=" + loaded.currentExp +
                 " map=" + loaded.mapNumber);
+            CultivationGameplayBinding prepared;
+            if(!PrepareCultivation(loaded,out prepared)){Destroy(loaded);return;}
             if (runtimeHeroData != null) Destroy(runtimeHeroData);
             runtimeHeroData = loaded;
+            ReplaceCultivation(prepared);
             recentEvents.Clear(); recentDamage.Clear(); fullEventHistory.Clear();
             runtimeHeroData.ApplyHeroBalance();
             RestoreSelectedStance();
@@ -1080,6 +1136,7 @@ public class GameManager : MonoBehaviour
     }
     public void OnCancelResetClicked()
     {
+        if(IsCultivationMigrationPending){CancelCultivationMigration();return;}
         pendingChoice = MenuChoice.None;
         if (confirmationPopup != null) confirmationPopup.SetActive(false);
     }
@@ -1114,6 +1171,7 @@ public class GameManager : MonoBehaviour
             return false;
         string reason = WorldMapCatalog.TravelBlockReason(runtimeHeroData, targetId);
         if (reason != null) { UpdateEventLog(reason); return false; }
+        if(Cultivation!=null && Cultivation.SettlePending()!=CultivationReason.None)return false;
 
         // Change only after validation; cancel old wave and all stale projectiles
         // and monsters so they cannot score kills in the destination node.
@@ -1164,6 +1222,7 @@ public class GameManager : MonoBehaviour
 
     void LateUpdate()
     {
+        TickCultivation(); // Sole cultivation clock; runs before entry can release the pause.
         TraceEntryFrame("GameManager.LateUpdate before entry handoff");
         // EnvironmentManager (-200) has already finished its paused LateUpdate.
         // Release entry AFTER camera/actor steps so no camera-only half-frame
@@ -1286,6 +1345,8 @@ public class GameManager : MonoBehaviour
 
     private void OnDisable()
     {
+        CancelCultivationMigration(false);
+        DisposeCultivation();
         if(combatManager!=null)combatManager.SuspendLootEncounter();
         var space=environmentManager!=null?environmentManager:EnvironmentManager.Instance;
         if(space!=null)space.CancelCameraEntryHandoff();
@@ -1302,6 +1363,7 @@ public class GameManager : MonoBehaviour
     }
     private void OnEnable()
     {
+        if(hasDeployed)EnsureCultivationBinding();
         if(combatManager!=null)combatManager.ResumeLootEncounter();
         if(!resumeEntryWave)return;
         resumeEntryWave=false;
@@ -1317,6 +1379,8 @@ public class GameManager : MonoBehaviour
     }
     private void OnDestroy()
     {
+        CancelCultivationMigration(false);
+        DisposeCultivation();
         if(mapEntryCover!=null)Destroy(mapEntryCover.transform.parent.gameObject);
     }
 }

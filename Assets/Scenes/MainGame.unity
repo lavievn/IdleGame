@@ -962,9 +962,13 @@ MonoBehaviour:
   cameraIdleSmoothTime: 0.6
   advanceStationaryCombatToRight: 1
   stationaryCombatSmoothTime: 1.5
-  cameraUseCombatCenter: 1
+  cameraUseCombatCenter: 0
   cameraCombatFocusSmoothTime: 1.5
   cameraCombatFocusMaxSpeed: 240
+  useMultiZoneCamera: 1
+  directionalCameraFraming: 1
+  leftwardFramingX: 0.65
+  directionalFramingSmoothTime: 0.35
   meleeRangeRatio: 0.035
   heroPhysicalRangeRatio: 0.36
   heroMagicRangeRatio: 0.42
@@ -3815,6 +3819,26 @@ MonoBehaviour:
   environmentManager: {fileID: 87556251}
   combatManager: {fileID: 649540127}
   saveManager: {fileID: 0}
+  controlledLootTest: 0
+  productionLoot:
+    configured: 1
+    material:
+      enabled: 1
+      chance: 0.6
+      materialId: material:refinement
+      minQuantity: 1
+      maxQuantity: 2
+    equipment:
+      enabled: 1
+      chance: 0.08
+      selectionPolicy: 1
+      templates:
+      - templateId: sample:iron_sword
+        itemLevel: 1
+        mainStat: 4
+      - templateId: sample:basic_bow
+        itemLevel: 1
+        mainStat: 4
   activeMonsters: []
   waveDelay: 5
 --- !u!4 &649540125
@@ -4725,7 +4749,7 @@ MonoBehaviour:
   spawnSkin: FadeIn_01
   attackMode: 0
   attackRange: 50
-  moveSpeed: 300
+  moveSpeed: 100
   laneSpeed: 150
   hpFillImage: {fileID: 1988525334}
   dmgTextPrototype: {fileID: 1835480570}

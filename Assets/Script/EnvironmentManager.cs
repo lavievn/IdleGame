@@ -86,10 +86,19 @@ public class EnvironmentManager : MonoBehaviour
     private float previousMultiZoneFocus;
     public float MultiZoneVelocity => multiZoneCamera.Velocity;
 
+    [Header("DIRECTIONAL FRAMING — screen-space target, primary camera subject")]
+    public bool directionalCameraFraming;
+    [Range(.5f,.8f)] public float leftwardFramingX=.65f;
+    [Min(.05f)] public float directionalFramingSmoothTime=.35f;
+    private float framingRatio=.65f,framingDesired=.65f,framingPreviousHeroX;
+    private readonly CombatFocusSmoother directionalFramingSmoother=new CombatFocusSmoother();
+    private bool framingSampleReady;
+
     // Only call while a new map is hidden. Gameplay subject changes never reset velocity.
     public void ResetCameraForMapEntry()
     {
         multiZoneCamera.Reset();combatFocusSmoother.Reset();multiZoneFocusReady=false;multiZoneSubject=null;
+        framingSampleReady=false;directionalFramingSmoother.Reset();framingRatio=framingDesired=leftwardFramingX;
         deadzoneCamera.Reset();stationaryCombatVelocity=0f;hasPlannedPan=false;
     }
 
@@ -246,6 +255,10 @@ public class EnvironmentManager : MonoBehaviour
     private float logicalWidth;
     private int presentationWidth;
     private int presentationCombatWidth;
+    [Header("BATTLE VIEW — screen pixels, presentation only")]
+    [Tooltip("Nâng toàn bộ battleground; không thay đổi tọa độ logic hoặc camera combat.")]
+    [SerializeField] private float battleVerticalOffsetPixels = 20f;
+    private float presentationVerticalOffset = float.NaN;
 
     // The battle keeps one coordinate system for its entire lifetime. Resizing
     // changes only the screen-space projection, never anchors/ranges/shot endpoints.
@@ -288,15 +301,18 @@ public class EnvironmentManager : MonoBehaviour
         if (battleCanvas == null || Screen.width <= 0) return;
         int projectedWidth=ManagementWindowLayout.CombatPixels(Screen.width);
         if (presentationWidth == Screen.width &&
-            presentationCombatWidth == projectedWidth) return;
+            presentationCombatWidth == projectedWidth &&
+            presentationVerticalOffset == battleVerticalOffsetPixels) return;
         presentationWidth=Screen.width;
         presentationCombatWidth=projectedWidth;
+        presentationVerticalOffset=battleVerticalOffsetPixels;
         battleCanvas.scaleFactor=
             ManagementWindowLayout.BattleCanvasScale(Screen.width,logicalWidth);
         // Only the projection's origin changes: the world-space Ground,
         // Hero, Monster and projectile coordinates remain untouched.
         battleArea.anchoredPosition=new Vector2(
-            ManagementWindowLayout.BattleLocalOffsetX(Screen.width,logicalWidth),0f);
+            ManagementWindowLayout.BattleLocalOffsetX(Screen.width,logicalWidth),
+            battleVerticalOffsetPixels / Mathf.Max(.01f, battleCanvas.scaleFactor));
     }
 
     public bool HasLoopingTerrain => groundPresentation != null;
@@ -389,6 +405,8 @@ public class EnvironmentManager : MonoBehaviour
         tracePlanFrame=Time.frameCount;
         TraceFrame("Environment.Update after camera plan before monsters");
         float groundMinusCamera = backgroundPan - cameraPan;
+        if (CombatManager.Instance != null && CombatManager.Instance.isActiveAndEnabled)
+            CombatManager.Instance.TickMonsterAwareness(this, dt);
         foreach (var monster in MonsterController.ActiveMonsters)
             if (monster != null && monster.IsAlive) monster.TickMovement(this, dt, groundMinusCamera);
         // Monsters may have entered a hero's range during this frame.
@@ -445,6 +463,9 @@ public class EnvironmentManager : MonoBehaviour
         CurrentBackgroundSpeed = Time.deltaTime > 0f ? backgroundPan / Time.deltaTime : 0f;
         CurrentCameraSpeed = Time.deltaTime > 0f ? pan / Time.deltaTime : 0f;
         if(useMultiZoneCamera)previousMultiZoneFocus=CurrentCameraSmoothedFocusX+pan;
+        if(useMultiZoneCamera && directionalCameraFraming && cameraTarget!=null && cameraTarget.IsDeployed) {
+            framingPreviousHeroX=Position(cameraTarget.heroRect).x;framingSampleReady=true;
+        }
         IsScrolling = Mathf.Abs(pan) > 0.01f;
         TraceFrame("Environment.LateUpdate after pan");
     }
@@ -465,6 +486,15 @@ public class EnvironmentManager : MonoBehaviour
             CurrentCameraFocusCount=0;return;
         }
         float heroX=Position(cameraTarget.heroRect).x;int count=1;
+        float tracking=0f;
+        if(directionalCameraFraming) {
+            float step=framingSampleReady && multiZoneSubject==cameraTarget && cameraTarget.MovementFrame==Time.frameCount?heroX-framingPreviousHeroX:0f;
+            float leftTarget=float.IsNaN(leftwardFramingX)||float.IsInfinity(leftwardFramingX)?.65f:Mathf.Clamp(leftwardFramingX,.5f,.8f);
+            if(Mathf.Abs(step)>.001f)framingDesired=step<0?leftTarget:1f-leftTarget;
+            // Retain the last direction while standing in combat; never snap back to center.
+            framingRatio=leftTarget+directionalFramingSmoother.Step(framingDesired-leftTarget,Time.deltaTime,Mathf.Max(.05f,directionalFramingSmoothTime),1f);
+            tracking=-step/Time.deltaTime;
+        }
         float raw=cameraUseCombatCenter?CombatCenterX(heroX,out count):heroX;
         // Preserve the absolute filtered center when the anchor Hero dies or
         // changes. Retain focus AND pan velocities across gameplay roster changes.
@@ -477,7 +507,8 @@ public class EnvironmentManager : MonoBehaviour
         CurrentCameraFocusX=raw;CurrentCameraSmoothedFocusX=focus;CurrentCameraFocusCount=count;
         pan=multiZoneCamera.Pan(focus,battleArea.rect.xMin,battleArea.rect.xMax,Time.deltaTime,
             greenZoneWidth,yellowZoneWidth,redZoneWidth,minFollowSpeed,maxFollowSpeed,
-            maxAcceleration,maxDeceleration,correctionSpeed,maxCameraStep);
+            maxAcceleration,maxDeceleration,correctionSpeed,maxCameraStep,
+            directionalCameraFraming?framingRatio:.5f,tracking,directionalCameraFraming);
     }
 
     // Equal-weight center of all deployed Heroes and living, ON-SCREEN monsters.

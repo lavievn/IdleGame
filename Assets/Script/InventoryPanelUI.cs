@@ -126,6 +126,11 @@ public sealed class InventoryPanelUI : MonoBehaviour
         var result=ui.SmallButton(root,name,caption,new Vector2(0f,1f),
             new Vector2(0f,1f),Vector2.zero,new Vector2(60f,36f),()=>click());
         ColorButton(result,new Color(.16f,.29f,.30f,.98f));
+        if(name.StartsWith("InventoryGrant",StringComparison.Ordinal) && !GameManager.DevelopmentItemGrantsEnabled)
+        {
+            result.GetComponent<CustomInteractable>().enabled=false;
+            ColorButton(result,new Color(.10f,.16f,.17f,1f));
+        }
         return result;
     }
     private TextMeshProUGUI MakeForgeText(string name,string caption)
@@ -209,11 +214,11 @@ public sealed class InventoryPanelUI : MonoBehaviour
 
         panel.detailInfoButton=panel.MakeButton("InventoryDetailInfo","Chi tiết",()=>panel.SetDetailView(false));
         panel.detailCompareButton=panel.MakeButton("InventoryDetailCompare","So sánh",()=>panel.SetDetailView(true));
-        panel.detailPrevious=panel.MakeButton("InventoryDetailPrevious","◀",()=>panel.ChangeDetailPage(-1));
-        panel.detailNext=panel.MakeButton("InventoryDetailNext","▶",()=>panel.ChangeDetailPage(1));
+        panel.detailPrevious=panel.MakeButton("InventoryDetailPrevious","<",()=>panel.ChangeDetailPage(-1));
+        panel.detailNext=panel.MakeButton("InventoryDetailNext",">",()=>panel.ChangeDetailPage(1));
         panel.detailPageLabel=panel.MakeText("InventoryDetailPage","");
-        panel.MakeButton("InventoryPrev","◀",panel.PreviousPage);
-        panel.MakeButton("InventoryNext","▶",panel.NextPage);
+        panel.MakeButton("InventoryPrev","<",panel.PreviousPage);
+        panel.MakeButton("InventoryNext",">",panel.NextPage);
         panel.MakeButton("InventoryGrantCharms","Hộ phù mẫu",panel.GrantCharms);
         panel.MakeButton("InventoryGrantSword","Kiếm rèn mẫu",panel.GrantSword);
         panel.MakeButton("InventoryGrantMaterials","Nguyên liệu +100",panel.GrantMaterials);
@@ -231,8 +236,11 @@ public sealed class InventoryPanelUI : MonoBehaviour
         panel.forgeOverlay=Backdrop(panel.root,"Forge_ModalDim",
             new Color(.012f,.021f,.027f,.88f));
         panel.forgeOverlay.GetComponent<Image>().raycastTarget=true;
+        ui.BindClick(panel.forgeOverlay,()=>{});
         panel.forgeFrame=Backdrop(panel.forgeOverlay,"Forge_Window",
             new Color(.075f,.13f,.15f,1f));
+        ui.Skin(panel.forgeFrame,UIManager.SurfaceKind.Frame);
+        ui.PanelHeader(panel.forgeFrame,30);
         panel.forgeCell=Backdrop(panel.forgeOverlay,"Forge_RarityBorder",Color.gray);
         panel.forgeCellInside=Backdrop(panel.forgeOverlay,"Forge_ItemBackground",
             new Color(.045f,.085f,.10f,1f));
@@ -563,18 +571,52 @@ public sealed class InventoryPanelUI : MonoBehaviour
         float left=fx+12f,inner=fw-24f;
         Place((RectTransform)forgeTitle.transform,left,fy+9f,inner-80f,28f);
         Place(FindForgeButton("Forge_Close"),fx+fw-81f,fy+7f,73f,27f);
+        if(fh<360f)
+        {
+            // Short windows: put the thumbnail beside the description so the
+            // controls keep readable rows instead of shrinking under the header.
+            float s=Mathf.Min(1f,(fh-44f)/270f),top=fy+42f;
+            Place(forgeCell,left,top,80f,72f*s);
+            Place(forgeCellInside,left+4f,top+4f,72f,72f*s-8f);
+            Place((RectTransform)forgeCellLevel.transform,left+3f,top+3f,74f,18f*s);
+            Place((RectTransform)forgeCellCount.transform,left+3f,top+49f*s,74f,20f*s);
+            Place((RectTransform)forgeCellTitle.transform,left+90f,top,inner-90f,32f*s);
+            Place((RectTransform)forgeInfo.transform,left+90f,top+35f*s,inner-90f,36f*s);
+            forgeInfo.alignment=TextAlignmentOptions.TopLeft;
+            for(int i=0;i<3;i++)
+            {
+                float row=top+(79f+i*30f)*s;
+                Place(forgeMinus[i],fx+fw-102f,row,29f,26f*s);
+                Place(forgePlus[i],fx+fw-36f,row,29f,26f*s);
+                var label=GetForgeRowLabel(i);
+                Place((RectTransform)label.transform,left,row,fw-130f,26f*s);
+                label.text=new[]{"Cấp vật phẩm","Rèn thường","Rèn đặc biệt"}[i]+"  "+GetForgeValue(i);
+                label.alignment=TextAlignmentOptions.MidlineLeft;
+            }
+            Place((RectTransform)forgeProgressLabel.transform,left,top+172f*s,inner,20f*s);
+            Place(forgeProgressBack,left,top+195f*s,inner,8f*s);
+            var compactItem=EquipmentRuntime.Find(Hero(),forgeItemId);
+            float compactPct=compactItem==null?0:EquipmentRefinement.ProgressPercent(compactItem)/100f;
+            Place(forgeProgressFill,left,top+195f*s,inner*compactPct,8f*s);
+            Place((RectTransform)forgeMaterialLabel.transform,left,top+208f*s,inner,22f*s);
+            Place((RectTransform)forgeMessage.transform,left,top+233f*s,inner,26f*s);
+            return;
+        }
+        // Keep the fixed header and fit the entire body, including its message,
+        // into the frame. The old 510 denominator omitted fixed gaps/footer.
+        scale=Mathf.Min(1f,(fh-44f)/487f);
         float cellWidth=128f*scale,cellHeight=124f*scale;
-        float cx=fx+(fw-cellWidth)*.5f, cy=fy+37f*scale;
+        float cx=fx+(fw-cellWidth)*.5f, cy=fy+40f;
         Place(forgeCell,cx,cy,cellWidth,cellHeight);
         Place(forgeCellInside,cx+4f,cy+4f,cellWidth-8f,cellHeight-8f);
         Place((RectTransform)forgeCellLevel.transform,cx+cellWidth-60f,cy+8f,54f,22f);
         Place((RectTransform)forgeCellCount.transform,cx+5f,cy+cellHeight-28f,cellWidth-10f,23f);
-        Place((RectTransform)forgeCellTitle.transform,left,cy+cellHeight+4f,inner,26f);
-        float detailsY=cy+cellHeight+32f;
+        Place((RectTransform)forgeCellTitle.transform,left,cy+cellHeight+4f*scale,inner,26f*scale);
+        float detailsY=cy+cellHeight+32f*scale;
         float detailsH=102f*scale;
         Place((RectTransform)forgeInfo.transform,left,detailsY,inner,detailsH);
         forgeInfo.alignment=TextAlignmentOptions.TopLeft;
-        float start=detailsY+detailsH+6f;
+        float start=detailsY+detailsH+6f*scale;
         string[] captions={"Cấp vật phẩm","Rèn thường","Rèn đặc biệt"};
         string[] values={forgeItemId==""?"":GetForgeValue(0),
             forgeItemId==""?"":GetForgeValue(1),forgeItemId==""?"":GetForgeValue(2)};
@@ -588,7 +630,7 @@ public sealed class InventoryPanelUI : MonoBehaviour
             label.text=captions[i]+"  "+values[i];
             label.alignment=TextAlignmentOptions.MidlineLeft;
         }
-        float barY=start+rowStep*3+3f;
+        float barY=start+rowStep*3+3f*scale;
         Place((RectTransform)forgeProgressLabel.transform,left,barY,inner,25f*scale);
         Place(forgeProgressBack,left,barY+27f*scale,inner,12f*scale);
         var item=EquipmentRuntime.Find(Hero(),forgeItemId);
@@ -901,8 +943,8 @@ public sealed class InventoryPanelUI : MonoBehaviour
             bannerText.text=hero==null?
                 "HÀNH TRANG TU SĨ\nBảo vật trong túi Càn Khôn" :
                 "HÀNH TRANG TU SĨ\n"+
-                "Cấp "+hero.currentLevel+"  ·  Bản đồ "+hero.mapNumber+
-                "  ·  Vàng "+hero.gold+"\n"+
+                "Cấp "+hero.currentLevel+"  ·  Vàng "+hero.gold+"\n"+
+                HudW3View.MapName(hero)+"  ·  Wave "+HudW3View.MapWave(hero)+"/5\n"+
                 "Tâm pháp · Võ học · Luyện chế: sẽ mở trong các giai đoạn tiếp theo";
         if(forgeButton!=null)forgeButton.gameObject.SetActive(selected!=null && selected.gear!=null);
         equipText.text=selected!=null && !selected.equipped && (selected.gear!=null || selected.legacy) ?
@@ -954,7 +996,7 @@ public sealed class InventoryPanelUI : MonoBehaviour
                 Place(topBanner,0f,0f,combatWidth,bannerHeight);
                 var bannerRect=(RectTransform)bannerText.transform;
                 Place(bannerRect,25f,18f,
-                    Mathf.Min(460f,combatWidth-48f),88f);
+                    Mathf.Min(460f,combatWidth-48f),Mathf.Min(132f,Mathf.Max(24f,bannerHeight-36f)));
                 Place(mapArtwork,0f,0f,combatWidth,bannerHeight);
                 Place(heroArtwork,combatWidth*.44f,8f,
                     combatWidth*.40f,Mathf.Max(32f,bannerHeight-14f));
@@ -1005,10 +1047,10 @@ public sealed class InventoryPanelUI : MonoBehaviour
         Place(FindButton("InventoryGrantMaterials"),9f,h-33f,left-8f,26f);
 
         const int cols=5;
-        int rows=h<540f?2:4;
+        int rows=h<360f?1:h<540f?2:4;
         bagPageSize=cols*rows;
         float cellW=(gridW-12f)/cols;
-        float cellH=Mathf.Max(25f,Mathf.Min(58f,(h-300f)/rows));
+        float cellH=rows==1?58f:Mathf.Max(25f,Mathf.Min(58f,(h-300f)/rows));
         float bagY=96f;
         for(int i=0;i<bagButtons.Length;i++)
             Place(bagButtons[i],gridX+(i%cols)*(cellW+2f),
@@ -1048,7 +1090,7 @@ public sealed class InventoryPanelUI : MonoBehaviour
         if(image==null)return;
         image.sprite=sprite;
         image.color=sprite!=null?Color.white:fallback;
-        image.type=sprite!=null && sliced ? Image.Type.Sliced : Image.Type.Simple;
+        image.type=sprite!=null && sliced && sprite.border!=Vector4.zero ? Image.Type.Sliced : Image.Type.Simple;
         image.preserveAspect=false;
         image.raycastTarget=false;
     }
@@ -1060,7 +1102,7 @@ public sealed class InventoryPanelUI : MonoBehaviour
         var image=rect.GetComponent<Image>();
         if(image==null)return;
         image.sprite=sprite;
-        image.type=sliced && sprite!=null?Image.Type.Sliced:Image.Type.Simple;
+        image.type=sliced && sprite!=null && sprite.border!=Vector4.zero?Image.Type.Sliced:Image.Type.Simple;
         image.preserveAspect=preserveAspect;
         image.color=new Color(1f,1f,1f,Mathf.Clamp01(opacity));
         image.raycastTarget=false;
@@ -1084,8 +1126,8 @@ public sealed class InventoryPanelUI : MonoBehaviour
             new Color(.078f,.145f,.16f,.96f),sliced);
         FrameArt(inventoryBacking,art==null?null:art.bagPanel,
             new Color(.055f,.115f,.13f,.96f),sliced);
-        OptionalArt(miniStatsBacking,art==null?null:art.miniStatsPanel,false,sliced);
-        OptionalArt(detailBacking,art==null?null:art.itemDetailsPanel,false,sliced);
+        FrameArt(miniStatsBacking,art==null?null:art.miniStatsPanel,new Color(.078f,.145f,.16f,.96f),sliced);
+        FrameArt(detailBacking,art==null?null:art.itemDetailsPanel,new Color(.055f,.115f,.13f,.96f),sliced);
         FrameArt(topBanner,art==null?null:art.heroAreaBackground,
             new Color(.048f,.105f,.119f,.965f),sliced);
 
@@ -1152,7 +1194,7 @@ public sealed class InventoryPanelUI : MonoBehaviour
             new Color(.16f,.29f,.30f,.98f),false);
 
         EntityDataSO hero=Hero();
-        InventoryMapArt map=art==null || hero==null?null:art.FindMap(hero.mapNumber);
+        InventoryMapArt map=art==null || hero==null?null:art.FindMapForHero(hero);
         bool preserve=art==null || art.preserveSplashAspect;
         OptionalArt(mapArtwork,map!=null && map.mapSplash!=null?map.mapSplash:
             art==null?null:art.defaultMapSplash,preserve,false,
@@ -1374,8 +1416,20 @@ public sealed class InventoryPanelUI : MonoBehaviour
         if(root==null)return;
         foreach(var text in root.GetComponentsInChildren<TextMeshProUGUI>(true))
         {
-            UIManager.ReadableText(text,Mathf.Min(15f,Mathf.Max(11f,lastWidth/105f)));
+            UIManager.ReadableText(text,Mathf.Clamp(root.rect.width/45f,11f,14f));
+            text.overflowMode=TextOverflowModes.Ellipsis;
+            var caption=text.rectTransform;
+            if(caption.anchorMin.Equals(Vector2.zero) && caption.anchorMax.Equals(Vector2.one))
+            {
+                // Short action rows still need one full font line after padding.
+                // This changes only caption space, never the button hit rectangle.
+                caption.offsetMin=new Vector2(caption.offsetMin.x,1f);
+                caption.offsetMax=new Vector2(caption.offsetMax.x,-1f);
+            }
             text.color=new Color(.89f,.91f,.83f,1f);
+            if(!GameManager.DevelopmentItemGrantsEnabled && text.transform.parent!=null &&
+                text.transform.parent.gameObject.name.StartsWith("InventoryGrant",StringComparison.Ordinal))
+                text.color=new Color(.47f,.54f,.53f,1f);
         }
         header.alignment=TextAlignmentOptions.Left;
         header.color=new Color(.88f,.75f,.48f,1f);
