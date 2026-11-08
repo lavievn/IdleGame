@@ -50,7 +50,11 @@ public sealed partial class WindowsDevelopmentAcceptanceV10:MonoBehaviour
     public static void ConfigureBeforeAwake(SaveManager manager)
     {
         if(RootArgument==null)return;
-        try{VerifyRoot();manager.ConfigureSaveDirectoryBeforeAwake(Path.Combine(root,"saves"));if(IsOwnedGateMode(Arg("-ownedV10Mode"))){var p=HeavenlyGateV13Fixtures.Profile();manager.ConfigureCultivationPlaytestBeforeAwake(p,false);manager.ConfigureTribulationFixtureBeforeAwake(HeavenlyGateV13Fixtures.Configuration(),HeavenlyGateV13Fixtures.Penalty());manager.GetComponent<GameManager>().ConfigureCultivationPlaytest(p);}Debug.Log("[WINDOWS V10] SAVE_DIRECTORY_BEFORE_AWAKE "+manager.SaveDirectory);}
+        try{VerifyRoot();manager.ConfigureSaveDirectoryBeforeAwake(Path.Combine(root,"saves"));
+            var mode=Arg("-ownedV10Mode");
+            if (mode=="v15playable" || mode=="v15playablereplay")
+                manager.ConfigureOwnedDevelopmentLoopBeforeAwake();
+            if(IsOwnedGateMode(Arg("-ownedV10Mode"))){var p=HeavenlyGateV13Fixtures.Profile();manager.ConfigureCultivationPlaytestBeforeAwake(p,false);manager.ConfigureTribulationFixtureBeforeAwake(HeavenlyGateV13Fixtures.Configuration(),HeavenlyGateV13Fixtures.Penalty());manager.GetComponent<GameManager>().ConfigureCultivationPlaytest(p);}Debug.Log("[WINDOWS V10] SAVE_DIRECTORY_BEFORE_AWAKE "+manager.SaveDirectory);}
         catch{Application.Quit(2);throw;}
     }
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)] static void Boot()
@@ -93,6 +97,17 @@ public sealed partial class WindowsDevelopmentAcceptanceV10:MonoBehaviour
         yield return new WaitForSecondsRealtime(1);
         gm=UnityEngine.Object.FindFirstObjectByType<GameManager>();saves=SaveManager.Instance;ui=UIManager.Instance;hero=UnityEngine.Object.FindFirstObjectByType<HeroController>();combat=UnityEngine.Object.FindFirstObjectByType<CombatManager>();space=UnityEngine.Object.FindFirstObjectByType<EnvironmentManager>();
         Require(gm!=null && saves!=null && ui!=null && Debug.isDebugBuild,"Real development Player managers");Require(!ui.inventoryLayoutDebug,"Player Inventory debug layout is off by default");AssertIsolated();result.saveDirectory=saves.SaveDirectory;
+        if(result.mode=="v15playable")
+        {
+            yield return Resize(800,450);
+            yield return Development015Smoke.Run(gm, saves, ui, combat, Evidence, Capture, Pass, true);
+            yield break;
+        }
+        if(result.mode=="v15playablereplay")
+        {
+            yield return Development015Smoke.Replay(gm, saves, ui, Pass);
+            yield break;
+        }
         if(result.mode=="v13trialreplay"){yield return DevelopmentV13GameplayScenario.Replay(gm,saves,ui,Pass);yield break;}
         if(result.mode=="v15trialprofile"){yield return ProfileTrialV15();yield break;}
         if(result.mode=="v15trialbalance"){yield return BalanceTrialV15();yield break;}

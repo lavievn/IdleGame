@@ -128,6 +128,8 @@ public sealed partial class MainGameFoundationProbe : MonoBehaviour
         Require(File.ReadAllText(Path.Combine(profileRoot,".owner"))==Marker,"Missing ownership marker.");
         Require(saveOwner!=null && !saveOwner.activeSelf,"Save owner must be inactive before Awake.");
         saves=saveOwner.GetComponent<SaveManager>();saves.ConfigureSaveDirectoryBeforeAwake(SavePath);
+        if (Array.IndexOf(Environment.GetCommandLineArgs(), "-foundationDevelopment015") >= 0)
+            saves.ConfigureOwnedDevelopmentLoopBeforeAwake();
         if(Array.IndexOf(Environment.GetCommandLineArgs(),"-foundationTribulationV13")>=0){var trialProfile=HeavenlyGateV13Fixtures.Profile();saves.ConfigureCultivationPlaytestBeforeAwake(trialProfile,false);saves.ConfigureTribulationFixtureBeforeAwake(HeavenlyGateV13Fixtures.Configuration(),HeavenlyGateV13Fixtures.Penalty());saveOwner.GetComponent<GameManager>().ConfigureCultivationPlaytest(trialProfile);CombatBalance.ResetDevProfiles();}
         if(Array.IndexOf(Environment.GetCommandLineArgs(),"-foundationCultivationV07")>=0 || Array.IndexOf(Environment.GetCommandLineArgs(),"-foundationCultivationV08")>=0) {
             bool balance=Array.IndexOf(Environment.GetCommandLineArgs(),"-foundationCultivationV08")>=0;
@@ -638,6 +640,15 @@ public sealed partial class MainGameFoundationProbe : MonoBehaviour
         // A personal DEVB file may otherwise hide the level-1 gear increment.
         // Reset only static state inside this disposable test process; no file write.
         if(Array.IndexOf(Environment.GetCommandLineArgs(),"-foundationCultivationV11C")>=0 || Array.IndexOf(Environment.GetCommandLineArgs(),"-foundationCultivationV11B")>=0 || Array.IndexOf(Environment.GetCommandLineArgs(),"-foundationCultivationV09UICap")>=0 || Array.IndexOf(Environment.GetCommandLineArgs(),"-foundationCultivationV09")>=0 || Array.IndexOf(Environment.GetCommandLineArgs(),"-foundationCultivationV08")>=0 || Array.IndexOf(Environment.GetCommandLineArgs(),"-foundationCultivationV07")>=0 || Array.IndexOf(Environment.GetCommandLineArgs(),"-foundationDualProgressionV06")>=0 || Array.IndexOf(Environment.GetCommandLineArgs(),"-foundationRealmV06")>=0 || Array.IndexOf(Environment.GetCommandLineArgs(),"-foundationDevelopmentV04")>=0 || Array.IndexOf(Environment.GetCommandLineArgs(),"-foundationRecoveryV03")>=0 || Array.IndexOf(Environment.GetCommandLineArgs(),"-foundationStabilityV03")>=0 || Array.IndexOf(Environment.GetCommandLineArgs(),"-foundationCameraV03")>=0 || Array.IndexOf(Environment.GetCommandLineArgs(),"-foundationGearDropV01")>=0 || Array.IndexOf(Environment.GetCommandLineArgs(),"-foundationProgressionV02")>=0)CombatBalance.ResetDevProfiles();
+        if (Array.IndexOf(Environment.GetCommandLineArgs(), "-foundationDevelopment015") >= 0)
+        {
+            phase = 1;
+            CombatBalance.ResetDevProfiles();
+            yield return Resize(800,450);
+            yield return Development015Smoke.Run(gm, saves, ui, combat, Evidence, Capture, Pass, false);
+            Status(1,"PASS");
+            yield break;
+        }
         yield return Resize(800,450);Call(gm,"InitHeroData",false);
         if(Array.IndexOf(Environment.GetCommandLineArgs(),"-foundationCultivationV07")>=0) {
             Require(gm.Cultivation!=null && gm.Cultivation.Current.Foundation.Amount==0 && gm.Cultivation.Current.Reserve.Amount==0,"New session starts at zero independently of Level");
