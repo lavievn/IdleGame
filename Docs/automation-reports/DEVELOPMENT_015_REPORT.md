@@ -1,5 +1,41 @@
 # Bách Luyện Tiên Đồ — Development 0.1.5
 
+## First Playable Cultivation Loop · 08/11/2026
+
+**DEV BUILD · cân bằng tạm.** MainGame trên Windows Editor và Windows Development Player tự mở vòng Luyện Khí → Viên mãn → Độ Kiếp → Trúc Cơ Sơ kỳ. Hero tự tiến đến tường, đánh bằng vũ khí đang trang bị và chịu Thiên Lôi thật. Trial dùng bầu trời A/B, terrain, tường và hai BGM của 0.1.4. Gate retail vẫn đóng.
+
+- **Thắng** khi phá tường và Hero còn sống. Trúc Cơ bắt đầu với căn cơ 0, giữ Qi dự trữ, dùng Capacity mới và tiếp tục tu luyện. Độ Kiếp giữ nguyên Level/EXP và không cấp chiến lợi phẩm.
+- **Thua** khi Hero chết, kể cả double KO. Hero hồi sinh cùng map, giữ đại cảnh giới và Qi dự trữ. Phạt chỉ trừ căn cơ, tối đa một tiểu cảnh giới ở Luyện Khí/Trúc Cơ và hai từ Kim Đan trở lên. Thành bại dựa vào HP sau combat, không có mốc Level bắt buộc hay lượt quay tỷ lệ thắng.
+- **Thoát giữa trận** bị chặn qua menu và yêu cầu thoát của Windows Player khi trận còn diễn ra. Sau gián đoạn, **Tiếp tục → Nhận thua** cho thấy lượng căn cơ sẽ mất và dùng chính sách thua của trận để hồi sinh. **Hủy** giữ nguyên checkpoint. Tải ô khác và Chơi mới bị chặn khi AutoSave còn Active. Sau quyết toán, các ô lưu tay tiếp tục là các mốc riêng. Giao dịch chỉ công bố kết quả sau khi ghi cùng snapshot, kiểm tra hash và đối soát bản sao lưu.
+
+### Cấu hình tạm và cách chơi
+
+Chỉnh [DevelopmentCultivation015.json](../../Assets/Resources/DevelopmentCultivation015.json) rồi chạy lại Editor hoặc build lại Player. Cân bằng hiện tại dùng ngưỡng Luyện Khí `0 / 45 / 100 / 180` và Trúc Cơ `0 / 120 / 290 / 510`. Trúc Cơ có trần cơ sở hấp thu/luyện hóa `1,8 / 1,25` mỗi giây. Thiên Quan có 260 HP, 16 giáp và kháng phép, sát thương thô 20, nhịp 1,25 giây, cảnh báo 0,35 giây. Phạt yêu cầu 35 căn cơ trước khi áp giới hạn.
+
+Mở `D:/IdleGame/Builds/Development015Playable/build/IdleGameV10.exe`. Bấm **Chơi mới** hoặc **Tiếp tục**, để Hero chạy tự động rồi mở **Nhân vật** để theo dõi căn cơ. Ở **Viên mãn**, bấm **Độ Kiếp** ở cuối bảng. Nếu cần đổi vũ khí, dùng **Hòm đồ** trước trận. Khi chơi thử, ghi lại thời gian tới Viên mãn, vũ khí và HP còn lại, độ dễ thấy cảnh báo sét và nhịp tu luyện sau khi trở về map.
+
+Save chơi DEV nằm tại `D:/IdleGame/Playtest/Development015/<dấu vân tay cấu hình>/Saves`. Mỗi cân bằng có thư mục riêng, nên chỉnh cấu hình có thể mở một lượt chơi mới. Khôi phục đúng nội dung cấu hình cũ để mở lại lượt cũ. Editor và Player dùng chung lượt DEV theo cấu hình, mỗi lần chỉ một tiến trình mở được. Save cá nhân và các fixture nằm ở đường dẫn riêng.
+
+### Kiểm tra và bàn giao
+
+| Lớp | Kết quả |
+| --- | --- |
+| Unity 6000.5.0f1 | Biên dịch thành công. Windows Development Mono2x build thành công, 0 lỗi, 58 cảnh báo. |
+| MainGame | Tu luyện thật từ New ở 6× thời gian đến bình cảnh. Kiếm thắng, tay không thua và hồi sinh. Ghi lỗi trước Replace giữ nguyên checkpoint, thử lại mới công bố kết quả. Đã xem ảnh HUD và Nhân vật ở 800×450. |
+| Windows Player | Kiếm, Cung và Trượng thắng. Tay không thua và hồi sinh. Video A/B có frame, VFX/RenderTexture thu hồi, BGM riêng dừng sau trận. Thử yêu cầu thoát qua Application.wantsToQuit. |
+| Windows process mới | Active giữ nguyên khi Hủy hoặc ghi lỗi. Nhận thua ghi đúng một lần; tải lại cả Save thắng và thua không áp kết quả lần hai. Gián đoạn được mô phỏng bằng fixture. |
+| Windows Player mặc định | Chạy EXE bình thường từ build, tự mở cấu hình DEV đúng đường dẫn trên D. Không tạo ô lưu trong lượt mở màn này. |
+| Mono/UnityStub | 37 kiểm tra domain Thiên Quan, gồm double KO và giới hạn trừ căn cơ. |
+
+MainGame và Windows dùng Save thử nghiệm có dấu sở hữu. Các lượt đánh dùng thông số Hero thử nghiệm để tạo kết quả thắng/thua, với cùng Thiên Quan và profile DEV như bản chơi. Thao tác nút qua handler và vùng bấm. Chưa kiểm tra chuột/phím thật, nghe BGM bằng tai, build retail hoặc mất điện giữa lúc ghi. Log có cảnh báo video mở màn đã biết; Editor có lỗi Search đã biết.
+
+- Nhánh `development_0.1.3`, HEAD ban đầu `da48d70768ded26de8e8e844220d10caf2e137d9`. Commit mã `8f78009791721ebebe15fb5ec8ca2dc3479b7c53`, commit kiểm thử và nguồn của build `4063b65298f2b22a628516e5ca53b1e90efffe94`.
+- Bằng chứng MainGame tại `D:/IdleGame/Project/.utmp/foundation-649e1bf7237749158a1a0ef91b0d1931/evidence`. Bằng chứng Windows và SHA bàn giao cuối trong `D:/IdleGame/Builds/Development015Playable/handoff.json`.
+- SHA-256 `Assembly-CSharp.dll` là `6e465461f277f1a580ea0d2ad602aa66dd125fc7d0aaa89317f89d28c5a6a081`.
+
+<details>
+<summary>Kiểm toán và đề xuất trước khi mở vòng chơi DEV</summary>
+
 ## A. Audit baseline
 
 Worktree `D:/IdleGame/Project`, nhánh `development_0.1.3`, baseline sạch `8ecf3c4e2eb8c99ed7c2fd7087025bb113303580`. Handoff cuối 0.1.4 khớp HEAD. Chín commit từ `ead6401` bao phủ môi trường, tia sét procedural, đường vào ải 800 đơn vị, cả hai BGM và lựa chọn theo encounter. Bảy asset trong manifest khớp SHA-256. Audit xác nhận video A/B, PNG dự phòng, target tĩnh cuộn cùng terrain, tỷ lệ 300% và hạ 100 px, điểm tường ổn định ở 35%, một AudioSource có loop và cả hai bài. Transaction fixture, Save isolation và bằng chứng UI bốn cỡ được đối chiếu. [Báo cáo 0.1.4](DEVELOPMENT_014_REPORT.md)
@@ -66,3 +102,5 @@ Các log engine vẫn có cảnh báo timestamp H.264 và cảnh báo môi trư�
 Bằng chứng ở `D:/IdleGame/Automation/v015/evidence`. Handoff ngoài repo tại `D:/IdleGame/Automation/v015/handoff.json`, gồm SHA commit báo cáo cuối. Build, hồ sơ Save kiểm thử và log nằm ngoài repo.
 
 Ưu tiên đề xuất cho 0.1.6 là chốt hành vi Active khi gián đoạn, duyệt penalty/successor và chạy pilot cân bằng nhiều seed cùng phép đo CPU/GPU bỏ giới hạn frame. Gate chỉ nên được xem xét sau các quyết định và phép thử tương thích Save.
+
+</details>
