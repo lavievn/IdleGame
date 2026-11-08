@@ -21,7 +21,8 @@ public partial class GameManager
     }
     void ResolveProductionCultivation()
     {
-        if(cultivationProfile==null && saveManager!=null && saveManager.CultivationProfile!=null && saveManager.CultivationProfile.IsProduction)cultivationProfile=saveManager.CultivationProfile;
+        if(cultivationProfile==null && saveManager!=null && saveManager.CultivationProfile!=null && (saveManager.CultivationProfile.IsProduction || saveManager.HasDevelopmentCultivationLoop))
+            cultivationProfile=saveManager.CultivationProfile;
     }
     void InitializeCultivation()
     {

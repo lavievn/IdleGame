@@ -1071,11 +1071,17 @@ public partial class UIManager : MonoBehaviour
     // --- LOGIC THOÁT GAME ---
     public void ClickExitButton()
     {
+        if (GameForUI()?.BlockExitDuringTrial() == true) return;
         if (exitConfirmPopup != null) exitConfirmPopup.SetActive(true);
     }
 
     public void ConfirmExit()
     {
+        if (GameForUI()?.BlockExitDuringTrial() == true)
+        {
+            CancelExit();
+            return;
+        }
         Application.Quit(); // Lệnh này chạy sẽ ngầm gọi Auto-save trong GameManager
     }
 

@@ -45,13 +45,16 @@ public partial class SaveManager : MonoBehaviour
 #if DEVELOPMENT_BUILD && UNITY_STANDALONE_WIN && !UNITY_EDITOR
         WindowsDevelopmentAcceptanceV10.ConfigureBeforeAwake(this);
 #endif
-        awakeStarted = true;
         // Singleton pattern chuẩn
         if (Instance != null && Instance != this)
         {
             Destroy(gameObject);
             return;
         }
+#if UNITY_5_3_OR_NEWER && (UNITY_EDITOR || DEVELOPMENT_BUILD)
+        ConfigureDefaultDevelopmentLoop();
+#endif
+        awakeStarted = true;
         if (customSaveDirectoryRequested)
         {
             if (string.IsNullOrEmpty(saveDirectory))
@@ -72,6 +75,10 @@ public partial class SaveManager : MonoBehaviour
             Directory.CreateDirectory(saveDirectory);
         }
     }
+
+#if UNITY_5_3_OR_NEWER && (UNITY_EDITOR || DEVELOPMENT_BUILD)
+    private void OnDestroy() => developmentProfileLock?.Dispose();
+#endif
 
     // =========================================================
     // CÁC HÀM ADAPTER ĐỂ TƯƠNG THÍCH HOÀN TOÀN VỚI GAMEMANAGER CŨ
@@ -97,7 +104,7 @@ public partial class SaveManager : MonoBehaviour
     // Đổi thành bool để tương thích với GameManager hiện tại
     public bool SaveGame(EntityDataSO entityData, SaveSlot slot)
     {
-        if (entityData == null) return false;
+        if (entityData == null || HasInterruptedDevelopmentTrial()) return false;
         string trialReason;if(!ValidateTrial(entityData,out trialReason)||(!string.IsNullOrEmpty(entityData.tribulationJson)&&TribulationSaveTransaction.Read(entityData.tribulationJson).outcome=="Active")){Debug.LogWarning("[SaveManager] Trial save refused: "+trialReason);return false;}
         if(!ValidateCultivationComponent(entityData.cultivationJson)){Debug.LogWarning("[SaveManager] Refusing cultivation save: "+LastCultivationFailure);return false;}
         string reason;
@@ -123,7 +130,7 @@ public partial class SaveManager : MonoBehaviour
         if(CultivationProfile!=null && CultivationProfile.IsProduction && NeedsMigrationReceiptRecovery(slot))return false;
         return TryLoadSnapshot(entityData,LoadGame(slot.ToString()),slot,false);
     }
-    private bool TryLoadSnapshot(EntityDataSO entityData,string jsonData,SaveSlot slot,bool allowLegacy)
+    private bool TryLoadSnapshot(EntityDataSO entityData,string jsonData,SaveSlot slot,bool allowLegacy,bool allowActiveTrial=false)
     {
         if(entityData==null)return false;
         if (!string.IsNullOrEmpty(jsonData))
@@ -145,7 +152,7 @@ public partial class SaveManager : MonoBehaviour
                 string cultivationComponent;
                 if(!ValidateCultivationJson(jsonData,out cultivationComponent,allowLegacy)){Debug.LogWarning("[SaveManager] Refusing cultivation load: "+LastCultivationFailure);return false;}
                 string trialComponent;if(!ReadTrialRoot(jsonData,out trialComponent,out reason)||!TribulationSaveTransaction.Validate(trialComponent,cultivationComponent,CultivationProfile,TrialConfiguration,TrialPenalty,out reason))return false;
-                if(!string.IsNullOrEmpty(trialComponent)&&TribulationSaveTransaction.Read(trialComponent).outcome=="Active"){Debug.LogWarning("[SaveManager] TrialRecoveryRequired; checkpoint retained without award or penalty.");return false;}
+                if(!allowActiveTrial&&!string.IsNullOrEmpty(trialComponent)&&TribulationSaveTransaction.Read(trialComponent).outcome=="Active"){Debug.LogWarning("[SaveManager] TrialRecoveryRequired; checkpoint retained without award or penalty.");return false;}
                 entityData.tribulationJson="";
                 // Missing Realm fields must not inherit the ScriptableObject template.
                 entityData.cultivationJson=""; // Never inherit an inline template/session snapshot.

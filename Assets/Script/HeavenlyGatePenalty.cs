@@ -4,7 +4,7 @@ namespace TuTienCore
     public sealed class HeavenlyGatePenaltyPolicy
     {
         public readonly string Id;public readonly int Version;public readonly double RequestedLoss;
-        public HeavenlyGatePenaltyPolicy(string id,int version,double requestedLoss){if(id==null||!id.StartsWith("fixture:",StringComparison.Ordinal)||version<1||!CultivationNumber.NonNegative(requestedLoss)||requestedLoss<=0)throw new ArgumentException("Explicit versioned fixture penalty required.");Id=id;Version=version;RequestedLoss=requestedLoss;}
+        public HeavenlyGatePenaltyPolicy(string id,int version,double requestedLoss){if(id==null||!(id.StartsWith("fixture:",StringComparison.Ordinal)||id=="development:gate-penalty-015")||version<1||!CultivationNumber.NonNegative(requestedLoss)||requestedLoss<=0)throw new ArgumentException("Explicit versioned gate penalty required.");Id=id;Version=version;RequestedLoss=requestedLoss;}
         public double Loss(CultivationRealmEvaluator catalog,CultivationSnapshot state)
         {
             var actual=catalog.Evaluate(state.Foundation.ActualRealmId,state.Foundation.Amount);CultivationRealmDefinition realm;if(!actual.IsValid||!catalog.TryGet(actual.ActualRealmId,out realm))throw new ArgumentException("Actual realm required");

@@ -1,0 +1,17 @@
+{
+  "version": 1,
+  "luyenKhiThresholds": [0, 45, 100, 180],
+  "trucCoThresholds": [0, 120, 290, 510],
+  "trucCoAbsorption": 1.8,
+  "trucCoRefinement": 1.25,
+  "foundationLoss": 35,
+  "lightningWarningSeconds": 0.35,
+  "gate": {
+    "hp": 260,
+    "armor": 16,
+    "magicResistance": 16,
+    "damagePerStrike": 20,
+    "strikeInterval": 1.25,
+    "targetRange": 200
+  }
+}

@@ -7,9 +7,13 @@ namespace TuTienCore
         public int schemaVersion,version,hp,damagePerStrike,receiptLifetimeSteps;
         public string id,title,cultivationConfiguration,sourceRealm,targetRealm,penaltyPolicyId,phase;
         public double strikeInterval,targetRange,armor,magicResistance;
+        // DEV balance is already fingerprinted by cultivationConfiguration. Keep old fixture receipt hashes.
+        [NonSerialized] public double warningSeconds;
         public bool IsFixture=>id!=null&&id.StartsWith("fixture:",StringComparison.Ordinal);
-        public bool IsValid=>schemaVersion==1&&version>0&&IsFixture&&!string.IsNullOrWhiteSpace(title)&&!string.IsNullOrWhiteSpace(cultivationConfiguration)&&!string.IsNullOrWhiteSpace(sourceRealm)&&!string.IsNullOrWhiteSpace(targetRealm)&&sourceRealm!=targetRealm&&!string.IsNullOrWhiteSpace(penaltyPolicyId)&&phase=="SealCombat"&&hp>0&&damagePerStrike>0&&receiptLifetimeSteps>=0&&receiptLifetimeSteps<=120&&CultivationNumber.NonNegative(strikeInterval)&&strikeInterval>=.05&&strikeInterval<=60&&CultivationNumber.NonNegative(targetRange)&&targetRange>0&&CultivationNumber.NonNegative(armor)&&CultivationNumber.NonNegative(magicResistance);
-        public HeavenlyGateConfiguration Copy()=>new HeavenlyGateConfiguration{schemaVersion=schemaVersion,version=version,id=id,title=title,cultivationConfiguration=cultivationConfiguration,sourceRealm=sourceRealm,targetRealm=targetRealm,penaltyPolicyId=penaltyPolicyId,phase=phase,hp=hp,damagePerStrike=damagePerStrike,receiptLifetimeSteps=receiptLifetimeSteps,strikeInterval=strikeInterval,targetRange=targetRange,armor=armor,magicResistance=magicResistance};
+        public bool IsDevelopment=>id=="development:heavenly-gate-015";
+        public bool IsValid=>schemaVersion==1&&version>0&&(IsFixture||
+            IsDevelopment&&CultivationNumber.NonNegative(warningSeconds)&&warningSeconds>0&&warningSeconds<=strikeInterval/2)&&!string.IsNullOrWhiteSpace(title)&&!string.IsNullOrWhiteSpace(cultivationConfiguration)&&!string.IsNullOrWhiteSpace(sourceRealm)&&!string.IsNullOrWhiteSpace(targetRealm)&&sourceRealm!=targetRealm&&!string.IsNullOrWhiteSpace(penaltyPolicyId)&&phase=="SealCombat"&&hp>0&&damagePerStrike>0&&receiptLifetimeSteps>=0&&receiptLifetimeSteps<=120&&CultivationNumber.NonNegative(strikeInterval)&&strikeInterval>=.05&&strikeInterval<=60&&CultivationNumber.NonNegative(targetRange)&&targetRange>0&&CultivationNumber.NonNegative(armor)&&CultivationNumber.NonNegative(magicResistance);
+        public HeavenlyGateConfiguration Copy()=>new HeavenlyGateConfiguration{schemaVersion=schemaVersion,version=version,id=id,title=title,cultivationConfiguration=cultivationConfiguration,sourceRealm=sourceRealm,targetRealm=targetRealm,penaltyPolicyId=penaltyPolicyId,phase=phase,hp=hp,damagePerStrike=damagePerStrike,receiptLifetimeSteps=receiptLifetimeSteps,strikeInterval=strikeInterval,targetRange=targetRange,armor=armor,magicResistance=magicResistance,warningSeconds=warningSeconds};
     }
     public enum HeavenlyGateOutcome { Fighting, Success, Failure }
     // The approved v1.3 seal fight replaces no historical v1.2 two-phase fixtures.
@@ -20,7 +24,7 @@ namespace TuTienCore
         public HeavenlyGateOutcome Outcome {get;private set;}public long Step {get;private set;}public double Seconds {get;private set;}
         public HeavenlyGateEncounter(CultivationSession session,HeavenlyGateConfiguration config,Guid encounter,Guid attempt,Guid target,int life)
         {
-            if(session==null||config==null||!config.IsValid||life<=0||encounter==Guid.Empty||attempt==Guid.Empty||target==Guid.Empty||session.CanAttemptBreakthrough()!=CultivationReason.None||session.Current.Foundation.ActualRealmId!=config.sourceRealm)throw new ArgumentException("Eligible actual session and complete explicit fixture configuration required");
+            if(session==null||config==null||!config.IsValid||life<=0||encounter==Guid.Empty||attempt==Guid.Empty||target==Guid.Empty||session.CanAttemptBreakthrough()!=CultivationReason.None||session.Current.Foundation.ActualRealmId!=config.sourceRealm)throw new ArgumentException("Eligible actual session and complete explicit gate configuration required");
             CultivationRealmDefinition source,destination;if(!session.Realms.TryGet(config.sourceRealm,out source)||!session.Realms.TryGet(config.targetRealm,out destination)||destination.CombatTier<=source.CombatTier)throw new ArgumentException("Known ascending successor required");
             this.session=session;this.config=config.Copy();EncounterId=encounter;AttemptId=attempt;TargetId=target;Owner=session.OwnerId;Epoch=session.Epoch;HeroLife=life;RealmRevision=session.RealmRevision;SourceRealm=config.sourceRealm;
         }

@@ -112,7 +112,7 @@ public partial class GameManager : MonoBehaviour
     // Button sequence: 1 Hero -> 2 Heroes -> 3 Heroes -> 1 Hero.
     public void CycleTestCompanions()
     {
-        if (!IsGameplayHUDVisible || HasPendingConfirmation ||
+        if (HasTribulationLiability || !IsGameplayHUDVisible || HasPendingConfirmation ||
             Time.timeScale == 0f || combatManager == null ||
             !combatManager.HasLivingHero || environmentManager == null ||
             environmentManager.BattleArea == null || heroController == null ||
@@ -374,7 +374,7 @@ public partial class GameManager : MonoBehaviour
             ?"Chưa có sát thương":string.Join("\n",recentDamage.ToArray());
     }
     public EntityDataSO HeroData => runtimeHeroData;
-    private enum MenuChoice { None, Continue, NewGame , CultivationUpgrade }
+    private enum MenuChoice { None, Continue, NewGame, CultivationUpgrade, InterruptedTrial }
     private MenuChoice pendingChoice;
     private SaveSlot continueSlot;
     private bool manualSelection;
@@ -418,7 +418,19 @@ public partial class GameManager : MonoBehaviour
         (preGameUI == null || !preGameUI.activeInHierarchy) &&
         (gameOverPanel == null || !gameOverPanel.activeInHierarchy) &&
         (confirmationPopup == null || !confirmationPopup.activeInHierarchy);
-    public bool CanContinue => saveManager != null && (manualSelection ? saveManager.HasSave(continueSlot) : saveManager.TryGetLatestSlot(out continueSlot));
+    public bool CanContinue
+    {
+        get
+        {
+            if (saveManager == null) return false;
+            if (saveManager.HasInterruptedDevelopmentTrial())
+            {
+                continueSlot = SaveSlot.AutoSave;
+                return true;
+            }
+            return manualSelection ? saveManager.HasSave(continueSlot) : saveManager.TryGetLatestSlot(out continueSlot);
+        }
+    }
     public bool HasSaveSlot(SaveSlot slot) => saveManager != null && saveManager.HasSave(slot);
 
     void Start()
@@ -894,7 +906,7 @@ public partial class GameManager : MonoBehaviour
     private bool TryLoadSlot(SaveSlot slot, bool deploy)
     {
         if(HasTribulationLiability)return false;
-        if (HasPendingConfirmation) return false;
+        if (HasPendingConfirmation || (saveManager != null && saveManager.HasInterruptedDevelopmentTrial())) return false;
         if (saveManager == null || !saveManager.HasSave(slot)) { UpdateEventLog("Ô lưu này chưa có dữ liệu."); return false; }
         if(saveManager.NeedsCultivationMigration(slot)){RequestCultivationMigration(slot,deploy,false);return false;}
 
@@ -1055,6 +1067,7 @@ public partial class GameManager : MonoBehaviour
         if(HasTribulationLiability)return;
         if (hasDeployed || HasPendingConfirmation) return;
         if (!CanContinue) { UpdateEventLog("Không tìm thấy bản lưu để tiếp tục."); return; }
+        if (OfferInterruptedTrialRecovery()) return;
         pendingChoice = MenuChoice.Continue;
         int level,map;
         string name = continueSlot == SaveSlot.AutoSave ? "Tự động" :
@@ -1069,6 +1082,7 @@ public partial class GameManager : MonoBehaviour
     {
         if(HasTribulationLiability)return;
         if (HasPendingConfirmation) return;
+        if (OfferInterruptedTrialRecovery()) return;
         pendingChoice = MenuChoice.NewGame;
         ShowConfirmation("Chơi mới sẽ đặt lại ô lưu tự động để bắt đầu nhân vật mới. Hai ô lưu thủ công được giữ nguyên. Bạn có muốn tiếp tục?");
     }
@@ -1082,6 +1096,7 @@ public partial class GameManager : MonoBehaviour
         if(HasTribulationLiability)return;
         if (HasPendingConfirmation) return;
         OnNewGameClicked();
+        if (pendingChoice != MenuChoice.NewGame) return;
         ShowConfirmation("Đặt lại nhân vật sẽ tạo nhân vật cấp 1 mới và thay ô lưu tự động. Hai ô lưu thủ công được giữ nguyên. Bạn có muốn tiếp tục?");
     }
     public void OnConfirmResetClicked()
@@ -1089,6 +1104,7 @@ public partial class GameManager : MonoBehaviour
         if(HasTribulationLiability)return;
         var choice = pendingChoice;
         if(choice==MenuChoice.CultivationUpgrade){ConfirmCultivationMigration();return;}
+        if(choice==MenuChoice.InterruptedTrial){ConfirmInterruptedTrialRecovery();return;}
         if (choice == MenuChoice.None) return;
         bool fromTitle=preGameUI!=null && preGameUI.activeInHierarchy;
         pendingChoice = MenuChoice.None;
@@ -1154,6 +1170,7 @@ public partial class GameManager : MonoBehaviour
     public void OnCancelResetClicked()
     {
         if(IsCultivationMigrationPending){CancelCultivationMigration();return;}
+        interruptedTrialExpectedHash = null;
         pendingChoice = MenuChoice.None;
         if (confirmationPopup != null) confirmationPopup.SetActive(false);
     }
@@ -1365,6 +1382,9 @@ public partial class GameManager : MonoBehaviour
 
     private void OnDisable()
     {
+#if DEVELOPMENT_BUILD && !UNITY_EDITOR
+        Application.wantsToQuit -= AllowQuitDuringTrial;
+#endif
         if(HasTribulationLiability){trialInterrupted=true;LastTribulationNotice="Trial bị gián đoạn · checkpoint giữ nguyên, cần kiểm tra";}
         CancelCultivationMigration(false);
         DisposeCultivation();
@@ -1384,6 +1404,9 @@ public partial class GameManager : MonoBehaviour
     }
     private void OnEnable()
     {
+#if DEVELOPMENT_BUILD && !UNITY_EDITOR
+        Application.wantsToQuit += AllowQuitDuringTrial;
+#endif
         if(hasDeployed)EnsureCultivationBinding();
         if(combatManager!=null)combatManager.ResumeLootEncounter();
         if(!resumeEntryWave)return;

@@ -18,14 +18,14 @@ public partial class UIManager
             rates="\nTrần hấp thu: "+QiNumber(cap.Absorption)+"/s · thực: "+QiNumber(flow.AbsorptionPerSecond)+"/s"+
                 "\nTrần luyện hóa: "+QiNumber(cap.Refinement)+"/s · thực: "+QiNumber(flow.RefinementPerSecond)+"/s";
         }else rates="\nHấp thu: "+QiNumber(p.EnvironmentalQiPerSecond(h.worldMapId))+"/s · Luyện hóa: ≤"+QiNumber(p.Rules.RefinementRate)+"/s";
-        return (p.IsProduction?"Tu luyện · ":(p.SaveVersion==1?"[PLAYTEST v":"[THỬ NGHIỆM v")+p.Version+"] ")+"Level "+h.currentLevel+" · EXP: "+h.currentExp+"/"+h.expToNextLevel+
+        return (gm.IsDevelopmentTrial?"[DEV 0.1.5] ":p.IsProduction?"Tu luyện · ":(p.SaveVersion==1?"[PLAYTEST v":"[THỬ NGHIỆM v")+p.Version+"] ")+"Level "+h.currentLevel+" · EXP: "+h.currentExp+"/"+h.expToNextLevel+
             "\n"+p.RealmName(s.Foundation.ActualRealmId)+" · "+stage+
             "\nTu vi căn cơ: "+QiNumber(s.Foundation.Amount)+" / "+QiNumber(definition.Thresholds[3])+"\n"+
             "\nLinh khí dự trữ: "+QiNumber(s.Reserve.Amount)+
-            (p.IsProduction?" · Qi map: "+QiNumber(p.EnvironmentalQiPerSecond(h.worldMapId))+"/s":" · Mật độ: "+QiNumber(p.Density(h.worldMapId)))+
+            (p.IsProduction||gm.IsDevelopmentTrial?" · Qi map: "+QiNumber(p.EnvironmentalQiPerSecond(h.worldMapId))+"/s":" · Mật độ: "+QiNumber(p.Density(h.worldMapId)))+
             rates+
             "\nLinh lực: "+QiNumber(s.Energy.Current)+" / "+QiNumber(p.Rules.EnergyMaximum(s.Injury.Severity))+
-            "\nHuyết khóa · Điểm: "+h.statPoints+(p.Rules.CapacityCatalog!=null?" · thực = bước gần nhất":"")+"\nĐộ Kiếp: "+(gm.TribulationLockedReason==""?"[FIXTURE] sẵn sàng":gm.TribulationLockedReason);
+            "\nHuyết khóa · Điểm: "+h.statPoints+(p.Rules.CapacityCatalog!=null?" · thực = bước gần nhất":"")+"\nĐộ Kiếp: "+(gm.TribulationLockedReason==""?(gm.IsDevelopmentTrial?"Sẵn sàng":"[FIXTURE] sẵn sàng"):gm.TribulationLockedReason);
     }
     void LayoutCultivationTrack(float width)
     {

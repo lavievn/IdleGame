@@ -98,7 +98,8 @@ public partial class CombatManager
         gateHeroLife = primaryHeroState.LifeVersion;
         gateHeroData = primaryHeroState.Data;
         gateBattleVersion = battleVersion;
-        gateSchedule = new HeavenlyLightningSchedule(config.strikeInterval, trialLightningWarningSeconds);
+        gateSchedule = new HeavenlyLightningSchedule(config.strikeInterval,
+            config.IsDevelopment ? config.warningSeconds : trialLightningWarningSeconds);
 
         // As with a normal wave, do not bank movement from the transition frame.
         gateExplorationFrame = Time.frameCount;
@@ -107,7 +108,11 @@ public partial class CombatManager
 #if UNITY_5_3_OR_NEWER
         var space = EnvironmentManager.Instance;
         var foot = space.Position(primaryHeroState.Controller.heroRect);
-        trialView = HeavenlyTrialView.Install(space, foot.y, trialSky);
+        // Presentation selects a sky independently of Combat's random state.
+        var sky = config.IsDevelopment
+            ? ((encounter.ToByteArray()[0] & 1) == 0 ? HeavenlyTrialView.SkyVariant.A : HeavenlyTrialView.SkyVariant.B)
+            : trialSky;
+        trialView = HeavenlyTrialView.Install(space, foot.y, sky);
 #endif
     }
 
