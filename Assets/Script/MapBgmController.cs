@@ -1,11 +1,13 @@
 using UnityEngine;
 using TuTienCore;
 
-// Runtime music controller. Two AudioSources provide 10-second crossfades.
+// Runtime music controller. Two AudioSources cover title, regional, and trial crossfades.
 // The gameplay does not depend on the catalog: missing groups stay silent.
 public sealed class MapBgmController : MonoBehaviour
 {
-    private const float FadeSeconds = 10f;
+    private const float TransitionSeconds = 1.25f;
+    private const float PlaylistFadeSeconds = 10f;
+    private const int TrialGroup = -3;
     private readonly AudioSource[] sources = new AudioSource[2];
     private MapBgmCatalog catalog;
     private GameManager gameManager;
@@ -13,14 +15,15 @@ public sealed class MapBgmController : MonoBehaviour
     private int currentGroup = -2;
     private AudioClip previousTrack;
     private bool fading;
-    private float elapsed, outgoingWeight;
+    private float elapsed, fadeDuration;
     private bool missingCatalogWarned;
     private AudioSource trialSource;
     private AudioClip[] trialTracks;
     // Choosing music must not advance Unity's combat random sequence.
     private System.Random trialTrackRandom = new System.Random();
     private bool trialMusicActive;
-    private int pausedMapSources;
+    private AudioClip trialClip;
+    private readonly System.Random playlistRandom = new System.Random();
 
     public static MapBgmController Instance { get; private set; }
     [Range(0f, 1f)] public float musicVolume = .6f;
@@ -102,7 +105,8 @@ public sealed class MapBgmController : MonoBehaviour
         if (gameManager == null) return 0;
         if (gameManager.preGameUI != null && gameManager.preGameUI.activeInHierarchy)
             return -1;
-        if (!gameManager.IsGameplayHUDVisible || gameManager.HeroData == null)
+        // Keep the regional theme during entry, confirmation and Retry.
+        if (gameManager.HeroData == null)
             return 0;
         return GroupForRegion(gameManager.HeroData.regionTheme);
     }
@@ -128,7 +132,7 @@ public sealed class MapBgmController : MonoBehaviour
             if (tracks[i] != null && (valid == 1 || tracks[i] != previousTrack))
                 choices++;
         if (choices == 0) return tracks[0];
-        int selected = Random.Range(0, choices);
+        int selected = playlistRandom.Next(choices);
         for (int i = 0; i < tracks.Length; i++)
         {
             if (tracks[i] == null || (valid > 1 && tracks[i] == previousTrack)) continue;
@@ -137,147 +141,96 @@ public sealed class MapBgmController : MonoBehaviour
         return tracks[0];
     }
 
-    private void CrossfadeToNext()
+    private void CrossfadeToNext(float duration)
     {
-        AudioSource outgoing = sources[activeIndex];
         int nextIndex = 1 - activeIndex;
-        AudioSource incoming = sources[nextIndex];
-        incoming.Stop();
-        incoming.clip = PickTrack();
-        incoming.loop = currentGroup == -1;
+        var incoming = sources[nextIndex]; // Previous outgoing channel was cleared after its fade.
+        incoming.clip = currentGroup == TrialGroup ? trialClip : PickTrack();
+        incoming.loop = currentGroup == -1 || currentGroup == TrialGroup;
         incoming.volume = 0f;
+        if (currentGroup == TrialGroup) trialSource = incoming;
         if (incoming.clip != null)
         {
             incoming.Play();
             previousTrack = incoming.clip;
         }
-
-        // When transitioning during a previous fade, retain the currently
-        // audible channel and smoothly replace the second channel.
-        outgoingWeight = musicVolume > .0001f
-            ? Mathf.Clamp01(outgoing.volume / musicVolume)
-            : (outgoing.isPlaying ? 1f : 0f);
+        fading = incoming.clip != null || sources[activeIndex].isPlaying;
         activeIndex = nextIndex;
         elapsed = 0f;
-        fading = incoming.clip != null || outgoing.isPlaying;
+        fadeDuration = duration;
     }
 
     private void Update()
     {
-        musicVolume=CurrentVolume; // Inspector mirror, not a second settings store.
-        if (UpdateTrialMusic()) return;
-        if (catalog == null)
+        musicVolume = CurrentVolume;
+        var combat = CombatManager.Instance;
+        bool inTrial = gameManager != null && gameManager.HasTribulationLiability &&
+            combat != null && combat.HeavenlyGateActive;
+        if (inTrial && !trialMusicActive) trialClip = ChooseTrialMusic();
+        trialMusicActive = inTrial;
+        if (catalog == null && !missingCatalogWarned)
         {
             catalog = Resources.Load<MapBgmCatalog>("MapBgmCatalog");
-            if (catalog == null)
-            {
-                if (!missingCatalogWarned)
-                {
-                    Debug.LogWarning("[BGM] MapBgmCatalog not found. Import OGG files into Assets/BGM and let Unity rebuild the catalog.");
-                    missingCatalogWarned = true;
-                }
-                return;
-            }
+            if (catalog == null) { missingCatalogWarned = true; Debug.LogWarning("[BGM] MapBgmCatalog missing."); }
         }
 
-        int desired = DesiredGroup();
+        int desired = inTrial ? TrialGroup : DesiredGroup();
+        // Finish the current fade with both sources intact. On completion
+        // observe the latest state, so obsolete requests are never replayed.
+        if (fading)
+        {
+            if (desired != currentGroup && fadeDuration > TransitionSeconds)
+            {
+                elapsed *= TransitionSeconds / fadeDuration;
+                fadeDuration = TransitionSeconds;
+            }
+            elapsed += Time.unscaledDeltaTime;
+            float t = Mathf.Clamp01(elapsed / fadeDuration);
+            var outgoing = sources[1 - activeIndex];
+            outgoing.volume = (1f - t) * musicVolume;
+            sources[activeIndex].volume = t * musicVolume;
+            if (t < 1f) return;
+            outgoing.Stop();
+            outgoing.clip = null;
+            outgoing.volume = 0f;
+            fading = false;
+        }
+
         if (desired != currentGroup)
         {
             currentGroup = desired;
             previousTrack = null;
-            CrossfadeToNext();
-        }
-
-        AudioSource current = sources[activeIndex];
-        if (!fading && currentGroup > 0 && current.clip != null)
-        {
-            if (!current.isPlaying || current.clip.length - current.time <= FadeSeconds)
-                CrossfadeToNext();
-        }
-
-        if (!fading)
-        {
-            // Volume changes must apply immediately even if the track is
-            // halfway through: the original code changed it only on fade.
-            current.volume = current.isPlaying ? musicVolume : 0f;
+            CrossfadeToNext(TransitionSeconds);
             return;
         }
-        elapsed += Time.unscaledDeltaTime;
-        float t = Mathf.Clamp01(elapsed / FadeSeconds);
-        AudioSource outgoingSource = sources[1 - activeIndex];
-        AudioSource incomingSource = sources[activeIndex];
-        outgoingSource.volume = outgoingWeight * (1f - t) * musicVolume;
-        incomingSource.volume = incomingSource.clip != null ? Mathf.Lerp(0f, musicVolume, t) : 0f;
-        if (t < 1f) return;
-        outgoingSource.Stop();
-        outgoingSource.clip = null;
-        outgoingSource.volume = 0f;
-        fading = false;
+        var current = sources[activeIndex];
+        current.volume = current.isPlaying ? musicVolume : 0f;
+        if (currentGroup > 0 && current.clip != null &&
+            (!current.isPlaying || current.clip.length - current.time <= PlaylistFadeSeconds))
+            CrossfadeToNext(PlaylistFadeSeconds);
     }
 
-    private bool UpdateTrialMusic()
-    {
-        var combat = CombatManager.Instance;
-        bool inTrial = gameManager != null && gameManager.HasTribulationLiability &&
-            combat != null && combat.HeavenlyGateActive;
-        if (inTrial != trialMusicActive)
-        {
-            trialMusicActive = inTrial;
-            if (inTrial)
-                StartTrialMusic();
-            else if (trialSource != null)
-            {
-                trialSource.Stop();
-                for (int i = 0; i < sources.Length; i++)
-                    if ((pausedMapSources & (1 << i)) != 0) sources[i].UnPause();
-                pausedMapSources = 0;
-            }
-        }
-
-        if (!trialMusicActive || trialSource == null) return false;
-        trialSource.volume = musicVolume;
-        return true;
-    }
-
-    private void StartTrialMusic()
+    private AudioClip ChooseTrialMusic()
     {
         if (trialTracks == null)
-            trialTracks = new[]
-            {
+            trialTracks = new[] {
                 Resources.Load<AudioClip>("Environment/Tribulation/HeavenlyGateTheme"),
                 Resources.Load<AudioClip>("Environment/Tribulation/HeavenlyGateThemeAlternate")
             };
-        var clip = trialTracks[trialTrackRandom.Next(trialTracks.Length)] ?? trialTracks[0] ?? trialTracks[1];
-        if (clip == null) return;
-
-        if (trialSource == null)
-        {
-            trialSource = gameObject.AddComponent<AudioSource>();
-            trialSource.playOnAwake = false;
-            trialSource.spatialBlend = 0f;
-            trialSource.loop = true;
-        }
-        trialSource.clip = clip;
-
-        // Leave both regional channels at their playback positions, including
-        // any crossfade in progress, while the encounter owns the music.
-        for (int i = 0; i < sources.Length; i++)
-            if (sources[i].isPlaying)
-            {
-                sources[i].Pause();
-                pausedMapSources |= 1 << i;
-            }
-        trialSource.volume = musicVolume;
-        trialSource.Play();
+        return trialTracks[trialTrackRandom.Next(trialTracks.Length)] ?? trialTracks[0] ?? trialTracks[1];
     }
 
     private void OnDisable()
     {
-        if (trialSource != null) trialSource.Stop();
-        trialMusicActive = false;
-        pausedMapSources = 0;
-        foreach (AudioSource source in sources)
-            if (source != null) source.Stop();
+        foreach (var source in sources)
+        {
+            if (source == null) continue;
+            source.Stop();
+            source.clip = null;
+            source.volume = 0f;
+        }
+        currentGroup = -2;
+        trialMusicActive = fading = false;
     }
 
     private void OnDestroy()
