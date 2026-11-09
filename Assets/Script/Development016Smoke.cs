@@ -154,7 +154,8 @@ internal static class Development016Smoke
         float cooldown = progress.Remaining(WeaponSkillRegistry.Thrust);
         Check(cooldown > 4.9f && actor.CurrentMana == 100 && game.UnequipGear(EquipmentSlot.Weapon), "Sword cooldown, zero cost");
         Click(ui, "WeaponSkillsButton");
-        Check(Get<TextMeshProUGUI>(ui, "skillQueueText").text.Contains("Không khả dụng"), "Unequipped queued skill is marked unavailable");
+        Click(ui, "SkillQueueSlot0");
+        Check(Get<TextMeshProUGUI>(ui, "skillRequirements").text.Contains("Không khả dụng"), "Unequipped queued skill is marked unavailable");
         Click(ui, "SkillClose");
         Equip(game, EquipmentFoundation.SkillSampleIds[0]);
         Check(progress.queue.Count == 1 && progress.Remaining(WeaponSkillRegistry.Thrust) == cooldown, "Same cooldown across re-equip");
@@ -192,8 +193,7 @@ internal static class Development016Smoke
         Check(combat.AcceptedHeroHitCount == hits+2 && enemies[0].currentHP < TestHP && enemies[1].currentHP < TestHP &&
             enemies[2].currentHP == TestHP, "Fireball AoE uses the legacy radius");
         Click(ui, "WeaponSkillsButton");
-        Click(ui, "SkillQueueNext");
-        Click(ui, "SkillQueueNext");
+        Click(ui, "SkillQueueSlot2");
         Click(ui, "SkillUp");
         Check(progress.queue[1] == WeaponSkillRegistry.Fireball && progress.queue[2] == WeaponSkillRegistry.Volley,
             "Move selected skill earlier");

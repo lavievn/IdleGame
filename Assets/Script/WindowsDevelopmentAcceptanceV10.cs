@@ -52,7 +52,8 @@ public sealed partial class WindowsDevelopmentAcceptanceV10:MonoBehaviour
         if(RootArgument==null)return;
         try{VerifyRoot();manager.ConfigureSaveDirectoryBeforeAwake(Path.Combine(root,"saves"));
             var mode=Arg("-ownedV10Mode");
-            if (mode=="v15playable" || mode=="v15playablereplay" || mode=="v16playable" || mode=="v16playablereplay" || mode=="combatrefinement" || mode=="combatvisualhp")
+            if (mode=="v15playable" || mode=="v15playablereplay" || mode=="v16playable" || mode=="v16playablereplay" || mode=="combatrefinement" || mode=="combatvisualhp" ||
+                mode=="skilluivfx" || mode=="skilluivfxreplay")
                 manager.ConfigureOwnedDevelopmentLoopBeforeAwake();
             if(IsOwnedGateMode(Arg("-ownedV10Mode"))){var p=HeavenlyGateV13Fixtures.Profile();manager.ConfigureCultivationPlaytestBeforeAwake(p,false);manager.ConfigureTribulationFixtureBeforeAwake(HeavenlyGateV13Fixtures.Configuration(),HeavenlyGateV13Fixtures.Penalty());manager.GetComponent<GameManager>().ConfigureCultivationPlaytest(p);}Debug.Log("[WINDOWS V10] SAVE_DIRECTORY_BEFORE_AWAKE "+manager.SaveDirectory);}
         catch{Application.Quit(2);throw;}
@@ -73,7 +74,10 @@ public sealed partial class WindowsDevelopmentAcceptanceV10:MonoBehaviour
         while(nested.Count>0){object next=null;bool moved=false;Exception error=null;try{if(fault!=null)throw new InvalidOperationException(fault);moved=nested.Peek().MoveNext();if(moved)next=nested.Peek().Current;}catch(Exception e){error=e;}
             if(error!=null){result.failure=error.ToString();break;}if(!moved){nested.Pop();continue;}var child=next as IEnumerator;if(child!=null)nested.Push(child);else yield return next;}
         measuring=false;allocation.Dispose();cpu.Dispose();File.WriteAllText(Path.Combine(Evidence,"player-result.json"),JsonUtility.ToJson(result,true));
-        Debug.Log("[WINDOWS V10] "+(result.failure==""?"PASS":"FAIL")+" "+root+" "+result.failure);Application.logMessageReceived-=Observe;Application.Quit(result.failure==""?0:2);
+        Debug.Log("[WINDOWS V10] "+(result.failure==""?"PASS":"FAIL")+" "+root+" "+result.failure);
+        Application.logMessageReceived-=Observe;
+        if(result.mode=="skilluivfx" && result.failure=="")ui.ConfirmExit();
+        else Application.Quit(result.failure==""?0:2);
     }
     void Pass(string text){result.checks.Add(text);Debug.Log("[WINDOWS V10] PASS "+text);}
     void AssertIsolated(){VerifyRoot();Require(saves.SaveDirectory==SavePath,"Player Save isolation lost");}
@@ -97,6 +101,18 @@ public sealed partial class WindowsDevelopmentAcceptanceV10:MonoBehaviour
         yield return new WaitForSecondsRealtime(1);
         gm=UnityEngine.Object.FindFirstObjectByType<GameManager>();saves=SaveManager.Instance;ui=UIManager.Instance;hero=UnityEngine.Object.FindFirstObjectByType<HeroController>();combat=UnityEngine.Object.FindFirstObjectByType<CombatManager>();space=UnityEngine.Object.FindFirstObjectByType<EnvironmentManager>();
         Require(gm!=null && saves!=null && ui!=null && Debug.isDebugBuild,"Real development Player managers");Require(!ui.inventoryLayoutDebug,"Player Inventory debug layout is off by default");AssertIsolated();result.saveDirectory=saves.SaveDirectory;
+        if(result.mode=="skilluivfx")
+        {
+            yield return Resize(800,450);
+            yield return SkillUiVfxHotfixSmoke.Run(gm,saves,ui,combat,hero,space,Resize,Capture,Pass,true);
+            Require(result.uiIssues.Count==0,"Võ học window presets");
+            yield break;
+        }
+        if(result.mode=="skilluivfxreplay")
+        {
+            yield return SkillUiVfxHotfixSmoke.Reopen(gm,ui,Pass);
+            yield break;
+        }
         if(result.mode=="combatvisualhp")
         {
             yield return Resize(800,450);

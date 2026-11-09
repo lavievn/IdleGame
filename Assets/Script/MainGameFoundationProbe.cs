@@ -131,7 +131,8 @@ public sealed partial class MainGameFoundationProbe : MonoBehaviour
         if (Array.IndexOf(Environment.GetCommandLineArgs(), "-foundationDevelopment015") >= 0 ||
             Array.IndexOf(Environment.GetCommandLineArgs(), "-foundationDevelopment016") >= 0 ||
             Array.IndexOf(Environment.GetCommandLineArgs(), "-foundationCombatUiRefinement") >= 0 ||
-            Array.IndexOf(Environment.GetCommandLineArgs(), "-foundationCombatVisualHp") >= 0)
+            Array.IndexOf(Environment.GetCommandLineArgs(), "-foundationCombatVisualHp") >= 0 ||
+            Array.IndexOf(Environment.GetCommandLineArgs(), "-foundationSkillUiVfx") >= 0)
             saves.ConfigureOwnedDevelopmentLoopBeforeAwake();
         if(Array.IndexOf(Environment.GetCommandLineArgs(),"-foundationTribulationV13")>=0){var trialProfile=HeavenlyGateV13Fixtures.Profile();saves.ConfigureCultivationPlaytestBeforeAwake(trialProfile,false);saves.ConfigureTribulationFixtureBeforeAwake(HeavenlyGateV13Fixtures.Configuration(),HeavenlyGateV13Fixtures.Penalty());saveOwner.GetComponent<GameManager>().ConfigureCultivationPlaytest(trialProfile);CombatBalance.ResetDevProfiles();}
         if(Array.IndexOf(Environment.GetCommandLineArgs(),"-foundationCultivationV07")>=0 || Array.IndexOf(Environment.GetCommandLineArgs(),"-foundationCultivationV08")>=0) {
@@ -649,6 +650,15 @@ public sealed partial class MainGameFoundationProbe : MonoBehaviour
             CombatBalance.ResetDevProfiles();
             yield return Resize(800,450);
             yield return Development015Smoke.Run(gm, saves, ui, combat, Evidence, Capture, Pass, false);
+            Status(1,"PASS");
+            yield break;
+        }
+        if (Array.IndexOf(Environment.GetCommandLineArgs(), "-foundationSkillUiVfx") >= 0)
+        {
+            phase=1;
+            CombatBalance.ResetDevProfiles();
+            yield return Resize(800,450);
+            yield return SkillUiVfxHotfixSmoke.Run(gm,saves,ui,combat,hero,space,Resize,Capture,Pass,false);
             Status(1,"PASS");
             yield break;
         }
