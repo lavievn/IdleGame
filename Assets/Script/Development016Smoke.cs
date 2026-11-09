@@ -133,7 +133,7 @@ internal static class Development016Smoke
 
         Equip(game, EquipmentFoundation.SkillSampleIds[0]);
         enemies = Wave(game, combat, space, hero, new Vector2(-30,0), new Vector2(-100,30),
-            new Vector2(30,0), new Vector2(-180,46), new Vector2(-245,0));
+            new Vector2(150,0), new Vector2(-180,55), new Vector2(-260,0));
         hits = combat.AcceptedHeroHitCount;
         ui.SetPaused(false);
         yield return Wait(() => combat.AcceptedHeroHitCount > hits, 5, "unqueued Sword basic");
@@ -141,7 +141,7 @@ internal static class Development016Smoke
         Check(combat.WeaponSkillReleases == skills && combat.AcceptedHeroHitCount == hits+1, "Equipment alone does not schedule skill");
         AddSkill(ui);
         enemies = Wave(game, combat, space, hero, new Vector2(-30,0), new Vector2(-100,30),
-            new Vector2(30,0), new Vector2(-180,46), new Vector2(-245,0));
+            new Vector2(150,0), new Vector2(-180,55), new Vector2(-260,0));
         hits = combat.AcceptedHeroHitCount;
         ui.SetPaused(false);
         yield return Wait(() => combat.WeaponSkillReleases > skills, 5, "Sword cast");
@@ -149,7 +149,8 @@ internal static class Development016Smoke
         Check(combat.LastWeaponSkill == WeaponSkillRegistry.Thrust && combat.AcceptedHeroHitCount == hits+2 &&
             enemies[0].currentHP < TestHP && enemies[1].currentHP < TestHP &&
             enemies[2].currentHP == TestHP && enemies[3].currentHP == TestHP && enemies[4].currentHP == TestHP,
-            "Thrust hits each target in forward 240×84 exactly once");
+            $"Thrust hits each target in forward 240×84 exactly once: hits={combat.AcceptedHeroHitCount-hits}, HP=" +
+            string.Join(",", enemies.ConvertAll(e=>e.currentHP)));
         float cooldown = progress.Remaining(WeaponSkillRegistry.Thrust);
         Check(cooldown > 4.9f && actor.CurrentMana == 100 && game.UnequipGear(EquipmentSlot.Weapon), "Sword cooldown, zero cost");
         Click(ui, "WeaponSkillsButton");
