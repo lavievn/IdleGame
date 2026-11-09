@@ -221,7 +221,7 @@ partial class MotionRegression
                 "new focus is computed relative to the new living Hero",.1f);
         });
 
-        Run("B2 companion attack-mode change preserves HP ratio independently",()=>{
+        Run("B2 companion attack-mode change preserves maximum and current HP independently",()=>{
             var f=new Field();
             var second=B2Hero(f,-100f,AttackMode.Melee);
             var state=f.combat.RegisterAdditionalHero(second,B2Data("Dual",400));
@@ -231,10 +231,8 @@ partial class MotionRegression
             f.combat.CurrentHeroCombatState.AttackTimer=.4f;
             second.ChangeAttackMode(1);
             f.combat.OnRegisteredHeroModeChanged(second);
-            Check(state.MaxHP==state.Data.GetCalculatedHealth(AttackMode.RangedPhysical),
-                "companion HP adjusted to its own stance");
-            Near(state.CurrentHP/(float)state.MaxHP,.5f,
-                "companion health percentage preserved",.02f);
+            Check(state.MaxHP==max && state.CurrentHP==max/2,
+                "companion HP stays independent of attack mode");
             Near(state.AttackTimer,0f,"companion windup reset");
             Near(f.combat.CurrentHeroCombatState.AttackTimer,.4f,
                 "primary windup unchanged");

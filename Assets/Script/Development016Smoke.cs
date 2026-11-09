@@ -219,10 +219,11 @@ internal static class Development016Smoke
         ui.SetPaused(true);
         Check(actor.CurrentHP-hpBefore >= 9 && actor.CurrentHP-hpBefore <= 12 &&
             Math.Abs(progress.mana-20-2*(Time.time-began)) < .15f, "Exploration rates 10 HP/s and 2 Mana/s");
-        Wave(game, combat, space, hero, new Vector2(-45,0));
-        actor.AttackTimer = 20;
-        hpBefore = actor.CurrentHP;
+        var regenOpponent=Wave(game, combat, space, hero, new Vector2(-45,0))[0];
+        regenOpponent.controller.attackMode=regenOpponent.cycleMode=AttackMode.Melee;
         ui.SetPaused(false);
+        yield return Wait(() => combat.CastingWeaponSkill == WeaponSkillRegistry.Fireball, 5, "actual combat windup");
+        hpBefore = actor.CurrentHP;
         yield return new WaitForSeconds(.5f);
         ui.SetPaused(true);
         Check(actor.CurrentHP == hpBefore, "No natural HP regeneration in combat");

@@ -97,7 +97,7 @@ partial class MotionRegression
             Near(state.AttackTimer,0f,"setup clears timer on current owner");
         });
 
-        Run("B1 mode changes preserve current HP ratio and reset only own windup",()=>{
+        Run("B1 mode changes preserve absolute and maximum HP and reset only own windup",()=>{
             var f=new Field();
             var state=f.combat.CurrentHeroCombatState;
             f.combat.SetupHeroInfo(new EntityDataSO {
@@ -110,12 +110,8 @@ partial class MotionRegression
             state.AttackTimer=1.5f;
             f.hero.attackMode=AttackMode.RangedPhysical;
             f.combat.OnHeroAttackModeChanged();
-            int expectedMax=state.Data.GetCalculatedHealth(AttackMode.RangedPhysical);
-            Check(state.MaxHP==expectedMax&&state.CurrentHP>0,
-                "mode changes still recalculate per-stance max HP");
-            Near(state.CurrentHP/(float)state.MaxHP,
-                (maxBefore/2)/(float)maxBefore,
-                "stance swap approximately preserves HP percentage",.02f);
+            Check(state.MaxHP==maxBefore && state.CurrentHP==maxBefore/2,
+                "mode changes keep the cap and absolute current HP");
             Near(state.AttackTimer,0f,
                 "old windup cancelled when switching from melee to ranged");
             Check(f.combat.CurrentHeroHP==state.CurrentHP,

@@ -39,9 +39,9 @@ partial class MotionRegression
             f.hero.ChangeAttackMode(0);CombatStep(f,.2f);Check(Bolts(f).Count==1,"target no longer required for graphic");
             Near(Get<Vector2>(shot,"end").x,end.x,"no retarget");Check(nearby.currentHP==hp,"no early AoE");
             CombatStep(f,duration-.2f+.001f);Check(nearby.currentHP<hp,"existing same-wave endpoint AoE preserved");
-            Check(outside.currentHP==outside.maxHP,"not retargeted to distant enemy");Check(Bolts(f).Count==0 && SparkCount(f)>0,"terminal explosion then cleanup");
+            Check(outside.currentHP==outside.maxHP,"not retargeted to distant enemy");Check(Bolts(f).Count==0 && SparkCount(f)>0,"accepted AoE emits a hit burst then cleans up");
         });
-        Run("Magic owner death continues as actor-free visual; pause/pan and terminal burst do not deal damage",()=>{
+        Run("Magic owner death continues as actor-free visual without hit effects",()=>{
             var f=new Field();var target=f.Monster(-200);f.Battle(target);EmitHeroMagic(f);
             var bolt=Bolts(f)[0];float duration=Get<float>(FirstShot(f),"duration");
             f.combat.ApplyDamageToRegisteredHero(f.hero,1000000,"test");
@@ -50,14 +50,14 @@ partial class MotionRegression
             CombatStep(f,.2f);var p=bolt.position;Time.timeScale=0;CombatStep(f,5);Near(bolt.position.x,p.x,"pause X");Near(bolt.position.y,p.y,"pause Y");Time.timeScale=1;
             f.combat.PanEffects(15);Near(bolt.position.x,p.x+15,"pan applies once");CombatStep(f,.1f);
             Check(Bolts(f).Count==1,"continues without any living Hero");CombatStep(f,duration);
-            Check(f.combat.DetachedMagicVisualCount==0 && Bolts(f).Count==0 && SparkCount(f)>0,"finite detached flight explodes");
+            Check(f.combat.DetachedMagicVisualCount==0 && Bolts(f).Count==0 && SparkCount(f)==0,"finite detached flight ends without an impact");
             Check(f.combat.CurrentHeroCombatState.Data.currentExp==exp,"no detached EXP");
         });
         Run("enemy Magic source dies: graphic completes but old source cannot damage Hero",()=>{
             var f=new Field();var enemy=f.Monster(-200,AttackMode.RangedMagic);f.Battle(enemy);CombatStep(f,2);
             Check(f.combat.PendingProjectileCount==1,"enemy release");KillInfo(f,f.Enemies[0]);int hp=f.combat.CurrentHeroHP;
             CombatStep(f,.2f);Check(f.combat.PendingProjectileCount==0 && f.combat.DetachedMagicVisualCount==1 && Bolts(f).Count==1,"enemy source invalidates damage only");
-            CombatStep(f,2);Check(f.combat.CurrentHeroHP==hp && Bolts(f).Count==0 && SparkCount(f)>0,"visual burst without stale damage");
+            CombatStep(f,2);Check(f.combat.CurrentHeroHP==hp && Bolts(f).Count==0 && SparkCount(f)==0,"retired flight has neither impact nor stale damage");
         });
         Run("new wave/pool re-use retires old Magic without damaging new target or duplicating rewards",()=>{
             var f=new Field();var enemy=f.Monster(-200);f.Battle(enemy);EmitHeroMagic(f);var bolt=Bolts(f)[0];
@@ -183,7 +183,7 @@ partial class MotionRegression
                     Check(f.field.combat.DetachedMagicVisualCount==1 && Bolts(f.field).Count==1,"no early visual expiry");
                     CombatStep(f.field,.02f);
                     Check(f.field.combat.DetachedMagicVisualCount==0 && Bolts(f.field).Count==0 &&
-                        SparkCount(f.field)>0,"original flight finishes once with its terminal burst");
+                        SparkCount(f.field)==0,"original flight finishes once without a false impact");
                     Check(f.manager.HeroData.currentExp==exp && actor.Data.currentExp==mageExp &&
                         f.manager.HeroData.worldMapLoopWave==wave && f.manager.HeroData.worldMapWaveProgress==progress &&
                         f.manager.HeroData.equipmentItems.Count==gear,"detached visual grants no EXP, progress or gear");
