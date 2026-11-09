@@ -165,7 +165,7 @@ internal static class CombatUiRefinementSmoke
         yield return new WaitForSeconds(1.05f);
         Check(combat.CastingWeaponSkill==null && combat.WeaponSkillReleases==releases,"Exploration cannot start a cast");
         ui.SetPaused(true);
-        var enemies=QuietWave(game,combat,space,hero,new Vector2(-42f,0f));
+        var enemies=QuietWave(game,combat,space,hero,new Vector2(-150f,0f));
         var effects=Read<BattleEffects>(combat,"effects");
         var sfx=combat.GetComponent<HeroCombatSfx>();
         int heroSounds=sfx.StartedCount;
@@ -202,6 +202,9 @@ internal static class CombatUiRefinementSmoke
             var icon=Array.Find(root.GetComponentsInChildren<RectTransform>(true),x=>x.name=="WeaponSkillCooldown");
             Check(icon!=null && icon.gameObject.activeInHierarchy && Mathf.Abs(icon.rect.width-icon.rect.height)<.01f,
                 "Visible square under Mana");
+            var label=icon.Find("WeaponSkillLabel").GetComponent<TextMeshProUGUI>();
+            label.ForceMeshUpdate();
+            Check(label.text=="Trượng" && !label.isTextTruncated,"Full Staff label fits the square");
             var fill=(RectTransform)icon.Find("CooldownFill");
             for(int i=0;i<=4;i++)
             {

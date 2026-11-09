@@ -71,7 +71,10 @@ internal sealed class HudW3View
                 c.CooldownFill.anchorMin = Vector2.zero;
                 c.CooldownFill.offsetMin = c.CooldownFill.offsetMax = Vector2.zero;
                 c.CooldownLabel = Text(c.Cooldown,"WeaponSkillLabel","—");
-                c.CooldownLabel.fontSize = 9;
+                Stretch(c.CooldownLabel.rectTransform, 0, 0);
+                c.CooldownLabel.enableAutoSizing = true;
+                c.CooldownLabel.fontSizeMin = 6;
+                c.CooldownLabel.fontSizeMax = 9;
             }
         }
         map=ui.Surface(Root,"WorldMapButton",UIManager.SurfaceKind.Frame);

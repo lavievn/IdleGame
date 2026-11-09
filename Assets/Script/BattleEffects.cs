@@ -190,10 +190,10 @@ public class BattleEffects : MaskableGraphic
             float angle = i * (float)(Math.PI * 2 / count) + .37f;
             float x = (float)Math.Cos(angle), y = (float)Math.Sin(angle);
             float progress = Mathf.Clamp01(cast.progress * 1.15f - (i % 3) * .07f);
-            float distance = Mathf.Lerp(57f + 7f * (i % 3), 6f, progress);
+            float distance = Mathf.Lerp(77f + 8f * (i % 3), 9f, progress);
             var point = cast.center + new Vector2(x, y * .8f) * distance;
-            Beam(vh, point, -x, -y, 13f, 2.5f, new Color(.37f,.78f,1f,.28f));
-            Beam(vh, point, -x, -y, 10f, .8f, new Color(.92f,1f,1f,.85f));
+            Beam(vh, point, -x, -.8f * y, 29f, 6f, new Color(.26f,.70f,1f,.40f));
+            Beam(vh, point, -x, -.8f * y, 24f, 2.4f, new Color(.92f,1f,1f,.96f));
         }
     }
 
