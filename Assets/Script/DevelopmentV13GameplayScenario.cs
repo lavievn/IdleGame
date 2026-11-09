@@ -51,6 +51,7 @@ namespace TuTienCore
     h.combatStatModifiers.Add(new CombatStatModifier{sourceId="fixture:gate:magic",stat=CombatStatId.MagicalAttack,flat=power-WeaponBasicAttack.Magical(h)});
     h.combatStatModifiers.Add(new CombatStatModifier{sourceId="fixture:gate:hp",stat=CombatStatId.MaxHealth,flat=wantedHP-h.GetCalculatedHealth(WeaponBasicAttack.Resolve(h))});
     if(name=="same-hp-armor")h.combatStatModifiers.Add(new CombatStatModifier{sourceId="fixture:gate:armor",stat=CombatStatId.Armor,flat=900});
+    h.combatSkills.health = -1; // This fixture deploys a fresh combatant at its authored HP.
     var profile=saves.CultivationProfile;using(var binding=new CultivationGameplayBinding(h,profile,HeavenlyGateV13Fixtures.Session(profile))){R(binding.Advance(h,0,.037,false,h.worldMapId)==CultivationReason.None,"fractional source fixture");}
     R(saves.SaveGame(h,SaveSlot.ManualSave2),"fixture seed slot");UnityEngine.Object.Destroy(h);R(gm.LoadAndContinue(SaveSlot.ManualSave2),"load canonical bottleneck fixture");
   }
