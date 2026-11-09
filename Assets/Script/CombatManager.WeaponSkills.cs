@@ -66,7 +66,7 @@ public partial class CombatManager
         };
         BeginEngagement(actor,target);
         actor.Controller.UpdateChargeBar(true, 0f);
-        ShowCast(actor.Controller.heroRect, space, weaponCast);
+        ShowHeroCast(actor,space,weaponCast);
         heroSfx?.PlayHero(actor, actor.SelectedMode, CombatAudioEvent.Cast);
         return true;
     }
@@ -113,7 +113,7 @@ public partial class CombatManager
         if (!cast.Advance(dt))
         {
             actor.Controller.UpdateChargeBar(true, cast.Progress);
-            ShowCast(actor.Controller.heroRect, space, cast);
+            ShowHeroCast(actor,space,cast);
             return true;
         }
         CancelWeaponCast();
@@ -132,9 +132,6 @@ public partial class CombatManager
                 ReleaseThrust(skill, actor, space, cast.Direction);
                 break;
             case SkillEffect.ArrowVolley:
-                var bow = CastVisualAnchor(actor.Controller.heroRect,space);
-                float direction = space.Position(target.controller.Rect).x > bow.x ? 1f : -1f;
-                effects?.BowRelease(bow + space.ScreenPixelsToBattleUnits(new Vector2(8f * direction,0f)),direction);
                 ReleaseVolleyArrow(skill, target, actor, space, skill.ProjectileCount);
                 break;
             case SkillEffect.LegacyFireball:
@@ -237,6 +234,19 @@ public partial class CombatManager
 
     private Vector2 CastVisualAnchor(RectTransform actor, EnvironmentManager space) =>
         BodyPosition(actor,space) + space.ScreenPixelsToBattleUnits(new Vector2(-4f,10f));
+
+    [SerializeField] private float bowCastingLiftPixels = 20f;
+    [SerializeField] private float staffCastingLiftPixels = 20f;
+
+    private void ShowHeroCast(HeroCombatState actor, EnvironmentManager space, SkillCast cast)
+    {
+        var rect = actor.Controller.heroRect;
+        var family = WeaponBasicAttack.Family(WeaponBasicAttack.Equipped(actor.Data));
+        float lift = family == WeaponFamily.Bow ? bowCastingLiftPixels :
+            family == WeaponFamily.Staff ? staffCastingLiftPixels : 0f;
+        effects?.SetCast(rect, CastVisualAnchor(rect,space) +
+            space.ScreenPixelsToBattleUnits(Vector2.up * lift), cast.Progress);
+    }
 
     void ShowCast(RectTransform actor, EnvironmentManager space, SkillCast cast)
     {

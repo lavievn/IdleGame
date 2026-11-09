@@ -37,7 +37,7 @@ public partial class CombatManager : MonoBehaviour
         public int battleVersion,stepTick;
         public bool fromHero, magic;
         public Vector2 start, end;
-        public float elapsed, duration, arc;
+        public float elapsed, duration, arc, muzzleOffsetX;
         public string source;
         public DamageTrace trace;
         public AttackMode attackMode;
@@ -927,6 +927,31 @@ public partial class CombatManager : MonoBehaviour
         return space.Position(rect) + new Vector2(0f, 24f * Mathf.Max(0.1f, effectsScale));
     }
 
+    [Tooltip("Forward and up as fractions of the visible Hero body width and height.")]
+    [SerializeField] private Vector2 bowReleaseAnchor = new Vector2(.24f,.48f);
+    [Tooltip("Forward and up as fractions of the visible Hero body width and height.")]
+    [SerializeField] private Vector2 staffReleaseAnchor = new Vector2(.18f,.51f);
+
+    private Vector2 ProjectileSpawnAnchor(HeroCombatState actor, AttackMode mode,
+        EnvironmentManager space, float facing, Vector2 fallback)
+    {
+        var rect = actor.Controller.heroRect;
+        var family = WeaponBasicAttack.Family(WeaponBasicAttack.Equipped(actor.Data));
+        if (!actor.Controller.UsesWeaponBasicAttack ||
+            (mode == AttackMode.RangedPhysical ? family != WeaponFamily.Bow : family != WeaponFamily.Staff))
+            return fallback;
+        var visual = rect.GetComponent<CultivationSpriteBridge>();
+        var body = visual != null ? visual.BodyGraphic : null;
+        if (body == null) return fallback;
+        Vector2 anchor = family == WeaponFamily.Bow ? bowReleaseAnchor : staffReleaseAnchor;
+        var offset = Vector2.Scale(visual.VisibleBodySize, anchor);
+        offset.x *= facing;
+        // The registered sprite pivot is the origin. Use the unmirrored actor
+        // axes so target direction mirrors only the hand offset, not its height.
+        return space.BattleArea.InverseTransformPoint(body.rectTransform.position +
+            (rect.TransformPoint(offset) - rect.position));
+    }
+
     private void Launch(ActiveMonsterInfo monster,bool fromHero,AttackMode mode,
         DamageTrace trace,float interval,EnvironmentManager space,HeroCombatState actor)
         => LaunchProjectile(monster, fromHero, mode, trace, interval, space, actor);
@@ -938,8 +963,10 @@ public partial class CombatManager : MonoBehaviour
         if (actor==null || actor.Controller==null || actor.Controller.heroRect==null) return;
         bool staffBasic=fromHero && trace.weaponBasic && mode==AttackMode.RangedMagic;
         bool magic=mode==AttackMode.RangedMagic && !staffBasic;
-        Vector2 start=BodyPosition(fromHero?actor.Controller.heroRect:monster.controller.Rect,space);
+        Vector2 bodyStart=BodyPosition(fromHero?actor.Controller.heroRect:monster.controller.Rect,space);
         Vector2 end=BodyPosition(fromHero?monster.controller.Rect:actor.Controller.heroRect,space);
+        float facing=end.x>bodyStart.x?1f:-1f;
+        Vector2 start=fromHero?ProjectileSpawnAnchor(actor,mode,space,facing,bodyStart):bodyStart;
         var shot=new Projectile {
             releaseId=impactRelease,monster=monster,monsterLife=monster.lifeId,
             battleVersion=battleVersion,stepTick=projectileTick,
@@ -947,6 +974,7 @@ public partial class CombatManager : MonoBehaviour
             hero=actor,heroLife=actor.LifeVersion,
             heroSpawn=actor.Controller.SpawnVersion,
             fromHero=fromHero,magic=magic,staffBasic=staffBasic,start=start,end=end,trace=trace,
+            muzzleOffsetX=start.x-bodyStart.x,
             skill=skill,weaponId=actor.WeaponIdentity,remainingArrows=remainingArrows,
             attackMode=mode,
             source=IdentityDisplay.Describe(fromHero?actor.Data:monster.data),
@@ -955,7 +983,7 @@ public partial class CombatManager : MonoBehaviour
             arc=magic?Mathf.Max(0f,magicArcHeight):
                 staffBasic ? (staffArcRandom.Next(2) == 0 ? -1f : 1f) *
                     (.55f + (float)staffArcRandom.NextDouble() * .45f) *
-                    Mathf.Min(Mathf.Max(20f, magicArcHeight), (end-start).magnitude * .25f) : 0f
+                    Mathf.Min(Mathf.Max(20f, magicArcHeight), (end-bodyStart).magnitude * .25f) : 0f
         };
         if (effects!=null)
         {
@@ -966,6 +994,8 @@ public partial class CombatManager : MonoBehaviour
             shot.visual.trailLength=staffEmberTrail;
         }
         projectiles.Add(shot);
+        if (fromHero && skill?.Effect == SkillEffect.ArrowVolley && remainingArrows == skill.ProjectileCount - 1)
+            effects?.BowRelease(start,facing);
         // Shoot/Magic belong to the actual release, never drawing, sprite
         // frame changes or projectile impact. Monster launches stay unchanged.
         var audioEvent = skill != null && (remainingArrows == 0 && skill.Effect != SkillEffect.ArrowVolley ||
@@ -1056,7 +1086,7 @@ public partial class CombatManager : MonoBehaviour
                                  end,physicalHitRadius);
                 if (hit) DealDamageToMonsterFromHero(shot.monster,
                     SynergyMath.EvaluateSnapshot(shot.trace,shot.monster.data),
-                    shot.hero,shot.start.x,shot.attackMode);
+                    shot.hero,shot.start.x-shot.muzzleOffsetX,shot.attackMode);
             }
             else
             {
