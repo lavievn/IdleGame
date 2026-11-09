@@ -63,8 +63,7 @@ internal sealed class WeaponSkill
 
     private bool HasSource(EntityDataSO hero, EquipmentInstance weapon) =>
         Source == CombatSkillSource.Learned ? hero?.combatSkills?.learned?.Contains(Id) == true :
-        weapon != null && weapon.rarity != EquipmentRarity.Common &&
-            EquipmentFoundation.FindTemplate(weapon.templateId)?.grantedSkillId == Id;
+        EquipmentFoundation.GrantedSkillId(weapon) == Id;
 
     internal IEnumerable<SkillRequirement> Requirements(EntityDataSO hero, EquipmentInstance weapon)
     {

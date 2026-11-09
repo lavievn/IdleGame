@@ -109,8 +109,8 @@ public static class EquipmentRuntime
         foreach(var item in hero.equipmentItems)
         {
             if(item==null) {changed=true;continue;}
-            // v2 saves did not have hidden/known/active fields. Preserve EVERY
-            // rolled stat as previously revealed and usable, with no rerolls.
+            // Preserve every legacy roll as known. The active rarity and
+            // refinement rules still decide whether its modifier applies.
             if(item.affixSchemaVersion==0 &&
                EquipmentFoundation.IsValid(item))
             {
@@ -163,14 +163,7 @@ public static class EquipmentRuntime
                 !ids.Add(item.instanceId) ||
                 !EquipmentFoundation.IsSlotAllowed(item,item.equippedSlot) ||
                 !occupied.Add(item.equippedSlot)) continue;
-            for(int i=0;i<item.mainStats.Count;i++)
-                expected.Add(EquipmentRefinement.EffectiveModifier(item,item.mainStats[i],
-                    EquipmentFoundation.SourcePrefix+item.instanceId+":m:"+i));
-            for(int i=0;i<item.extraStats.Count;i++)
-                if(EquipmentFoundation.AffixState(item,item.extraStats[i]) ==
-                    EquipmentAffixState.Active)
-                    expected.Add(EquipmentRefinement.EffectiveModifier(item,item.extraStats[i],
-                        EquipmentFoundation.SourcePrefix+item.instanceId+":a:"+i));
+            AddEffectiveModifiers(item,expected);
         }
         var actual=new List<CombatStatModifier>();
         foreach(var mod in hero.combatStatModifiers)
@@ -186,6 +179,16 @@ public static class EquipmentRuntime
                 StringComparison.Ordinal));
         hero.combatStatModifiers.AddRange(expected);
         return true;
+    }
+
+    internal static void AddEffectiveModifiers(EquipmentInstance item,List<CombatStatModifier> output)
+    {
+        string source=EquipmentFoundation.SourcePrefix+item.instanceId;
+        for(int i=0;i<item.mainStats.Count;i++)
+            output.Add(EquipmentRefinement.EffectiveModifier(item,item.mainStats[i],source+":m:"+i));
+        for(int i=0;i<item.extraStats.Count;i++)
+            if(EquipmentFoundation.AffixState(item,item.extraStats[i])==EquipmentAffixState.Active)
+                output.Add(EquipmentRefinement.EffectiveModifier(item,item.extraStats[i],source+":a:"+i));
     }
 
     private static void RemoveDerived(EntityDataSO hero)
@@ -213,7 +216,7 @@ public static class EquipmentRuntime
     private static EquipmentInstance Copy(EquipmentInstance item)
     {
         var output=new EquipmentInstance {
-            instanceId=item.instanceId, templateId=item.templateId,
+            instanceId=item.instanceId, templateId=item.templateId, grantedSkillId=item.grantedSkillId,
             level=item.level,rarity=item.rarity,refineLevel=item.refineLevel,
             affixSchemaVersion=item.affixSchemaVersion,itemElement=item.itemElement,
             potentialRarity=item.potentialRarity,affixSlotCount=item.affixSlotCount,

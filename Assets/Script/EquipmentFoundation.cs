@@ -64,6 +64,8 @@ public sealed class EquipmentInstance
     // they share a template, level or rarity.
     public string instanceId = "";
     public string templateId = "";
+    // Empty on older saves: resolve the catalog grant without rewriting the item.
+    public string grantedSkillId = "";
     public int level = 1;
     public EquipmentRarity rarity = EquipmentRarity.Common;
     public int refineLevel = 0;
@@ -173,11 +175,12 @@ public sealed class EquipmentTemplate
     public readonly CombatStatId mainStat;
     public readonly WeaponFamily weaponFamily;
     public readonly string grantedSkillId;
+    public readonly float sampleMainStat;
     public EquipmentTemplate(string id,string name,EquipmentSlot slot,CombatStatId stat,
-        WeaponFamily family=WeaponFamily.Unarmed, string grantedSkillId=null)
+        WeaponFamily family=WeaponFamily.Unarmed, string grantedSkillId=null, float sampleMainStat=10f)
     {
         this.id=id;this.name=name;this.slot=slot;mainStat=stat;weaponFamily=family;
-        this.grantedSkillId=grantedSkillId;
+        this.grantedSkillId=grantedSkillId;this.sampleMainStat=sampleMainStat;
     }
 }
 
@@ -190,6 +193,8 @@ public static class EquipmentFoundation
     public const string DemoSword = "sample:iron_sword";
     public const string DemoBow = "sample:basic_bow";
     public const string DemoStaff = "sample:basic_staff";
+    internal const string DefenseSample = "base:chest";
+    internal const string ManaSample = "sample:mana-charm";
 
     // Ratios are true probabilities, NOT percentage values. 0.005% =
     // 0.00005 chance, 0.001% = 0.00001 chance.
@@ -289,7 +294,8 @@ public static class EquipmentFoundation
         new EquipmentTemplate(DemoBow,"Cung mẫu",EquipmentSlot.Weapon,CombatStatId.Attack,WeaponFamily.Bow),
         new EquipmentTemplate(DemoStaff,"Pháp trượng mẫu",EquipmentSlot.Weapon,CombatStatId.MagicalAttack,WeaponFamily.Staff),
         new EquipmentTemplate("base:head","Mũ vải",EquipmentSlot.Head,CombatStatId.Armor),
-        new EquipmentTemplate("base:chest","Áo vải",EquipmentSlot.Chest,CombatStatId.Armor),
+        new EquipmentTemplate(DefenseSample,"Áo vải",EquipmentSlot.Chest,CombatStatId.Armor,sampleMainStat:12f),
+        new EquipmentTemplate(ManaSample,"Phù Tụ Linh · mẫu DEV",EquipmentSlot.Artifact,CombatStatId.MaxMana,sampleMainStat:25f),
         new EquipmentTemplate("base:boots","Giày vải",EquipmentSlot.Boots,CombatStatId.MovementSpeed),
         new EquipmentTemplate("base:artifact","Pháp bảo",EquipmentSlot.Artifact,CombatStatId.MaxHealth),
         new EquipmentTemplate("base:necklace","Dây chuyền",EquipmentSlot.Necklace,CombatStatId.MagicResistance),
@@ -320,11 +326,22 @@ public static class EquipmentFoundation
 
     internal static EquipmentInstance CreateSkillSample(string templateId)
     {
-        if (string.IsNullOrEmpty(FindTemplate(templateId)?.grantedSkillId)) return null;
-        var item = CreateCommon(templateId, 1, 10f);
+        var template = FindTemplate(templateId);
+        if (string.IsNullOrEmpty(template?.grantedSkillId)) return null;
+        var item = CreateCommon(templateId, 1, template.sampleMainStat);
         item.rarity = EquipmentRarity.Hoang;
+        item.grantedSkillId = template.grantedSkillId;
         item.potentialRarity = EquipmentRarity.Hoang;
         return item;
+    }
+
+    internal static string GrantedSkillId(EquipmentInstance item)
+    {
+        if (item == null || item.rarity == EquipmentRarity.Common) return null;
+        var templateId = FindTemplate(item.templateId)?.grantedSkillId;
+        // A saved override cannot create a new source of ownership.
+        return string.IsNullOrEmpty(item.grantedSkillId) || item.grantedSkillId == templateId
+            ? templateId : null;
     }
 
     public static string RarityName(EquipmentRarity rarity)

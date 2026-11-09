@@ -179,8 +179,7 @@ internal sealed class HudW3View
         var data = state?.Data;
         var weapon = WeaponBasicAttack.Equipped(data);
         var family = WeaponBasicAttack.Family(weapon);
-        var template = weapon == null ? null : EquipmentFoundation.FindTemplate(weapon.templateId);
-        var skill = WeaponSkillRegistry.Find(template?.grantedSkillId);
+        var skill = WeaponSkillRegistry.Find(EquipmentFoundation.GrantedSkillId(weapon));
         var progress = data?.combatSkills;
         bool available = skill != null && progress != null && skill.IsAvailable(data, weapon) &&
             progress.queue.Contains(skill.Id);

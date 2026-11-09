@@ -888,9 +888,15 @@ public partial class GameManager : MonoBehaviour
         if(HasTribulationLiability)return false;
         if(!DevelopmentItemGrantsEnabled)return false;
         if (!IsGameplayHUDVisible || runtimeHeroData == null) return false;
-        if (!EquipmentInventory.GrantSamples(runtimeHeroData)) return false;
-        UpdateEventLog("Đã nhận hai hộ phù thử nghiệm.");
-        return true;
+        bool added=EquipmentInventory.GrantSamples(runtimeHeroData);
+        foreach (string id in new[]{EquipmentFoundation.DefenseSample,EquipmentFoundation.ManaSample})
+        {
+            if (runtimeHeroData.equipmentItems.Exists(item=>item!=null && item.templateId==id)) continue;
+            var template=EquipmentFoundation.FindTemplate(id);
+            added |= EquipmentRuntime.AddInstance(runtimeHeroData,EquipmentFoundation.CreateCommon(id,1,template.sampleMainStat));
+        }
+        if (added) UpdateEventLog("Đã nhận đồ mẫu DEV trong Hòm đồ.");
+        return added;
     }
 
     // --- CÁC HÀM XỬ LÝ SAVE/LOAD TỪ UI MỚI ---
