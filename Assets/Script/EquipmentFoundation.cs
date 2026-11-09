@@ -172,9 +172,13 @@ public sealed class EquipmentTemplate
     public readonly EquipmentSlot slot;
     public readonly CombatStatId mainStat;
     public readonly WeaponFamily weaponFamily;
+    public readonly string grantedSkillId;
     public EquipmentTemplate(string id,string name,EquipmentSlot slot,CombatStatId stat,
-        WeaponFamily family=WeaponFamily.Unarmed)
-    { this.id=id;this.name=name;this.slot=slot;mainStat=stat;weaponFamily=family; }
+        WeaponFamily family=WeaponFamily.Unarmed, string grantedSkillId=null)
+    {
+        this.id=id;this.name=name;this.slot=slot;mainStat=stat;weaponFamily=family;
+        this.grantedSkillId=grantedSkillId;
+    }
 }
 
 public static class EquipmentFoundation
@@ -271,7 +275,16 @@ public static class EquipmentFoundation
 
     // Extend via catalog data later; these initial templates establish
     // real slot compatibility, but no other gear is generated/dropped yet.
+    internal static readonly IReadOnlyList<string> SkillSampleIds = Array.AsReadOnly(new[] {
+        "sample:skill-sword", "sample:skill-bow", "sample:skill-staff"
+    });
     private static readonly EquipmentTemplate[] templates = {
+        new EquipmentTemplate(SkillSampleIds[0],"Kiếm Đâm · mẫu",EquipmentSlot.Weapon,
+            CombatStatId.Attack,WeaponFamily.Sword,WeaponSkillRegistry.Thrust),
+        new EquipmentTemplate(SkillSampleIds[1],"Cung Liên Hoàn · mẫu",EquipmentSlot.Weapon,
+            CombatStatId.Attack,WeaponFamily.Bow,WeaponSkillRegistry.Volley),
+        new EquipmentTemplate(SkillSampleIds[2],"Trượng Hỏa Cầu · mẫu",EquipmentSlot.Weapon,
+            CombatStatId.MagicalAttack,WeaponFamily.Staff,WeaponSkillRegistry.Fireball),
         new EquipmentTemplate(DemoSword,"Thiết Kiếm",EquipmentSlot.Weapon,CombatStatId.Attack,WeaponFamily.Sword),
         new EquipmentTemplate(DemoBow,"Cung mẫu",EquipmentSlot.Weapon,CombatStatId.Attack,WeaponFamily.Bow),
         new EquipmentTemplate(DemoStaff,"Pháp trượng mẫu",EquipmentSlot.Weapon,CombatStatId.MagicalAttack,WeaponFamily.Staff),
@@ -303,6 +316,15 @@ public static class EquipmentFoundation
             rarity=EquipmentRarity.Common,refineLevel=0,
             mainStats=new List<ItemStatLine>{main}
         };
+    }
+
+    internal static EquipmentInstance CreateSkillSample(string templateId)
+    {
+        if (string.IsNullOrEmpty(FindTemplate(templateId)?.grantedSkillId)) return null;
+        var item = CreateCommon(templateId, 1, 10f);
+        item.rarity = EquipmentRarity.Hoang;
+        item.potentialRarity = EquipmentRarity.Hoang;
+        return item;
     }
 
     public static string RarityName(EquipmentRarity rarity)
@@ -387,7 +409,8 @@ public static class EquipmentFoundation
     {
         if(item==null || line==null || !line.revealed)
             return EquipmentAffixState.Hidden;
-        return item.level >= line.requiredItemLevel &&
+        // Historical Common affixes remain serialized for Forge but confer no bonus.
+        return item.rarity != EquipmentRarity.Common && item.level >= line.requiredItemLevel &&
             item.refineLevel >= line.requiredRefineLevel &&
             item.rarity >= line.requiredRarity
             ? EquipmentAffixState.Active : EquipmentAffixState.KnownLocked;

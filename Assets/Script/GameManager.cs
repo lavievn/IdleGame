@@ -470,6 +470,7 @@ public partial class GameManager : MonoBehaviour
         runtimeHeroData.savedAttackMode = AttackMode.Melee;
         EquipmentInventory.InitializeNewRun(runtimeHeroData);
         EquipmentRuntime.InitializeNewRun(runtimeHeroData);
+        runtimeHeroData.combatSkills = new CombatSkillProgress();
         runtimeHeroData.originHealth = Mathf.Max(1,heroDataSO != null ? heroDataSO.baseHealth : CombatBalance.HeroHealth(1));
         runtimeHeroData.meleeGrowthBonus = 0;
         runtimeHeroData.meleeGrowthThroughLevel = 1;
@@ -584,6 +585,17 @@ public partial class GameManager : MonoBehaviour
         heroController.HideHero();
         heroController.useStanceMoveSpeeds=useW2StanceMoveSpeeds;
         if (combatManager != null) combatManager.SetupHeroInfo(runtimeHeroData);
+        if (runtimeHeroData.combatSkills.health == 0)
+        {
+            // A saved defeat stays a defeat until the player explicitly retries.
+            hasDeployed = false;
+            HideMapEntryCover();
+            if (startMenu != null) startMenu.EnterGameplayImmediately();
+            if (preGameUI != null) preGameUI.SetActive(false);
+            RestoreProgress();
+            if (gameOverPanel != null) gameOverPanel.SetActive(true);
+            return;
+        }
         ResetEntryCamera();
         var space=environmentManager!=null?environmentManager:EnvironmentManager.Instance;
         Vector2 spawn=space!=null && space.BattleArea!=null
@@ -739,6 +751,20 @@ public partial class GameManager : MonoBehaviour
     {
         if (runtimeHeroData != null && heroController != null)
             heroController.BindBasicAttackData(runtimeHeroData,false);
+    }
+
+    internal bool GrantWeaponSkillSamples()
+    {
+        if (!DevelopmentItemGrantsEnabled || HasTribulationLiability ||
+            !IsGameplayHUDVisible || runtimeHeroData == null) return false;
+        bool added = false;
+        foreach (string id in EquipmentFoundation.SkillSampleIds)
+        {
+            if (runtimeHeroData.equipmentItems.Exists(item => item != null && item.templateId == id)) continue;
+            added |= EquipmentRuntime.AddInstance(runtimeHeroData, EquipmentFoundation.CreateSkillSample(id));
+        }
+        UpdateEventLog(added ? "Đã nhận vũ khí Hoàng mẫu trong Hòm đồ." : "Vũ khí mẫu đã có trong Hòm đồ.");
+        return added;
     }
 
     // V2 individual gear: all 8 positions share one canonical inventory.
@@ -1019,6 +1045,7 @@ public partial class GameManager : MonoBehaviour
         if(HasTribulationLiability){RetryTribulationCommit();return;}
         if (hasDeployed || HasPendingConfirmation || runtimeHeroData == null) return;
         if (gameOverPanel != null) gameOverPanel.SetActive(false);
+        runtimeHeroData.combatSkills.health = -1; // Explicit Retry revives HP, retaining Mana and cooldowns.
         DeployHero();
     }
 

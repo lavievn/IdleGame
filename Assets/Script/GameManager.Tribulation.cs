@@ -76,6 +76,9 @@ public partial class GameManager
         result.resultCultivation = CultivationGameplayState.Capture(source, profile);
         candidate.cultivationJson = result.resultCultivation;
         candidate.tribulationJson = JsonUtility.ToJson(result);
+        // The existing trial settlement redeploys Hero at full HP. Save that
+        // explicit respawn while retaining combat Mana, queue and cooldowns.
+        candidate.combatSkills.health = candidate.GetCalculatedHealth(WeaponBasicAttack.Resolve(candidate));
     }
 
     bool OfferInterruptedTrialRecovery()

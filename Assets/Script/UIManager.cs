@@ -123,6 +123,7 @@ public partial class UIManager : MonoBehaviour
     void Update()
     {
         if(musicVolumePanel!=null)musicVolumePanel.Tick();
+        RefreshWeaponSkills();
         // Read scroll before native pointer early-return so map zoom also works
         // in transparent Windows Player, not only in Unity Editor.
         var mapMouse=UnityEngine.InputSystem.Mouse.current;
@@ -183,6 +184,7 @@ public partial class UIManager : MonoBehaviour
             else
             {
                 // World map modal takes precedence over the underlying HUD/buttons.
+                if (SkillPanelOpen && !item.transform.IsChildOf(skillPanel)) continue;
                 if (worldMapUI != null && worldMapUI.IsOpen &&
                     !item.transform.IsChildOf(worldMapUI.Root)) continue;
                 // The full-screen opening owns input while its menu is visible.
@@ -580,7 +582,7 @@ public partial class UIManager : MonoBehaviour
             gm != null && gm.preGameUI != null && gm.preGameUI.activeInHierarchy,
             gm != null && gm.gameOverPanel != null && gm.gameOverPanel.activeInHierarchy,
             gm != null && gm.confirmationPopup != null && gm.confirmationPopup.activeInHierarchy,
-            (damagePanel != null && damagePanel.activeSelf) || (devUI != null && devUI.IsOpen) ||
+            SkillPanelOpen || (damagePanel != null && damagePanel.activeSelf) || (devUI != null && devUI.IsOpen) ||
             (systemMenu != null && systemMenu.activeInHierarchy) ||
             (inventoryUI != null && inventoryUI.IsOpen) ||
             (worldMapUI != null && worldMapUI.IsOpen));

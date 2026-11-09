@@ -55,7 +55,7 @@ internal sealed class HudW3View
             c.Fill.rectTransform.anchorMax=Vector2.one;
             c.Fill.rectTransform.offsetMin=c.Fill.rectTransform.offsetMax=Vector2.zero;
             c.Health=Text(c.HP,"HP Value","");
-            c.Mana=ui.Surface(c.Root,"Mana Disabled",UIManager.SurfaceKind.Track);
+            c.Mana=ui.Surface(c.Root,"Mana Track",UIManager.SurfaceKind.Track);
             c.ManaLabel=Text(c.Mana,"Mana Value","Mana —");
             c.ManaLabel.color=new Color(.53f,.65f,.67f,1);
         }
@@ -169,6 +169,9 @@ internal sealed class HudW3View
         string name=empty?"Chưa có Hero":data.entityName;
         int level=empty?0:data.currentLevel,hp=empty?0:state.CurrentHP,max=empty?0:state.MaxHP;
         bool dead=!empty && hp<=0;
+        string mana = empty || index > 0 ? "Mana —" :
+            "Mana " + Mathf.FloorToInt(state.CurrentMana) + "/" + Mathf.FloorToInt(state.MaxMana);
+        if (c.ManaLabel.text != mana) c.ManaLabel.text = mana;
         if(data!=c.Data || name!=c.LastName || level!=c.LastLevel || hp!=c.LastHP || max!=c.LastMax || dead!=c.LastDead)
         {
             c.Data=data;c.LastName=name;c.LastLevel=level;c.LastHP=hp;c.LastMax=max;c.LastDead=dead;

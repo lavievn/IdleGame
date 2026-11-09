@@ -139,6 +139,11 @@ public partial class SaveManager : MonoBehaviour
             {
                 if (!jsonData.TrimStart().StartsWith("{") || !jsonData.Contains("\"currentLevel\"")) return false;
                 string reason;
+                if (!CombatSkillProgress.TryRead(jsonData, out var combatSkills))
+                {
+                    Debug.LogWarning("[SaveManager] Unsupported combat skill snapshot in " + slot);
+                    return false;
+                }
                 if (!TryValidateEquipmentJson(jsonData, out reason))
                 {
                     Debug.LogWarning("[SaveManager] Refusing load from " + slot + ": " + reason);
@@ -205,6 +210,7 @@ public partial class SaveManager : MonoBehaviour
                 entityData.hybridSecondaryRace = TuTienCore.RaceType.YeuThu;
                 JsonUtility.FromJsonOverwrite(jsonData, entityData);
                 entityData.tribulationJson=trialComponent;
+                entityData.combatSkills = combatSkills;
                 // A partial load of only inventory/equipment must NEVER count
                 // as a successful progress rollback. Verify ALL present
                 // authoritative progression fields before normalization.
@@ -412,6 +418,7 @@ public partial class SaveManager : MonoBehaviour
     {
         string reason;
         RealmVersionProbe realm;bool legacyRealm;
+        if (!CombatSkillProgress.TryRead(data, out _)) return false;
         if (!TryValidateEquipmentJson(data, out reason) || !TryValidateRealmJson(data,out realm,out legacyRealm,out reason))
         {
             Debug.LogWarning("[SaveManager] Refusing write to " + slotName + ": " + reason);
@@ -450,8 +457,10 @@ public partial class SaveManager : MonoBehaviour
                 }
             }
             if(File.Exists(finalPath)) {
+                string existingJson = File.ReadAllText(finalPath);
+                if (!CombatSkillProgress.TryRead(existingJson, out _)) return false;
                 string existingComponent;
-                if(!ValidateCultivationJson(File.ReadAllText(finalPath),out existingComponent,true)) {
+                if(!ValidateCultivationJson(existingJson,out existingComponent,true)) {
                     Debug.LogWarning("[SaveManager] Preserving incompatible cultivation slot: "+LastCultivationFailure);return false;
                 }
                 if(!CanReplaceCultivationConfiguration(existingComponent,cultivationComponent,slotName))return false;

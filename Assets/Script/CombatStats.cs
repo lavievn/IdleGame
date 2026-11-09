@@ -10,7 +10,8 @@ public enum CombatStatId
     PhysicalDamagePercent, MagicalDamagePercent, ElementDamagePercent,
     AttackSpeed, MovementSpeed, CastSpeed, CooldownReductionPercent,
     HealthRegeneration, ManaRegeneration, KillHealBonus,
-    MagicalAttack // appended: legacy Attack (ID 1) remains Physical Attack
+    MagicalAttack, // legacy Attack (ID 1) remains Physical Attack
+    MaxMana
 }
 
 [Serializable]

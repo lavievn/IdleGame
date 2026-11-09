@@ -7,7 +7,23 @@ public sealed class HeroCombatState
 {
     public HeroController Controller { get; set; }
     public EntityDataSO Data { get; private set; }
-    public int CurrentHP { get; set; }
+    int currentHP;
+    bool persistHealth;
+    public int CurrentHP
+    {
+        get => currentHP;
+        set
+        {
+            currentHP = value;
+            if (!persistHealth || Data.combatSkills.health == value) return;
+            Data.combatSkills.health = value;
+            Data.isDirty = true;
+        }
+    }
+    public float CurrentMana => persistHealth ? Data.combatSkills.mana : 0;
+    public float MaxMana => persistHealth ? System.Math.Max(0, CombatStats.Get(Data,
+        CombatStatId.MaxMana, CombatSkillProgress.BaseMaxMana, ElementType.Vo,
+        new[] { CombatStats.StanceTag(SelectedMode) })) : 0;
     public int MaxHP { get; set; }
     // Mutable field is intentional: legacy AdvanceCycle(ref timer) stays exact.
     public float AttackTimer;
@@ -25,14 +41,25 @@ public sealed class HeroCombatState
 
     // Rebinding an actor to newly loaded/created hero data starts a fresh life.
     // The selected attack mode remains on HeroController, as in .54g.
-    public void BeginLife(EntityDataSO data, int maxHP)
+    public void BeginLife(EntityDataSO data, int maxHP, bool persistent = false)
     {
         LifeVersion++;
         Data = data;
         MaxHP = maxHP;
-        CurrentHP = maxHP;
+        persistHealth = persistent && Data != null;
+        if (persistHealth && Data.combatSkills == null) Data.combatSkills = new CombatSkillProgress();
+        int storedHP = persistHealth ? Data.combatSkills.health : -1;
+        CurrentHP = storedHP < 0 ? maxHP : System.Math.Min(storedHP, maxHP);
+        ClampMana();
         AttackTimer = 0f;
         HealthRegenRemainder = 0f;
+    }
+
+    internal void ClampMana()
+    {
+        if (!persistHealth || Data.combatSkills.mana <= MaxMana) return;
+        Data.combatSkills.mana = MaxMana;
+        Data.isDirty = true;
     }
 
     public void ResetAttack() { AttackTimer = 0f; }

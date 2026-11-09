@@ -37,6 +37,9 @@ public partial class CombatManager : MonoBehaviour
         public DamageTrace trace;
         public AttackMode attackMode;
         public bool staffBasic;
+        public WeaponSkill skill;
+        public string weaponId;
+        public int remainingArrows;
         public BattleEffects.Bolt visual;
     }
     private readonly List<Projectile> projectiles = new List<Projectile>();
@@ -46,6 +49,7 @@ public partial class CombatManager : MonoBehaviour
         public Vector2 start,end;
         public float elapsed,duration,arc;
         public int stepTick;
+        public bool silentEnd;
         public BattleEffects.Bolt visual;
     }
     private readonly List<MagicFlight> magicFlights=new List<MagicFlight>();
@@ -202,7 +206,7 @@ public partial class CombatManager : MonoBehaviour
             if (oldState != primaryHeroState && oldState.Controller != null)
                 oldState.Controller.HideHero();
         heroStates.Clear();
-        primaryHeroState.BeginLife(hData, initialMaxHP);
+        primaryHeroState.BeginLife(hData, initialMaxHP, persistent: true);
         primaryHeroState.WeaponIdentity=WeaponBasicAttack.Identity(hData);
         if (heroController != null) heroStates[heroController] = primaryHeroState;
         ResetHeroAttack();
@@ -375,6 +379,7 @@ public partial class CombatManager : MonoBehaviour
         state.MaxHP=state.Data.GetCalculatedHealth(controller.attackMode);
         // A weapon change can lower the HP cap, but never heal the actor.
         state.CurrentHP=hp<=0?0:Mathf.Min(hp,state.MaxHP);
+        state.ClampMana();
         state.WindupMode=controller.attackMode;
         ResetRegisteredAttack(state);
         float speed=CombatStats.Get(state.Data,CombatStatId.AttackSpeed,state.Data.baseAttackSpeed,
@@ -392,6 +397,7 @@ public partial class CombatManager : MonoBehaviour
         state.MaxHP = state.Data.GetCalculatedHealth(controller.attackMode);
         state.CurrentHP = state.CurrentHP <= 0 ? 0 :
             Mathf.Clamp(Mathf.RoundToInt(ratio*state.MaxHP),1,state.MaxHP);
+        state.ClampMana();
         if (resetAttack) ResetRegisteredAttack(state);
         controller.UpdateHealthBar(state.CurrentHP,state.MaxHP);
         controller.UpdateStats(state.Data,state.CurrentHP,state.MaxHP);
@@ -432,6 +438,7 @@ public partial class CombatManager : MonoBehaviour
         foreach (var state in heroStates.Values)
             if (state.CanFight)
             {
+                TickCombatResources(state, dt);
                 TickPassiveRegeneration(state,dt);
                 TickRegisteredHeroAttack(state,space,dt);
             }
@@ -507,7 +514,12 @@ public partial class CombatManager : MonoBehaviour
             state.HealthRegenRemainder = 0f;
             return;
         }
-        float rate = CombatStats.Get(state.Data,CombatStatId.HealthRegeneration,0f,
+        bool primary = state == primaryHeroState && gameManager != null;
+        if (primary && (!gameManager.IsGameplayHUDVisible ||
+            UIManager.Instance != null && UIManager.Instance.CombatResourcesMenuOpen)) return;
+        float natural = primary && !isBattling && !HeavenlyGateActive && state.Controller.IsExplorationMovement
+            ? CombatSkillProgress.BaseExplorationHPRegen : 0f;
+        float rate = CombatStats.Get(state.Data,CombatStatId.HealthRegeneration,natural,
             ElementType.Vo,new [] { CombatStats.StanceTag(state.SelectedMode) });
         if (rate <= 0f) { state.HealthRegenRemainder = 0f; return; }
         state.HealthRegenRemainder += Mathf.Min(100000f,rate) * dt;
@@ -561,6 +573,11 @@ public partial class CombatManager : MonoBehaviour
         float speed=CombatStats.Get(actor.Data,CombatStatId.AttackSpeed,
             actor.Data.baseAttackSpeed,ElementType.Vo,new [] { CombatStats.StanceTag(mode) });
         float duration=basic?WeaponBasicAttack.Interval(mode,speed):AttackDuration(mode,speed);
+        if (basic && TickWeaponCast(actor, space, dt))
+        {
+            actor.AttackTimer = weaponCast == null ? duration : 0;
+            return;
+        }
         ActiveMonsterInfo target=NearestEligibleMonster(space,actor);
         if (!basic && mode==AttackMode.RangedMagic && (!isBattling || target==null))
         {
@@ -570,7 +587,9 @@ public partial class CombatManager : MonoBehaviour
         }
         bool ready=AdvanceCycle(ref actor.AttackTimer,basic?AttackMode.Melee:mode,duration,dt);
         hero.UpdateChargeBar(!basic && mode==AttackMode.RangedMagic,actor.AttackTimer/duration);
-        if (!ready || !isBattling || target==null) return;
+        if (!ready || !isBattling) return;
+        if (basic && TryBeginWeaponCast(actor, space)) return;
+        if (target == null) return;
         actor.AttackTimer=!basic && mode==AttackMode.RangedMagic?0f:duration;
         hero.UpdateChargeBar(!basic && mode==AttackMode.RangedMagic,0f);
         hero.PlayAttackFeedback();
@@ -601,6 +620,7 @@ public partial class CombatManager : MonoBehaviour
     private void ResetHeroAttack() { ResetRegisteredAttack(primaryHeroState); }
     private void ResetRegisteredAttack(HeroCombatState actor)
     {
+        if (actor == primaryHeroState) CancelWeaponCast();
         if(heroSfx!=null)heroSfx.StopHero(actor.Controller);
         actor.ResetAttack();
         if (actor.Controller != null) actor.Controller.UpdateChargeBar(false,0f);
@@ -819,6 +839,11 @@ public partial class CombatManager : MonoBehaviour
 
     private void Launch(ActiveMonsterInfo monster,bool fromHero,AttackMode mode,
         DamageTrace trace,float interval,EnvironmentManager space,HeroCombatState actor)
+        => LaunchProjectile(monster, fromHero, mode, trace, interval, space, actor);
+
+    private void LaunchProjectile(ActiveMonsterInfo monster, bool fromHero, AttackMode mode,
+        DamageTrace trace, float interval, EnvironmentManager space, HeroCombatState actor,
+        WeaponSkill skill = null, int remainingArrows = 0)
     {
         if (actor==null || actor.Controller==null || actor.Controller.heroRect==null) return;
         bool staffBasic=fromHero && trace.weaponBasic && mode==AttackMode.RangedMagic;
@@ -832,15 +857,17 @@ public partial class CombatManager : MonoBehaviour
             hero=actor,heroLife=actor.LifeVersion,
             heroSpawn=actor.Controller.SpawnVersion,
             fromHero=fromHero,magic=magic,staffBasic=staffBasic,start=start,end=end,trace=trace,
+            skill=skill,weaponId=actor.WeaponIdentity,remainingArrows=remainingArrows,
             attackMode=mode,
             source=IdentityDisplay.Describe(fromHero?actor.Data:monster.data),
             duration=BattleMotion.FlightDuration(magic?magicFlightTime:physicalFlightTime,interval),
-            arc=magic?Mathf.Max(0f,magicArcHeight):0f
+            arc=magic?Mathf.Max(0f,magicArcHeight):
+                staffBasic ? (float)(staffArcRandom.NextDouble() * 2 - 1) * Mathf.Max(20f, magicArcHeight) : 0f
         };
         if (effects!=null)
         {
             shot.visual=effects.AddBolt(start,magic,
-                (magic?5f*Mathf.Max(.1f,magicProjectileScale):2f)*Mathf.Max(.1f,effectsScale));
+                (magic?5f*Mathf.Max(.1f,magicProjectileScale):staffBasic?3.5f:2f)*Mathf.Max(.1f,effectsScale));
             shot.visual.direction=shot.end-shot.start;
         }
         projectiles.Add(shot);
@@ -871,12 +898,23 @@ public partial class CombatManager : MonoBehaviour
                               shot.monster.controller!=null &&
                               shot.monster.controller.SpawnVersion==shot.monsterSpawn &&
                               shot.monster.controller.IsAlive;
-            // A resurrected Hero and a pooled monster are NEW lifetimes. Physical
-            // shots require the original target; Hero magic still explodes at
-            // its stored endpoint even if the original monster has died.
             if (shot.battleVersion!=battleVersion || !validHero ||
-                ((!shot.fromHero || !shot.magic) && !validMonster))
+                shot.skill != null && shot.weaponId != WeaponBasicAttack.Identity(shot.hero.Data))
             { RetireProjectile(i); continue; }
+            bool volley = shot.skill?.Effect == SkillEffect.ArrowVolley;
+            if (!validMonster && volley)
+            {
+                var replacement = PickSkillTarget(shot.skill, shot.hero, space, true);
+                if (replacement == null) { RemoveProjectile(i); continue; }
+                BindProjectileTarget(shot, replacement);
+                validMonster = true;
+            }
+            // Legacy AoE can still detonate at its snapshot point; locked
+            // single-target attacks must have a valid registered target life.
+            if (!validMonster && (!shot.fromHero || !shot.magic))
+            { RetireProjectile(i); continue; }
+            bool locked = shot.staffBasic || volley;
+            if (locked) shot.end = BodyPosition(shot.monster.controller.Rect, space);
             shot.stepTick=projectileTick;
             shot.elapsed+=dt;
             float t=shot.duration>0f?Mathf.Clamp01(shot.elapsed/shot.duration):1f;
@@ -912,7 +950,7 @@ public partial class CombatManager : MonoBehaviour
             }
             else if (shot.fromHero)
             {
-                hit=WithinImpact(BodyPosition(shot.monster.controller.Rect,space),
+                hit=locked || WithinImpact(BodyPosition(shot.monster.controller.Rect,space),
                                  end,physicalHitRadius);
                 if (hit) DealDamageToMonsterFromHero(shot.monster,
                     SynergyMath.EvaluateSnapshot(shot.trace,shot.monster.data),
@@ -936,7 +974,11 @@ public partial class CombatManager : MonoBehaviour
                                           ": đòn cung hụt, sát thương 0.");
                 gameManager.UpdateEventLog(miss);gameManager.RecordDamage(miss);
             }
+            if (shot.battleVersion != battleVersion) return;
             if (!isBattling) { DiscardCombatProjectiles(true,false); return; }
+            if (volley && shot.remainingArrows > 0 && shot.hero.CanFight)
+                ReleaseVolleyArrow(shot.skill, PickSkillTarget(shot.skill, shot.hero, space, true),
+                    shot.hero, space, shot.remainingArrows);
         }
     }
 
@@ -979,7 +1021,8 @@ public partial class CombatManager : MonoBehaviour
             if(t>=1f)
             {
                 if(effects!=null)effects.RemoveBolt(flight.visual);
-                magicFlights.RemoveAt(i);Impact(flight.end,true);
+                magicFlights.RemoveAt(i);
+                if (!flight.silentEnd) Impact(flight.end,true);
             }
             else magicFlights[i]=flight;
         }
@@ -1063,6 +1106,7 @@ public partial class CombatManager : MonoBehaviour
         resumeEncounterAfterEnable=false;
         lootRewards.Invalidate();
         battleVersion++;
+        CancelWeaponCast();
         isBattling = false;
         if (!preserveHeroAttack) ResetAllHeroAttacks();
         if(keepMagicVisuals)DiscardCombatProjectiles(true,true);

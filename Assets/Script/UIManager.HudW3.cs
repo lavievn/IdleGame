@@ -101,11 +101,7 @@ public partial class UIManager
         if(!themeDirty && appliedTheme==inventoryArtTheme && appliedArtEnabled==inventoryUseArtTheme && appliedThemeRevision==revision)return;
         themeDirty=false;appliedTheme=inventoryArtTheme;appliedArtEnabled=inventoryUseArtTheme;appliedThemeRevision=revision;
         foreach(var b in surfaces)if(b.Image!=null)ApplySurface(b);
-        if(martialButton!=null)
-        {
-            martialButton.GetComponent<Image>().color=new Color(.10f,.15f,.16f,1);
-            martialButton.GetComponentInChildren<TextMeshProUGUI>(true).color=new Color(.49f,.58f,.58f,1);
-        }
+        if(martialButton!=null) Skin(martialButton,SurfaceKind.Button);
         if(worldMapButton!=null)
         {
             var caption=worldMapButton.GetComponentInChildren<TextMeshProUGUI>(true);
@@ -134,8 +130,7 @@ public partial class UIManager
         worldMapButton.SetParent(w3.Root,false);pauseRect.SetParent(w3.Root,false);
         statsButton.GetComponentInChildren<TextMeshProUGUI>(true).text="Nhân vật";
         inventoryButton.GetComponentInChildren<TextMeshProUGUI>(true).text="Hòm đồ";
-        martialButton=SmallButton(w3.Root,"MartialArtsUnavailable","Võ học",Vector2.zero,Vector2.zero,Vector2.zero,Vector2.one,()=>{});
-        martialButton.GetComponent<CustomInteractable>().enabled=false;
+        martialButton=SmallButton(w3.Root,"WeaponSkillsButton","Võ học",Vector2.zero,Vector2.zero,Vector2.zero,Vector2.one,OpenWeaponSkills);
         menuButton=SmallButton(w3.Root,"SystemMenuButton","Menu",Vector2.zero,Vector2.zero,Vector2.zero,Vector2.one,ToggleSystemMenu);
         logToggle=SmallButton(w3.Root,"CompactLogToggle","Nhật ký",Vector2.zero,Vector2.zero,Vector2.zero,Vector2.one,ToggleCompactLog);
         logToggleLabel=logToggle.GetComponentInChildren<TextMeshProUGUI>(true);
