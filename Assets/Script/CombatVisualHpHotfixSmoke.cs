@@ -1,6 +1,7 @@
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
 using System;
 using System.Collections;
+using System.IO;
 using System.Reflection;
 using TuTienCore;
 using UnityEngine;
@@ -46,7 +47,7 @@ internal static class CombatVisualHpHotfixSmoke
         Check(!Read<bool>(sparks[0],"fire"),"Uses the common Bow burst");
     }
 
-    static IEnumerator TestHealth(GameManager game,UIManager ui,CombatManager combat,
+    static IEnumerator TestHealth(GameManager game,SaveManager saves,UIManager ui,CombatManager combat,
         HeroController hero,EnvironmentManager space,Action<string> pass)
     {
         var state=combat.CurrentHeroCombatState;
@@ -92,8 +93,18 @@ internal static class CombatVisualHpHotfixSmoke
         Check(legacy.GetCalculatedHealth(AttackMode.Melee)==oldMax &&
             legacy.GetCalculatedHealth(AttackMode.RangedMagic)==oldMax && legacy.combatSkills.health==615,
             "Legacy creation HP and stored current HP stay intact");
+        legacy.combatSkills.health=oldMax+100;
+        Check(saves.SaveGame(legacy,SaveSlot.ManualSave2),"Save owned legacy cap fixture");
         UnityEngine.Object.Destroy(legacy);
-        pass("New HP 1000, four families, level growth, real HP gear, clamp/re-equip, absolute Save/Load and legacy origin.");
+        var path=Path.Combine(saves.SaveDirectory,"ManualSave2.json");
+        string stored=File.ReadAllText(path);
+        Check(game.LoadAndContinue(SaveSlot.ManualSave2) && state.CurrentHP==oldMax && state.MaxHP==oldMax &&
+            game.FullEventHistory.Contains("HP trong bản lưu") && File.ReadAllText(path)==stored,
+            "Over-cap legacy HP is explained and clamped in memory; the source file is unchanged");
+        yield return Ready(game,ui);
+        Check(game.LoadAndContinue(SaveSlot.ManualSave1),"Restore new Hero fixture");
+        yield return Ready(game,ui);
+        pass("New HP 1000, four families, level growth, real HP gear, clamp/re-equip, absolute Save/Load and explained legacy clamp.");
     }
 
     internal static IEnumerator Run(GameManager game,SaveManager saves,UIManager ui,CombatManager combat,
@@ -105,7 +116,7 @@ internal static class CombatVisualHpHotfixSmoke
         game.OnNewGameClicked();
         game.OnConfirmResetClicked();
         yield return Ready(game,ui);
-        yield return TestHealth(game,ui,combat,hero,space,pass);
+        yield return TestHealth(game,saves,ui,combat,hero,space,pass);
         var state=combat.CurrentHeroCombatState;
         var progress=game.HeroData.combatSkills;
         var fx=Read<BattleEffects>(combat,"effects");

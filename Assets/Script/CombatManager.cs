@@ -212,7 +212,10 @@ public partial class CombatManager : MonoBehaviour
             if (oldState != primaryHeroState && oldState.Controller != null)
                 oldState.Controller.HideHero();
         heroStates.Clear();
+        int savedHP = hData.combatSkills?.health ?? -1;
         primaryHeroState.BeginLife(hData, initialMaxHP, persistent: true);
+        if (savedHP > initialMaxHP)
+            gameManager?.UpdateEventLog($"HP trong bản lưu ({savedHP}) được giới hạn theo MaxHP hiện tại ({initialMaxHP}).");
         primaryHeroState.WeaponIdentity=WeaponBasicAttack.Identity(hData);
         if (heroController != null) heroStates[heroController] = primaryHeroState;
         ResetHeroAttack();
