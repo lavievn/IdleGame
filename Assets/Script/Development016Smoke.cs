@@ -15,9 +15,9 @@ internal static class Development016Smoke
     static T Get<T>(object owner, string name) => (T)owner.GetType().GetField(name, Fields).GetValue(owner);
     static void Set(object owner, string name, object value) => owner.GetType().GetField(name, Fields).SetValue(owner, value);
     static void Call(object owner, string name, params object[] args) => owner.GetType().GetMethod(name, Fields).Invoke(owner, args);
-    static void Check(bool good, string label) { if (!good) throw new InvalidOperationException(label); }
+    internal static void Check(bool good, string label) { if (!good) throw new InvalidOperationException(label); }
 
-    static IEnumerator Wait(Func<bool> condition, float seconds, string label)
+    internal static IEnumerator Wait(Func<bool> condition, float seconds, string label)
     {
         float until = Time.realtimeSinceStartup + seconds;
         while (!condition())
@@ -27,14 +27,14 @@ internal static class Development016Smoke
         }
     }
 
-    static IEnumerator Ready(GameManager game, UIManager ui)
+    internal static IEnumerator Ready(GameManager game, UIManager ui)
     {
         yield return Wait(() => game.IsGameplayHUDVisible, 30, "MainGame entry");
         ui.SetPaused(true);
         yield return null;
     }
 
-    static void Click(UIManager ui, string name)
+    internal static void Click(UIManager ui, string name)
     {
         var rect = Array.Find(Get<RectTransform>(ui, "hudCanvas").GetComponentsInChildren<RectTransform>(true),
             t => t.name == name && t.gameObject.activeInHierarchy);
@@ -46,13 +46,13 @@ internal static class Development016Smoke
         ui.HandleMouseClick(point);
     }
 
-    static void Equip(GameManager game, string template)
+    internal static void Equip(GameManager game, string template)
     {
         var item = game.HeroData.equipmentItems.Find(x => x.templateId == template);
         Check(item != null && game.EquipGear(item.instanceId, EquipmentSlot.Weapon), "Equip " + template);
     }
 
-    static void Clear(GameManager game, CombatManager combat)
+    internal static void Clear(GameManager game, CombatManager combat)
     {
         Call(game, "CancelNextWave");
         combat.ForceClearAllMonsters();
@@ -60,7 +60,7 @@ internal static class Development016Smoke
     }
 
     const int TestHP = 5000;
-    static List<CombatManager.ActiveMonsterInfo> Wave(GameManager game, CombatManager combat,
+    internal static List<CombatManager.ActiveMonsterInfo> Wave(GameManager game, CombatManager combat,
         EnvironmentManager space, HeroController hero, params Vector2[] positions)
     {
         Clear(game, combat);

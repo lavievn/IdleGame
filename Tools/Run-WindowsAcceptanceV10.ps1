@@ -1,5 +1,5 @@
 param(
- [ValidateSet('Build','Run','Replay','Manual','QiUpgrade','Capacity','Performance','Tribulation','TrialV13','TrialReplay','TrialProfile','TrialBalance','TrialManual','Playable015','Playable015Replay','Playable016','Playable016Replay')][string]$Mode='Build',
+ [ValidateSet('Build','Run','Replay','Manual','QiUpgrade','Capacity','Performance','Tribulation','TrialV13','TrialReplay','TrialProfile','TrialBalance','TrialManual','Playable015','Playable015Replay','Playable016','Playable016Replay','CombatRefinement')][string]$Mode='Build',
  [Parameter(Mandatory=$true)][string]$OutputRoot,
  [string]$ProjectRoot=(Split-Path $PSScriptRoot -Parent),
  [string]$UnityEditor='C:\Program Files\Unity\Hub\Editor\6000.5.0f1\Editor\Unity.exe',
@@ -53,7 +53,7 @@ if($Mode -in @('Replay','TrialReplay','Playable015Replay','Playable016Replay')){
  }
  foreach($file in $files){$source=Join-Path $ReplayProfile ('saves/'+$file);if((Get-Item -LiteralPath $source).Attributes -band [IO.FileAttributes]::ReparsePoint){throw 'Linked replay file refused'};Copy-Item -LiteralPath $source -Destination (Join-Path $dest $file)}
 }
-$head=git -C $project rev-parse HEAD;$runMode=if($Mode -eq 'Replay'){'replay'}elseif($Mode -eq 'Manual'){'observe'}elseif($Mode -eq 'QiUpgrade'){'v11qi'}elseif($Mode -eq 'Capacity'){'v11capacity'}elseif($Mode -eq 'Performance'){'v12performance'}elseif($Mode -eq 'Tribulation'){'v12tribulation'}elseif($Mode -eq 'TrialV13'){'v13trial'}elseif($Mode -eq 'TrialReplay'){'v13trialreplay'}elseif($Mode -eq 'TrialProfile'){'v15trialprofile'}elseif($Mode -eq 'TrialBalance'){'v15trialbalance'}elseif($Mode -eq 'TrialManual'){'v15trialmanual'}elseif($Mode -eq 'Playable015'){'v15playable'}elseif($Mode -eq 'Playable015Replay'){'v15playablereplay'}elseif($Mode -eq 'Playable016'){'v16playable'}elseif($Mode -eq 'Playable016Replay'){'v16playablereplay'}else{'matrix'}
+$head=git -C $project rev-parse HEAD;$runMode=if($Mode -eq 'Replay'){'replay'}elseif($Mode -eq 'Manual'){'observe'}elseif($Mode -eq 'QiUpgrade'){'v11qi'}elseif($Mode -eq 'Capacity'){'v11capacity'}elseif($Mode -eq 'Performance'){'v12performance'}elseif($Mode -eq 'Tribulation'){'v12tribulation'}elseif($Mode -eq 'TrialV13'){'v13trial'}elseif($Mode -eq 'TrialReplay'){'v13trialreplay'}elseif($Mode -eq 'TrialProfile'){'v15trialprofile'}elseif($Mode -eq 'TrialBalance'){'v15trialbalance'}elseif($Mode -eq 'TrialManual'){'v15trialmanual'}elseif($Mode -eq 'Playable015'){'v15playable'}elseif($Mode -eq 'Playable015Replay'){'v15playablereplay'}elseif($Mode -eq 'Playable016'){'v16playable'}elseif($Mode -eq 'Playable016Replay'){'v16playablereplay'}elseif($Mode -eq 'CombatRefinement'){'combatrefinement'}else{'matrix'}
 $style=if($Mode -eq 'TrialManual'){'Normal'}else{'Hidden'}
 $player=Start-Process -FilePath $exe -ArgumentList @('-ownedV10Root',('"'+$ownedProfilePath+'"'),'-ownedV10Mode',$runMode,'-ownedV10Head',$head,'-logFile',('"'+(Join-Path $ownedProfilePath 'player.log')+'"'),'-screen-fullscreen','0') -WindowStyle $style -PassThru
 Write-Output "OWNED_PROFILE $ownedProfilePath";Write-Output "OWNED_PLAYER_PID $($player.Id)"

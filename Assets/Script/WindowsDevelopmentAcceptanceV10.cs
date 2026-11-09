@@ -52,7 +52,7 @@ public sealed partial class WindowsDevelopmentAcceptanceV10:MonoBehaviour
         if(RootArgument==null)return;
         try{VerifyRoot();manager.ConfigureSaveDirectoryBeforeAwake(Path.Combine(root,"saves"));
             var mode=Arg("-ownedV10Mode");
-            if (mode=="v15playable" || mode=="v15playablereplay" || mode=="v16playable" || mode=="v16playablereplay")
+            if (mode=="v15playable" || mode=="v15playablereplay" || mode=="v16playable" || mode=="v16playablereplay" || mode=="combatrefinement")
                 manager.ConfigureOwnedDevelopmentLoopBeforeAwake();
             if(IsOwnedGateMode(Arg("-ownedV10Mode"))){var p=HeavenlyGateV13Fixtures.Profile();manager.ConfigureCultivationPlaytestBeforeAwake(p,false);manager.ConfigureTribulationFixtureBeforeAwake(HeavenlyGateV13Fixtures.Configuration(),HeavenlyGateV13Fixtures.Penalty());manager.GetComponent<GameManager>().ConfigureCultivationPlaytest(p);}Debug.Log("[WINDOWS V10] SAVE_DIRECTORY_BEFORE_AWAKE "+manager.SaveDirectory);}
         catch{Application.Quit(2);throw;}
@@ -97,6 +97,13 @@ public sealed partial class WindowsDevelopmentAcceptanceV10:MonoBehaviour
         yield return new WaitForSecondsRealtime(1);
         gm=UnityEngine.Object.FindFirstObjectByType<GameManager>();saves=SaveManager.Instance;ui=UIManager.Instance;hero=UnityEngine.Object.FindFirstObjectByType<HeroController>();combat=UnityEngine.Object.FindFirstObjectByType<CombatManager>();space=UnityEngine.Object.FindFirstObjectByType<EnvironmentManager>();
         Require(gm!=null && saves!=null && ui!=null && Debug.isDebugBuild,"Real development Player managers");Require(!ui.inventoryLayoutDebug,"Player Inventory debug layout is off by default");AssertIsolated();result.saveDirectory=saves.SaveDirectory;
+        if(result.mode=="combatrefinement")
+        {
+            yield return Resize(800,450);
+            yield return CombatUiRefinementSmoke.Run(gm,saves,ui,combat,hero,space,Resize,Capture,Pass);
+            Require(result.uiIssues.Count == 0,"Refinement HUD resolutions");
+            yield break;
+        }
         if(result.mode=="v16playablereplay")
         {
             Development016Smoke.Replay(gm, saves, Pass);

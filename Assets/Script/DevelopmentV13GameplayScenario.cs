@@ -82,7 +82,8 @@ namespace TuTienCore
    var trackNames=new[]{"HeavenlyGateTheme","HeavenlyGateThemeAlternate"};
    var observedTracks=new HashSet<string>();
    var musicRows=new List<string>{"fixture,clip"};
-   AudioSource dedicatedMusicSource=null;
+   var musicSources=music.GetComponents<AudioSource>();
+   R(musicSources.Length==2,"two reusable crossfade channels");
    var resourceRows=new List<string>{"fixture,phase,views,video_players,render_targets,vfx_objects,mono_used,unity_allocated"};
    foreach(string name in new[]{"weak","sword","bow","staff","unarmed","same-hp-armor"}){
     var family=name=="sword"?WeaponFamily.Sword:name=="bow"?WeaponFamily.Bow:name=="staff"?WeaponFamily.Staff:WeaponFamily.Unarmed;
@@ -181,10 +182,8 @@ namespace TuTienCore
     string expectedTrack=trackNames[expectedMusicRandom.Next(trackNames.Length)];
     R(trialTrack!=null&&trialTrack.clip!=null&&trialTrack.clip.name==expectedTrack&&trialTrack.loop&&trialTrack.isPlaying&&
        Mathf.Abs(trialTrack.volume-MapBgmController.CurrentVolume)<.001f&&
-       Array.TrueForAll(music.GetComponents<AudioSource>(),a=>a==trialTrack||!a.isPlaying),
-       "each trial selects one dedicated track to loop at the global BGM volume");
-    if(dedicatedMusicSource==null)dedicatedMusicSource=trialTrack;
-    R(dedicatedMusicSource==trialTrack,"reuse one audio source across all trials");
+       Array.Exists(musicSources,a=>a==trialTrack)&&Array.TrueForAll(musicSources,a=>a==trialTrack||!a.isPlaying),
+       "one pooled channel loops the chosen trial track after the crossfade");
     observedTracks.Add(trialTrack.clip.name);
     musicRows.Add(name+","+trialTrack.clip.name);
     if(name=="sword"){
@@ -284,8 +283,11 @@ namespace TuTienCore
       GameObject.Find("Heavenly Trial Environment")==null && GameObject.Find("Trial lightning")==null,
       "environment, decoder, lightning and pending strike retired on result "+name);
     TrackTrialResources(resourceRows,name,"after",false);
-    R(!trialTrack.isPlaying&&trialTrack.clip.name==expectedTrack,
-      "the selected clip stayed assigned until the dedicated source stopped on leaving");
+    float musicDeadline=Time.realtimeSinceStartup+4f;
+    while(trialTrack.clip!=null && trialTrack.clip.name==expectedTrack && Time.realtimeSinceStartup<musicDeadline)
+     yield return null;
+    R(trialTrack.clip==null||trialTrack.clip.name!=expectedTrack,
+      "the trial theme cleared from the pooled channel after fading out");
     R(!success||b.Capacity.Absorption==3&&b.Capacity.Refinement==2,"new realm capacities derived immediately");
     R((family!=WeaponFamily.Bow&&family!=WeaponFamily.Staff)||projectile,"actual ranged projectile observed");
     if(!success){R(!gm.RequestTribulation()&&gm.TryManualSave(SaveSlot.ManualSave1),"failed Hero must regain bottleneck; save terminal failure for restart");ui.RefreshCharacterProgression();yield return capture("v13-failure-hud");}
