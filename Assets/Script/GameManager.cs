@@ -1407,6 +1407,8 @@ public partial class GameManager : MonoBehaviour
         retryWaveSize = 0;
     }
 
+    private bool applicationQuitting;
+
     private void OnDisable()
     {
 #if DEVELOPMENT_BUILD && !UNITY_EDITOR
@@ -1418,9 +1420,9 @@ public partial class GameManager : MonoBehaviour
         if(combatManager!=null)combatManager.SuspendLootEncounter();
         var space=environmentManager!=null?environmentManager:EnvironmentManager.Instance;
         if(space!=null)space.CancelCameraEntryHandoff();
-        // Restore presentation on cancellation, but never spawn a wave while
-        // disabling the scene/component (including application shutdown).
-        if(enteringGameplay)
+        // During quit the menu's child objects may already be destroyed.
+        // Entry presentation is only needed for a reversible component disable.
+        if(enteringGameplay && !applicationQuitting)
         {
             resumeEntryWave=hasDeployed;
             CancelGameplayEntry();
@@ -1444,6 +1446,7 @@ public partial class GameManager : MonoBehaviour
 
     private void OnApplicationQuit()
     {
+        applicationQuitting = true;
         if (HasTribulationLiability || saveManager == null || !hasDeployed || runtimeHeroData == null) return;
         CaptureSelectedStance();
         saveManager.SaveGame(runtimeHeroData, SaveSlot.AutoSave);
