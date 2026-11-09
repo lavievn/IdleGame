@@ -12,7 +12,7 @@ public sealed class EquipmentStatLine
     public float withoutEquipment;
     public float current;
     public float preview;
-    public bool isDerivedGameplayTotal; // HP, ATK and attack speed only.
+    public bool isDerivedGameplayTotal;
     public float equippedBonus { get { return current-withoutEquipment; } }
     public float difference { get { return preview-current; } }
 }
@@ -24,6 +24,7 @@ public sealed class EquipmentStatComparison
     public AttackMode currentMode;
     public AttackMode mode; // resolved future weapon profile
     public bool isUnequip;
+    public string currentItemName, previewItemName, currentGrantedSkillId, previewGrantedSkillId;
     public readonly List<EquipmentStatLine> lines=new List<EquipmentStatLine>();
 
     public EquipmentStatLine Find(CombatStatId stat,ElementType element=ElementType.Vo)
@@ -110,8 +111,10 @@ public static class EquipmentStatPreview
                 stat=legacy.stat,flat=legacy.flat
             });
 
-        AttackMode currentMode=WeaponBasicAttack.Resolve(hero);
-        AttackMode nextMode=AttackMode.Melee; // no weapon in the simulated assignment
+        var currentWeapon=WeaponBasicAttack.Equipped(hero);
+        var currentItem=EquipmentRuntime.Equipped(hero,slot);
+        EquipmentInstance nextWeapon=null;
+        AttackMode currentMode=WeaponBasicAttack.Mode(WeaponBasicAttack.Family(currentWeapon));
         var occupied=new HashSet<EquipmentSlot>();
         if(legacy!=null)occupied.Add(EquipmentSlot.Artifact);
         var seenIds=new HashSet<string>(StringComparer.Ordinal);
@@ -127,15 +130,8 @@ public static class EquipmentStatPreview
             EquipmentSlot destination=isCandidate && !currentOnly?slot:item.equippedSlot;
             if(!EquipmentFoundation.IsSlotAllowed(item,destination) ||
                 !seenIds.Add(item.instanceId) || !occupied.Add(destination))continue;
-            if(destination==EquipmentSlot.Weapon)nextMode=WeaponBasicAttack.Mode(WeaponBasicAttack.Family(item));
-            for(int i=0;i<item.mainStats.Count;i++)
-                future.Add(EquipmentRefinement.EffectiveModifier(item,item.mainStats[i],
-                    EquipmentFoundation.SourcePrefix+item.instanceId+":m:"+i));
-            for(int i=0;i<item.extraStats.Count;i++)
-                if(EquipmentFoundation.AffixState(item,item.extraStats[i]) ==
-                    EquipmentAffixState.Active)
-                    future.Add(EquipmentRefinement.EffectiveModifier(item,item.extraStats[i],
-                        EquipmentFoundation.SourcePrefix+item.instanceId+":a:"+i));
+            if(destination==EquipmentSlot.Weapon)nextWeapon=item;
+            EquipmentRuntime.AddEffectiveModifiers(item,future);
         }
 
         // Current comes from the real Hero modifier snapshot, including
@@ -144,7 +140,12 @@ public static class EquipmentStatPreview
         var after=currentOnly?current:future;
         var result=new EquipmentStatComparison {
             candidateId=candidate!=null?candidate.instanceId:legacyCandidate,
-            slot=slot,currentMode=currentMode,mode=currentOnly?currentMode:nextMode,isUnequip=removing
+            slot=slot,currentMode=currentMode,
+            mode=currentOnly?currentMode:WeaponBasicAttack.Mode(WeaponBasicAttack.Family(nextWeapon)),isUnequip=removing,
+            currentItemName=ItemName(currentItem,slot==EquipmentSlot.Artifact?hero.equippedItemId:null),
+            previewItemName=currentOnly?ItemName(currentItem,null):ItemName(candidate,legacyCandidate),
+            currentGrantedSkillId=EquipmentFoundation.GrantedSkillId(currentWeapon),
+            previewGrantedSkillId=EquipmentFoundation.GrantedSkillId(currentOnly?currentWeapon:nextWeapon)
         };
         foreach(CombatStatId stat in Enum.GetValues(typeof(CombatStatId)))
         {
@@ -159,6 +160,9 @@ public static class EquipmentStatPreview
         }
         return result;
     }
+
+    private static string ItemName(EquipmentInstance item,string legacyId) =>
+        item!=null?EquipmentRefinement.DisplayName(item):EquipmentCatalog.Find(legacyId)?.name;
 
     private static bool IsEquipmentModifier(CombatStatModifier modifier)
     {
@@ -175,9 +179,12 @@ public static class EquipmentStatPreview
             return WeaponBasicAttack.Value(hero,stat,mode,mods);
         if(stat==CombatStatId.MaxHealth)
             return Math.Max(1,CombatStats.GetIntWithModifiers(hero,mods,stat,hero.HeroHealthBeforeModifiers));
-        float baseline=stat==CombatStatId.AttackSpeed?hero.baseAttackSpeed:0f;
-        return CombatStats.GetWithModifiers(hero,mods,stat,baseline,element,
-            new[]{CombatStats.StanceTag(mode)});
+        float baseline=stat==CombatStatId.AttackSpeed?hero.baseAttackSpeed:CombatSkillProgress.ResourceBaseline(stat);
+        string[] context=stat==CombatStatId.Armor?CombatDamage.IncomingTags(DamageSchool.Physical,element):
+            stat==CombatStatId.MagicResistance?CombatDamage.IncomingTags(DamageSchool.Magical,element):
+            new[]{CombatStats.StanceTag(mode)};
+        float value=CombatStats.GetWithModifiers(hero,mods,stat,baseline,element,context);
+        return CombatSkillProgress.IsResourceStat(stat)?Math.Max(0,value):value;
     }
     private static void AddLine(EquipmentStatComparison output,
         EntityDataSO hero,CombatStatId stat,ElementType element,
@@ -190,7 +197,7 @@ public static class EquipmentStatPreview
             current=Total(hero,before,stat,element,output.currentMode),
             preview=Total(hero,after,stat,element,output.mode),
             isDerivedGameplayTotal=stat==CombatStatId.Attack || stat==CombatStatId.MagicalAttack ||
-                stat==CombatStatId.MaxHealth || stat==CombatStatId.AttackSpeed
+                stat==CombatStatId.MaxHealth || stat==CombatStatId.AttackSpeed || CombatSkillProgress.IsResourceStat(stat)
         });
     }
 }

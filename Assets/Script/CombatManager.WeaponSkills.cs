@@ -41,7 +41,7 @@ public partial class CombatManager
         var tags = new[] { CombatStats.StanceTag(actor.SelectedMode) };
         float max = actor.MaxMana;
         float manaRate = progress.mana < max ? Mathf.Max(0, CombatStats.Get(actor.Data,
-            CombatStatId.ManaRegeneration, CombatSkillProgress.BaseManaRegen, ElementType.Vo, tags)) : 0;
+            CombatStatId.ManaRegeneration, CombatSkillProgress.ResourceBaseline(CombatStatId.ManaRegeneration), ElementType.Vo, tags)) : 0;
         if (progress.Advance(dt, manaRate, max)) actor.Data.isDirty = true;
     }
 

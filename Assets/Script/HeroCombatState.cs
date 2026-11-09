@@ -23,7 +23,7 @@ public sealed class HeroCombatState
     }
     public float CurrentMana => persistHealth ? Data.combatSkills.mana : 0;
     public float MaxMana => persistHealth ? System.Math.Max(0, CombatStats.Get(Data,
-        CombatStatId.MaxMana, CombatSkillProgress.BaseMaxMana, ElementType.Vo,
+        CombatStatId.MaxMana, CombatSkillProgress.ResourceBaseline(CombatStatId.MaxMana), ElementType.Vo,
         new[] { CombatStats.StanceTag(SelectedMode) })) : 0;
     public int MaxHP { get; set; }
     // Mutable field is intentional: legacy AdvanceCycle(ref timer) stays exact.

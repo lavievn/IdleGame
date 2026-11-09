@@ -36,6 +36,10 @@ public sealed class CombatDamageResult
 
 public static class CombatDamage
 {
+    internal static string[] IncomingTags(DamageSchool school, ElementType element) => new[] {
+        school==DamageSchool.Physical?"incoming:physical":"incoming:magical",CombatStats.ElementTag(element)
+    };
+
     public static CombatDamageResult Resolve(EntityDataSO attacker, EntityDataSO defender,
         AttackMode mode, IEnumerable<CombatDamagePart> parts,
         CombatResistanceSettings settings = null)
@@ -60,10 +64,7 @@ public static class CombatDamage
             result.afterModifiers += (float)enhanced;
             // Defender conditions concern incoming damage, never the
             // ATTACKER's combat stance.
-            var incomingTags = new [] {
-                part.school == DamageSchool.Physical ? "incoming:physical" : "incoming:magical",
-                CombatStats.ElementTag(part.element)
-            };
+            var incomingTags = IncomingTags(part.school,part.element);
             float resistance = CombatStats.Get(defender,
                 part.school == DamageSchool.Physical ? CombatStatId.Armor :
                 CombatStatId.MagicResistance,0f,ElementType.Vo,incomingTags);

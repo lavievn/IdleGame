@@ -582,7 +582,7 @@ public partial class CombatManager : MonoBehaviour
         bool primary = state == primaryHeroState && gameManager != null;
         if (primary && (!gameManager.IsGameplayHUDVisible ||
             UIManager.Instance != null && UIManager.Instance.CombatResourcesMenuOpen)) return;
-        float natural = primary ? CombatSkillProgress.BaseExplorationHPRegen : 0f;
+        float natural = primary ? CombatSkillProgress.ResourceBaseline(CombatStatId.HealthRegeneration) : 0f;
         float rate = CombatStats.Get(state.Data,CombatStatId.HealthRegeneration,natural,
             ElementType.Vo,new [] { CombatStats.StanceTag(state.SelectedMode) });
         if (rate <= 0f) { state.HealthRegenRemainder = 0f; return; }

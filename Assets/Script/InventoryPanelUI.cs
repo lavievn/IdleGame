@@ -219,7 +219,7 @@ public sealed class InventoryPanelUI : MonoBehaviour
         panel.detailPageLabel=panel.MakeText("InventoryDetailPage","");
         panel.MakeButton("InventoryPrev","<",panel.PreviousPage);
         panel.MakeButton("InventoryNext",">",panel.NextPage);
-        panel.MakeButton("InventoryGrantCharms","Hộ phù mẫu",panel.GrantCharms);
+        panel.MakeButton("InventoryGrantCharms","Đồ mẫu DEV",panel.GrantCharms);
         panel.MakeButton("InventoryGrantSword","Kiếm rèn mẫu",panel.GrantSword);
         panel.MakeButton("InventoryGrantMaterials","Nguyên liệu +100",panel.GrantMaterials);
         panel.equipButton=panel.MakeButton("InventoryEquip","Trang bị",panel.EquipSelected);
@@ -760,7 +760,8 @@ public sealed class InventoryPanelUI : MonoBehaviour
             case CombatStatId.CastSpeed:return "Tốc thi triển (bonus)";
             case CombatStatId.CooldownReductionPercent:return "Giảm hồi chiêu";
             case CombatStatId.HealthRegeneration:return "Hồi HP/giây";
-            case CombatStatId.ManaRegeneration:return "Hồi Mana (bonus)";
+            case CombatStatId.MaxMana:return "Mana tối đa";
+            case CombatStatId.ManaRegeneration:return "Hồi Mana/giây";
             default:return "Hồi HP khi hạ quái";
         }
     }
@@ -771,9 +772,15 @@ public sealed class InventoryPanelUI : MonoBehaviour
         {detailPages.Add(reason);return;}
         string action=(comparison.isUnequip?"Tháo":right?"Nút Nhẫn phải":"Trang bị")+
             " · "+SlotNames[Array.IndexOf(Slots,comparison.slot)];
+        if(comparison.currentGrantedSkillId!=comparison.previewGrantedSkillId)
+        {
+            string before=WeaponSkillRegistry.Find(comparison.currentGrantedSkillId)?.Name??"Không có";
+            string after=WeaponSkillRegistry.Find(comparison.previewGrantedSkillId)?.Name??"Không có";
+            detailPages.Add(action+"\nKỹ năng từ trang bị\nĐang dùng: "+before+"\nXem trước: "+after);
+        }
         if(comparison.currentMode!=comparison.mode)
-            detailPages.Add(action+"\nĐánh thường\nCurrent: "+comparison.currentMode+
-                "\nPreview: "+comparison.mode);
+            detailPages.Add(action+"\nĐánh thường\nĐang dùng: "+comparison.currentMode+
+                "\nXem trước: "+comparison.mode);
         int changed=0;
         foreach(var line in comparison.lines)
         {
@@ -788,6 +795,8 @@ public sealed class InventoryPanelUI : MonoBehaviour
         }
         if(changed==0)detailPages.Add(action+"\n<color=#C3CCC7>Current = Preview · Delta: 0"+
             "\nKhông đổi chỉ số trong thế hiện tại.</color>");
+        detailPages.Add(action+"\nĐang dùng: "+(comparison.currentItemName??"Ô trống")+
+            "\nXem trước: "+(comparison.previewItemName??"Ô trống"));
     }
     private void RefreshDetail(EntityDataSO hero,Entry selected)
     {
@@ -842,8 +851,7 @@ public sealed class InventoryPanelUI : MonoBehaviour
         if(stat.stat==CombatStatId.ElementDamagePercent ||
             stat.stat==CombatStatId.ElementResistance)
             value+=" ("+stat.element+")";
-        return (stat.stat==CombatStatId.Attack || stat.stat==CombatStatId.MagicalAttack?
-            ComparisonName(stat.stat):stat.stat.ToString())+": "+value;
+        return ComparisonName(stat.stat)+": "+value;
     }
     public void Refresh()
     {
@@ -910,8 +918,12 @@ public sealed class InventoryPanelUI : MonoBehaviour
                 var item=selected.gear;
                 detail.text=selected.name+" · "+EquipmentFoundation.RarityName(item.rarity)+
                     " · Cấp "+item.level+" · Rèn +"+item.refineLevel;
+                detail.text+="\n"+SlotNames[Array.IndexOf(Slots,selected.slot)]+
+                    (item.isEquipped?" · Đang trang bị":" · Trong hòm");
                 foreach(var line in item.mainStats)detail.text+="\nChính: "+StatLine(item,line);
-                foreach(var line in item.extraStats)
+                var skill=WeaponSkillRegistry.Find(EquipmentFoundation.GrantedSkillId(item));
+                if(skill!=null)detail.text+="\nKỹ năng: "+skill.Name;
+                if(item.rarity!=EquipmentRarity.Common)foreach(var line in item.extraStats)
                 {
                     var state=EquipmentFoundation.AffixState(item,line);
                     if(state==EquipmentAffixState.Hidden)
@@ -927,7 +939,8 @@ public sealed class InventoryPanelUI : MonoBehaviour
                 foreach(var line in item.extraStats)
                     if(EquipmentFoundation.AffixState(item,line)==
                         EquipmentAffixState.Active)activeLines++;
-                detail.text+="\nDòng phụ kích hoạt: "+activeLines+"/"+totalLines;
+                if(item.rarity!=EquipmentRarity.Common && item.extraStats.Count>0)
+                    detail.text+="\nDòng phụ kích hoạt: "+activeLines+"/"+totalLines;
             }
             else
             {

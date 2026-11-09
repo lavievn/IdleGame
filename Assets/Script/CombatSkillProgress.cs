@@ -18,6 +18,20 @@ public sealed class CombatSkillProgress
 {
     public const int CurrentVersion = 1;
     public const float BaseMaxMana = 100f, BaseManaRegen = 2f, BaseExplorationHPRegen = 10f;
+    internal static bool IsResourceStat(CombatStatId stat) =>
+        stat==CombatStatId.MaxMana || stat==CombatStatId.ManaRegeneration || stat==CombatStatId.HealthRegeneration;
+
+    internal static float ResourceBaseline(CombatStatId stat)
+    {
+        switch(stat)
+        {
+            case CombatStatId.MaxMana: return BaseMaxMana;
+            case CombatStatId.ManaRegeneration: return BaseManaRegen;
+            case CombatStatId.HealthRegeneration: return BaseExplorationHPRegen;
+            default: return 0f;
+        }
+    }
+
     public int version = CurrentVersion;
     public float mana = BaseMaxMana;
     public int health = -1; // Absent in old saves, or intentional fresh life.
