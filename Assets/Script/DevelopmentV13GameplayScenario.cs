@@ -207,7 +207,7 @@ namespace TuTienCore
       var heroPoint=RectTransformUtility.WorldToScreenPoint(null,hero.heroRect.position);
       var gatePoint=RectTransformUtility.WorldToScreenPoint(null,gateArt.position);
       var receiverPoint=RectTransformUtility.WorldToScreenPoint(null,gateRect.position);
-      R(Mathf.Abs(receiverPoint.y-gatePoint.y-100)<1f,"wall is 100 physical pixels lower at "+size.x);
+      R(Mathf.Abs(receiverPoint.y-gatePoint.y-25)<1f,"wall artwork is 25 physical pixels below the receiver at "+size.x);
       R(heroPoint.x<size.x*.8f&&Mathf.Abs(gatePoint.x-size.x*.35f)<2&&
         gatePoint.x<heroPoint.x,"gate visual center at 35%, Hero approaches from the right at "+size.x);
       yield return Wait(()=>combat.TrialWarning&&view.Lightning.HasWarning,4,"live warning "+size.x);
@@ -305,7 +305,7 @@ namespace TuTienCore
    File.WriteAllLines(Path.Combine(evidence,"trial-music.csv"),musicRows);
    File.WriteAllLines(Path.Combine(evidence,"trial-resources.csv"),resourceRows);
    pass("Both trial tracks played across seeded entries, one looping source per entry, stopped at exit.");
-   pass("All trial Heroes explored 800 units before the wall spawned outside the left edge. Camera scrolled wall and ground together. Wall is 100 pixels lower at four sizes; the dedicated track stopped after each result.");
+   pass("All trial Heroes explored 800 units before the wall spawned outside the left edge. Camera scrolled wall and ground together. Wall artwork is 25 pixels below the receiver at four sizes; the dedicated track stopped after each result.");
    File.WriteAllLines(Path.Combine(evidence,"trial-combat.csv"),rows);ui.OpenHeroStats();ui.RefreshCharacterProgression();yield return capture("v13-result-character");ui.CloseDamageInfo();pass("Save failure/retry, repeated Load, pause, four native Character/trial HUD sizes and fixture-only lifecycle PASS; native input NOT RUN.");
   }
   static void Fit(TextMeshProUGUI label,string caption){R(label!=null&&label.isActiveAndEnabled,caption+" visible");label.ForceMeshUpdate();R(!label.isTextOverflowing,caption+" overflow: "+label.text);}

@@ -11,7 +11,7 @@ internal sealed class HeavenlyTrialView : MonoBehaviour
 {
     internal enum SkyVariant { A, B, Still }
     private const string Art = "Environment/Tribulation/";
-    internal const float SealDropPixels = 100f;
+    internal const float SealDropPixels = 25f; // Lift the previous 100px artwork drop by 75px.
     private const float GroundSurface = .344f; // Contact line in the supplied ground PNG.
     private static readonly Color Dark = new Color(.032f, .009f, .017f);
     private EnvironmentManager space;

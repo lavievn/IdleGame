@@ -30,6 +30,9 @@ public class GroundPresentation : MonoBehaviour
     private readonly TileLoop groundLoop = new TileLoop(), nearLoop = new TileLoop(),
         distantLoop = new TileLoop(), skyLoop = new TileLoop();
     private float skyPhase;
+    private const float GroundLayer2OffsetPixels = -50f;
+    private const float GroundLayer3OffsetPixels = -100f;
+    private const float SkyOffsetPixels = -10f;
 #if UNITY_EDITOR
     [Header("EDITOR — chẩn đoán mép tile (tạm thời)")]
     public bool traceTileSeams = true;
@@ -473,34 +476,39 @@ public class GroundPresentation : MonoBehaviour
         float viewportHeight = space.Width * ManagementWindowLayout.CombatHeight(Screen.height) /
             Mathf.Max(1, ManagementWindowLayout.CombatPixels(Screen.width));
         float width = space.Width * Mathf.Max(1f, skyScale);
+        float skyY = space.BattleArea.rect.yMin + viewportHeight + skyOffset.y +
+            ScreenPixelsToBattleUnits(SkyOffsetPixels);
         for (int i = 0; i < skyTiles.Count; i++)
         {
             var rect = skyTiles[i];
             rect.sizeDelta = new Vector2(width, AspectHeight(activeArtwork.Sky, width));
             var position = rect.anchoredPosition;
-            position.y = space.BattleArea.rect.yMin + viewportHeight + skyOffset.y;
+            position.y = skyY;
             rect.anchoredPosition = position;
         }
         PlaceLoop(skyTiles, skyLoop, ref skyPhase, space.BattleArea.rect.xMin + skyOffset.x, 0f, "Sky");
     }
-    private void LayoutFarTiles(float amount = 0f) { LayoutParallaxTiles(farTiles, nearLoop, ref farPhase, farLayerScale, amount, "Background2"); }
-    private void LayoutDistantTiles(float amount = 0f) { LayoutParallaxTiles(distantTiles, distantLoop, ref distantPhase, distantLayerScale, amount, "Background3"); }
+    private void LayoutFarTiles(float amount = 0f) =>
+        LayoutParallaxTiles(farTiles, nearLoop, ref farPhase, farLayerScale, amount, "Background2", GroundLayer2OffsetPixels);
+    private void LayoutDistantTiles(float amount = 0f) =>
+        LayoutParallaxTiles(distantTiles, distantLoop, ref distantPhase, distantLayerScale, amount, "Background3", GroundLayer3OffsetPixels);
 
-    private void LayoutParallaxTiles(List<RectTransform> layer, TileLoop loop, ref float layerPhase, float scale, float amount, string label)
+    private void LayoutParallaxTiles(List<RectTransform> layer, TileLoop loop, ref float layerPhase,
+        float scale, float amount, string label, float offsetPixels)
     {
         float width = space.Width * Mathf.Max(1f, scale);
         float height = space.BattleArea.rect.height * Mathf.Max(1f, scale);
+        // Keep the original silhouette baseline and apply the art offset once.
+        float baselineY = grassY + grassHeight * parallaxBaseHeightRatio;
+        float layerY = UsesTerrainArtwork ? baselineY + ScreenPixelsToBattleUnits(offsetPixels) : baselineY;
         for (int i = 0; i < layer.Count; i++)
         {
             RectTransform tile = layer[i];
             if (tile == null) continue;
             tile.sizeDelta = new Vector2(width, UsesTerrainArtwork
                 ? AspectHeight(tile.GetComponent<Image>().sprite, width) : height);
-            // Place the *visible* bottom of each silhouette near the back edge
-            // of the main Grass strip. This stays independent of logic/world Y.
-            float baselineY = grassY + grassHeight * parallaxBaseHeightRatio;
             var position = tile.anchoredPosition;
-            position.y = baselineY;
+            position.y = layerY;
             tile.anchoredPosition = position;
         }
         PlaceLoop(layer, loop, ref layerPhase, space.BattleArea.rect.xMin, amount, label);
@@ -626,12 +634,15 @@ public class GroundPresentation : MonoBehaviour
 #endif
     private float GroundDropUnits()
     {
-        // Stable Battle Canvas maps logical width onto compact gameplay pixels.
-        // At 600px / 1920 units, a 20px drop is 64 units, not 20 world units.
         float extra = CurrentArtworkGroup == ArtworkGroup.Desert || CurrentArtworkGroup == ArtworkGroup.Swamp
             ? Mathf.Max(0f, desertSwampExtraGroundDropPixels) : 0f;
-        return (Mathf.Max(0f, groundDropPixels) + extra) / Mathf.Max(.0001f,
-            ManagementWindowLayout.BattleCanvasScale(Screen.width, space.Width));
+        return ScreenPixelsToBattleUnits(Mathf.Max(0f, groundDropPixels) + extra);
+    }
+
+    private float ScreenPixelsToBattleUnits(float pixels)
+    {
+        // Stable Battle Canvas maps logical width onto compact gameplay pixels.
+        return pixels / Mathf.Max(.0001f, ManagementWindowLayout.BattleCanvasScale(Screen.width, space.Width));
     }
     private void AddDepth(RectTransform rect)
     {
