@@ -75,8 +75,10 @@ public sealed class WorldMapOutlineGraphic : MaskableGraphic
         foreach (var shape in WorldMapPolygons.Load().polygons)
         {
             if (shape == null || !WorldMapPolygons.ValidPolygon(shape.vertices)) continue;
-            bool selected = shape.mapId == selectedId;
-            bool adjacent = allowedToExplore && current.Links.Contains(shape.mapId);
+            bool adjacent = allowedToExplore && current.Links.Contains(shape.mapId) &&
+                WorldMapCatalog.TravelBlockReason(hero,shape.mapId) == null;
+            bool selected = shape.mapId == selectedId &&
+                (adjacent || hero.worldMapVisited != null && hero.worldMapVisited.Contains(shape.mapId));
             if (!selected && !adjacent) continue;
             // Pale border exposes possible destinations, not the covered image.
             Color stroke = selected ? new Color(1f, .85f, .23f, .98f) :
@@ -84,6 +86,11 @@ public sealed class WorldMapOutlineGraphic : MaskableGraphic
             for (int i = 0; i < shape.vertices.Count; i++)
             {
                 Vector2 a = shape.vertices[i], b = shape.vertices[(i + 1) % shape.vertices.Count];
+                if (selected)
+                {
+                    AddLine(vh, a, b, 9f, new Color(1f,.66f,.15f,.20f));
+                    AddLine(vh, a, b, 5f, new Color(1f,.79f,.19f,.44f));
+                }
                 AddLine(vh, a, b, selected ? 2.5f : 1.25f, stroke);
             }
         }

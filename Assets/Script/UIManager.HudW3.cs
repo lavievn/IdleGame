@@ -127,7 +127,7 @@ public partial class UIManager
         pauseRect.gameObject.name="PauseButton";
         Skin(pauseRect,SurfaceKind.Button);
         statsButton.SetParent(w3.Root,false);inventoryButton.SetParent(w3.Root,false);
-        worldMapButton.SetParent(w3.Root,false);pauseRect.SetParent(w3.Root,false);
+        worldMapButton=w3.MapButton;pauseRect.SetParent(w3.Root,false);
         statsButton.GetComponentInChildren<TextMeshProUGUI>(true).text="Nhân vật";
         inventoryButton.GetComponentInChildren<TextMeshProUGUI>(true).text="Hòm đồ";
         martialButton=SmallButton(w3.Root,"WeaponSkillsButton","Võ học",Vector2.zero,Vector2.zero,Vector2.zero,Vector2.one,OpenWeaponSkills);
@@ -186,8 +186,9 @@ public partial class UIManager
         appliedHudLayout=hudLayout.Revision;
         w3.Layout(w,h,hudLayout);
         float m=Mathf.Max(4,hudLayout.margin),gap=Mathf.Max(2,hudLayout.gap);
-        float top=Mathf.Max(hudLayout.systemTop,m+hudLayout.heroCardHeight+gap);
-        var buttons=new[]{statsButton,inventoryButton,martialButton,worldMapButton,menuButton};
+        float cardsBottom=m+Mathf.Max(hudLayout.heroCardHeight,HudW3View.PrimaryCardHeight)+gap;
+        float top=Mathf.Max(hudLayout.systemTop,cardsBottom);
+        var buttons=new[]{statsButton,inventoryButton,martialButton,menuButton};
         for(int i=0;i<buttons.Length;i++)
             HudW3View.Place(buttons[i],w-m-hudLayout.systemButtonWidth,top+i*(hudLayout.systemButtonHeight+gap+2),hudLayout.systemButtonWidth,hudLayout.systemButtonHeight);
         HudW3View.Place(pauseRect,m,m,76,26);HudW3View.Place(logToggle,m+80,m,76,26);
@@ -197,7 +198,7 @@ public partial class UIManager
         {
             float x=m+hudLayout.mapWidth+gap;
             var log=(RectTransform)hudGame.eventLog.transform;
-            HudW3View.Place(log,x,m+hudLayout.heroCardHeight+gap,Mathf.Max(120,w-x-hudLayout.systemButtonWidth-2*m-gap),hudLayout.logHeight);
+            HudW3View.Place(log,x,cardsBottom,Mathf.Max(120,w-x-hudLayout.systemButtonWidth-2*m-gap),hudLayout.logHeight);
             if(hudGame.eventLogText!=null)
             {
                 var t=hudGame.eventLogText;

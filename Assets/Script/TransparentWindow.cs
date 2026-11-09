@@ -104,7 +104,7 @@ public class TransparentWindow : MonoBehaviour
 #endif
     }
 
-    private bool nativeOpeningVolumeDrag;
+    private bool nativeOpeningVolumeDrag, nativeMapPointer;
 
     void Update()
     {
@@ -121,6 +121,23 @@ public class TransparentWindow : MonoBehaviour
         // Opening slider owns its own drag stream. Bypass the native window
         // move gesture, otherwise dragging the volume bar moves the app itself.
         var openingUI=UIManager.Instance;
+        if (pressed && openingUI != null && TryGetPointerPosition(out var mapStart) &&
+            openingUI.TryBeginWorldMapPointer(mapStart))
+        {
+            nativeMapPointer = true;
+            gesture.Cancel();
+        }
+        if (nativeMapPointer)
+        {
+            if (openingUI != null && TryGetPointerPosition(out var mapPoint))
+            {
+                if (down) openingUI.DragWorldMapPointer(mapPoint);
+                else openingUI.EndWorldMapPointer(mapPoint);
+            }
+            if (!down) nativeMapPointer = false;
+            if (!isCurrentlyClickable) ToggleClickThrough(false);
+            return;
+        }
         if (pressed && openingUI != null)
         {
             Vector2 beginPoint;

@@ -19,18 +19,18 @@ public sealed class WorldMapPanelUI
     private string selectedMapId = "";
     private readonly TextMeshProUGUI heading;
     private readonly TextMeshProUGUI summary;
-    private readonly RectTransform[] choices = new RectTransform[8];
-    private readonly TextMeshProUGUI[] choiceLabels = new TextMeshProUGUI[8];
-    private readonly string[] choiceIds = new string[8];
-    private readonly List<string> eligible = new List<string>();
+    private readonly RectTransform viewport, artRect, travel;
+    private bool pointerCaptured, panning;
+    private Vector2 pressScreen, pressLocal, pressPan;
+    private const float PanThreshold = 6f;
     private Texture2D fogTexture;
     private bool previousPause;
-    private int page;
+    private bool fogReady;
     private const float MapOpenZoom = 1.35f;
     private const float MinZoom = 1f;
     private const float MaxZoom = 2.5f;
     private float mapZoom = MapOpenZoom;
-    private readonly RectTransform navigation;
+
     private const int FogWidth = 160;
     private const int FogHeight = 92;
 
@@ -50,14 +50,18 @@ public sealed class WorldMapPanelUI
         backdrop.color = new Color(.08f, .09f, .12f, .98f);
         backdrop.raycastTarget = false;
 
+        viewport = (RectTransform)new GameObject("WorldMapViewport", typeof(RectTransform), typeof(RectMask2D)).transform;
+        viewport.SetParent(root, false);
+        viewport.anchorMin = viewport.anchorMax = new Vector2(.5f,.5f);
+        viewport.pivot = new Vector2(.5f,.5f);
         var artGO = new GameObject("Artwork", typeof(RectTransform),
             typeof(CanvasRenderer), typeof(Image));
         artwork = artGO.GetComponent<Image>();
-        var artRect = (RectTransform)artGO.transform;
-        artRect.SetParent(root, false);
-        artRect.anchorMin = artRect.anchorMax = new Vector2(.5f,1f);
-        artRect.pivot = new Vector2(.5f,1f);
-        artRect.anchoredPosition = new Vector2(0f,-48f);
+        artRect = (RectTransform)artGO.transform;
+        artRect.SetParent(viewport, false);
+        artRect.anchorMin = artRect.anchorMax = new Vector2(.5f,.5f);
+        artRect.pivot = new Vector2(.5f,.5f);
+        artRect.anchoredPosition = Vector2.zero;
         artRect.sizeDelta = new Vector2(605f,400f);
         artwork.color = new Color(.76f, .68f, .52f, 1f);
         artwork.raycastTarget = false;
@@ -126,32 +130,9 @@ public sealed class WorldMapPanelUI
 
         owner.SmallButton(root,"WorldMapClose","Đóng",new Vector2(1f,1f),
             new Vector2(1f,1f),new Vector2(-14f,-14f),new Vector2(90f,32f),Close);
-        owner.SmallButton(root,"WorldMapTravelSelected","Tới ô đã chọn",new Vector2(1f,0f),
-            new Vector2(1f,0f),new Vector2(-14f,171f),new Vector2(130f,28f),
-            TravelSelected);
-        navigation = (RectTransform)new GameObject("WorldMapRoutes",typeof(RectTransform)).transform;
-        navigation.SetParent(root,false);
-        navigation.anchorMin = new Vector2(1f,0f);
-        navigation.anchorMax = new Vector2(1f,0f);
-        navigation.pivot = new Vector2(1f,0f);
-        navigation.anchoredPosition = new Vector2(-12f,12f);
-        navigation.sizeDelta = new Vector2(410f,150f);
-        for(int i=0;i<8;i++)
-        {
-            int index = i;
-            choices[i] = owner.SmallButton(navigation,"MapNeighbor"+i,"",
-                new Vector2(0f,1f),new Vector2(0f,1f),
-                new Vector2((i%2)*205f, -(i/2)*30f),new Vector2(201f,28f),
-                ()=>Choose(index));
-            choiceLabels[i] = choices[i].GetComponentInChildren<TextMeshProUGUI>(true);
-            if(choiceLabels[i]!=null)
-            {
-                choiceLabels[i].fontSize = 10f;
-                choiceLabels[i].enableWordWrapping = false;
-                choiceLabels[i].overflowMode = TextOverflowModes.Ellipsis;
-            }
-            choices[i].gameObject.SetActive(false);
-        }
+        travel = owner.SmallButton(root,"WorldMapTravelSelected","Tới ô đã chọn",new Vector2(1f,0f),
+            new Vector2(1f,0f),new Vector2(-14f,12f),new Vector2(130f,30f),TravelSelected);
+        travel.gameObject.SetActive(false);
         root.gameObject.SetActive(false);
     }
 
@@ -168,14 +149,51 @@ public sealed class WorldMapPanelUI
     public void HandleScroll(Vector2 mousePoint, float scroll)
     {
         if(!IsOpen || artwork==null || Mathf.Abs(scroll)<.001f || !HitMapSurface(mousePoint))return;
-        mapZoom=Mathf.Clamp(mapZoom*Mathf.Pow(1.12f,scroll),MinZoom,MaxZoom);
-        ((RectTransform)artwork.transform).localScale=new Vector3(mapZoom,mapZoom,1f);
+        if (!RectTransformUtility.ScreenPointToLocalPointInRectangle(viewport, mousePoint, null, out var point)) return;
+        float previous = mapZoom;
+        mapZoom=Mathf.Clamp(mapZoom*Mathf.Pow(owner.WorldMapZoomPerNotch,scroll),MinZoom,MaxZoom);
+        artRect.localScale=new Vector3(mapZoom,mapZoom,1f);
+        SetPan(point + (artRect.anchoredPosition-point) * (mapZoom/previous));
     }
     public RectTransform Root => root;
     public bool HitMapSurface(Vector2 screenPoint) =>
-        IsOpen && artwork != null &&
-        RectTransformUtility.RectangleContainsScreenPoint(
-            (RectTransform)artwork.transform, screenPoint, null);
+        IsOpen && RectTransformUtility.RectangleContainsScreenPoint(viewport, screenPoint, null) &&
+        RectTransformUtility.RectangleContainsScreenPoint(artRect, screenPoint, null);
+
+    internal bool BeginPointer(Vector2 point)
+    {
+        if (!HitMapSurface(point) ||
+            !RectTransformUtility.ScreenPointToLocalPointInRectangle(viewport, point, null, out pressLocal))
+            return false;
+        pressScreen = point;
+        pressPan = artRect.anchoredPosition;
+        pointerCaptured = true;
+        panning = false;
+        return true;
+    }
+
+    internal void DragPointer(Vector2 point)
+    {
+        if (!pointerCaptured || !IsOpen) return;
+        if ((point - pressScreen).sqrMagnitude >= PanThreshold * PanThreshold) panning = true;
+        if (panning && RectTransformUtility.ScreenPointToLocalPointInRectangle(viewport, point, null, out var local))
+            SetPan(pressPan + local - pressLocal);
+    }
+
+    internal void EndPointer(Vector2 point)
+    {
+        if (!pointerCaptured) return;
+        DragPointer(point);
+        pointerCaptured = false;
+        if (!panning) HandleMapClick(point);
+    }
+
+    void SetPan(Vector2 pan)
+    {
+        float x = Mathf.Max(0f, (artRect.rect.width * mapZoom - viewport.rect.width) / 2f);
+        float y = Mathf.Max(0f, (artRect.rect.height * mapZoom - viewport.rect.height) / 2f);
+        artRect.anchoredPosition = new Vector2(Mathf.Clamp(pan.x,-x,x), Mathf.Clamp(pan.y,-y,y));
+    }
 
     // Hit against the exact six-corner region. Selection never auto-travels.
     public bool HandleMapClick(Vector2 screenPoint)
@@ -193,27 +211,22 @@ public sealed class WorldMapPanelUI
             (RectTransform)artwork.transform, screenPoint);
         string id = WorldMapPolygons.HitTest(position, candidate =>
         {
-            WorldMapNode current;
             return (hero.worldMapVisited != null && hero.worldMapVisited.Contains(candidate)) ||
-                (WorldMapCatalog.TryGet(hero.worldMapId, out current) &&
-                 WorldMapCatalog.IsCleared(hero, current.Id) &&
-                 current.Links.Contains(candidate));
+                WorldMapCatalog.TravelBlockReason(hero,candidate) == null;
         });
-        if (!string.IsNullOrEmpty(id))
-        {
-            selectedMapId = id;
-            Refresh();
-        }
-        else summary.text = WorldMapPolygons.Load().polygons.Count == 0
-            ? "Chưa có tọa độ lục giác: mở Tools > Bach Luyen Tien Do > World Map Polygon Editor (.54)."
-            : "Map chưa khám phá hoặc chưa có viền 6 đỉnh. Hoàn thành 5 wave để mở hướng đi kề.";
+        selectedMapId = id ?? "";
+        Refresh();
         return true;
     }
 
     private void TravelSelected()
     {
         if (string.IsNullOrEmpty(selectedMapId)) return;
-        if (host.TryTravelToWorldMap(selectedMapId)) Close();
+        if (host.TryTravelToWorldMap(selectedMapId))
+        {
+            pointerCaptured = false;
+            root.gameObject.SetActive(false); // Map entry now owns pause.
+        }
         else Refresh();
     }
 
@@ -225,7 +238,8 @@ public sealed class WorldMapPanelUI
         if(!WorldMapCatalog.Enabled(host.HeroData)) return;
         previousPause=owner.IsPaused;
         owner.SetPaused(true);
-        page=0;
+        pointerCaptured = false;
+        artRect.anchoredPosition = Vector2.zero;
         selectedMapId = host.HeroData.worldMapId;
         mapZoom=MapOpenZoom;
         ((RectTransform)artwork.transform).localScale=new Vector3(mapZoom,mapZoom,1f);
@@ -238,6 +252,7 @@ public sealed class WorldMapPanelUI
     public void Close()
     {
         if(!IsOpen) return;
+        pointerCaptured = false;
         root.gameObject.SetActive(false);
         owner.SetPaused(previousPause);
     }
@@ -248,16 +263,20 @@ public sealed class WorldMapPanelUI
         float width = Mathf.Max(340f,Mathf.Min(Screen.width-12f,1070f));
         float height = Mathf.Max(260f,Mathf.Min(Screen.height-12f,650f));
         root.sizeDelta = new Vector2(width,height);
-        var imageRect=(RectTransform)artwork.transform;
+        viewport.sizeDelta = new Vector2(width - 20f, height - 98f);
+        viewport.anchoredPosition = new Vector2(0f, -2f);
+        var imageRect = artRect;
         // Exact image aspect is required: otherwise six-vertex hit regions
         // drift away from the visible polygons under preserveAspect.
         float aspect = artwork.sprite != null && artwork.sprite.rect.height > 0f
             ? artwork.sprite.rect.width / artwork.sprite.rect.height : 1.5f;
-        float imageHeight=Mathf.Max(100f,height-175f);
-        float imageWidth=Mathf.Min(width-24f,imageHeight*aspect);
+        float imageHeight = viewport.sizeDelta.y;
+        float imageWidth = Mathf.Min(viewport.sizeDelta.x,imageHeight*aspect);
         imageHeight=Mathf.Min(imageHeight,imageWidth/aspect);
         imageRect.sizeDelta=new Vector2(imageWidth,imageHeight);
-        ((RectTransform)summary.transform).anchoredPosition=new Vector2(Mathf.Min(270f,width*.36f),-height+73f);
+        summary.rectTransform.anchoredPosition = new Vector2((width - 145f) / 2f, -height + 27f);
+        summary.rectTransform.sizeDelta = new Vector2(width - 165f, 31f);
+        SetPan(artRect.anchoredPosition);
     }
 
     private static int Hash(string value)
@@ -269,6 +288,8 @@ public sealed class WorldMapPanelUI
     {
         // Texture is only the CLOUD LAYER. Never punch approximate circular
         // holes; the polygon mesh above it owns every exact revealed area.
+        if (!fogReady)
+        {
         var colors = new Color32[FogWidth * FogHeight];
         for (int y = 0; y < FogHeight; ++y)
         for (int x = 0; x < FogWidth; ++x)
@@ -279,6 +300,8 @@ public sealed class WorldMapPanelUI
         }
         fogTexture.SetPixels32(colors);
         fogTexture.Apply(false);
+        fogReady = true;
+        }
         bool compatible = WorldMapPolygons.MatchesArtwork(artwork.sprite);
         reveal.SetSource(compatible ? artwork.sprite : null, compatible ? hero : null);
         outlines.Refresh(compatible ? hero : null, selectedMapId);
@@ -296,46 +319,14 @@ public sealed class WorldMapPanelUI
         bool selectedExists = WorldMapCatalog.TryGet(selectedMapId, out selected);
         bool selectedAccessible = selectedExists &&
             WorldMapCatalog.TravelBlockReason(hero, selectedMapId) == null;
-        bool clear=WorldMapCatalog.IsCleared(hero,current.Id);
-        string progress = clear ? "Đã vượt qua" :
-            "Wave tối thiểu: "+hero.worldMapWaveProgress+"/5";
-        heading.text="BẢN ĐỒ · "+current.Id+" · "+current.Name;
-        summary.text="Đang ở: "+current.Name+" ("+current.TerrainLabel+")\n"+
-            progress+"  |  Wave hiện tại: "+hero.worldMapLoopWave+"/5\n"+
-            (!WorldMapPolygons.MatchesArtwork(artwork.sprite)
-                ? "Chưa đúng ảnh 1448×1086 để dùng vùng click; danh sách map kề vẫn hoạt động.\n"
-                : "") +
-            (selectedExists ? "Đã chọn: "+selected.Id+" – "+selected.Name+
-                (selectedAccessible ? " · Có thể đi" : " · Chưa đi được") :
-                (clear ? "Chọn lục giác cạnh bên để di chuyển (đồ thị tạm)." :
-                    "Chưa vượt qua map: đường đi kế tiếp vẫn ẩn."));
-        // The country list and exact polygon masks are deliberately EMPTY until
-        // approved nation IDs, labels, centers and hex vertices are supplied.
-        eligible.Clear();
-        if(clear) eligible.AddRange(current.Links);
-        eligible.Sort(System.StringComparer.Ordinal);
-        int start=page*choices.Length;
-        if(start>=eligible.Count) { page=0;start=0; }
-        for(int i=0;i<choices.Length;i++)
+        heading.text = "BẢN ĐỒ · " + current.Id + " · " + current.Name;
+        travel.gameObject.SetActive(selectedAccessible);
+        summary.text = selectedAccessible ? selected.Name + " · " + selected.TerrainLabel +
+            " · Cấp gợi ý " + selected.SuggestedLevel : "";
+        if (!WorldMapPolygons.MatchesArtwork(artwork.sprite))
         {
-            int n=start+i;
-            bool visible=n<eligible.Count;
-            choices[i].gameObject.SetActive(visible);
-            choiceIds[i]=visible?eligible[n]:"";
-            if(!visible)continue;
-            WorldMapNode destination;
-            if(!WorldMapCatalog.TryGet(choiceIds[i],out destination))continue;
-            string marker=destination.IsBoss?" [BOSS]":"";
-            if(choiceLabels[i]!=null)choiceLabels[i].text=destination.Id+" "+destination.Name+" Lv."+destination.SuggestedLevel+marker;
+            travel.gameObject.SetActive(false);
+            summary.text = "Ảnh bản đồ chưa khớp dữ liệu lục giác.";
         }
-    }
-
-    private void Choose(int buttonIndex)
-    {
-        if(buttonIndex<0||buttonIndex>=choiceIds.Length)return;
-        string id=choiceIds[buttonIndex];
-        if(string.IsNullOrEmpty(id))return;
-        if(host.TryTravelToWorldMap(id))Close();
-        else Refresh();
     }
 }

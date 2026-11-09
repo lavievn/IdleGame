@@ -13,6 +13,11 @@ internal sealed class HudW3View
     private readonly TextMeshProUGUI mapName, wave, distanceLabel;
     private readonly Image distanceFill;
     private string lastMap;
+    internal const float PrimaryCardHeight = 110f;
+    static readonly Color ReadyBlue = new Color(.07f,.25f,.51f,1f);
+    static readonly Color CooldownBlue = new Color(.23f,.52f,.79f,1f);
+    static readonly Color CastingBlue = new Color(.08f,.39f,.51f,1f);
+    static readonly Color UnavailableBlue = new Color(.14f,.19f,.25f,1f);
     private int lastWave=-1;
     private int lastDistance=-1,lastTarget=-1;
     private bool lastExploring;
@@ -21,7 +26,8 @@ internal sealed class HudW3View
     {
         internal RectTransform Root, Header, Avatar, HP, Mana;
         internal Image Portrait, Fill;
-        internal TextMeshProUGUI Name, Level, Health, ManaLabel, EmptyAvatar;
+        internal TextMeshProUGUI Name, Level, Health, ManaLabel, EmptyAvatar, CooldownLabel;
+        internal RectTransform Cooldown, CooldownFill;
         internal EntityDataSO Data;
         internal string LastName;
         internal int LastLevel=-1,LastHP=-1,LastMax=-1;
@@ -58,9 +64,18 @@ internal sealed class HudW3View
             c.Mana=ui.Surface(c.Root,"Mana Track",UIManager.SurfaceKind.Track);
             c.ManaLabel=Text(c.Mana,"Mana Value","Mana —");
             c.ManaLabel.color=new Color(.53f,.65f,.67f,1);
+            if (i == 0)
+            {
+                c.Cooldown = ui.Surface(c.Root, "WeaponSkillCooldown", UIManager.SurfaceKind.Track);
+                c.CooldownFill = ui.Surface(c.Cooldown, "CooldownFill", UIManager.SurfaceKind.Progress);
+                c.CooldownFill.anchorMin = Vector2.zero;
+                c.CooldownFill.offsetMin = c.CooldownFill.offsetMax = Vector2.zero;
+                c.CooldownLabel = Text(c.Cooldown,"WeaponSkillLabel","—");
+                c.CooldownLabel.fontSize = 9;
+            }
         }
-        map=ui.Surface(Root,"Map Information",UIManager.SurfaceKind.Frame);
-        ui.BindClick(map,()=>{});
+        map=ui.Surface(Root,"WorldMapButton",UIManager.SurfaceKind.Frame);
+        ui.BindClick(map,ui.ToggleWorldMapMenu);
         mapName=Text(map,"Vertical Map Name","");
         wave=Text(map,"Current Wave","");
         distance=ui.Surface(Root,"Exploration Feedback",UIManager.SurfaceKind.Track);
@@ -71,6 +86,8 @@ internal sealed class HudW3View
         distanceFill.rectTransform.offsetMin=distanceFill.rectTransform.offsetMax=Vector2.zero;
         distanceLabel=Text(distance,"Actual Distance","");
     }
+
+    internal RectTransform MapButton => map;
 
     private static RectTransform Rect(Transform parent,string name)
     {
@@ -106,12 +123,13 @@ internal sealed class HudW3View
         for(int i=0;i<cards.Length;i++)
         {
             var c=cards[i];
-            Place(c.Root,left+i*(cw+gap),margin,cw,ch);
+            Place(c.Root,left+i*(cw+gap),margin,cw,i == 0 ? Mathf.Max(ch, PrimaryCardHeight) : ch);
             Place(c.Header,1,1,cw-2,20);
             Place(c.Avatar,5,25,32,32);
             Place(c.Level.rectTransform,39,22,cw-43,16);
             Place(c.HP,41,39,cw-46,16);
             Place(c.Mana,41,57,cw-46,15);
+            if (c.Cooldown != null) Place(c.Cooldown,41,75,32,32);
             c.Name.fontSize=l.textSize; c.Level.fontSize=l.textSize-1;
             c.Health.fontSize=11;c.ManaLabel.fontSize=10;c.EmptyAvatar.fontSize=18;
         }
@@ -131,6 +149,7 @@ internal sealed class HudW3View
                 combat.StateFor(game==null?null:game.TestCompanionAt(i-1));
             RenderCard(cards[i],state,i,art);
         }
+        RenderWeaponCooldown(cards[0], combat);
         var data=game==null?null:game.HeroData;
         string title=MapName(data);
         if(title!=lastMap)
@@ -151,6 +170,33 @@ internal sealed class HudW3View
             distanceFill.rectTransform.anchorMax=new Vector2(target>0?(float)progress/target:0,1);
         }
     }
+    static void RenderWeaponCooldown(Card card, CombatManager combat)
+    {
+        var state = combat?.CurrentHeroCombatState;
+        var data = state?.Data;
+        var weapon = WeaponBasicAttack.Equipped(data);
+        var family = WeaponBasicAttack.Family(weapon);
+        var template = weapon == null ? null : EquipmentFoundation.FindTemplate(weapon.templateId);
+        var skill = WeaponSkillRegistry.Find(template?.grantedSkillId);
+        var progress = data?.combatSkills;
+        bool available = skill != null && progress != null && skill.IsAvailable(data, weapon) &&
+            progress.queue.Contains(skill.Id);
+        bool casting = available && combat.CastingWeaponSkill == skill.Id;
+        float remaining = available ? progress.Remaining(skill.Id) : 0f;
+        Color background = available ? CooldownBlue : UnavailableBlue;
+        float fill = casting ? combat.CastingWeaponProgress :
+            available ? CooldownFraction(remaining, skill.Cooldown) : 0f;
+        card.Cooldown.GetComponent<Image>().color = background;
+        card.CooldownFill.GetComponent<Image>().color = casting ? CastingBlue : ReadyBlue;
+        card.CooldownFill.anchorMax = new Vector2(1f, fill);
+        card.CooldownLabel.text = family == WeaponFamily.Sword ? "Kiếm" :
+            family == WeaponFamily.Bow ? "Cung" : family == WeaponFamily.Staff ? "Trượng" : "—";
+        card.CooldownLabel.color = available ? Color.white : new Color(.62f,.70f,.77f,1f);
+    }
+
+    internal static float CooldownFraction(float remaining, float total) =>
+        total > 0f ? Mathf.Clamp01(1f - remaining / total) : 1f;
+
     internal static string MapName(EntityDataSO data)
     {
         if(data==null)return "Chưa vào map";

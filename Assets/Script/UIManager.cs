@@ -145,10 +145,20 @@ public partial class UIManager : MonoBehaviour
         else point=mouse.position.ReadValue();
         if(mouse.leftButton.wasPressedThisFrame)
         {
-            if(!TryBeginOpeningVolumeDrag(point))HandleMouseClick(point);
+            editorMapPointer = TryBeginWorldMapPointer(point);
+            if(!editorMapPointer && !TryBeginOpeningVolumeDrag(point))HandleMouseClick(point);
         }
-        else if(mouse.leftButton.isPressed)DragOpeningVolume(point);
-        if(mouse.leftButton.wasReleasedThisFrame)EndOpeningVolumeDrag();
+        else if(mouse.leftButton.isPressed)
+        {
+            if(editorMapPointer) DragWorldMapPointer(point);
+            else DragOpeningVolume(point);
+        }
+        if(mouse.leftButton.wasReleasedThisFrame)
+        {
+            if(editorMapPointer) EndWorldMapPointer(point);
+            editorMapPointer = false;
+            EndOpeningVolumeDrag();
+        }
     }
 
     public void RegisterInteractable(CustomInteractable item) { if (!interactables.Contains(item)) interactables.Add(item); }
@@ -215,23 +225,31 @@ public partial class UIManager : MonoBehaviour
         // Buttons drawn above the map (Close, route list, confirmation) win
         // over hex hit tests when their rectangles overlap the map artwork.
         var hit = HitControl(mousePos);
-        if (hit != null) { hit.onClickEvent?.Invoke(); return; }
-        if (worldMapUI != null && worldMapUI.HandleMapClick(mousePos)) return;
+        if (worldMapUI != null && (hit == null || hit.GetRect() == worldMapUI.Root) &&
+            worldMapUI.HandleMapClick(mousePos)) return;
+        if (hit != null) hit.onClickEvent?.Invoke();
     }
     public void HandlePointerClick(Vector2 press, Vector2 release)
     {
         var hit = HitControl(press);
-        if (hit != null)
+        if (TryBeginWorldMapPointer(press))
         {
-            if (hit == HitControl(release)) hit.onClickEvent?.Invoke();
+            EndWorldMapPointer(release);
             return;
         }
-        if (worldMapUI != null && worldMapUI.HitMapSurface(press))
-        {
-            if (worldMapUI.HitMapSurface(release)) worldMapUI.HandleMapClick(release);
-            return;
-        }
+        if (hit != null && hit == HitControl(release)) hit.onClickEvent?.Invoke();
     }
+
+    internal bool TryBeginWorldMapPointer(Vector2 point)
+    {
+        if (GameForUI()?.HasPendingConfirmation == true || worldMapUI == null || !worldMapUI.HitMapSurface(point))
+            return false;
+        var hit = HitControl(point);
+        return (hit == null || hit.GetRect() == worldMapUI.Root) && worldMapUI.BeginPointer(point);
+    }
+
+    internal void DragWorldMapPointer(Vector2 point) => worldMapUI?.DragPointer(point);
+    internal void EndWorldMapPointer(Vector2 point) => worldMapUI?.EndPointer(point);
 
     private StartMenuUI OpeningSettingsMenu()
     {
@@ -477,8 +495,7 @@ public partial class UIManager : MonoBehaviour
             new Vector2(1,1),new Vector2(-308,-4),new Vector2(62,24),OpenInventory);
         volumeButton = SmallButton(canvas,"MusicVolumeButton","Âm lượng",new Vector2(1,1),
             new Vector2(1,1),new Vector2(-244,-4),new Vector2(62,24),ToggleMusicVolume);
-        worldMapButton = SmallButton(canvas,"WorldMapButton","Bản đồ",new Vector2(1,1),
-            new Vector2(1,1),new Vector2(-376,-4),new Vector2(62,24),ToggleWorldMapMenu);
+
         // The label is longer than 'Kho đồ': keep the same button size without
         // introducing a second text line at the compact 600px window preset.
         var volumeCaption = volumeButton.GetComponentInChildren<TMPro.TextMeshProUGUI>(true);
@@ -787,6 +804,9 @@ public partial class UIManager : MonoBehaviour
 
     private RectTransform hudCanvas, combatUIRoot, pauseRect, devButton, statsButton, inventoryButton, volumeButton, worldMapButton, statsPanel;
     private WorldMapPanelUI worldMapUI;
+    [SerializeField, Range(1.1f, 2f)] private float worldMapZoomPerNotch = 1.36f;
+    internal float WorldMapZoomPerNotch => Mathf.Clamp(worldMapZoomPerNotch, 1.1f, 2f);
+    bool editorMapPointer;
     private MusicVolumePanelUI musicVolumePanel;
     private InventoryPanelUI inventoryUI;
     private DevBalanceUI devUI;
