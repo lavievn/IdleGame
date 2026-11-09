@@ -54,7 +54,6 @@ public partial class CombatManager : MonoBehaviour
         public Vector2 start,end;
         public float elapsed,duration,arc;
         public int stepTick;
-        public bool silentEnd;
         public BattleEffects.Bolt visual;
     }
     private readonly List<MagicFlight> magicFlights=new List<MagicFlight>();
@@ -299,9 +298,8 @@ public partial class CombatManager : MonoBehaviour
         foreach (var actor in activeMonsters) CancelMonsterCast(actor);
         if (!monster && runtimeHeroData != null)
         {
-            float healthRatio = maxHeroHP > 0 ? (float)currentHeroHP / maxHeroHP : 1f;
             runtimeHeroData.ApplyHeroBalance(); maxHeroHP = runtimeHeroData.GetCalculatedHealth(heroController != null ? heroController.attackMode : AttackMode.Melee);
-            currentHeroHP = currentHeroHP <= 0 ? 0 : Mathf.Clamp(Mathf.RoundToInt(healthRatio * maxHeroHP),1,maxHeroHP);
+            currentHeroHP = Mathf.Clamp(currentHeroHP,0,maxHeroHP);
             if (heroController != null) {
                 if (CombatBalance.HeroDev != null) heroController.moveSpeed = CombatBalance.HeroDev.movementSpeed;
                 heroController.UpdateHealthBar(currentHeroHP,maxHeroHP); heroController.UpdateStats(runtimeHeroData,currentHeroHP,maxHeroHP);
@@ -312,11 +310,9 @@ public partial class CombatManager : MonoBehaviour
             foreach (var state in heroStates.Values)
             {
                 if (state == primaryHeroState || state.Data == null) continue;
-                float ratio = state.MaxHP > 0 ? (float)state.CurrentHP / state.MaxHP : 1f;
                 state.Data.ApplyHeroBalance();
                 state.MaxHP = state.Data.GetCalculatedHealth(state.SelectedMode);
-                state.CurrentHP = state.CurrentHP <= 0 ? 0 :
-                    Mathf.Clamp(Mathf.RoundToInt(ratio * state.MaxHP),1,state.MaxHP);
+                state.CurrentHP = Mathf.Clamp(state.CurrentHP,0,state.MaxHP);
                 if (CombatBalance.HeroDev != null && state.Controller != null)
                     state.Controller.moveSpeed = CombatBalance.HeroDev.movementSpeed;
                 if (state.Controller != null)
@@ -401,10 +397,8 @@ public partial class CombatManager : MonoBehaviour
     {
         var state = StateFor(controller);
         if (state == null || state.Data == null || state.Controller == null) return;
-        float ratio = state.MaxHP > 0 ? (float)state.CurrentHP/state.MaxHP : 1f;
         state.MaxHP = state.Data.GetCalculatedHealth(controller.attackMode);
-        state.CurrentHP = state.CurrentHP <= 0 ? 0 :
-            Mathf.Clamp(Mathf.RoundToInt(ratio*state.MaxHP),1,state.MaxHP);
+        state.CurrentHP = Mathf.Clamp(state.CurrentHP,0,state.MaxHP);
         state.ClampMana();
         if (resetAttack) ResetRegisteredAttack(state);
         controller.UpdateHealthBar(state.CurrentHP,state.MaxHP);
@@ -448,10 +442,16 @@ public partial class CombatManager : MonoBehaviour
             if (state.CanFight)
             {
                 TickCombatResources(state, dt);
-                TickPassiveRegeneration(state,dt);
                 TickRegisteredHeroAttack(state,space,dt);
             }
         if(HeavenlyGateActive){TickHeavenlyGate(space,dt);return;}
+        TickMonsterAttacks(space,dt);
+        foreach (var state in heroStates.Values)
+            if (state.CanFight) TickPassiveRegeneration(state,space,dt);
+    }
+
+    private void TickMonsterAttacks(EnvironmentManager space,float dt)
+    {
         if (!isBattling) return;
         for (int i=activeMonsters.Count-1;i>=0;i--)
         {
@@ -485,9 +485,11 @@ public partial class CombatManager : MonoBehaviour
                 continue;
             }
             bool legacyWindup = skills == null && mode == AttackMode.RangedMagic;
+            if (legacyWindup && eligible) BeginEngagement(victim,info);
             bool ready=AdvanceCycle(ref info.attackTimer,legacyWindup?mode:AttackMode.Melee,duration,dt);
             info.controller.UpdateChargeBar(legacyWindup,info.attackTimer/duration);
             if (!ready || !eligible) continue;
+            BeginEngagement(victim,info);
             if (TryBeginMonsterCast(info, victim, space)) continue;
             info.attackTimer=legacyWindup?0f:duration;
             info.controller.UpdateChargeBar(mode==AttackMode.RangedMagic,0f);
@@ -496,7 +498,6 @@ public partial class CombatManager : MonoBehaviour
             if (mode==AttackMode.Melee)
             {
                 heroSfx?.PlayMonster(info.controller, mode, CombatAudioEvent.Basic);
-                Impact(BodyPosition(victim.Controller.heroRect,space),false);
                 ApplyDamageToHeroState(victim,trace.elementDamage,
                     IdentityDisplay.Describe(info.data),trace,
                     BodyPosition(info.controller.Rect,space).x,info.data,mode);
@@ -526,8 +527,50 @@ public partial class CombatManager : MonoBehaviour
         return nearest;
     }
 
-    private void TickPassiveRegeneration(HeroCombatState state,float dt)
+    private const float DisengageGraceSeconds = .5f;
+
+    private static void BeginEngagement(HeroCombatState state, ActiveMonsterInfo opponent)
     {
+        state.EngagedOpponents.Add(opponent.lifeId);
+        state.DisengageSeconds = DisengageGraceSeconds;
+    }
+
+    private bool IsEngaged(HeroCombatState state, EnvironmentManager space, float dt)
+    {
+        if (state.EngagedOpponents.Count == 0) return false;
+        if (isBattling)
+        {
+            if (state == primaryHeroState && weaponCast != null) return true;
+            foreach (var shot in projectiles)
+                if (shot.hero == state && shot.heroLife == state.LifeVersion) return true;
+
+            // Only opponents that took part in an attack can sustain combat.
+            // The grace period absorbs brief movement out of attack range.
+            foreach (var opponent in activeMonsters)
+            {
+                if (!state.EngagedOpponents.Contains(opponent.lifeId) || !CurrentMonsterLife(opponent)) continue;
+                if (state.Controller.CanAttack(opponent.controller,space) ||
+                    opponent.controller.CanAttack(state.Controller,space))
+                {
+                    state.DisengageSeconds = DisengageGraceSeconds;
+                    return true;
+                }
+            }
+            state.DisengageSeconds -= dt;
+            if (state.DisengageSeconds > 0f) return true;
+        }
+        state.EndEngagement();
+        return false;
+    }
+
+    private void TickPassiveRegeneration(HeroCombatState state,EnvironmentManager space,float dt)
+    {
+        bool engaged = IsEngaged(state,space,dt);
+        if (engaged)
+        {
+            state.HealthRegenRemainder = 0f;
+            return;
+        }
         if (state.CurrentHP >= state.MaxHP || dt <= 0f)
         {
             state.HealthRegenRemainder = 0f;
@@ -536,8 +579,7 @@ public partial class CombatManager : MonoBehaviour
         bool primary = state == primaryHeroState && gameManager != null;
         if (primary && (!gameManager.IsGameplayHUDVisible ||
             UIManager.Instance != null && UIManager.Instance.CombatResourcesMenuOpen)) return;
-        float natural = primary && !isBattling && !HeavenlyGateActive && state.Controller.IsExplorationMovement
-            ? CombatSkillProgress.BaseExplorationHPRegen : 0f;
+        float natural = primary ? CombatSkillProgress.BaseExplorationHPRegen : 0f;
         float rate = CombatStats.Get(state.Data,CombatStatId.HealthRegeneration,natural,
             ElementType.Vo,new [] { CombatStats.StanceTag(state.SelectedMode) });
         if (rate <= 0f) { state.HealthRegenRemainder = 0f; return; }
@@ -604,11 +646,14 @@ public partial class CombatManager : MonoBehaviour
             hero.UpdateChargeBar(false,0f);
             return;
         }
+        if (!basic && mode==AttackMode.RangedMagic && isBattling && target!=null)
+            BeginEngagement(actor,target);
         bool ready=AdvanceCycle(ref actor.AttackTimer,basic?AttackMode.Melee:mode,duration,dt);
         hero.UpdateChargeBar(!basic && mode==AttackMode.RangedMagic,actor.AttackTimer/duration);
         if (!ready || !isBattling) return;
         if (basic && TryBeginWeaponCast(actor, space)) return;
         if (target == null) return;
+        BeginEngagement(actor,target);
         actor.AttackTimer=!basic && mode==AttackMode.RangedMagic?0f:duration;
         hero.UpdateChargeBar(!basic && mode==AttackMode.RangedMagic,0f);
         hero.PlayAttackFeedback();
@@ -618,7 +663,6 @@ public partial class CombatManager : MonoBehaviour
         if (mode==AttackMode.Melee)
         {
             if(heroSfx!=null)heroSfx.TryPlay(actor,mode);
-            Impact(BodyPosition(target.controller.Rect,space),false);
             DealDamageToMonsterFromHero(target,trace,actor,null,mode);
         }
         else Launch(target,true,mode,trace,duration,space,actor);
@@ -693,6 +737,7 @@ public partial class CombatManager : MonoBehaviour
         // cannot consume surprise or wake this encounter; a lethal ambush still
         // alerts the other living members before the victim leaves the pool.
         AlertEncounter(attacker.Controller, true);
+        BeginEngagement(attacker,target);
         target.currentHP=Mathf.Max(0,target.currentHP-damage);
         AcceptedHeroHitCount++;LastImpactRelease=impactRelease;
         if (gameManager!=null)
@@ -704,6 +749,7 @@ public partial class CombatManager : MonoBehaviour
         }
         target.controller.UpdateHealthBar(target.currentHP,target.maxHP);
         var space=EnvironmentManager.Instance;
+        ShowAcceptedHit(target.controller.Rect,space);
         float away=-1f;
         if (space!=null && attacker.Controller!=null && attacker.Controller.heroRect!=null)
         {
@@ -851,15 +897,25 @@ public partial class CombatManager : MonoBehaviour
         if (space!=null && hero.heroRect!=null && impactSourceX.HasValue)
             away=DamagePopupMotion.AwaySign(space.Position(hero.heroRect).x,impactSourceX.Value,1f);
         hero.ShowDamage(damage,away);
-        if (victim.CurrentHP>0) return;
+        // Capture before death hides the actor or a pool reuses its transform.
+        var hitPoint = AcceptedHitPosition(hero.heroRect, space);
+        if (victim.CurrentHP>0)
+        {
+            DrawAcceptedHit(hitPoint);
+            return;
+        }
         heroSfx?.PlayHero(victim, victim.SelectedMode, CombatAudioEvent.Death);
         ResetRegisteredAttack(victim);
         hero.Die();
         // Do not GameOver or clear projectiles when teammates remain alive.
-        if (AnyFightingHero()) return;
-        if(HeavenlyGateActive)return; // Trial transaction owns death/respawn, not normal map defeat.
-        ClearBattle(false,true); // Game Over cancels combat; existing Magic finishes visually.
-        if (gameManager!=null) gameManager.OnHeroDied();
+        if (!AnyFightingHero() && !HeavenlyGateActive)
+        {
+            ClearBattle(false,true); // Game Over cancels combat; existing Magic finishes visually.
+            DrawAcceptedHit(hitPoint);
+            if (gameManager!=null) gameManager.OnHeroDied();
+            return;
+        }
+        DrawAcceptedHit(hitPoint);
     }
 
     private Vector2 BodyPosition(RectTransform rect, EnvironmentManager space)
@@ -975,7 +1031,6 @@ public partial class CombatManager : MonoBehaviour
             if (t<1f) continue;
             RemoveProjectile(i); // Death callbacks may clear the remaining volley.
             impactRelease=shot.releaseId;
-            if(!shot.staffBasic)Impact(end,shot.magic);
             bool hit=false;
             if (shot.fromHero && shot.magic)
             {
@@ -1007,6 +1062,7 @@ public partial class CombatManager : MonoBehaviour
                                  end,shot.magic?magicImpactRadius:physicalHitRadius);
                 if (hit)
                 {
+                    BeginEngagement(victim,shot.monster);
                     heroSfx?.PlayMonster(shot.monster.controller, shot.attackMode, CombatAudioEvent.Impact);
                     var trace=SynergyMath.EvaluateSnapshot(shot.trace,victim.Data);
                     ApplyDamageToHeroState(victim,trace.elementDamage,shot.source,trace,
@@ -1027,9 +1083,18 @@ public partial class CombatManager : MonoBehaviour
         }
     }
 
-    private void Impact(Vector2 position, bool fire)
+    private Vector2? AcceptedHitPosition(RectTransform target, EnvironmentManager space) =>
+        target != null && space != null && space.BattleArea != null
+            ? BodyPosition(target,space) + space.ScreenPixelsToBattleUnits(new Vector2(0f,20f))
+            : (Vector2?)null;
+
+    private void ShowAcceptedHit(RectTransform target, EnvironmentManager space) =>
+        DrawAcceptedHit(AcceptedHitPosition(target,space));
+
+    private void DrawAcceptedHit(Vector2? position)
     {
-        if (effects != null) effects.Burst(position, fire, Mathf.Max(0.1f, effectsScale));
+        if (position.HasValue)
+            effects?.Burst(position.Value, false, Mathf.Max(.1f, effectsScale));
     }
     private void RemoveProjectile(int index)
     {
@@ -1067,7 +1132,6 @@ public partial class CombatManager : MonoBehaviour
             {
                 if(effects!=null)effects.RemoveBolt(flight.visual);
                 magicFlights.RemoveAt(i);
-                if (!flight.silentEnd) Impact(flight.end,true);
             }
             else magicFlights[i]=flight;
         }
@@ -1156,6 +1220,7 @@ public partial class CombatManager : MonoBehaviour
         CancelWeaponCast();
         foreach (var actor in activeMonsters) CancelMonsterCast(actor);
         isBattling = false;
+        foreach (var state in heroStates.Values) state.EndEngagement();
         if (!preserveHeroAttack) ResetAllHeroAttacks();
         if(keepMagicVisuals)DiscardCombatProjectiles(true,true);
         else ClearProjectiles(); // Load/Retry/Travel/New Game/menu/disable are hard boundaries.

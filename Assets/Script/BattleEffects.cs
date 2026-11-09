@@ -36,7 +36,21 @@ public class BattleEffects : MaskableGraphic
     readonly Dictionary<RectTransform, CastLight> casts = new Dictionary<RectTransform, CastLight>();
     readonly List<RectTransform> castKeys = new List<RectTransform>();
     readonly List<ThrustLight> thrusts = new List<ThrustLight>();
+    struct BowFlash
+    {
+        public Vector2 origin;
+        public float direction, elapsed;
+    }
+
+    readonly List<BowFlash> bowFlashes = new List<BowFlash>();
+    const float BowFlashSeconds = .15f;
     const float ThrustSeconds = .17f;
+
+    internal void BowRelease(Vector2 origin, float direction)
+    {
+        bowFlashes.Add(new BowFlash { origin = origin, direction = direction });
+        SetVerticesDirty();
+    }
     internal int ActiveCasts => casts.Count;
 
     internal void SetCast(RectTransform actor, Vector2 center, float progress)
@@ -103,6 +117,13 @@ public class BattleEffects : MaskableGraphic
             if (thrust.elapsed >= ThrustSeconds) thrusts.RemoveAt(i);
             else thrusts[i] = thrust;
         }
+        for (int i = bowFlashes.Count - 1; i >= 0; i--)
+        {
+            var flash = bowFlashes[i];
+            flash.elapsed += dt;
+            if (flash.elapsed >= BowFlashSeconds) bowFlashes.RemoveAt(i);
+            else bowFlashes[i] = flash;
+        }
         for (int i = sparks.Count - 1; i >= 0; i--)
         {
             var p = sparks[i]; p.age += dt;
@@ -132,10 +153,16 @@ public class BattleEffects : MaskableGraphic
             thrust.origin.x += amount;
             thrusts[i] = thrust;
         }
+        for (int i = 0; i < bowFlashes.Count; i++)
+        {
+            var flash = bowFlashes[i];
+            flash.origin.x += amount;
+            bowFlashes[i] = flash;
+        }
         SetVerticesDirty();
     }
     public void Clear() { bolts.Clear(); casts.Clear(); ClearParticles(); }
-    public void ClearParticles() { sparks.Clear(); thrusts.Clear(); SetVerticesDirty(); }
+    public void ClearParticles() { sparks.Clear(); thrusts.Clear(); bowFlashes.Clear(); SetVerticesDirty(); }
 
     protected override void OnPopulateMesh(VertexHelper vh)
     {
@@ -174,6 +201,7 @@ public class BattleEffects : MaskableGraphic
             }
         }
         foreach (var cast in casts.Values) DrawCast(vh, cast);
+        foreach (var flash in bowFlashes) DrawBowFlash(vh,flash);
         foreach (var thrust in thrusts) DrawThrust(vh, thrust);
         foreach (var spark in sparks)
         {
@@ -194,6 +222,21 @@ public class BattleEffects : MaskableGraphic
             var point = cast.center + new Vector2(x, y * .8f) * distance;
             Beam(vh, point, -x, -.8f * y, 29f, 6f, new Color(.26f,.70f,1f,.40f));
             Beam(vh, point, -x, -.8f * y, 24f, 2.4f, new Color(.92f,1f,1f,.96f));
+        }
+    }
+
+    static void DrawBowFlash(VertexHelper vh, BowFlash flash)
+    {
+        float t = flash.elapsed / BowFlashSeconds;
+        float fade = 1f - t;
+        Glow(vh,flash.origin,26f,new Color(.66f,.88f,1f,.50f * fade));
+        for (int i = -2; i <= 2; i++)
+        {
+            float angle = i * .27f;
+            var direction = new Vector2(flash.direction * Mathf.Cos(angle),Mathf.Sin(angle));
+            var center = flash.origin + direction * (14f + 15f * t);
+            Beam(vh,center,direction.x,direction.y,31f,6f,new Color(.49f,.77f,1f,.52f * fade));
+            Beam(vh,center,direction.x,direction.y,26f,2.8f,new Color(1f,1f,1f,fade));
         }
     }
 

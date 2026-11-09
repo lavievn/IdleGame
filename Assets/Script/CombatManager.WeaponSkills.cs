@@ -64,6 +64,7 @@ public partial class CombatManager
             MonsterTarget = target, TargetLife = target.lifeId, TargetSpawn = target.controller.SpawnVersion,
             Direction = direction
         };
+        BeginEngagement(actor,target);
         actor.Controller.UpdateChargeBar(true, 0f);
         ShowCast(actor.Controller.heroRect, space, weaponCast);
         heroSfx?.PlayHero(actor, actor.SelectedMode, CombatAudioEvent.Cast);
@@ -104,7 +105,7 @@ public partial class CombatManager
             !progress.queue.Contains(skill.Id) || !skill.IsAvailable(actor.Data, WeaponBasicAttack.Equipped(actor.Data)) ||
             !progress.CanPay(skill) || locked == null || !activeMonsters.Contains(locked) ||
             locked.lifeId != cast.TargetLife || locked.controller == null || locked.controller.SpawnVersion != cast.TargetSpawn ||
-            !CanTargetSkill(skill, actor, locked, space, space.Position(actor.Controller.heroRect), cast.Direction))
+            !CanTargetSkill(skill, actor, locked, space, SkillTargetOrigin(skill,actor,space), cast.Direction))
         {
             CancelWeaponCast();
             return false;
@@ -131,6 +132,9 @@ public partial class CombatManager
                 ReleaseThrust(skill, actor, space, cast.Direction);
                 break;
             case SkillEffect.ArrowVolley:
+                var bow = CastVisualAnchor(actor.Controller.heroRect,space);
+                float direction = space.Position(target.controller.Rect).x > bow.x ? 1f : -1f;
+                effects?.BowRelease(bow + space.ScreenPixelsToBattleUnits(new Vector2(8f * direction,0f)),direction);
                 ReleaseVolleyArrow(skill, target, actor, space, skill.ProjectileCount);
                 break;
             case SkillEffect.LegacyFireball:
@@ -160,7 +164,7 @@ public partial class CombatManager
         ActiveMonsterInfo chosen = null;
         int seen = 0;
         float nearest = float.MaxValue;
-        var origin = space.Position(actor.Controller.heroRect);
+        var origin = SkillTargetOrigin(skill,actor,space);
         foreach (var candidate in activeMonsters)
         {
             if (!CanTargetSkill(skill, actor, candidate, space, origin, direction)) continue;
@@ -183,17 +187,20 @@ public partial class CombatManager
     {
         if (target == null || target.currentHP <= 0 || target.controller == null || !target.controller.IsAlive)
             return false;
-        var delta = space.Position(target.controller.Rect) - origin;
         if (skill.Targeting == SkillTargeting.ForwardRectangle)
+        {
+            var delta = ThrustBodyAnchor(target.controller.Rect,space) - origin;
             return delta.x * direction >= 0 && delta.x * direction <= skill.Width && Mathf.Abs(delta.y) <= skill.Height / 2 &&
                 (target != gateTarget || actor.Controller.CanAttack(target.controller, space));
-        if (skill.Targeting == SkillTargeting.RandomForwardInRange && delta.x > 0) return false;
+        }
+        if (skill.Targeting == SkillTargeting.RandomForwardInRange && space.Position(target.controller.Rect).x > origin.x)
+            return false;
         return actor.Controller.CanAttack(target.controller, space);
     }
 
     void ReleaseThrust(WeaponSkill skill, HeroCombatState actor, EnvironmentManager space, float direction)
     {
-        var origin = space.Position(actor.Controller.heroRect);
+        var origin = SkillTargetOrigin(skill,actor,space);
         var targets = new List<ActiveMonsterInfo>(activeMonsters);
         int battle = battleVersion;
         impactRelease = ++HeroReleaseCount;
@@ -203,7 +210,6 @@ public partial class CombatManager
         {
             if (battle != battleVersion || !actor.CanFight) break;
             if (!activeMonsters.Contains(target) || !CanTargetSkill(skill, actor, target, space, origin, direction)) continue;
-            Impact(BodyPosition(target.controller.Rect, space), false);
             DealDamageToMonsterFromHero(target, SynergyMath.EvaluateBasicDamage(actor.Data, target.data,
                 AttackMode.Melee, Random.Range(.85f, 1f)), actor, origin.x, AttackMode.Melee);
         }
@@ -220,9 +226,21 @@ public partial class CombatManager
                 Random.Range(.85f, 1f)), skill.Cooldown, space, actor, skill, remaining - 1);
     }
 
+    // The thrust runs through the upper body of both actors. The same
+    // fixed BattleArea height on each actor preserves relative lane bounds.
+    private Vector2 ThrustBodyAnchor(RectTransform actor, EnvironmentManager space) =>
+        BodyPosition(actor,space) + Vector2.up * 42f;
+
+    private Vector2 SkillTargetOrigin(WeaponSkill skill, HeroCombatState actor, EnvironmentManager space) =>
+        skill.Targeting == SkillTargeting.ForwardRectangle
+            ? ThrustBodyAnchor(actor.Controller.heroRect,space) : space.Position(actor.Controller.heroRect);
+
+    private Vector2 CastVisualAnchor(RectTransform actor, EnvironmentManager space) =>
+        BodyPosition(actor,space) + space.ScreenPixelsToBattleUnits(new Vector2(-4f,10f));
+
     void ShowCast(RectTransform actor, EnvironmentManager space, SkillCast cast)
     {
-        effects?.SetCast(actor, BodyPosition(actor, space), cast.Progress);
+        effects?.SetCast(actor, CastVisualAnchor(actor,space), cast.Progress);
     }
 
     CombatSkillProgress MonsterSkills(ActiveMonsterInfo actor)

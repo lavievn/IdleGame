@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using TuTienCore;
 
 // B2: transient state for ONE combatant, independent from other Heroes.
@@ -30,6 +31,14 @@ public sealed class HeroCombatState
     internal string WeaponIdentity;
     // Fractional health regeneration carries across frames, not respawns.
     public float HealthRegenRemainder;
+    internal readonly HashSet<int> EngagedOpponents = new HashSet<int>();
+    internal float DisengageSeconds;
+
+    internal void EndEngagement()
+    {
+        EngagedOpponents.Clear();
+        DisengageSeconds = 0f;
+    }
     public AttackMode WindupMode { get; set; }
     // Changes whenever this state starts a new life. Old projectiles cannot
     // hit a respawned actor just because the Controller object was reused.
@@ -53,6 +62,7 @@ public sealed class HeroCombatState
         ClampMana();
         AttackTimer = 0f;
         HealthRegenRemainder = 0f;
+        EndEngagement();
     }
 
     internal void ClampMana()

@@ -350,6 +350,12 @@ public class EnvironmentManager : MonoBehaviour
 
     public RectTransform BattleArea => battleArea;
     public float Width => battleArea != null ? battleArea.rect.width : 0f;
+    internal Vector2 ScreenPixelsToBattleUnits(Vector2 pixels)
+    {
+        float scale = battleCanvas != null ? battleCanvas.scaleFactor :
+            ManagementWindowLayout.BattleCanvasScale(Screen.width, Width);
+        return pixels / Mathf.Max(.01f, scale);
+    }
     public float HomeX => battleArea.rect.xMin + Width * explorationHeroX;
     private float ZoneMin => Mathf.Clamp01(Mathf.Min(speedZoneLeft, speedZoneRight));
     private float ZoneMax => Mathf.Clamp01(Mathf.Max(speedZoneLeft, speedZoneRight));
