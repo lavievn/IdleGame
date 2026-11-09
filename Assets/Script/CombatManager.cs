@@ -12,6 +12,11 @@ public partial class CombatManager : MonoBehaviour
     [Min(0.01f)] public float magicFlightTime = 1.2f;
     [Min(0f)] public float magicArcHeight = 65f;
     [Min(0.1f)] public float effectsScale = 1f;
+    [Header("STAFF BASIC — locked ember visual")]
+    [SerializeField, Min(.1f)] private float staffEmberSeconds = .55f;
+    [SerializeField, Min(1f)] private float staffEmberSize = 8f;
+    [SerializeField, Min(1.25f)] private float staffEmberAcceleration = 2f;
+    [SerializeField, Min(0f)] private float staffEmberTrail = 38f;
     [Min(0f)] public float physicalHitRadius = 12f;
     [Min(0f)] public float magicImpactRadius = 100f; // Enemy radius unchanged.
     [Min(0f)] public float heroMagicImpactRadius = 250f; // Ground-local hero explosion.
@@ -167,6 +172,8 @@ public partial class CombatManager : MonoBehaviour
         public int currentHP;
         public int maxHP;
         public float attackTimer;
+        internal CombatSkillProgress skillProgress;
+        internal SkillCast skillCast;
         public AttackMode cycleMode;
         public int lifeId;
         internal CombatLootRewards.KillKey lootKey;
@@ -289,6 +296,7 @@ public partial class CombatManager : MonoBehaviour
     {
         // Changing balance cancels in-flight old power/cooldowns, not the wave or identity.
         DiscardCombatProjectiles(true,true); ResetAllHeroAttacks();
+        foreach (var actor in activeMonsters) CancelMonsterCast(actor);
         if (!monster && runtimeHeroData != null)
         {
             float healthRatio = maxHeroHP > 0 ? (float)currentHeroHP / maxHeroHP : 1f;
@@ -423,6 +431,7 @@ public partial class CombatManager : MonoBehaviour
             return;
         }
         if(HeavenlyGateActive && (!CanRunGateCombat || !ValidateGateLives()))return;
+        if (weaponCast != null && !HeroIsFighting(primaryHeroState)) CancelWeaponCast();
         if(!AnyFightingHero())
         {
             if (HeavenlyGateActive) { TickHeavenlyGate(space,dt); return; }
@@ -448,7 +457,14 @@ public partial class CombatManager : MonoBehaviour
         {
             if (i>=activeMonsters.Count) continue;
             var info=activeMonsters[i];
-            if (info.controller==null || !info.controller.IsAlive) continue;
+            if (info.controller==null || !info.controller.IsAlive) { CancelMonsterCast(info); continue; }
+            var skills = MonsterSkills(info);
+            if (skills != null) skills.Advance(dt, 0f, info.controller.SkillMana);
+            if (TickMonsterCast(info, space, dt))
+            {
+                info.attackTimer = info.skillCast == null ? AttackDuration(info.controller.attackMode, info.data.baseAttackSpeed, true) : 0f;
+                continue;
+            }
             if (!info.controller.IsAggressive)
             {
                 info.attackTimer = 0f;
@@ -468,15 +484,18 @@ public partial class CombatManager : MonoBehaviour
                 info.controller.UpdateChargeBar(false,0f);
                 continue;
             }
-            bool ready=AdvanceCycle(ref info.attackTimer,mode,duration,dt);
-            info.controller.UpdateChargeBar(mode==AttackMode.RangedMagic,info.attackTimer/duration);
+            bool legacyWindup = skills == null && mode == AttackMode.RangedMagic;
+            bool ready=AdvanceCycle(ref info.attackTimer,legacyWindup?mode:AttackMode.Melee,duration,dt);
+            info.controller.UpdateChargeBar(legacyWindup,info.attackTimer/duration);
             if (!ready || !eligible) continue;
-            info.attackTimer=mode==AttackMode.RangedMagic?0f:duration;
+            if (TryBeginMonsterCast(info, victim, space)) continue;
+            info.attackTimer=legacyWindup?0f:duration;
             info.controller.UpdateChargeBar(mode==AttackMode.RangedMagic,0f);
             var trace=RollDamageTrace(info.data,victim.Data,mode);
             info.controller.PlayAttackFeedback();
             if (mode==AttackMode.Melee)
             {
+                heroSfx?.PlayMonster(info.controller, mode, CombatAudioEvent.Basic);
                 Impact(BodyPosition(victim.Controller.heroRect,space),false);
                 ApplyDamageToHeroState(victim,trace.elementDamage,
                     IdentityDisplay.Describe(info.data),trace,
@@ -653,6 +672,8 @@ public partial class CombatManager : MonoBehaviour
     {
         DealDamageFromHero(target,finalDmg,primaryHeroState,impactSourceX);
     }
+    private long lastImpactSoundRelease = -1;
+
     private void DealDamageFromHero(ActiveMonsterInfo target,int damage,
         HeroCombatState attacker,float? impactSourceX=null)
     {
@@ -661,6 +682,11 @@ public partial class CombatManager : MonoBehaviour
             (target!=gateTarget && target.controller.SpawnVersion!=target.lootKey.Spawn) ||
             (target!=gateTarget && !lootRewards.IsCurrent(target.lootKey,LootRecipient))) return;
         if (damage <= 0) return;
+        if (lastImpactSoundRelease != impactRelease)
+        {
+            lastImpactSoundRelease = impactRelease;
+            heroSfx?.PlayHero(attacker, attacker.SelectedMode, CombatAudioEvent.Impact);
+        }
         bool surprise = target!=gateTarget && !target.controller.HasDetectedHero;
         if (surprise) damage = (int)System.Math.Min(int.MaxValue, (long)damage * 2L);
         // Resolve at the accepted impact, after defense. A stale/missed shot
@@ -707,7 +733,11 @@ public partial class CombatManager : MonoBehaviour
             !IsRegistered(attacker) || attacker.Data==null || !activeMonsters.Contains(target) ||
             !lootRewards.TryClaim(target.lootKey,LootRecipient)) return;
         activeMonsters.Remove(target);
-        if (target.controller!=null) target.controller.MarkDead();
+        if (target.controller!=null)
+        {
+            heroSfx?.PlayMonster(target.controller, target.controller.attackMode, CombatAudioEvent.Death);
+            target.controller.MarkDead();
+        }
         int exp=CombatBalance.KillExp(target.data.currentLevel)*
                 (gameManager!=null && gameManager.IsHardMode?3:1);
         // Progress is credited to the attacker, not a global primary stat.
@@ -822,7 +852,8 @@ public partial class CombatManager : MonoBehaviour
             away=DamagePopupMotion.AwaySign(space.Position(hero.heroRect).x,impactSourceX.Value,1f);
         hero.ShowDamage(damage,away);
         if (victim.CurrentHP>0) return;
-        victim.ResetAttack();
+        heroSfx?.PlayHero(victim, victim.SelectedMode, CombatAudioEvent.Death);
+        ResetRegisteredAttack(victim);
         hero.Die();
         // Do not GameOver or clear projectiles when teammates remain alive.
         if (AnyFightingHero()) return;
@@ -860,21 +891,33 @@ public partial class CombatManager : MonoBehaviour
             skill=skill,weaponId=actor.WeaponIdentity,remainingArrows=remainingArrows,
             attackMode=mode,
             source=IdentityDisplay.Describe(fromHero?actor.Data:monster.data),
-            duration=BattleMotion.FlightDuration(magic?magicFlightTime:physicalFlightTime,interval),
+            duration=staffBasic ? Mathf.Max(.1f, staffEmberSeconds) :
+                BattleMotion.FlightDuration(magic?magicFlightTime:physicalFlightTime,interval),
             arc=magic?Mathf.Max(0f,magicArcHeight):
-                staffBasic ? (float)(staffArcRandom.NextDouble() * 2 - 1) * Mathf.Max(20f, magicArcHeight) : 0f
+                staffBasic ? (staffArcRandom.Next(2) == 0 ? -1f : 1f) *
+                    (.55f + (float)staffArcRandom.NextDouble() * .45f) *
+                    Mathf.Min(Mathf.Max(20f, magicArcHeight), (end-start).magnitude * .25f) : 0f
         };
         if (effects!=null)
         {
             shot.visual=effects.AddBolt(start,magic,
-                (magic?5f*Mathf.Max(.1f,magicProjectileScale):staffBasic?3.5f:2f)*Mathf.Max(.1f,effectsScale));
+                (magic?5f*Mathf.Max(.1f,magicProjectileScale):staffBasic?staffEmberSize:2f)*Mathf.Max(.1f,effectsScale));
             shot.visual.direction=shot.end-shot.start;
+            shot.visual.staffEmber=staffBasic;
+            shot.visual.trailLength=staffEmberTrail;
         }
         projectiles.Add(shot);
         // Shoot/Magic belong to the actual release, never drawing, sprite
         // frame changes or projectile impact. Monster launches stay unchanged.
-        if(fromHero && heroSfx!=null)heroSfx.TryPlay(actor,mode);
+        var audioEvent = skill != null && (remainingArrows == 0 && skill.Effect != SkillEffect.ArrowVolley ||
+            skill.Effect == SkillEffect.ArrowVolley && remainingArrows == skill.ProjectileCount - 1)
+            ? CombatAudioEvent.Release : CombatAudioEvent.Projectile;
+        if (fromHero) heroSfx?.PlayHero(actor, mode, audioEvent);
+        else heroSfx?.PlayMonster(monster.controller, mode, audioEvent);
     }
+
+    internal static float StaffEmberProgress(float t, float acceleration) =>
+        Mathf.Pow(Mathf.Clamp01(t), Mathf.Max(1.25f, acceleration));
 
     private static bool WithinImpact(Vector2 a, Vector2 b, float radius)
     {
@@ -899,7 +942,7 @@ public partial class CombatManager : MonoBehaviour
                               shot.monster.controller.SpawnVersion==shot.monsterSpawn &&
                               shot.monster.controller.IsAlive;
             if (shot.battleVersion!=battleVersion || !validHero ||
-                shot.skill != null && shot.weaponId != WeaponBasicAttack.Identity(shot.hero.Data))
+                shot.fromHero && shot.skill != null && shot.weaponId != WeaponBasicAttack.Identity(shot.hero.Data))
             { RetireProjectile(i); continue; }
             bool volley = shot.skill?.Effect == SkillEffect.ArrowVolley;
             if (!validMonster && volley)
@@ -919,10 +962,11 @@ public partial class CombatManager : MonoBehaviour
             shot.elapsed+=dt;
             float t=shot.duration>0f?Mathf.Clamp01(shot.elapsed/shot.duration):1f;
             Vector2 end=shot.end;
+            float phase=shot.staffBasic ? StaffEmberProgress(t,staffEmberAcceleration) : t;
             Vector2 position=new Vector2(
-                shot.start.x+(end.x-shot.start.x)*t,
-                shot.start.y+(end.y-shot.start.y)*t+
-                4f*shot.arc*t*(1f-t));
+                shot.start.x+(end.x-shot.start.x)*phase,
+                shot.start.y+(end.y-shot.start.y)*phase+
+                4f*shot.arc*phase*(1f-phase));
             if (shot.visual!=null)
             {
                 shot.visual.direction=position-shot.visual.position;
@@ -963,6 +1007,7 @@ public partial class CombatManager : MonoBehaviour
                                  end,shot.magic?magicImpactRadius:physicalHitRadius);
                 if (hit)
                 {
+                    heroSfx?.PlayMonster(shot.monster.controller, shot.attackMode, CombatAudioEvent.Impact);
                     var trace=SynergyMath.EvaluateSnapshot(shot.trace,victim.Data);
                     ApplyDamageToHeroState(victim,trace.elementDamage,shot.source,trace,
                         shot.magic?shot.end.x:shot.start.x,shot.monster.data,shot.attackMode);
@@ -994,7 +1039,7 @@ public partial class CombatManager : MonoBehaviour
     private void RetireProjectile(int index)
     {
         var shot=projectiles[index];
-        if(!shot.magic) {RemoveProjectile(index);return;}
+        if (!shot.magic || !shot.fromHero && shot.skill != null) { RemoveProjectile(index); return; }
         float duration=float.IsNaN(shot.duration)||float.IsInfinity(shot.duration)
             ?MaxDetachedMagicSeconds:Mathf.Clamp(shot.duration,.001f,MaxDetachedMagicSeconds);
         magicFlights.Add(new MagicFlight {start=shot.start,end=shot.end,arc=shot.arc,
@@ -1054,6 +1099,8 @@ public partial class CombatManager : MonoBehaviour
         if(lootPresentation!=null)lootPresentation.Clear();
         resumeEncounterAfterEnable=activeMonsters.Count>0;
         lootRewards.Invalidate();battleVersion++;
+        CancelWeaponCast();
+        foreach (var actor in activeMonsters) CancelMonsterCast(actor);
     }
     void OnDisable()
     {
@@ -1107,6 +1154,7 @@ public partial class CombatManager : MonoBehaviour
         lootRewards.Invalidate();
         battleVersion++;
         CancelWeaponCast();
+        foreach (var actor in activeMonsters) CancelMonsterCast(actor);
         isBattling = false;
         if (!preserveHeroAttack) ResetAllHeroAttacks();
         if(keepMagicVisuals)DiscardCombatProjectiles(true,true);

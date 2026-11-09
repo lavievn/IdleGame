@@ -90,6 +90,8 @@ public class HeroController : MonoBehaviour
     public float MovementDeltaThisFrame { get; private set; }
     // Identity of the CURRENT deployed life, not the reusable GameObject.
     public int SpawnVersion { get; private set; }
+    [SerializeField] private CombatAudioProfile combatAudio;
+    internal CombatAudioProfile AudioProfile => combatAudio;
 
     private bool deployed;
     private Coroutine fadeDmgCoroutine;

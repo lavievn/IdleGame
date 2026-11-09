@@ -11,8 +11,8 @@ public class BattleEffects : MaskableGraphic
     public class Bolt
     {
         public Vector2 position, direction;
-        public bool magic;
-        public float size;
+        public bool magic, staffEmber;
+        public float size, trailLength;
     }
     private class Spark
     {
@@ -23,6 +23,38 @@ public class BattleEffects : MaskableGraphic
     private readonly List<Bolt> bolts = new List<Bolt>();
     private readonly List<Spark> sparks = new List<Spark>();
     private const int MaxSparks = 256;
+    struct CastLight
+    {
+        public Vector2 center;
+        public float progress;
+    }
+    struct ThrustLight
+    {
+        public Vector2 origin;
+        public float direction, width, height, elapsed;
+    }
+    readonly Dictionary<RectTransform, CastLight> casts = new Dictionary<RectTransform, CastLight>();
+    readonly List<RectTransform> castKeys = new List<RectTransform>();
+    readonly List<ThrustLight> thrusts = new List<ThrustLight>();
+    const float ThrustSeconds = .17f;
+    internal int ActiveCasts => casts.Count;
+
+    internal void SetCast(RectTransform actor, Vector2 center, float progress)
+    {
+        casts[actor] = new CastLight { center = center, progress = progress };
+        SetVerticesDirty();
+    }
+
+    internal void EndCast(RectTransform actor)
+    {
+        if (actor != null && casts.Remove(actor)) SetVerticesDirty();
+    }
+
+    internal void Thrust(Vector2 origin, float direction, float width, float height)
+    {
+        thrusts.Add(new ThrustLight { origin = origin, direction = direction, width = width, height = height });
+        SetVerticesDirty();
+    }
 
     public static BattleEffects Create(RectTransform ground)
     {
@@ -64,6 +96,13 @@ public class BattleEffects : MaskableGraphic
     }
     public void Advance(float dt)
     {
+        for (int i = thrusts.Count - 1; i >= 0; i--)
+        {
+            var thrust = thrusts[i];
+            thrust.elapsed += dt;
+            if (thrust.elapsed >= ThrustSeconds) thrusts.RemoveAt(i);
+            else thrusts[i] = thrust;
+        }
         for (int i = sparks.Count - 1; i >= 0; i--)
         {
             var p = sparks[i]; p.age += dt;
@@ -79,10 +118,24 @@ public class BattleEffects : MaskableGraphic
     {
         foreach (var bolt in bolts) bolt.position.x += amount;
         foreach (var spark in sparks) spark.position.x += amount;
+        castKeys.Clear();
+        castKeys.AddRange(casts.Keys);
+        foreach (var key in castKeys)
+        {
+            var cast = casts[key];
+            cast.center.x += amount;
+            casts[key] = cast;
+        }
+        for (int i = 0; i < thrusts.Count; i++)
+        {
+            var thrust = thrusts[i];
+            thrust.origin.x += amount;
+            thrusts[i] = thrust;
+        }
         SetVerticesDirty();
     }
-    public void Clear() { bolts.Clear(); sparks.Clear(); SetVerticesDirty(); }
-    public void ClearParticles() { sparks.Clear();SetVerticesDirty(); }
+    public void Clear() { bolts.Clear(); casts.Clear(); ClearParticles(); }
+    public void ClearParticles() { sparks.Clear(); thrusts.Clear(); SetVerticesDirty(); }
 
     protected override void OnPopulateMesh(VertexHelper vh)
     {
@@ -93,7 +146,19 @@ public class BattleEffects : MaskableGraphic
             float length = (float)Math.Sqrt(bolt.direction.x * bolt.direction.x + bolt.direction.y * bolt.direction.y);
             float dx = length > 0.001f ? bolt.direction.x / length : -1f;
             float dy = length > 0.001f ? bolt.direction.y / length : 0f;
-            if (bolt.magic)
+            if (bolt.staffEmber)
+            {
+                for (int k = 5; k >= 1; k--)
+                {
+                    float fraction = k / 5f;
+                    Glow(vh, new Vector2(x - dx * bolt.trailLength * fraction, y - dy * bolt.trailLength * fraction),
+                        s * (1.2f - fraction * .7f), new Color(1f, .32f, .1f, .32f * (1.1f - fraction)));
+                }
+                Glow(vh, bolt.position, s * 1.75f, new Color(1f, .22f, .05f, .48f));
+                Glow(vh, bolt.position, s, new Color(1f, .62f, .18f, 1f));
+                Glow(vh, bolt.position, s * .55f, new Color(1f, .98f, .77f, 1f));
+            }
+            else if (bolt.magic)
             {
                 for (int k = 5; k >= 1; k--)
                     Glow(vh, new Vector2(x - dx * k * s * 0.7f, y - dy * k * s * 0.7f),
@@ -108,6 +173,8 @@ public class BattleEffects : MaskableGraphic
                 Beam(vh, bolt.position, dx, dy, s * 6f, s * 0.45f, new Color(0.85f, 0.98f, 1f, 1f));
             }
         }
+        foreach (var cast in casts.Values) DrawCast(vh, cast);
+        foreach (var thrust in thrusts) DrawThrust(vh, thrust);
         foreach (var spark in sparks)
         {
             float fade = 1f - spark.age / spark.lifetime;
@@ -115,6 +182,42 @@ public class BattleEffects : MaskableGraphic
                 spark.fire ? new Color(1f, 0.45f, 0.04f, fade) : new Color(1f, 0.95f, 0.7f, fade));
         }
     }
+    static void DrawCast(VertexHelper vh, CastLight cast)
+    {
+        const int count = 7;
+        for (int i = 0; i < count; i++)
+        {
+            float angle = i * (float)(Math.PI * 2 / count) + .37f;
+            float x = (float)Math.Cos(angle), y = (float)Math.Sin(angle);
+            float progress = Mathf.Clamp01(cast.progress * 1.15f - (i % 3) * .07f);
+            float distance = Mathf.Lerp(57f + 7f * (i % 3), 6f, progress);
+            var point = cast.center + new Vector2(x, y * .8f) * distance;
+            Beam(vh, point, -x, -y, 13f, 2.5f, new Color(.37f,.78f,1f,.28f));
+            Beam(vh, point, -x, -y, 10f, .8f, new Color(.92f,1f,1f,.85f));
+        }
+    }
+
+    static void DrawThrust(VertexHelper vh, ThrustLight thrust)
+    {
+        float fade = 1f - thrust.elapsed / ThrustSeconds;
+        DrawSpear(vh, thrust, 1f, new Color(.33f,.81f,1f,.40f * fade));
+        DrawSpear(vh, thrust, .58f, new Color(.66f,.90f,1f,.90f * fade));
+        DrawSpear(vh, thrust, .23f, new Color(1f,1f,1f,fade));
+    }
+
+    static void DrawSpear(VertexHelper vh, ThrustLight t, float band, Color color)
+    {
+        float dx = t.width * t.direction;
+        float h = t.height * .5f * band;
+        int i = vh.currentVertCount;
+        vh.AddVert(t.origin, new Color(color.r,color.g,color.b,0f), Vector2.zero);
+        vh.AddVert(t.origin + new Vector2(dx * .24f, h), color, Vector2.zero);
+        vh.AddVert(t.origin + new Vector2(dx, 0f), color, Vector2.zero);
+        vh.AddVert(t.origin + new Vector2(dx * .24f, -h), color, Vector2.zero);
+        vh.AddTriangle(i, i+1, i+2);
+        vh.AddTriangle(i, i+2, i+3);
+    }
+
     private static void Glow(VertexHelper vh, Vector2 p, float radius, Color color)
     {
         int index = vh.currentVertCount;

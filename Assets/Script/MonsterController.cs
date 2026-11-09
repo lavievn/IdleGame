@@ -23,12 +23,21 @@ public class MonsterController : MonoBehaviour
     public bool IsAlive => isActiveAndEnabled && currentState != MonsterState.Dead;
     // The same pooled GameObject can represent multiple monster lives.
     public int SpawnVersion { get; private set; }
+    [SerializeField] private CombatAudioProfile combatAudio;
+    internal CombatAudioProfile AudioProfile => combatAudio;
     public float SightRange => attackMode == AttackMode.Melee ? 550f : 800f;
     public const float AlertDuration = .5f;
     public MonsterAwareness Awareness { get; private set; }
     public bool HasDetectedHero => Awareness != MonsterAwareness.Unaware;
     public bool IsAggressive => Awareness == MonsterAwareness.Engaged;
     public bool FacingRight { get; private set; }
+    internal const float IdleWanderSpeed = 50f;
+    private static readonly System.Random wanderRandom = new System.Random();
+    private float wanderTargetY, wanderTime;
+    [SerializeField] private string[] combatSkillIds = new string[0];
+    [SerializeField, Min(0f)] private float combatSkillMana;
+    internal string[] SkillIds => combatSkillIds ?? System.Array.Empty<string>();
+    internal float SkillMana => Mathf.Max(0f, combatSkillMana);
     // Looking around is independent of combat/damage/spawn RNG.
     private static readonly System.Random awarenessRandom = new System.Random();
     private float nextLook, alertElapsed;
@@ -100,6 +109,7 @@ public class MonsterController : MonoBehaviour
         Awareness = MonsterAwareness.Unaware;
         alertElapsed = 0f;
         nextLook = NextLookInterval();
+        wanderTime = 0;
         SetFacing(awarenessRandom.Next(2) == 0);
         HideAwarenessLabel();
         if (!ActiveMonsters.Contains(this)) ActiveMonsters.Add(this);
@@ -107,6 +117,7 @@ public class MonsterController : MonoBehaviour
 
     void OnDisable()
     {
+        CombatManager.Instance?.ForgetMonsterCast(this);
         ActiveMonsters.Remove(this);
         CurrentTarget = null;
         Awareness = MonsterAwareness.Unaware;
@@ -122,11 +133,7 @@ public class MonsterController : MonoBehaviour
         attackRange = space.AttackRange(attackMode, false);
         if (!IsAggressive)
         {
-            // Still on the floor: LateUpdate adds camera pan, so this
-            // compensation produces exactly the same displacement as Ground.
-            Vector2 idle = space.Position(rect);
-            idle.x += groundMinusCamera;
-            space.SetPosition(rect, idle);
+            Wander(space, dt, groundMinusCamera);
             currentState = HasDetectedHero ? MonsterState.Suspicious : MonsterState.PassiveScroll;
             UpdateChargeBar(false, 0f);
             return;
@@ -137,10 +144,13 @@ public class MonsterController : MonoBehaviour
         }
         if (CurrentTarget == null)
         {
-            // Stay coupled to Ground even before acquiring a target.
-            Vector2 idle = space.Position(rect);
-            idle.x += groundMinusCamera;
-            space.SetPosition(rect, idle);
+            Awareness = MonsterAwareness.Unaware;
+            alertElapsed = 0f;
+            nextLook = NextLookInterval();
+            wanderTime = 0f;
+            HideAwarenessLabel();
+            UpdateChargeBar(false, 0f);
+            Wander(space, dt, groundMinusCamera);
             currentState = MonsterState.PassiveScroll;
             return;
         }
@@ -164,6 +174,41 @@ public class MonsterController : MonoBehaviour
         p.x = BattleMotion.MonsterApproach(p.x, targetX, attackRange, moveSpeed, dt, groundMinusCamera);
         space.SetPosition(rect, p);
         currentState = CanAttack(CurrentTarget, space) ? MonsterState.Attacking : MonsterState.Approaching;
+    }
+
+    void Wander(EnvironmentManager space, float dt, float groundMinusCamera)
+    {
+        var bounds = space.BattleArea.rect;
+        var p = space.Position(rect);
+        p.x += groundMinusCamera;
+        float step = IdleWanderSpeed * Mathf.Max(0f, dt);
+        const float edgeTolerance = .05f; // RectTransform round-trips can straddle the exact edge.
+        if (p.x < bounds.xMin - edgeTolerance || p.x > bounds.xMax + edgeTolerance)
+        {
+            // Existing offscreen spawns walk in instead of snapping to an edge.
+            SetFacing(p.x < bounds.xMin);
+            p.x = Mathf.MoveTowards(p.x, FacingRight ? bounds.xMin : bounds.xMax, step);
+        }
+        else
+        {
+            wanderTime -= dt;
+            if (wanderTime <= 0f)
+            {
+                wanderTime = 1.25f + (float)wanderRandom.NextDouble();
+                wanderTargetY = Mathf.Lerp(bounds.yMin, bounds.yMax, (float)wanderRandom.NextDouble());
+            }
+            if (p.x <= bounds.xMin + edgeTolerance && !FacingRight ||
+                p.x >= bounds.xMax - edgeTolerance && FacingRight)
+            {
+                SetFacing(!FacingRight);
+                nextLook = Mathf.Max(nextLook, .4f);
+            }
+            var heading = new Vector2(FacingRight ? 1f : -1f, Mathf.Clamp((wanderTargetY - p.y) / 45f, -.38f, .38f));
+            p += heading.normalized * step;
+            p.x = Mathf.Clamp(p.x, bounds.xMin, bounds.xMax);
+        }
+        p.y = Mathf.Clamp(p.y, bounds.yMin, bounds.yMax);
+        space.SetPosition(rect, p);
     }
 
     public bool CanAttack(HeroController target, EnvironmentManager space)
@@ -287,6 +332,7 @@ public class MonsterController : MonoBehaviour
 
     public void MarkDead()
     {
+        CombatManager.Instance?.ForgetMonsterCast(this);
         currentState = MonsterState.Dead;
         HideAwarenessLabel();
         CultivationSpriteBridge.ResetPose(rect);
