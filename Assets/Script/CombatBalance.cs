@@ -48,7 +48,8 @@ public static class CombatBalance
         // Integer storage safety at extremely high levels, never wrap negative.
         return (int)Math.Min(2000000000d, Math.Ceiling(100d * Math.Pow(1.15d, Level(level) - 1)));
     }
-    public static int HeroHealth(int level) { return HeroDev != null ? HeroDev.HealthAt(level) : 400 + 16 * (Level(level) - 1); }
+    public const int HeroBaseHealth = 1000;
+    public static int HeroHealth(int level) { return HeroDev != null ? HeroDev.HealthAt(level) : HeroBaseHealth + 16 * (Level(level) - 1); }
     public static int HeroAttack(int level) { return HeroDev != null ? HeroDev.AttackAt(level) : 10 + Level(level) - 1; }
     public static float HeroSpeed(int level) { return HeroDev != null ? HeroDev.SpeedAt(level) : 1f + Math.Min(0.25f, 0.005f * (Level(level) - 1)); }
     public static int MonsterHealth(int level) { return MonsterDev != null ? MonsterDev.HealthAt(level) : 55 + 6 * (Level(level) - 1); }
@@ -62,11 +63,6 @@ public static class CombatBalance
             : (mode == AttackMode.RangedPhysical ? 1.4f / 1.5f : 1.4f);
         // A corrupted/legacy speed must not restore exponential attack growth.
         return seconds / Math.Max(0.1f, Math.Min(devOverride ? 20f : 1.25f, speed));
-    }
-    // The stance scales character BASE health, not health added by equipment or points.
-    public static float HeroHealthMultiplier(AttackMode mode)
-    {
-        return mode == AttackMode.Melee ? 2f : mode == AttackMode.RangedPhysical ? .6f : 1f;
     }
     public static int MeleeKillHeal(int level, int baseRoll)
     {
@@ -110,7 +106,7 @@ public sealed class DevBalanceProfile
     public static DevBalanceProfile Defaults(bool monster, EnvironmentManager space, float movement)
     {
         return new DevBalanceProfile { attack = monster ? 6 : 10, attackPerLevel = monster ? .6f : 1,
-            attackSpeed = 1, attackSpeedPerLevel = .005f, movementSpeed = movement, health = monster ? 55 : 400,
+            attackSpeed = 1, attackSpeedPerLevel = .005f, movementSpeed = movement, health = monster ? 55 : CombatBalance.HeroBaseHealth,
             healthPerLevel = monster ? 6 : 16, meleeRange = space != null ? space.DefaultAttackRange(AttackMode.Melee,!monster) : 35,
             physicalRange = space != null ? space.DefaultAttackRange(AttackMode.RangedPhysical,!monster) : monster ? 280 : 360,
             magicRange = space != null ? space.DefaultAttackRange(AttackMode.RangedMagic,!monster) : monster ? 360 : 420 };

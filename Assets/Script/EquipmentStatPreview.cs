@@ -168,23 +168,16 @@ public static class EquipmentStatPreview
                  StringComparison.Ordinal));
     }
 
-    private static float Raw(EntityDataSO hero,CombatStatId stat,AttackMode mode)
-    {
-        if(stat==CombatStatId.AttackSpeed)return hero.baseAttackSpeed;
-        if(stat!=CombatStatId.MaxHealth)return 0f;
-        long byMode=Math.Max(1,Mathf.RoundToInt(hero.baseHealth*CombatBalance.HeroHealthMultiplier(mode)));
-        long hp=byMode+hero.addedHealth+(mode==AttackMode.Melee?Math.Max(0,hero.meleeGrowthBonus):0);
-        return (float)Math.Max(1,Math.Min(int.MaxValue,hp));
-    }
     private static float Total(EntityDataSO hero,IEnumerable<CombatStatModifier> mods,
         CombatStatId stat,ElementType element,AttackMode mode)
     {
         if(stat==CombatStatId.Attack || stat==CombatStatId.MagicalAttack)
             return WeaponBasicAttack.Value(hero,stat,mode,mods);
-        float value=CombatStats.GetWithModifiers(hero,mods,stat,Raw(hero,stat,mode),element,
+        if(stat==CombatStatId.MaxHealth)
+            return Math.Max(1,CombatStats.GetIntWithModifiers(hero,mods,stat,hero.HeroHealthBeforeModifiers));
+        float baseline=stat==CombatStatId.AttackSpeed?hero.baseAttackSpeed:0f;
+        return CombatStats.GetWithModifiers(hero,mods,stat,baseline,element,
             new[]{CombatStats.StanceTag(mode)});
-        if(stat==CombatStatId.MaxHealth)value=Math.Max(1,RoundStat(value));
-        return value;
     }
     private static void AddLine(EquipmentStatComparison output,
         EntityDataSO hero,CombatStatId stat,ElementType element,
@@ -199,10 +192,5 @@ public static class EquipmentStatPreview
             isDerivedGameplayTotal=stat==CombatStatId.Attack || stat==CombatStatId.MagicalAttack ||
                 stat==CombatStatId.MaxHealth || stat==CombatStatId.AttackSpeed
         });
-    }
-    private static float RoundStat(float x)
-    {
-        return (float)Math.Max(int.MinValue,Math.Min(int.MaxValue,
-            Math.Round(x,MidpointRounding.AwayFromZero)));
     }
 }

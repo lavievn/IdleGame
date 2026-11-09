@@ -163,9 +163,9 @@ public class EntityDataSO : ScriptableObject
         if (count > 0) isDirty = true;
         return count;
     }
-    // Independent per-character base; default/legacy characters start with test HP 400.
+    // Preserve the creation HP of existing Heroes separately from level growth.
     public int originHealth = 0;
-    // Persist the growth pool separately from the active stance for save/load stability.
+    // Historical save field names. The accumulated level growth applies to all weapon families.
     public int meleeGrowthThroughLevel = 0;
     public int meleeGrowthBonus = 0;
     public bool isDirty = false;
@@ -256,7 +256,7 @@ public class EntityDataSO : ScriptableObject
         {
             // Old levelled saves stored a derived baseHealth, not their creation HP.
             originHealth = currentLevel == 1 && baseHealth > 0
-                ? baseHealth : CombatBalance.HeroHealth(1);
+                ? baseHealth : 400; // Legacy creation HP for old levelled snapshots.
             isDirty = true;
         }
         if (meleeGrowthThroughLevel <= 0)
@@ -312,15 +312,11 @@ public class EntityDataSO : ScriptableObject
     public void AllocateDamage() { if (statPoints > 0) { statPoints--; addedDamage += 1; isDirty = true; } }
     public int GetCalculatedHealth() => System.Math.Max(1,CombatStats.GetInt(
         this,CombatStatId.MaxHealth,System.Math.Max(1,baseHealth + addedHealth)));
-    public int GetCalculatedHealth(AttackMode mode)
-    {
-        // Stance multiplier applies to original base HP, not bonus points/gear.
-        long baseByMode = System.Math.Max(1,Mathf.RoundToInt(baseHealth * CombatBalance.HeroHealthMultiplier(mode)));
-        long hp = baseByMode + addedHealth + (mode == AttackMode.Melee ? System.Math.Max(0,meleeGrowthBonus) : 0);
-        hp = System.Math.Max(1,System.Math.Min(int.MaxValue,hp));
-        return System.Math.Max(1,CombatStats.GetInt(this,CombatStatId.MaxHealth,(int)hp,
-            ElementType.Vo,new [] { CombatStats.StanceTag(mode) }));
-    }
+    internal int HeroHealthBeforeModifiers => (int)System.Math.Max(1, System.Math.Min(int.MaxValue,
+        (long)baseHealth + addedHealth + System.Math.Max(0,meleeGrowthBonus)));
+
+    public int GetCalculatedHealth(AttackMode mode) => System.Math.Max(1,
+        CombatStats.GetInt(this,CombatStatId.MaxHealth,HeroHealthBeforeModifiers));
     public int GetCalculatedDamage() => System.Math.Max(1,
         CombatStats.GetInt(this,CombatStatId.Attack,baseDamage + addedDamage));
     public int GetCalculatedDamage(AttackMode mode) => System.Math.Max(1,

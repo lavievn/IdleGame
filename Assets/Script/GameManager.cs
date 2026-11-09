@@ -471,7 +471,7 @@ public partial class GameManager : MonoBehaviour
         EquipmentInventory.InitializeNewRun(runtimeHeroData);
         EquipmentRuntime.InitializeNewRun(runtimeHeroData);
         runtimeHeroData.combatSkills = new CombatSkillProgress();
-        runtimeHeroData.originHealth = Mathf.Max(1,heroDataSO != null ? heroDataSO.baseHealth : CombatBalance.HeroHealth(1));
+        runtimeHeroData.originHealth = CombatBalance.HeroBaseHealth;
         runtimeHeroData.meleeGrowthBonus = 0;
         runtimeHeroData.meleeGrowthThroughLevel = 1;
         runtimeHeroData.balanceVersion = 0;
