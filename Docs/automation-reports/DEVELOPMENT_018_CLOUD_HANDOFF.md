@@ -37,3 +37,6 @@ Read `AGENTS.md`, `.agents/skills/idle-game-project-rules/SKILL.md`, `.agents/sk
 
 ## Cloud status at handoff
 This document and the Karpathy skill are committed using GitHub actions. **No Unity source code, runtime assets, build, or player verification has yet been implemented for 0.1.8.** A Codex Cloud execution session still needs to be started from this branch.
+
+## Spine 3.8.75 authoring decision (2026-11-10)
+User will create Hero and Monster animations with **Spine Editor 3.8.75**, aiming for batch reuse across all actors. Read `Docs/animation/SPINE_3_8_75_PIPELINE.md` before changing animation code. Esoteric's official chart marks spine-unity 3.8 unsupported on the game's Unity 6000.5.0f1. Do not install a mismatched runtime in the game. First prepare a shared, data-driven actor visual bridge and PNG-sequence ingestion compatible with Spine 3.8 export; skeleton runtime integration is explicitly gated pending a supported editor/runtime/version strategy. No new production art has been supplied; do not fabricate assets or claim native Spine/Unity PASS.
