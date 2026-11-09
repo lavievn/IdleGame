@@ -27,6 +27,14 @@ Hotfix từ HEAD `a4e3b54e9419d4ac7066c576599fe8a6a1cabdbe` trên `development_0
 
 `D:\IdleGame\Builds\SkillUiVfxHotfix\build\IdleGameV10.exe`
 
+## Cách chạy Windows đã kiểm tra
+
+Mở `D:\IdleGame\Builds\SkillUiVfxHotfix\build\IdleGame-WARP.cmd`. Launcher chạy cùng tệp EXE bằng Microsoft WARP với cờ `-force-driver-type-warp`. [Tài liệu tham số Unity Player](https://docs.unity.com/en-us/engine/6000.0/manual/unity-editor/command-line-arguments/player)
+
+- Cả lượt smoke đầy đủ và lượt mở lại AutoSave bằng WARP đều thoát mã `0`. Lượt đầu gọi `UIManager.ConfirmExit` trong lúc vào màn chơi sau Thiên Quan. Lượt sau xác nhận lại Trúc Cơ, Qi và thứ tự kỹ năng.
+- Lỗi native vẫn tái hiện với đường kết xuất Direct3D 11 dùng GPU mặc định trên máy kiểm tra. Kết quả WARP xác nhận cách chạy thay thế trên máy này. Chưa xác định được cách sửa đường GPU mặc định.
+- Evidence WARP trong `profiles\idlegame-v10-9ac8aa5adf0e485d94bb3d15a9972892\evidence` và `profiles\idlegame-v10-7461872935b24a258247ddf0611de0f2\evidence`.
+
 ## Nghiệm thu trực tiếp
 
 - [ ] Mở Võ học ở cửa sổ nhỏ, bấm ô trống và kỹ năng xám, sau đó thêm/bỏ/sắp xếp khi trang bị đúng nguồn.
@@ -43,4 +51,4 @@ Hotfix từ HEAD `a4e3b54e9419d4ac7066c576599fe8a6a1cabdbe` trên `development_0
 - `91e17a4e1fbc00c29f03e1559429d2a9bb39e71b` — anchor tích lực và phát đạn.
 - `acfb7b946bba2ba0d8273784fffd58fe6d637652` — bảng Võ học và metadata.
 - `881147651f763596180bb143e6bad56b1025b6ca` — smoke và launcher. Đây là SHA dùng build Windows. Commit kế tiếp chỉ thêm báo cáo.
-- Sau commit báo cáo, nhánh đi trước `origin/development_0.1.5` 11 commit, gồm 6 commit đã có từ hotfix trước. Working tree chỉ còn hai asset đã sửa sẵn và 15 file `.meta` chưa track. Từng file khớp hash trước hotfix.
+- Sau commit báo cáo, nhánh đi trước `origin/development_0.1.5` 12 commit, gồm 6 commit đã có từ hotfix trước. Working tree chỉ còn hai asset đã sửa sẵn và 15 file `.meta` chưa track. Từng file khớp hash trước hotfix.
