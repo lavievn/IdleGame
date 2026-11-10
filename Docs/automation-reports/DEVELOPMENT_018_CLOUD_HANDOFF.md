@@ -67,3 +67,6 @@ The user has supplied `hero.zip` **in the ChatGPT conversation** and requests th
 9. After implementing, provide screenshot/video evidence of Hero holding Sword, Bow and Staff displaying the **same** selected animations when states match; animation change must not change Combat/Save.
 
 **User intent:** quick playable visual integration, not a new system, no new game content, no need for Spine install now.
+
+### User correction — BasicAttack single-frame placeholder (2026-11-10)
+An existing **BasicAttack sprite/frame already exists in the game**. Reuse that actual sprite as a **one-frame BasicAttack clip** in the Hero's temporary shared animation profile for Sword, Bow, Staff and Unarmed. Find its actual asset reference and current animation bridge before editing; do not invent, redraw or replace it with a frame from Hit. Display that frame for the existing attack presentation window / authoritative attack timing, then return to the correct Idle/Move animation. Do not invent extra animation frames, turn it into a new damaging action, or change cooldown, mana, hit events or attack scheduling. Cast, SkillRelease and Death still fall back to existing presentation until assets are supplied. Report where the reused sprite lives, and explicitly distinguish a held single frame from a multi-frame attack animation.
