@@ -40,3 +40,30 @@ This document and the Karpathy skill are committed using GitHub actions. **No Un
 
 ## Spine 3.8.75 authoring decision (2026-11-10)
 User will create Hero and Monster animations with **Spine Editor 3.8.75**, aiming for batch reuse across all actors. Read `Docs/animation/SPINE_3_8_75_PIPELINE.md` before changing animation code. Esoteric's official chart marks spine-unity 3.8 unsupported on the game's Unity 6000.5.0f1. Do not install a mismatched runtime in the game. First prepare a shared, data-driven actor visual bridge and PNG-sequence ingestion compatible with Spine 3.8 export; skeleton runtime integration is explicitly gated pending a supported editor/runtime/version strategy. No new production art has been supplied; do not fabricate assets or claim native Spine/Unity PASS.
+
+## Superseding task — Hero PNG animation experiment (2026-11-10)
+The user has supplied `hero.zip` **in the ChatGPT conversation** and requests that its frame sequences replace **Hero presentation only**, temporarily reused for all equipped weapon families. This task supersedes the preceding Spine runtime plan **for this experiment**. Do not install Spine or build native skeleton integration for this delivery.
+
+**Confirmed ZIP inventory (read from the user-provided file, 115 RGBA PNG frames):**
+| Folder | Frames | Canvas |
+| --- | ---: | --- |
+| `hero/sword_idle` | 48 | 360x500 |
+| `hero/sword_walk` | 17 | 360x500 |
+| `hero/sword_run` | 11 | 360x500 |
+| `hero/sword_hit` | 27 | 360x500 |
+| `hero/archer_run` | 12 | 360x640 |
+
+**Important:** The ZIP includes **no** BasicAttack, Cast, SkillRelease or Death. Preserve existing clips/visual fallbacks for those states. Do not substitute Hit as Attack. Do not load archer_run in the initial shared-weapon experiment because its canvas/pose is different.
+
+### Implementation contract for Codex Cloud
+1. Get actual `hero.zip` attachment bytes in the Work session; **this branch currently does not contain those binary images**. Do not pretend it does. If unavailable, implement only a data-driven import adapter and mark asset integration BLOCKED.
+2. Keep Hero logic, colliders, HP bar, VFX, attack timing, mana, skill scheduler, hit/damage and Save unchanged.
+3. Align all PNG frames by stable logical pivot/feet marker; do **not** shift Hero gameplay position to hide per-frame jitter. Sample PNGs contain transparent alpha and should retain alpha. Avoid per-frame crop changing visual anchor.
+4. Create one shared Hero animation profile used regardless of Sword/Bow/Staff/Unarmed, binding Idle/Walk/Run/Hit. Reuse existing sprite bridge instead of replacing its attack/hit precedence rules.
+5. Map gameplay exploration movement to Walk or Run using **actual movement state**. Do not infer a speed threshold without checking controller code; existing speed values and semantics govern.
+6. Explicit per-clip loop and configurable playback FPS. Idle, Walk and Run loop; Hit one-shot. Death and skill visuals fall back.
+7. Keep actual frame ordering from trailing 5-digit numeric sequence; make imports deterministic, avoid extra GUID churn. Optimize texture use only if observed and keep full-resolution source originals available.
+8. Tests: static frame count/order, sprite binding and fallback; Unity/Player runtime tests only if an actual compatible environment exists. Report NOT RUN otherwise.
+9. After implementing, provide screenshot/video evidence of Hero holding Sword, Bow and Staff displaying the **same** selected animations when states match; animation change must not change Combat/Save.
+
+**User intent:** quick playable visual integration, not a new system, no new game content, no need for Spine install now.
