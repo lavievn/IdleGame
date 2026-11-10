@@ -1,17 +1,17 @@
-# Thanh Khê origin — story and identity implementation contract (2026-11-10)
+# Hàn Vụ origin — story and identity implementation contract (2026-11-10)
 
 Status: approved implementation scope; **story/runtime code NOT yet implemented**. Branch based on `development_0.1.7`; keep PR #12 animation independent. Read `AGENTS.md`, current Unity/C# rules, story design notes, Save rules, gameplay code, tests. Do not treat old design notes as runtime authority.
 
 ## 1. Randomized identity, one-time generation
 - Main playable hero: randomized gender (current enum `Nam`/`Nu`), randomized 2–3-part Chinese/Hán-Việt name, **always `RaceType.NhanToc`**, multiple `linh căn` allowed per existing 1–4-root rule. Do not modify spirit root odds or combat math.
-- Guardian/elder role `thanhkhe.guardian` (previous draft name Lục Bá): male **or** female, randomized name from appropriate gender pool. Human. Use an appropriate title and pronouns by gender; do not hardcode “Lục Bá” for a female. Guardian stays a genuinely ordinary person unless later plot explicitly decides otherwise.
-- Companion role `thanhkhe.companion` (draft A Ninh): randomized gender **opposite** the main hero’s gender, randomized name from matching pool. The **role/ID** is stable regardless of display name. Do not infer gender from generated name alone.
+- Guardian/elder role `hanvu.guardian` (previous draft name Lục Bá): male **or** female, randomized name from appropriate gender pool. Human. Use an appropriate title and pronouns by gender; do not hardcode “Lục Bá” for a female. Guardian stays a genuinely ordinary person unless later plot explicitly decides otherwise.
+- Companion role `hanvu.companion` (draft A Ninh): randomized gender **opposite** the main hero’s gender, randomized name from matching pool. The **role/ID** is stable regardless of display name. Do not infer gender from generated name alone.
 - Generate identity only on **new-game creation**; persist names, explicit genders, race and origin across Save/Load, retry, death, map changes. Preserve prior saved hero names on migration, and don't assume previously stored NPC data exists. Be careful with SaveManager I/O tests and backward compatibility.
 - `NameDatabase` current update on this branch: 20 surnames, 20 middle syllables, 20 male and 20 female given syllables. Structured 2–3-part names, surname first. Validate pronunciation/odd combinations in content review later; names are not canonical Chinese character mappings. Separate stable identifiers from display names.
 - Do NOT change all races globally or `SynergyMath.GenerateRandomRace()` if it is also used for NPCs/monsters. Scope Human constraint specifically to main hero and first guardian.
 
 ## 2. First origin, multiple origins later
-- First playable origin ID `thanhkhe`; future origin IDs must be supportable, not hardcoded to the global game.
+- First playable origin ID `hanvu`; future origin IDs must be supportable, not hardcoded to the global game.
 - A safe, **zero-monster** starting map (reuse existing suitable map temporarily). Story/NPC dialogue/UI tutorial only; still allow appropriate manual travel. Current map title can temporarily act as world-map access/hint; don't redesign UI.
 - Story sequence: narrator worries about guardian's worsening cough; travel manually to a forest map; complete 5 waves of **wolf-sprite normal beasts**; quest herbs guaranteed enough by the completion of wave 5 (quest progress independent of existing random production loot); map-title/world-map hint pulses to prompt manual return; on safe map, prepare medicine and receive guardian follow-up; companion has gone to seek another cure; travel through 1–2 existing maps; defeat final-wave elite; receive an ambiguous clue about missing companion.
 - At this stage, the starting maps' monsters **all use existing wolf image**, **melee basic attacks only**, no ranged combat, learned martial skills or special attacks. Elite may differ in stats but no special skill. Scope to starting content, don't overwrite generic Monster templates/world behavior.
