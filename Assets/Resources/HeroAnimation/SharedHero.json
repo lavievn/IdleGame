@@ -1,0 +1,17 @@
+{
+  "idlePrefix": "HeroAnimation/sword_idle/sword_idle_",
+  "idleCount": 48,
+  "idleFps": 24,
+  "walkPrefix": "HeroAnimation/sword_walk/sword_walk_",
+  "walkCount": 17,
+  "walkFps": 24,
+  "runPrefix": "HeroAnimation/sword_run/sword_run_",
+  "runCount": 11,
+  "runFps": 24,
+  "hitPrefix": "HeroAnimation/sword_hit/sword_hit_",
+  "hitCount": 27,
+  "hitFps": 30,
+  "feetX": 220,
+  "feetY": 17,
+  "pixelsPerUnit": 6
+}

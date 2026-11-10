@@ -70,3 +70,14 @@ The user has supplied `hero.zip` **in the ChatGPT conversation** and requests th
 
 ### User correction — BasicAttack single-frame placeholder (2026-11-10)
 An existing **BasicAttack sprite/frame already exists in the game**. Reuse that actual sprite as a **one-frame BasicAttack clip** in the Hero's temporary shared animation profile for Sword, Bow, Staff and Unarmed. Find its actual asset reference and current animation bridge before editing; do not invent, redraw or replace it with a frame from Hit. Display that frame for the existing attack presentation window / authoritative attack timing, then return to the correct Idle/Move animation. Do not invent extra animation frames, turn it into a new damaging action, or change cooldown, mana, hit events or attack scheduling. Cast, SkillRelease and Death still fall back to existing presentation until assets are supplied. Report where the reused sprite lives, and explicitly distinguish a held single frame from a multi-frame attack animation.
+
+## Kết quả tiếp tục trên Cloud — Hero PNG (2026-11-10)
+
+Đã đưa 103 PNG Idle/Walk/Run/Hit từ ZIP thật vào repo và nối profile chung vào
+CultivationSpriteBridge. Xem [báo cáo triển khai, test và checklist Windows](DEVELOPMENT_018_HERO_PNG_REPORT.md).
+Yêu cầu hiện tại giữ trạng thái thiếu ảnh được ưu tiên: Attack vẫn dùng bitmap
+Normal thực tế ở baseline, không tự chuyển sang Swordsman_Attack theo ghi chú cũ.
+9 ca bridge boundary và kiểm tra bytes/PNG PASS; runner tổng bị lỗi compile cũ.
+Unity có sẵn đúng phiên bản nhưng thiếu license nên **chưa import/native test**,
+chưa sinh `.meta` mới, chưa có screenshot/video gameplay hay Windows Player PASS.
+Không merge và không triển khai các hạng mục UI/Spine khác của handoff.
