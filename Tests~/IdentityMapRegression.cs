@@ -10,16 +10,22 @@ partial class MotionRegression
 {
     static void IdentityMapTests()
     {
-        Run("composed names use original gender pool and one to three syllables",()=>{
+        Run("structured names use family and gendered given pools with two or three syllables",()=>{
+            var flags=System.Reflection.BindingFlags.NonPublic|System.Reflection.BindingFlags.Static;
+            var family=(string[])typeof(NameDatabase).GetField("Surnames",flags).GetValue(null);
+            var middle=(string[])typeof(NameDatabase).GetField("MiddleNames",flags).GetValue(null);
+            Check(family.Length>=20&&middle.Length>=20,"at least 20 surnames and middle syllables");
             foreach(GenderType gender in Enum.GetValues(typeof(GenderType))) {
-                var names=(string[])typeof(NameDatabase).GetField(gender==GenderType.Nam?"MaleNames":"FemaleNames",System.Reflection.BindingFlags.NonPublic|System.Reflection.BindingFlags.Static).GetValue(null);
-                var vocabulary=new HashSet<string>();foreach(var name in names)foreach(var word in name.Split(' '))vocabulary.Add(word);
-                var lengths=new HashSet<int>();bool novel=false;
+                var given=(string[])typeof(NameDatabase).GetField(gender==GenderType.Nam?"MaleGivenNames":"FemaleGivenNames",flags).GetValue(null);
+                Check(given.Length>=20,"at least 20 gendered given syllables");
+                var lengths=new HashSet<int>();
                 for(int i=0;i<1000;i++) {string name=NameDatabase.GetRandomName(gender);var words=name.Split(' ');lengths.Add(words.Length);
-                    Check(words.Length>=1&&words.Length<=3,"bounded syllables");foreach(var word in words)Check(vocabulary.Contains(word),"word from correct gender list");
-                    if(Array.IndexOf(names,name)<0)novel=true;
+                    Check(words.Length>=2&&words.Length<=3,"bounded full names");
+                    Check(Array.IndexOf(family,words[0])>=0,"valid surname");
+                    Check(Array.IndexOf(given,words[words.Length-1])>=0,"given syllable matches gender pool");
+                    if(words.Length==3)Check(Array.IndexOf(middle,words[1])>=0,"valid middle syllable");
                 }
-                Check(lengths.Count==3&&novel,"all lengths and novel combinations generated");
+                Check(lengths.Contains(2)&&lengths.Contains(3),"both name lengths generated");
             }
         });
         Run("root count follows 60 25 10 5 and mixed race always has two distinct roots",()=>{
