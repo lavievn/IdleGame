@@ -11,7 +11,7 @@
   - https://esotericsoftware.com/spine-export
   - https://esotericsoftware.com/spine-using-runtimes
 
-## Approved near-term path: export PNG sequences, preserve .spine sources
+## Safe production fallback: export PNG sequences, preserve .spine sources
 Spine 3.8 exports PNG frame sequences with alpha. Unity can display these using the existing sprite pipeline without embedding the unsupported 3.8 runtime. Tradeoffs: more texture memory/size, no skeletal blending or skin swaps at runtime. Optimize only after measuring real assets.
 
 Provide a single animation abstraction for **Hero, companions/B2, and Monsters**. Do not build separate player and monster animator engines. Source state is still the existing Combat/Actor lifecycle, never the renderer.
@@ -44,13 +44,18 @@ Do not mass-import placeholder images or fake .spine project files. Never manufa
 - Avoid allocations per frame; cache sprites or atlas references, and reuse animation presentation components.
 - Show hit/VFX/projectile anchors at proper shoulder/chest height; do not compensate by moving actor physics or world positions.
 
-### Future native Spine runtime (blocked pending compatibility decision)
-If later upgrading to a supported Spine Editor/runtime and Unity pair:
-1. Back up and migrate source .spine projects; export with the exact matching runtime version.
-2. Prototype one actor in an isolated Unity test branch/package (license confirmed).
-3. Bind the same logical animation contract to Spine skeleton animations, events and slots; keep the PNG bridge as fallback.
-4. Verify Unity compile, URP materials, scale/pivot, sorting, pause, events and player build **on actual Unity**, not through source-only tests.
-Do not present this as ready with Spine 3.8.75 on Unity 6000.5.0f1.
+### Experimental priority: adapt spine-unity 3.8 to Unity 6000.5.0f1 (NOT VERIFIED)
+**User's constraint:** Spine Editor 3.8.75 is the only editor version allowed by the available software/license. Do **not** recommend, require or automate a newer Spine Editor or paid upgrade. Do not downgrade the game project from Unity 6000.5.0f1.
+
+The first native-skeleton experiment should use **matching spine-unity 3.8 runtime**, not 4.x with 3.8 exports. This is a high-risk **unofficial compatibility port**, not supported by Esoteric's Unity compatibility table; it may require substantial C#/Unity API, URP shader and rendering work and may ultimately fail.
+
+1. On a separate proof-of-concept Unity 6000.5.0f1 project or isolated branch, inspect the 3.8 runtime license and actual Editor license eligibility. Do not assume an expired license grants rights to integrate Spine Runtimes into a new product; official FAQ: https://esotericsoftware.com/spine-purchase .
+2. With an authorized **real** 3.8.75 exported sample (skeleton JSON or binary, atlas, textures), import spine-unity 3.8. Record every compile error, renderer/material issue and required patch. Avoid replacing existing game assets/packages.
+3. Validate skeleton render, Idle/Move/BasicAttack/Cast/SkillRelease/Hit/Death, skin and attachment swaps, facing/pivots, URP material/sorting, lifecycle, Play Mode and Windows Player on **actual Unity**. Mark tests not run on Cloud as NOT RUN.
+4. Only if a minimal, maintainable bridge works, integrate into existing actor animation abstraction, pin the exact runtime commit and list every local patch. Do not rewrite combat scheduling.
+5. If not proven, revert isolated PoC (without touching main worktree/history) and use Spine 3.8 PNG frame-sequence export as the production fallback. Preserve source .spine files. Do not develop a 3.8-to-4.x format converter on speculation.
+
+**Status:** No sample exported Spine 3.8 skeleton was supplied, so no native-runtime compatibility claim or game integration is possible yet.
 
 ## Development 0.1.8 acceptance (cloud)
 1. Audit current actor/sprite bridge and actual animations, then propose minimal adapter changes; keep existing visuals working.
