@@ -319,9 +319,9 @@ public sealed class WorldMapPanelUI
         bool selectedExists = WorldMapCatalog.TryGet(selectedMapId, out selected);
         bool selectedAccessible = selectedExists &&
             WorldMapCatalog.TravelBlockReason(hero, selectedMapId) == null;
-        heading.text = "BẢN ĐỒ · " + current.Id + " · " + current.Name;
+        heading.text = "BẢN ĐỒ · " + current.Id + " · " + StoryOrigin.MapName(hero, current);
         travel.gameObject.SetActive(selectedAccessible);
-        summary.text = selectedAccessible ? selected.Name + " · " + selected.TerrainLabel +
+        summary.text = selectedAccessible ? StoryOrigin.MapName(hero, selected) + " · " + selected.TerrainLabel +
             " · Cấp gợi ý " + selected.SuggestedLevel : "";
         if (!WorldMapPolygons.MatchesArtwork(artwork.sprite))
         {

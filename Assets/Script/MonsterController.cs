@@ -36,7 +36,20 @@ public class MonsterController : MonoBehaviour
     private float wanderTargetY, wanderTime;
     [SerializeField] private string[] combatSkillIds = new string[0];
     [SerializeField, Min(0f)] private float combatSkillMana;
-    internal string[] SkillIds => combatSkillIds ?? System.Array.Empty<string>();
+    internal string[] SkillIds => originWolf ? System.Array.Empty<string>() :
+        combatSkillIds ?? System.Array.Empty<string>();
+    private bool originWolf;
+    internal void ConfigureOriginWolf()
+    {
+        originWolf = true;
+        attackMode = AttackMode.Melee;
+        spriteIdentityChosen = true;
+        spriteIdentityMode = attackMode;
+        SpriteIdentityKey = "Wolf";
+        var space = EnvironmentManager.Instance;
+        if (space != null && space.Width > 0f) attackRange = space.AttackRange(attackMode, false);
+        CultivationSpriteBridge.AttachMonster(this);
+    }
     internal float SkillMana => Mathf.Max(0f, combatSkillMana);
     // Looking around is independent of combat/damage/spawn RNG.
     private static readonly System.Random awarenessRandom = new System.Random();
@@ -90,6 +103,7 @@ public class MonsterController : MonoBehaviour
     }
     void OnEnable()
     {
+        originWolf = false;
         SpriteIdentityKey=null;spriteIdentityChosen=false;
         SpawnVersion++;
         if (rect == null) rect = GetComponent<RectTransform>();

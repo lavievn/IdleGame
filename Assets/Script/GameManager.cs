@@ -479,16 +479,11 @@ public partial class GameManager : MonoBehaviour
         runtimeHeroData.mapNumber = 1; runtimeHeroData.completedWavesInMap = 0; runtimeHeroData.mapProgressVersion = 1;
         runtimeHeroData.mapVisits = 1;
         runtimeHeroData.regionIndex = -1; runtimeHeroData.mapName = ""; WorldNames.AssignMap(runtimeHeroData);
-        // A NEW run starts in one of the five confirmed world-map births.
-        // Old saves retain their unmodified legacy sequential maps.
-        if (!WorldMapCatalog.StartNew(runtimeHeroData))
-            Debug.LogWarning("[WorldMap] World catalog unavailable; new run remains in legacy mode.");
-
+        StoryOrigin.InitializeNewHero(runtimeHeroData);
+        if (!WorldMapCatalog.StartNew(runtimeHeroData, StoryOrigin.HanVu.Village))
         {
-            runtimeHeroData.gender = Random.Range(0, 2) == 0 ? GenderType.Nam : GenderType.Nu;
-            runtimeHeroData.entityName = NameDatabase.GetRandomName(runtimeHeroData.gender);
-            runtimeHeroData.race = SynergyMath.GenerateRandomRace();
-            SynergyMath.GenerateRootProfile(runtimeHeroData);
+            runtimeHeroData.originStory = null;
+            Debug.LogError("[StoryOrigin] Hàn Vụ map unavailable; new run remains in legacy mode.");
         }
 
         InitializeCultivation();
@@ -735,6 +730,8 @@ public partial class GameManager : MonoBehaviour
             var space=environmentManager!=null?environmentManager:EnvironmentManager.Instance;
             if(space!=null)space.BeginCameraEntryHandoff();
             if(UIManager.Instance!=null)UIManager.Instance.ShowMapTitle(runtimeHeroData.mapName);
+            string narration = StoryOrigin.Arrive(runtimeHeroData);
+            if (narration != null) CommitOriginChange(narration);
             CallNextWave();
         }
         TraceEntryFrame("GameManager after gameplay release and first wave");
@@ -1034,9 +1031,10 @@ public partial class GameManager : MonoBehaviour
         if (runtimeHeroData != null)
         {
             runtimeHeroData.RestartRegionAfterDefeat();
+            StoryOrigin.RestoreOpeningWave(runtimeHeroData);
             RestoreProgress();
             UpdateEventLog(WorldMapCatalog.Enabled(runtimeHeroData)
-                ? "Thất bại: đánh lại wave 1 tại " + runtimeHeroData.mapName +
+                ? "Thất bại: đánh lại wave " + runtimeHeroData.worldMapLoopWave + " tại " + runtimeHeroData.mapName +
                     ". Giữ cấp, trang bị và lịch sử map đã mở."
                 : "Thất bại: quay về map đầu của " + WorldNames.Region(runtimeHeroData.regionTheme) +
                     ", đợt 1/5. Giữ cấp và chỉ số nhân vật.");
@@ -1261,16 +1259,44 @@ public partial class GameManager : MonoBehaviour
         return true;
     }
 
+    internal bool TryOriginInteraction()
+    {
+        if (!IsGameplayHUDVisible || HasTribulationLiability) return false;
+        var state = runtimeHeroData.originStory;
+        if (state == null) return false;
+        var stage = state.stage;
+        bool heardCompanion = state.heardCompanion;
+        string narration = StoryOrigin.Interact(runtimeHeroData);
+        if (narration == null) return false;
+        if (stage != state.stage || heardCompanion != state.heardCompanion) CommitOriginChange(narration);
+        else if (UIManager.Instance != null) UIManager.Instance.ShowOriginNotice(runtimeHeroData, narration);
+        return true;
+    }
+
+    private void CommitOriginChange(string narration)
+    {
+        if (narration != null)
+        {
+            UpdateEventLog(narration);
+            if (UIManager.Instance != null) UIManager.Instance.ShowOriginNotice(runtimeHeroData, narration);
+        }
+        CaptureSelectedStance();
+        if (saveManager != null && !saveManager.SaveGame(runtimeHeroData, SaveSlot.AutoSave))
+            UpdateEventLog("Chưa lưu được mốc truyện Hàn Vụ. Có thể thử lưu lại.");
+    }
+
     private void CallNextWave()
     {
-        if (HasTribulationLiability || !hasDeployed || enteringGameplay || monsterSpawner == null || activeMonsters.Count>0) return;
+        if (HasTribulationLiability || !hasDeployed || enteringGameplay || monsterSpawner == null ||
+            activeMonsters.Count > 0 || StoryOrigin.IsSafe(runtimeHeroData)) return;
         waitingForExploration=false;explorationDistance=0d;
         foreach(var hero in HeroController.ActiveHeroes)
             if(hero!=null)hero.TracePosition("CallNextWave before spawn");
         activeMonsters.Clear();
 
         RestoreProgress();
-        int spawnCount = retryWaveSize > 0 ? retryWaveSize : Random.Range(1, 4);
+        int spawnCount = StoryOrigin.IsEliteWave(runtimeHeroData) ? 1 :
+            retryWaveSize > 0 ? retryWaveSize : Random.Range(1, 4);
         retryWaveSize = 0;
         waveSpawnCount = spawnCount;
         for (int i = 0; i < spawnCount; i++)
@@ -1334,8 +1360,14 @@ public partial class GameManager : MonoBehaviour
         {
             if (runtimeHeroData != null)
             {
+                int wave = runtimeHeroData.worldMapLoopWave;
+                var story = runtimeHeroData.originStory;
+                int previousStoryWaves = story == null ? 0 : story.herbWaves + story.searchWaves;
                 bool changed = runtimeHeroData.CompleteWave();
+                string narration = StoryOrigin.AfterWave(runtimeHeroData, wave);
                 RestoreProgress();
+                if (story != null && previousStoryWaves != story.herbWaves + story.searchWaves)
+                    CommitOriginChange(narration);
                 if (changed)
                 {
                     if (WorldMapCatalog.Enabled(runtimeHeroData))

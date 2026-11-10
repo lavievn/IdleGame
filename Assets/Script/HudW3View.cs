@@ -155,7 +155,8 @@ internal sealed class HudW3View
         RenderWeaponCooldown(cards[0], combat);
         var data=game==null?null:game.HeroData;
         string title=MapName(data);
-        if(title!=lastMap)
+        bool mapChanged=title!=lastMap;
+        if(mapChanged)
         {
             lastMap=title;
             // Stack words in reading order, retaining Vietnamese diacritics.
@@ -166,10 +167,11 @@ internal sealed class HudW3View
         int target=game==null?0:Mathf.CeilToInt(game.CurrentDistancePerWave);
         int progress=game==null?0:Mathf.FloorToInt(Mathf.Clamp(game.ExplorationDistance,0,target));
         bool exploring=game!=null && game.IsWaitingForExploration;
-        if(progress!=lastDistance || target!=lastTarget || exploring!=lastExploring)
+        if(progress!=lastDistance || target!=lastTarget || exploring!=lastExploring || mapChanged)
         {
             lastDistance=progress;lastTarget=target;lastExploring=exploring;
-            distanceLabel.text=(exploring?"Khám phá":"Chiến đấu")+"\n"+progress+"/"+target;
+            distanceLabel.text=StoryOrigin.IsSafe(data)?"An toàn":
+                (exploring?"Khám phá":"Chiến đấu")+"\n"+progress+"/"+target;
             distanceFill.rectTransform.anchorMax=new Vector2(target>0?(float)progress/target:0,1);
         }
     }
@@ -203,12 +205,12 @@ internal sealed class HudW3View
     {
         if(data==null)return "Chưa vào map";
         WorldMapNode node;
-        if(WorldMapCatalog.Enabled(data))return WorldMapCatalog.TryGet(data.worldMapId,out node)?node.Name:"Map "+data.worldMapId;
+        if(WorldMapCatalog.Enabled(data))return WorldMapCatalog.TryGet(data.worldMapId,out node)?StoryOrigin.MapName(data,node):"Map "+data.worldMapId;
         return string.IsNullOrWhiteSpace(data.mapName)?"Bản đồ "+data.mapNumber:data.mapName;
     }
     internal static int MapWave(EntityDataSO data)
     {
-        return data==null?0:Mathf.Clamp(WorldMapCatalog.Enabled(data)?data.worldMapLoopWave:data.completedWavesInMap+1,1,5);
+        return data==null || StoryOrigin.IsSafe(data)?0:Mathf.Clamp(WorldMapCatalog.Enabled(data)?data.worldMapLoopWave:data.completedWavesInMap+1,1,5);
     }
     private static void RenderCard(Card c,HeroCombatState state,int index,InventoryArtTheme art)
     {
