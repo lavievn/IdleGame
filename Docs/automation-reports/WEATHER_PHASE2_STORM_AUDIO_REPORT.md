@@ -2,6 +2,13 @@
 
 [Draft PR #16](https://github.com/lavievn/IdleGame/pull/16) · `feature/dynamic-sky-weather-cycle` · checkpoint Phase 1 `2c2ce40`. Worktree `D:/IdleGame/Projects/DynamicSkyWeather`. Kết quả đo Phase 1 có trong [DYNAMIC_SKY_WEATHER_REPORT.md](DYNAMIC_SKY_WEATHER_REPORT.md).
 
+## Chỉnh gió và cỡ hạt mưa
+
+- Trong **GameManager → Rain, wind and storm visuals**, **Rain Wind** bật độ nghiêng. **Random Rain Wind** chọn độ lớn và hướng trái/phải theo seed của map mỗi 14 giây trong game, nội suy trong 4 giây. **Wind Direction** chỉnh hướng ưu tiên khi bật ngẫu nhiên và hướng cố định khi tắt. **Wind Strength** mặc định 5, đặt 0 để mưa rơi thẳng. **Gust Strength** tiếp tục chỉnh các đợt gió trong mưa lớn.
+- **Drop Size** mặc định 0,30. Chiều dài và chiều rộng vệt mưa đều còn 30% giá trị trước chỉnh. Splash và độ sâu tiếp đất dùng cùng luồng Phase 2.
+- Unity Play Mode và Windows Development Player qua smoke ngắn. Vận tốc ngang trung bình trên hạt thật ở hai mẫu mưa nhẹ/mưa lớn là `-2.42` / `3.48` đơn vị mô phỏng mỗi giây. Kiểm tra riêng xác nhận seed cho cả hai hướng, chuyển mượt, chế độ hướng cố định và gió bằng 0. Windows ghi đủ 14/14 kết quả rồi tái hiện lỗi thoát UnityPlayer.dll 0xc0000005.
+- Runtime `41c78e9`. [Unity Play Mode](<D:/IdleGame/Logs/Unity-MainGameWorldClimateVendor-20261111-200640.log>) · [Windows log](<D:/IdleGame/Builds/DynamicSkyWeather/profiles/idlegame-v10-9b48c98d3a1b4d98a6be4806e94f945b/player.log>) · [ảnh mưa nhẹ](<D:/IdleGame/Builds/DynamicSkyWeather/profiles/idlegame-v10-9b48c98d3a1b4d98a6be4806e94f945b/evidence/phase2-light-splash.png>) · [ảnh mưa lớn](<D:/IdleGame/Builds/DynamicSkyWeather/profiles/idlegame-v10-9b48c98d3a1b4d98a6be4806e94f945b/evidence/phase2-heavy-splash.png>).
+
 ## Asset đã xem
 
 | Asset | Kết quả và lựa chọn |
@@ -45,7 +52,7 @@ Mốc tham chiếu của lượt Phase 2 trước khi rải độ sâu là 300 g
 ### Bằng chứng cục bộ
 
 - [Mở Windows Player bằng profile thử riêng](<D:/IdleGame/Builds/DynamicSkyWeather/build/Play-Dynamic-Sky-Weather-Isolated.cmd>) · [EXE](<D:/IdleGame/Builds/DynamicSkyWeather/build/IdleGameV10.exe>).
-- [Unity MainGame](<D:/IdleGame/Logs/Unity-MainGameWorldClimateVendor-20261111-200034.log>) · [Windows build](<D:/IdleGame/Builds/DynamicSkyWeather/build.log>) · [Windows Player](<D:/IdleGame/Builds/DynamicSkyWeather/profiles/idlegame-v10-acfec8c0592c442fb83d3f49ca4b61eb/player.log>) · [JSON](<D:/IdleGame/Builds/DynamicSkyWeather/profiles/idlegame-v10-acfec8c0592c442fb83d3f49ca4b61eb/evidence/player-result.json>).
+- [Unity MainGame](<D:/IdleGame/Logs/Unity-MainGameWorldClimateVendor-20261111-200034.log>) · [Windows build](<D:/IdleGame/Logs/Unity-WorldClimate-Phase2-BattleDepth-Windows-build.log>) · [Windows Player](<D:/IdleGame/Builds/DynamicSkyWeather/profiles/idlegame-v10-acfec8c0592c442fb83d3f49ca4b61eb/player.log>) · [JSON](<D:/IdleGame/Builds/DynamicSkyWeather/profiles/idlegame-v10-acfec8c0592c442fb83d3f49ca4b61eb/evidence/player-result.json>).
 - [Splash nhẹ](<D:/IdleGame/Builds/DynamicSkyWeather/profiles/idlegame-v10-acfec8c0592c442fb83d3f49ca4b61eb/evidence/phase2-light-splash.png>) · [splash lớn](<D:/IdleGame/Builds/DynamicSkyWeather/profiles/idlegame-v10-acfec8c0592c442fb83d3f49ca4b61eb/evidence/phase2-heavy-splash.png>) · [nước 600×338](<D:/IdleGame/Builds/DynamicSkyWeather/profiles/idlegame-v10-acfec8c0592c442fb83d3f49ca4b61eb/evidence/phase2-water-600.png>) · [nước 1150×647](<D:/IdleGame/Builds/DynamicSkyWeather/profiles/idlegame-v10-acfec8c0592c442fb83d3f49ca4b61eb/evidence/phase2-water-1150.png>) · [tia sét](<D:/IdleGame/Builds/DynamicSkyWeather/profiles/idlegame-v10-acfec8c0592c442fb83d3f49ca4b61eb/evidence/phase2-lightning.png>).
 
 Chạy lại qua `Tools/Local-IdleGame.ps1 -Mode MainGameWorldClimateVendor` trong worktree đã liên kết asset. Sau khi build, dùng `-Mode Player -PlayerMode WorldClimateVendor -WindowsOutputRoot D:/IdleGame/Builds/DynamicSkyWeather` và giữ cửa sổ Player ở foreground. Fixture dùng hồ sơ riêng ở Lạc Vân Trạch và dọn wave để đo trong khám phá.
