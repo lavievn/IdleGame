@@ -4,6 +4,8 @@ using UnityEngine;
 // vendor assembly. Implementations should reuse output textures and emitters.
 public abstract class WorldClimateAssetAdapter : MonoBehaviour
 {
+    internal virtual void SetSkyScroll(float viewportWidths) { }
+
     // Supply a view-projected 2D texture, including phase/weather treatment.
     // Return false until the texture can replace the legacy sky completely.
     public abstract bool TryGetProjectedSky(WorldClimateFrame frame, Rect viewport, out Texture texture);

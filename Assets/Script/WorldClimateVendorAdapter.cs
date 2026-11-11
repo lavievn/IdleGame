@@ -13,6 +13,9 @@ public sealed class WorldClimateVendorAdapter : WorldClimateAssetAdapter
     private Material projection;
     private RenderTexture projectedSky;
     private float nextSkyUpdate;
+    private float skyScroll, lastSkyScroll;
+
+    internal override void SetSkyScroll(float viewportWidths) => skyScroll = viewportWidths;
     private Vector4 lastSkyMix;
     private Cubemap lastTwilight;
     private ParticleSystem emitter;
@@ -69,11 +72,13 @@ public sealed class WorldClimateVendorAdapter : WorldClimateAssetAdapter
 
         Vector4 mix = SkyMix(frame);
         Cubemap twilight = frame.Hour < 12f ? assets.dawnSky : assets.duskSky;
-        if (resized || (Time.unscaledTime >= nextSkyUpdate && (mix != lastSkyMix || twilight != lastTwilight)))
+        if (resized || (Time.unscaledTime >= nextSkyUpdate && (mix != lastSkyMix || twilight != lastTwilight || skyScroll != lastSkyScroll)))
         {
             projection.SetTexture("_TwilightSky", twilight);
             projection.SetVector("_SkyMix", mix);
             projection.SetFloat("_Aspect", aspect);
+            projection.SetFloat("_SkyScroll", skyScroll);
+            lastSkyScroll = skyScroll;
             Graphics.Blit(null, projectedSky, projection);
             lastSkyMix = mix;
             lastTwilight = twilight;

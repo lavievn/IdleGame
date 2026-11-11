@@ -20,12 +20,17 @@ Shader "Hidden/IdleGame/WorldClimateSkyProjection"
 
             samplerCUBE _ClearSky, _CloudySky, _TwilightSky;
             float4 _SkyMix;
-            float _Aspect;
+            float _Aspect, _SkyScroll;
 
             half4 frag(v2f_img input) : SV_Target
             {
                 float2 uv = input.uv;
-                float3 direction = normalize(float3((uv.x - .5) * _Aspect * .95, .045 + uv.y * .92, 1));
+                // Double the angular span to halve apparent sky feature size.
+                float horizontal = min(3.05, 4 * atan(_Aspect * .475));
+                float longitude = (uv.x - .5 - _SkyScroll) * horizontal;
+                float elevation = .045 + uv.y * 1.44;
+                float3 direction = float3(sin(longitude) * cos(elevation),
+                    sin(elevation), cos(longitude) * cos(elevation));
                 float3 clouds = texCUBE(_CloudySky, direction).rgb;
                 float3 day = lerp(texCUBE(_ClearSky, direction).rgb, clouds, _SkyMix.z);
                 float3 warm = texCUBE(_TwilightSky, direction).rgb;

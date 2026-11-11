@@ -29,7 +29,9 @@ public partial class GroundPresentation : MonoBehaviour
     }
     private readonly TileLoop groundLoop = new TileLoop(), nearLoop = new TileLoop(),
         distantLoop = new TileLoop(), skyLoop = new TileLoop();
-    private float skyPhase;
+    private const float SkySizeMultiplier = .5f;
+    private const float SkySpeedMultiplier = .5f;
+    private float skyPhase, projectedSkyScroll;
     private const float GroundLayer2OffsetPixels = -50f;
     private const float GroundLayer3OffsetPixels = -100f;
     private const float SkyOffsetPixels = -10f;
@@ -354,9 +356,12 @@ public partial class GroundPresentation : MonoBehaviour
         float width = space.Width;
         if (width <= 0f) return;
         LayoutTiles(amount);
-        LayoutFarTiles(amount * Mathf.Clamp01(farParallaxSpeed));
+        float ground2Pan = amount * Mathf.Clamp01(farParallaxSpeed);
+        LayoutFarTiles(ground2Pan);
         LayoutDistantTiles(amount * Mathf.Clamp01(distantParallaxSpeed));
-        LayoutSky();
+        float skyPan = ground2Pan * SkySpeedMultiplier;
+        projectedSkyScroll += skyPan / width;
+        LayoutSky(skyPan);
         for (int i = 0; i < decorations.Count; i++)
         {
             var d = decorations[i]; if (d == null) continue;
@@ -464,14 +469,14 @@ public partial class GroundPresentation : MonoBehaviour
     {
         return width * sprite.rect.height / Mathf.Max(1f, sprite.rect.width);
     }
-    private void LayoutSky()
+    private void LayoutSky(float amount = 0f)
     {
         if (!UsesTerrainArtwork) return;
         // BattleArea is the 100-unit FLOOR, not the visible viewport. Convert
         // the compact gameplay pixel height through its stable width projection.
         float viewportHeight = space.Width * ManagementWindowLayout.CombatHeight(Screen.height) /
             Mathf.Max(1, ManagementWindowLayout.CombatPixels(Screen.width));
-        float width = space.Width * Mathf.Max(1f, skyScale);
+        float width = space.Width * Mathf.Max(1f, skyScale * SkySizeMultiplier);
         float skyY = space.BattleArea.rect.yMin + viewportHeight + skyOffset.y +
             ScreenPixelsToBattleUnits(SkyOffsetPixels);
         for (int i = 0; i < skyTiles.Count; i++)
@@ -482,7 +487,7 @@ public partial class GroundPresentation : MonoBehaviour
             position.y = skyY;
             rect.anchoredPosition = position;
         }
-        PlaceLoop(skyTiles, skyLoop, ref skyPhase, space.BattleArea.rect.xMin + skyOffset.x, 0f, "Sky");
+        PlaceLoop(skyTiles, skyLoop, ref skyPhase, space.BattleArea.rect.xMin + skyOffset.x, amount, "Sky");
     }
     private void LayoutFarTiles(float amount = 0f) =>
         LayoutParallaxTiles(farTiles, nearLoop, ref farPhase, farLayerScale, amount, "Background2", GroundLayer2OffsetPixels);

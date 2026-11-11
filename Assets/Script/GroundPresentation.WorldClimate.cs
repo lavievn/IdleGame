@@ -43,6 +43,7 @@ public partial class GroundPresentation
         Texture sky = null;
         if (hdrSky && viewport.width > 0f && viewport.height > 0f)
         {
+            adapter.SetSkyScroll(projectedSkyScroll);
             if (!adapter.TryGetProjectedSky(frame, viewport, out sky) ||
                 sky == null || sky.dimension != TextureDimension.Tex2D ||
                 (sky is RenderTexture target && !target.IsCreated()))
