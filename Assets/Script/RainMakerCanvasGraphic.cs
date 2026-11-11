@@ -3,6 +3,7 @@ using UnityEngine.UI;
 
 // A single clipped UI mesh paints the Rain Maker texture over the battle
 // viewport, independent of URP 2D scene lighting and below the HUD Canvas.
+[RequireComponent(typeof(CanvasRenderer))]
 public sealed class RainMakerCanvasGraphic : MaskableGraphic
 {
     private readonly ParticleSystem.Particle[] particles =
