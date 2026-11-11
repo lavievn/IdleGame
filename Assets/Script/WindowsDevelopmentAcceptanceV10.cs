@@ -195,7 +195,10 @@ public sealed partial class WindowsDevelopmentAcceptanceV10:MonoBehaviour
         if(result.mode=="v15trialbalance"){yield return BalanceTrialV15();yield break;}
         if(result.mode=="v15trialmanual"){yield return ManualTrialV15();yield break;}
         if(result.mode=="v13trial"){gm.OnNewGameClicked();gm.OnConfirmResetClicked();yield return Ready();yield return DevelopmentV13GameplayScenario.Run(gm,saves,ui,combat,hero,space,Evidence,Resize,Capture,Pass);Require(result.uiIssues.Count==0,"V13 UI sizes");yield break;}
-        Require(saves.CultivationProfile!=null && saves.CultivationProfile.IsProduction && Resources.Load<TextAsset>("WorldQiDistributionV1")!=null,"Packaged default production resources");
+        if (result.mode=="integratedobserve")
+            Require(saves.HasDevelopmentCultivationLoop, "Owned integrated observer enables the DEV Gate");
+        else
+            Require(saves.CultivationProfile!=null && saves.CultivationProfile.IsProduction && Resources.Load<TextAsset>("WorldQiDistributionV1")!=null,"Packaged default production resources");
         if(result.mode=="replay"){
             string component,error;Require(CultivationGameplayState.TryReadHeroJson(File.ReadAllText(Path.Combine(SavePath,"ManualSave2.json")),saves.CultivationProfile,out component,out error),"Restart source");
             Require(gm.LoadAndContinue(SaveSlot.ManualSave2),"Separate Player process Load");yield return Ready();Require(gm.HeroData.cultivationJson==component,"Restart exact checkpoint; no offline award");Pass("Separate OS Player process loads migrated ManualSave2 with exact checkpoint and retained compatibility metadata/backup; no offline grant.");yield break;}
