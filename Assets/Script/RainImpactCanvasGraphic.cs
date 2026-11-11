@@ -18,6 +18,7 @@ public sealed class RainImpactCanvasGraphic : MaskableGraphic
     private double scroll;
     private float floor, tileWidth;
     private int next;
+    internal int Generation { get; private set; }
     internal int VisibleImpacts { get; private set; }
     internal int VisibleRipples { get; private set; }
     internal float PeakStrength { get; private set; }
@@ -48,10 +49,12 @@ public sealed class RainImpactCanvasGraphic : MaskableGraphic
         var surfaces = weather.Settings?.surfaces;
         if (surfaces == null || tileWidth <= 0f) return ground;
         float x = Mathf.Repeat((float)(battleX - scroll - viewport.xMin), tileWidth);
+        bool matched = false;
         foreach (var surface in surfaces)
         {
             if (surface.mapId != weather.MapId || x < surface.horizontalRange.x || x >= surface.horizontalRange.y ||
-                surface.height < ground || surface.height >= viewport.yMax) continue;
+                surface.height < viewport.yMin || surface.height >= viewport.yMax || matched && surface.height < ground) continue;
+            matched = true;
             ground = surface.height;
             water = surface.water;
         }
@@ -85,11 +88,26 @@ public sealed class RainImpactCanvasGraphic : MaskableGraphic
 
     internal void Clear()
     {
+        Generation++;
         System.Array.Clear(impacts, 0, impacts.Length);
         next = VisibleImpacts = VisibleRipples = 0;
         PeakStrength = SoundStrength = 0f;
         SetVerticesDirty();
     }
+
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+    internal bool TryGetImpactPosition(bool water, out Vector2 battle)
+    {
+        foreach (var impact in impacts)
+        {
+            if (impact.EndTime <= Time.time || impact.Water != water) continue;
+            battle = new Vector2((float)(impact.X + scroll), impact.Y);
+            return true;
+        }
+        battle = default;
+        return false;
+    }
+#endif
 
     private void LateUpdate()
     {

@@ -107,7 +107,11 @@ internal static class WorldClimateVendorSmoke
         {
             float distantBefore = ground.DistantPhase;
             yield return resize(size.x, size.y);
+            float skyBefore = Read<float>(ground, "projectedSkyScroll");
             space.PanEnvironment(37);
+            float skyPan = (Read<float>(ground, "projectedSkyScroll") - skyBefore) * space.Width;
+            Check(Mathf.Abs(skyPan - 37f * ground.farParallaxSpeed * .5f) < .02f,
+                "Projected sky moves at half Ground 2 speed");
             yield return new WaitForSecondsRealtime(.85f);
             var drops = adapter.RainGraphic;
             var layer = drops.rectTransform.parent as RectTransform;
@@ -129,9 +133,12 @@ internal static class WorldClimateVendorSmoke
         yield return null;
         Check(skyTiles.TrueForAll(tile => tile.gameObject.activeSelf) &&
             !Read<RawImage>(ground, "projectedSky").isActiveAndEnabled, "PNG fallback switch");
+        Check(Mathf.Abs(skyTiles[0].sizeDelta.x - space.Width * Mathf.Max(1f, ground.skyScale * .5f)) < .02f,
+            "Fallback tiles use half the configured sky size with full viewport coverage");
         Set(game, "worldClimateHdrSky", true);
         Set(game, "previewWorldClimate", false);
         pass("Dry stops and clears Rain Maker completely. The HDR toggle restores the legacy PNGs.");
+        yield return WeatherPhase2Smoke.Run(game, ui, combat, space, adapter, resize, capture, pass);
         if (soak)
             yield return Soak(game, adapter, resize, capture, pass);
     }
@@ -146,7 +153,8 @@ internal static class WorldClimateVendorSmoke
         var start = data.worldClimate;
         double started = Time.realtimeSinceStartupAsDouble, elapsed, active;
         double nextSample = 300, longest = 0;
-        int frames = 0, peak = 0, wetFrames = 0, dryFrames = 0;
+        int frames = 0, peak = 0, wetFrames = 0, dryFrames = 0, peakImpacts = 0, flashes = 0;
+        bool flashed = false;
         var seen = new HashSet<WorldWeather>();
         do
         {
@@ -157,21 +165,27 @@ internal static class WorldClimateVendorSmoke
             Check(elapsed < 2040, "Too much inactive time during the vendor soak");
             int count = adapter.ActiveParticles;
             peak = Mathf.Max(peak, count);
+            int impacts = adapter.ImpactGraphic != null ? adapter.ImpactGraphic.VisibleImpacts : 0;
+            peakImpacts = Mathf.Max(peakImpacts, impacts);
+            bool flash = adapter.Weather.Flash > 0f;
+            if (flash && !flashed) flashes++;
+            flashed = flash;
             if (count > 0) wetFrames++; else dryFrames++;
             longest = Math.Max(longest, Time.unscaledDeltaTime * 1000);
             if (active < nextSample) continue;
             var sample = WorldClimate.Sample(data.worldClimate, 780, data.mapTerrain, data.worldMapId, data.mapNumber, false);
-            pass(FormattableString.Invariant($"Vendor soak {active:F0}s active, {elapsed:F0}s real, day {data.worldClimate.day}, {sample.Weather}, {frames / elapsed:F1} FPS, current/peak {count}/{peak} particles, Unity allocated {Profiler.GetTotalAllocatedMemoryLong() / 1048576.0:F1} MiB, Mono used {Profiler.GetMonoUsedSizeLong() / 1048576.0:F1} MiB."));
+            pass(FormattableString.Invariant($"Vendor soak {active:F0}s active, {elapsed:F0}s real, day {data.worldClimate.day}, {sample.Weather}, {frames / elapsed:F1} FPS, current/peak {count}/{peak} particles, {impacts}/{peakImpacts} impacts, {flashes} flashes, Unity allocated {Profiler.GetTotalAllocatedMemoryLong() / 1048576.0:F1} MiB, Mono used {Profiler.GetMonoUsedSizeLong() / 1048576.0:F1} MiB."));
             nextSample += 300;
         } while (active < 1805);
         // Read each actual four-hour forecast slot traversed by the live clock.
         for (int slot = 2; slot <= (int)((data.worldClimate.day + data.worldClimate.dayFraction) * 6); slot++)
             seen.Add(Forecast(data, seed, slot));
         Check(wetFrames > 0 && dryFrames > 0 && peak <= WorldClimateVendorAdapter.MaxRainParticles &&
+            peakImpacts > 0 && peakImpacts <= RainImpactCanvasGraphic.Capacity && flashes > 0 &&
             seen.Contains(WorldWeather.LightRain) && seen.Contains(WorldWeather.HeavyRain),
             "The real-time soak exercised both densities and dry cleanup");
         yield return capture("vendor-soak-30min");
-        pass(FormattableString.Invariant($"Vendor soak complete: {active:F1}s active, {elapsed:F1}s real, {frames} frames, {frames / elapsed:F2} FPS, longest {longest:F1}ms, peak {peak} particles, wet/dry frames {wetFrames}/{dryFrames}, seed {seed}."));
+        pass(FormattableString.Invariant($"Vendor soak complete: {active:F1}s active, {elapsed:F1}s real, {frames} frames, {frames / elapsed:F2} FPS, longest {longest:F1}ms, peak {peak} particles, {peakImpacts} impacts, {flashes} flashes, wet/dry frames {wetFrames}/{dryFrames}, seed {seed}."));
     }
 
     private static int SeedForWetAndDry(EntityDataSO data)
