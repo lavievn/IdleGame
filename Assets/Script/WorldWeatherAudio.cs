@@ -59,12 +59,19 @@ internal sealed class WorldWeatherAudio
     }
 
     private readonly Loop biome = new Loop(), wildlife = new Loop(), rain = new Loop(), wind = new Loop();
+    private readonly Loop[] layers = new Loop[WorldEnvironmentAudioCatalog.SlotCount];
+    private readonly WorldEnvironmentAudioCatalog.Layer[] desired = new WorldEnvironmentAudioCatalog.Layer[WorldEnvironmentAudioCatalog.SlotCount];
+    private WorldEnvironmentAudioCatalog catalog;
+    private WorldEnvironmentAudioCatalog.Profile mapProfile;
+    private GameObject layerHost;
+    private bool resolved;
+    internal string CurrentMapProfile => mapProfile?.id;
     private AudioSource oneShots;
     private float nextSplashAt;
     internal int ThunderPlayed { get; private set; }
 
     internal void Update(GameObject host, WorldWeatherAudioSettings settings, WorldWeatherVisual visual,
-        WorldClimateFrame frame, TerrainType terrain, string id, bool active, bool outdoors, float splash)
+        WorldClimateFrame frame, TerrainType terrain, string id, bool active, bool outdoors, float splash, bool safeVillage = false)
     {
         float sfx = AudioVolumeSettings.Get(GameAudioChannel.Sfx);
         float envGain = Mathf.Clamp01(settings.environmentVolume) * sfx;
@@ -75,10 +82,18 @@ internal sealed class WorldWeatherAudio
         float rainGain = outdoors && active ? frame.Rain : 0f;
         float windGain = outdoors && active ? Mathf.Clamp01(Mathf.Abs(visual.Wind) * .24f) : 0f;
         AudioClip wildlifeClip = night && settings.nightAmbience != null ? settings.nightAmbience : settings.birdsInsects;
-        biome.Update(host, active ? Ambience(settings, terrain, village) : null, envGain, step);
-        wildlife.Update(host, active && outdoors ? wildlifeClip : null, envGain, step);
-        rain.Update(host, rainGain > .55f ? settings.heavyRainLoop : settings.lightRainLoop, rainGain * weatherGain, step);
-        wind.Update(host, settings.windLoop, windGain * weatherGain, step);
+        if (settings.useMapLayers && !resolved)
+        {
+            catalog = WorldEnvironmentAudioCatalog.Load();
+            resolved = true;
+        }
+        bool layered = settings.useMapLayers && catalog != null;
+        UpdateLayers(host, layered && active, terrain, id, safeVillage || village, outdoors, frame, visual.Wind,
+            envGain, weatherGain, step);
+        biome.Update(host, !layered && active ? Ambience(settings, terrain, safeVillage || village) : null, envGain, step);
+        wildlife.Update(host, !layered && active && outdoors ? wildlifeClip : null, envGain, step);
+        rain.Update(host, layered ? null : rainGain > .55f ? settings.heavyRainLoop : settings.lightRainLoop, rainGain * weatherGain, step);
+        wind.Update(host, layered ? null : settings.windLoop, windGain * weatherGain, step);
         if (oneShots != null) oneShots.volume = weatherGain;
         if (!active || !outdoors || weatherGain <= 0f) return;
         if (visual.Thunder)
@@ -92,6 +107,36 @@ internal sealed class WorldWeatherAudio
         {
             nextSplashAt = Time.unscaledTime + .28f;
             Play(host, settings.rainSplash, weatherGain, Mathf.Clamp01(splash * .45f));
+        }
+    }
+
+    private void UpdateLayers(GameObject host, bool active, TerrainType terrain, string id, bool village,
+        bool outdoors, WorldClimateFrame frame, float windSpeed, float envGain, float weatherGain, float step)
+    {
+        mapProfile = active ? catalog.Select(terrain, id, village) : null;
+        Array.Clear(desired, 0, desired.Length);
+        if (mapProfile != null)
+        {
+            if (layerHost == null)
+            {
+                layerHost = new GameObject("Map ambience layers");
+                layerHost.transform.SetParent(host.transform, false);
+            }
+            foreach (var layer in mapProfile.layers) desired[layer.slot] = layer;
+            if (outdoors)
+                foreach (var layer in catalog.Weather) desired[layer.slot] = layer;
+        }
+        for (int i = 0; i < layers.Length; i++)
+        {
+            var layer = desired[i];
+            float volume = layer != null ? WorldEnvironmentAudioCatalog.LayerGain(layer, frame, windSpeed)
+                * (i < 7 ? envGain : weatherGain) : 0f;
+            if (volume > 0f)
+            {
+                layers[i] ??= new Loop();
+                layers[i].Update(layerHost, catalog.Clip(layer.clip), volume, step);
+            }
+            else layers[i]?.Update(layerHost, null, 0f, step);
         }
     }
 
@@ -131,6 +176,7 @@ internal sealed class WorldWeatherAudio
 
     internal void Stop()
     {
+        foreach (var layer in layers) layer?.Stop();
         biome.Stop();
         wildlife.Stop();
         rain.Stop();

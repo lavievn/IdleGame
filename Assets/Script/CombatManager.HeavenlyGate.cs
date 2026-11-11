@@ -25,6 +25,10 @@ public partial class CombatManager
 
     [SerializeField] private float trialLightningWarningSeconds = .26f;
 #if UNITY_5_3_OR_NEWER
+    [SerializeField] private AudioClip trialThunderClip;
+    [SerializeField, Range(0f, 3f)] private float trialThunderDelay = .12f;
+    [SerializeField, Range(0f, 1f)] private float trialThunderVolume = .67f;
+    private readonly HeavenlyGateThunderAudio trialThunder = new HeavenlyGateThunderAudio();
     [SerializeField] private HeavenlyTrialView.SkyVariant trialSky;
     private HeavenlyTrialView trialView;
     private HeavenlyLightningVisual committedGateBreak;
@@ -203,6 +207,7 @@ public partial class CombatManager
 #if UNITY_5_3_OR_NEWER
         var lightning = trialView != null ? trialView.Lightning : null;
         if (lightning != null) lightning.Advance(dt);
+        trialThunder.Advance(gameObject, dt, trialThunderVolume, trialThunderClip);
 #endif
         if (!gateEngaged && primaryHeroState.CanFight)
             gateEngaged = primaryHeroState.Controller.CanAttack(gateTarget.controller, space);
@@ -227,6 +232,7 @@ public partial class CombatManager
 #if UNITY_5_3_OR_NEWER
                 if (lightning != null)
                     lightning.Strike(BodyPosition(heroRect,space),space.Position(heroRect),trialView.SkyTop,strike.Strike);
+                trialThunder.QueueStrike(gameObject, gateEncounter, strike.Strike, trialThunderDelay, trialThunderVolume, trialThunderClip);
 #endif
                 var trace = SynergyMath.EvaluateDamage(gateTarget.data,primaryHeroState.Data,AttackMode.Melee,1f,1f);
                 ApplyDamageToHeroState(primaryHeroState,trace.elementDamage,gateConfig.title,trace,null,gateTarget.data,AttackMode.Melee);
@@ -269,6 +275,7 @@ public partial class CombatManager
     private void ClearGateIdentity()
     {
 #if UNITY_5_3_OR_NEWER
+        trialThunder.Clear();
         if (trialView != null)
         {
             trialView.Release();

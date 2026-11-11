@@ -115,3 +115,7 @@ InitTestScene*.unity*
 /Assets/Resources/WorldClimateVendor.meta
 /Assets/Resources/WorldMapMusic/
 /Assets/Resources/WorldMapMusic.meta
+
+# Licensed local integration audio
+/Assets/Resources/IntegratedAmbience/
+/Assets/Resources/IntegratedAmbience.meta
