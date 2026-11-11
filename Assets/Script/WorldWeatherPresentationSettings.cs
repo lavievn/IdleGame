@@ -40,7 +40,7 @@ public struct WorldWeatherSurface
 public sealed class WorldWeatherAudioSettings
 {
     public bool useMapLayers = true;
-    [Range(0f, 1f)] public float environmentVolume = .6f;
+    [Range(0f, 1f)] public float environmentVolume = 1f;
     [Range(0f, 1f)] public float weatherVolume = .5f;
     [Range(.1f, 8f)] public float fadeSeconds = 2f;
     public string[] villageMapIds = Array.Empty<string>();

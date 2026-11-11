@@ -2,376 +2,57 @@
   "profiles": [
     {
       "id": "Village",
-      "layers": [
-        {
-          "slot": 0,
-          "clip": "Meadow_base",
-          "gain": 0.33,
-          "response": "bed"
-        },
-        {
-          "slot": 1,
-          "clip": "Morning_02",
-          "gain": 0.18,
-          "response": "bed"
-        },
-        {
-          "slot": 2,
-          "clip": "Meadow_06",
-          "gain": 0.34,
-          "response": "day"
-        },
-        {
-          "slot": 3,
-          "clip": "Night_10",
-          "gain": 0.24,
-          "response": "night"
-        },
-        {
-          "slot": 4,
-          "clip": "Meadow_07",
-          "gain": 0.22,
-          "response": "bed"
-        }
-      ]
+      "prefix": "Meadow"
     },
     {
       "id": "Plains",
-      "layers": [
-        {
-          "slot": 0,
-          "clip": "Meadow_base",
-          "gain": 0.34,
-          "response": "bed"
-        },
-        {
-          "slot": 1,
-          "clip": "Meadow_04",
-          "gain": 0.29,
-          "response": "bed"
-        },
-        {
-          "slot": 2,
-          "clip": "Meadow_08",
-          "gain": 0.28,
-          "response": "day"
-        },
-        {
-          "slot": 3,
-          "clip": "Night_10",
-          "gain": 0.24,
-          "response": "night"
-        },
-        {
-          "slot": 4,
-          "clip": "Meadow_02",
-          "gain": 0.22,
-          "response": "bed"
-        }
-      ]
+      "prefix": "Meadow"
     },
     {
       "id": "Steppe",
-      "layers": [
-        {
-          "slot": 0,
-          "clip": "Meadow_base",
-          "gain": 0.31,
-          "response": "bed"
-        },
-        {
-          "slot": 1,
-          "clip": "Meadow_05",
-          "gain": 0.33,
-          "response": "bed"
-        },
-        {
-          "slot": 2,
-          "clip": "Meadow_08",
-          "gain": 0.22,
-          "response": "day"
-        },
-        {
-          "slot": 3,
-          "clip": "Night_10",
-          "gain": 0.24,
-          "response": "night"
-        },
-        {
-          "slot": 4,
-          "clip": "Meadow_04",
-          "gain": 0.27,
-          "response": "bed"
-        }
-      ]
+      "prefix": "Meadow"
     },
     {
       "id": "Forest",
-      "layers": [
-        {
-          "slot": 0,
-          "clip": "Primeval_02",
-          "gain": 0.35,
-          "response": "bed"
-        },
-        {
-          "slot": 1,
-          "clip": "Morning_06",
-          "gain": 0.19,
-          "response": "bed"
-        },
-        {
-          "slot": 2,
-          "clip": "Morning_07",
-          "gain": 0.28,
-          "response": "day"
-        },
-        {
-          "slot": 3,
-          "clip": "Night_02",
-          "gain": 0.24,
-          "response": "night"
-        },
-        {
-          "slot": 4,
-          "clip": "Primeval_04",
-          "gain": 0.28,
-          "response": "bed"
-        },
-        {
-          "slot": 5,
-          "clip": "Morning_08",
-          "gain": 0.22,
-          "response": "day"
-        },
-        {
-          "slot": 6,
-          "clip": "Primeval_03",
-          "gain": 0.25,
-          "response": "bed"
-        }
-      ]
+      "prefix": "Primeval"
     },
     {
       "id": "Highland",
-      "layers": [
-        {
-          "slot": 0,
-          "clip": "Meadow_05",
-          "gain": 0.35,
-          "response": "bed"
-        },
-        {
-          "slot": 1,
-          "clip": "Primeval_12",
-          "gain": 0.18,
-          "response": "bed"
-        },
-        {
-          "slot": 2,
-          "clip": "Morning_07",
-          "gain": 0.22,
-          "response": "day"
-        },
-        {
-          "slot": 3,
-          "clip": "Night_02",
-          "gain": 0.17,
-          "response": "night"
-        },
-        {
-          "slot": 4,
-          "clip": "Meadow_04",
-          "gain": 0.25,
-          "response": "bed"
-        }
-      ]
+      "prefix": "Meadow"
     },
     {
       "id": "Snow",
-      "layers": [
-        {
-          "slot": 0,
-          "clip": "Meadow_05",
-          "gain": 0.38,
-          "response": "bed"
-        },
-        {
-          "slot": 1,
-          "clip": "Primeval_12",
-          "gain": 0.18,
-          "response": "bed"
-        },
-        {
-          "slot": 4,
-          "clip": "Meadow_07",
-          "gain": 0.27,
-          "response": "bed"
-        }
-      ]
+      "prefix": "Meadow"
     },
     {
       "id": "Desert",
-      "layers": [
-        {
-          "slot": 0,
-          "clip": "Meadow_05",
-          "gain": 0.35,
-          "response": "bed"
-        },
-        {
-          "slot": 1,
-          "clip": "Meadow_04",
-          "gain": 0.21,
-          "response": "bed"
-        },
-        {
-          "slot": 3,
-          "clip": "Night_02",
-          "gain": 0.16,
-          "response": "night"
-        },
-        {
-          "slot": 4,
-          "clip": "Meadow_07",
-          "gain": 0.22,
-          "response": "bed"
-        }
-      ]
+      "prefix": "Meadow"
     },
     {
       "id": "Swamp",
-      "layers": [
-        {
-          "slot": 0,
-          "clip": "Primeval_02",
-          "gain": 0.32,
-          "response": "bed"
-        },
-        {
-          "slot": 1,
-          "clip": "Morning_04",
-          "gain": 0.23,
-          "response": "bed"
-        },
-        {
-          "slot": 2,
-          "clip": "Primeval_06",
-          "gain": 0.32,
-          "response": "day"
-        },
-        {
-          "slot": 3,
-          "clip": "Night_02",
-          "gain": 0.28,
-          "response": "night"
-        },
-        {
-          "slot": 4,
-          "clip": "Primeval_04",
-          "gain": 0.25,
-          "response": "bed"
-        },
-        {
-          "slot": 6,
-          "clip": "Primeval_03",
-          "gain": 0.26,
-          "response": "bed"
-        }
-      ]
+      "prefix": "Morning"
     },
     {
       "id": "Lake",
-      "layers": [
-        {
-          "slot": 0,
-          "clip": "Morning_03",
-          "gain": 0.29,
-          "response": "bed"
-        },
-        {
-          "slot": 1,
-          "clip": "Morning_06",
-          "gain": 0.21,
-          "response": "bed"
-        },
-        {
-          "slot": 2,
-          "clip": "Morning_07",
-          "gain": 0.27,
-          "response": "day"
-        },
-        {
-          "slot": 3,
-          "clip": "Night_10",
-          "gain": 0.22,
-          "response": "night"
-        },
-        {
-          "slot": 4,
-          "clip": "Morning_02",
-          "gain": 0.24,
-          "response": "bed"
-        }
-      ]
+      "prefix": "Morning"
     },
     {
       "id": "Coast",
-      "layers": [
-        {
-          "slot": 0,
-          "clip": "Coast_base",
-          "gain": 0.24,
-          "response": "bed"
-        },
-        {
-          "slot": 1,
-          "clip": "Pebble_03",
-          "gain": 0.34,
-          "response": "bed"
-        },
-        {
-          "slot": 2,
-          "clip": "Coast_06",
-          "gain": 0.27,
-          "response": "day"
-        },
-        {
-          "slot": 3,
-          "clip": "Night_02",
-          "gain": 0.15,
-          "response": "night"
-        },
-        {
-          "slot": 4,
-          "clip": "Coast_10",
-          "gain": 0.23,
-          "response": "bed"
-        },
-        {
-          "slot": 5,
-          "clip": "Pebble_07",
-          "gain": 0.23,
-          "response": "bed"
-        }
-      ]
+      "prefix": "Pebble"
     }
   ],
   "weather": [
     {
-      "slot": 7,
       "clip": "Rain_05",
       "gain": 0.55,
       "response": "lightRain"
     },
     {
-      "slot": 8,
       "clip": "Rain_07",
       "gain": 0.64,
       "response": "heavyRain"
     },
     {
-      "slot": 9,
       "clip": "WindRain_11",
       "gain": 0.28,
       "response": "wind"

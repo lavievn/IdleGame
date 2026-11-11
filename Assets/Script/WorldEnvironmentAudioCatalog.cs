@@ -5,13 +5,12 @@ using UnityEngine;
 
 internal sealed class WorldEnvironmentAudioCatalog
 {
-    internal const int SlotCount = 10;
+    internal const float PrefixClipGain = .5f;
     private const string ClipRoot = "IntegratedAmbience/";
 
     [Serializable]
     internal sealed class Layer
     {
-        public int slot;
         public string clip, response;
         public float gain;
     }
@@ -19,8 +18,7 @@ internal sealed class WorldEnvironmentAudioCatalog
     [Serializable]
     internal sealed class Profile
     {
-        public string id;
-        public Layer[] layers;
+        public string id, prefix;
     }
 
     [Serializable]
@@ -32,6 +30,8 @@ internal sealed class WorldEnvironmentAudioCatalog
 
     private readonly Dictionary<string, Profile> profiles = new Dictionary<string, Profile>(StringComparer.Ordinal);
     private readonly Dictionary<string, AudioClip> clips = new Dictionary<string, AudioClip>(StringComparer.Ordinal);
+    private readonly Dictionary<string, AudioClip[]> groups = new Dictionary<string, AudioClip[]>(StringComparer.Ordinal);
+    private AudioClip[] importedClips;
     internal Layer[] Weather { get; }
     internal static WorldEnvironmentAudioCatalog Load()
     {
@@ -68,6 +68,20 @@ internal sealed class WorldEnvironmentAudioCatalog
         return profiles.TryGetValue(id, out var profile) ? profile : null;
     }
 
+    internal AudioClip[] PrefixClips(Profile profile)
+    {
+        if (profile == null) return Array.Empty<AudioClip>();
+        if (!groups.TryGetValue(profile.prefix, out var group))
+        {
+            importedClips ??= Resources.LoadAll<AudioClip>(ClipRoot.TrimEnd('/'));
+            string prefix = profile.prefix + "_";
+            group = Array.FindAll(importedClips, clip => clip.name.StartsWith(prefix, StringComparison.Ordinal));
+            Array.Sort(group, (a, b) => StringComparer.Ordinal.Compare(a.name, b.name));
+            groups.Add(profile.prefix, group);
+        }
+        return group;
+    }
+
     internal AudioClip Clip(string name)
     {
         if (string.IsNullOrEmpty(name)) return null;
@@ -81,18 +95,13 @@ internal sealed class WorldEnvironmentAudioCatalog
 
     internal static float LayerGain(Layer layer, WorldClimateFrame frame, float wind)
     {
-        float night = 1f - Mathf.SmoothStep(0f, 1f, (frame.Hour - 5f) / 2f)
-            + Mathf.SmoothStep(0f, 1f, (frame.Hour - 18f) / 3f);
         float heavy = Mathf.SmoothStep(0f, 1f, (frame.Rain - .30f) / .70f);
         switch (layer.response)
         {
-            case "day": return layer.gain * (1f - night) * (1f - .85f * frame.Rain) *
-                (1f - .12f * frame.Cloud - .18f * frame.Fog);
-            case "night": return layer.gain * night * (1f - .75f * frame.Rain);
             case "lightRain": return layer.gain * Mathf.Clamp01(frame.Rain / .35f) * (1f - heavy);
             case "heavyRain": return layer.gain * heavy;
             case "wind": return layer.gain * Mathf.Clamp01(Mathf.Abs(wind) / 5f) * frame.Rain;
-            default: return layer.gain * (1f - .30f * frame.Rain);
+            default: return 0f;
         }
     }
 }
