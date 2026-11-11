@@ -1,5 +1,7 @@
 # Thử nghiệm ngày–đêm và thời tiết
 
+Bản Player hiện tại và các thay đổi sky, BGM, mưa/giông nằm trong [báo cáo Phase 2](WEATHER_PHASE2_STORM_AUDIO_REPORT.md). Số liệu dưới đây thuộc lượt đo Phase 1.
+
 [PR #16](https://github.com/lavievn/IdleGame/pull/16) · `feature/dynamic-sky-weather-cycle` · baseline `f695df96547c57296562cbd6f1b061d359933814`. Worktree thử nghiệm ở `D:/IdleGame/Projects/DynamicSkyWeather`.
 
 ## Tích hợp asset trên Windows
@@ -48,7 +50,7 @@ Các ảnh bằng chứng chứa sky và texture Rain Maker nên được lưu c
 
 - [Bình minh](<D:/IdleGame/Builds/DynamicSkyWeather/profiles/idlegame-v10-cc39f492a4864f98b1a0bfcad212755a/evidence/vendor-hdr-06.5.png>) · [ban ngày](<D:/IdleGame/Builds/DynamicSkyWeather/profiles/idlegame-v10-cc39f492a4864f98b1a0bfcad212755a/evidence/vendor-hdr-12.0.png>) · [hoàng hôn](<D:/IdleGame/Builds/DynamicSkyWeather/profiles/idlegame-v10-cc39f492a4864f98b1a0bfcad212755a/evidence/vendor-hdr-18.5.png>) · [ban đêm](<D:/IdleGame/Builds/DynamicSkyWeather/profiles/idlegame-v10-cc39f492a4864f98b1a0bfcad212755a/evidence/vendor-hdr-22.0.png>).
 - [Mưa nhẹ](<D:/IdleGame/Builds/DynamicSkyWeather/profiles/idlegame-v10-cc39f492a4864f98b1a0bfcad212755a/evidence/vendor-light-rain-800.png>) · [mưa lớn 600×338](<D:/IdleGame/Builds/DynamicSkyWeather/profiles/idlegame-v10-cc39f492a4864f98b1a0bfcad212755a/evidence/vendor-heavy-rain-600.png>) · [mưa lớn 800×450](<D:/IdleGame/Builds/DynamicSkyWeather/profiles/idlegame-v10-cc39f492a4864f98b1a0bfcad212755a/evidence/vendor-heavy-rain-800.png>) · [mưa lớn 1150×647](<D:/IdleGame/Builds/DynamicSkyWeather/profiles/idlegame-v10-cc39f492a4864f98b1a0bfcad212755a/evidence/vendor-heavy-rain-1150.png>).
-- [Import HDR](<D:/IdleGame/Logs/Unity-WorldClimate-Imported-Sky.log>) · [import Rain Maker](<D:/IdleGame/Logs/Unity-WorldClimate-Imported-Rain.log>) · [liên kết asset](<D:/IdleGame/Logs/Unity-WorldClimate-VendorSetup.log>) · [Play Mode](<D:/IdleGame/Logs/Unity-MainGameWorldClimateVendor-20261111-190417.log>) · [Windows build](<D:/IdleGame/Builds/DynamicSkyWeather/build.log>) · [Windows Player](<D:/IdleGame/Builds/DynamicSkyWeather/profiles/idlegame-v10-cc39f492a4864f98b1a0bfcad212755a/player.log>).
+- [Import HDR](<D:/IdleGame/Logs/Unity-WorldClimate-Imported-Sky.log>) · [import Rain Maker](<D:/IdleGame/Logs/Unity-WorldClimate-Imported-Rain.log>) · [liên kết asset](<D:/IdleGame/Logs/Unity-WorldClimate-VendorSetup.log>) · [Play Mode](<D:/IdleGame/Logs/Unity-MainGameWorldClimateVendor-20261111-190417.log>) · [Windows build](<D:/IdleGame/Logs/Unity-WorldClimate-Phase1-Windows-build.log>) · [Windows Player](<D:/IdleGame/Builds/DynamicSkyWeather/profiles/idlegame-v10-cc39f492a4864f98b1a0bfcad212755a/player.log>).
 - [Ảnh sau 30 phút](<D:/IdleGame/Builds/DynamicSkyWeather/profiles/idlegame-v10-cc39f492a4864f98b1a0bfcad212755a/evidence/vendor-soak-30min.png>) · [kết quả Windows JSON](<D:/IdleGame/Builds/DynamicSkyWeather/profiles/idlegame-v10-cc39f492a4864f98b1a0bfcad212755a/evidence/player-result.json>).
 - [Mở Windows Player bằng profile thử riêng](<D:/IdleGame/Builds/DynamicSkyWeather/build/Play-Dynamic-Sky-Weather-Isolated.cmd>) · [EXE](<D:/IdleGame/Builds/DynamicSkyWeather/build/IdleGameV10.exe>).
 
