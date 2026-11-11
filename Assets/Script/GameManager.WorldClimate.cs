@@ -19,6 +19,9 @@ public partial class GameManager
 
     [Header("Rain, wind and storm visuals")]
     [SerializeField] private WorldWeatherPresentationSettings worldWeatherPresentation = new WorldWeatherPresentationSettings();
+    [Header("Environmental SFX")]
+    [SerializeField] private WorldWeatherAudioSettings worldWeatherAudioSettings = new WorldWeatherAudioSettings();
+    private readonly WorldWeatherAudio weatherAudio = new WorldWeatherAudio();
     private readonly WorldWeatherStorm weatherStorm = new WorldWeatherStorm();
     private EntityDataSO weatherOwner;
     private bool skipClimateFrame;
@@ -40,6 +43,7 @@ public partial class GameManager
         if (runtimeHeroData == null || !hasDeployed || HasTribulationLiability)
         {
             weatherStorm.Reset();
+            weatherAudio.Update(gameObject, worldWeatherAudioSettings, default, default, default, null, false, false, 0f);
             if (environmentManager != null) environmentManager.ClearWorldClimate();
             return;
         }
@@ -80,5 +84,8 @@ public partial class GameManager
             data.mapNumber, worldDaySeconds, running, !indoor);
         environmentManager.ApplyWorldClimate(frame, worldClimateLighting,
             worldClimateHdrSky && !indoor, worldClimateRain2D && !indoor, worldClimateAssets, visual);
+        float splash = worldClimateAssets != null ? worldClimateAssets.ConsumeRainImpact() : 0f;
+        weatherAudio.Update(gameObject, worldWeatherAudioSettings, visual, frame, data.mapTerrain, data.worldMapId,
+            IsGameplayHUDVisible, !indoor, splash);
     }
 }

@@ -1419,6 +1419,7 @@ public partial class GameManager : MonoBehaviour
 
     private void OnDisable()
     {
+        weatherAudio.Stop();
         if (environmentManager != null) environmentManager.ClearWorldClimate();
 #if DEVELOPMENT_BUILD && !UNITY_EDITOR
         Application.wantsToQuit -= AllowQuitDuringTrial;
