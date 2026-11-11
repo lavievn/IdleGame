@@ -3,6 +3,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Reflection;
+using TuTienCore;
 using UnityEngine;
 using UnityEngine.Profiling;
 using UnityEngine.UI;
@@ -11,6 +12,7 @@ using static Development016Smoke;
 internal static class WorldClimateVendorSmoke
 {
     private const BindingFlags Fields = BindingFlags.Instance | BindingFlags.NonPublic;
+    private const string WetFixtureMap = "TV-20"; // Lạc Vân Trạch
     private static T Read<T>(object owner, string key) => (T)owner.GetType().GetField(key, Fields).GetValue(owner);
     private static void Set(object owner, string key, object value) => owner.GetType().GetField(key, Fields).SetValue(owner, value);
 
@@ -44,6 +46,14 @@ internal static class WorldClimateVendorSmoke
         game.OnNewGameClicked();
         game.OnConfirmResetClicked();
         yield return Ready(game, ui);
+        // Some random birth maps have no heavy rain in their biome table.
+        // Keep this owned profile on a real wet map without changing the game catalog.
+        game.HeroData.worldMapId = WetFixtureMap;
+        WorldMapCatalog.Normalize(game.HeroData);
+        Check(game.TryManualSave(SaveSlot.ManualSave1) && game.LoadAndContinue(SaveSlot.ManualSave1),
+            "Load the owned wet map fixture");
+        yield return Ready(game, ui);
+        Check(game.HeroData.worldMapId == WetFixtureMap, "Wet map fixture is active");
         var adapter = Read<WorldClimateAssetAdapter>(game, "worldClimateAssets") as WorldClimateVendorAdapter;
         var ground = Read<GroundPresentation>(space, "groundPresentation");
         Check(adapter != null && ground != null, "MainGame resolved the licensed adapter");
