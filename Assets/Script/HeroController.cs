@@ -52,7 +52,7 @@ public class HeroController : MonoBehaviour
         if(!IsDead)CurrentState=HeroState.Idle;
     }
     public float attackRange = 30f;
-    [Min(0f)] public float moveSpeed = 100f;
+    [Min(0f)] public float moveSpeed = DefaultRunSpeed;
     [Min(0f)] public float laneSpeed = 150f;
     [Header("W2 MOVEMENT TEST DEFAULTS (not saved)")]
     public bool useStanceMoveSpeeds;
@@ -209,20 +209,11 @@ public class HeroController : MonoBehaviour
         ApplyAttackMode((AttackMode)modeIndex);
     }
 
-    public float EffectiveMoveSpeed()
-    {
-        var manager = CombatManager.Instance;
-        var state = manager != null ? manager.StateFor(this) : null;
-        // DEVB remains an explicit override. Gear/passive/stance modifiers are
-        // applied AFTER choosing the base; neither data nor isDirty is changed.
-        float baseSpeed=useStanceMoveSpeeds && CombatBalance.HeroDev==null
-            ? attackMode==AttackMode.Melee?meleeMoveSpeed:
-                attackMode==AttackMode.RangedPhysical?physicalMoveSpeed:magicMoveSpeed
-            : moveSpeed;
-        return state == null || state.Data == null ? Mathf.Max(0f,baseSpeed) :
-            Mathf.Max(0f,CombatStats.Get(state.Data,CombatStatId.MovementSpeed,
-                baseSpeed,ElementType.Vo,new [] { CombatStats.StanceTag(attackMode) }));
-    }
+    internal const float DefaultRunSpeed = 200f;
+    internal const float WalkSpeed = 100f;
+    // A zero speed remains available for explicit stationary DEV probes.
+    internal float ExplorationMoveSpeed => moveSpeed > 0f ? WalkSpeed : 0f;
+    public float EffectiveMoveSpeed() => Mathf.Max(0f, moveSpeed);
 
     public void TickMovement(EnvironmentManager space, float dt)
     {
@@ -235,7 +226,15 @@ public class HeroController : MonoBehaviour
         MovementInputDeltaThisFrame=float.IsNaN(dt)||float.IsInfinity(dt)?0f:Mathf.Max(0f,dt);
         dt=space.HeroMovementDeltaTime(dt);
         MovementDeltaThisFrame=dt;
-        MovementBudgetThisFrame=EffectiveMoveSpeed()*dt;
+        var combat = CombatManager.Instance;
+        if (combat != null && !combat.HeavenlyGateActive && StoryOrigin.IsSafe(combat.CurrentHeroCombatState.Data))
+        {
+            CurrentTarget = null;
+            CurrentState = HeroState.Idle;
+            LastMovementSpeed = 0f;
+            HandleAnimation(false, false);
+            return;
+        }
         Vector2 p = space.Position(heroRect);
         laneInputY=p.y;laneUnexpectedY=hasExpectedLaneY?p.y-laneExpectedY:0f;
         if(Mathf.Abs(laneUnexpectedY)>.01f)TracePositionFrame("Unexpected Y before movement: inspect external writer/parent");
@@ -248,6 +247,7 @@ public class HeroController : MonoBehaviour
         if(HeroFormation.TryStep(this,space,dt,out formationX))
         {
             IsExplorationMovement=true;
+            MovementBudgetThisFrame=ExplorationMoveSpeed*dt;
             CurrentState=HeroState.Returning;
             p.x=formationX;
             MovementDistanceThisFrame=Mathf.Abs(p.x-startX);
@@ -260,18 +260,20 @@ public class HeroController : MonoBehaviour
         if (CurrentTarget == null)
         {
             IsExplorationMovement=true;
+            MovementBudgetThisFrame=ExplorationMoveSpeed*dt;
             CurrentState = HeroState.Returning;
             // X exploration is unchanged. Ranged foot lanes are an independent
             // bounded Y step and never enter MovementDistanceThisFrame.
-            p.x -= EffectiveMoveSpeed() * dt;
+            p.x -= MovementBudgetThisFrame;
             MovementDistanceThisFrame = Mathf.Abs(p.x - startX);
             LastMovementSpeed=dt>0f?MovementDistanceThisFrame/dt:0f;
             WriteWalkingPosition(space,p,dt,true);
-            HandleAnimation(true, false);
+            HandleAnimation(MovementDistanceThisFrame>.001f, false);
             TracePositionFrame("TickMovement after exploration step");
             return;
         }
 
+        MovementBudgetThisFrame=EffectiveMoveSpeed()*dt;
         Vector2 target = space.Position(CurrentTarget.Rect);
         float reach=CurrentTarget.IsHeavenlyGate?Mathf.Min(attackRange,CurrentTarget.HeavenlyGateRange):attackRange;
         p.x = BattleMotion.ForwardApproach(p.x, target.x, reach, EffectiveMoveSpeed(), dt, -1);

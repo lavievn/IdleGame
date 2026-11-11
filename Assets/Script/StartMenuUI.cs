@@ -17,8 +17,8 @@ public class StartMenuUI : MonoBehaviour
     private Image logoImage;
     private Button[] sizeButtons = new Button[3];
     private RectTransform volumeTrack, volumeFill, volumeKnob;
-    private AudioVolumeBar bgmVolumeBar,sfxVolumeBar;
-    private TextMeshProUGUI sfxLabel,sfxValueLabel;
+    private AudioVolumeBar bgmVolumeBar,sfxVolumeBar,environmentVolumeBar;
+    private TextMeshProUGUI sfxLabel,sfxValueLabel,environmentLabel,environmentValueLabel;
     private bool volumeDragging;
     private int selectedWindowWidth;
     private CanvasGroup rootFade;
@@ -86,6 +86,8 @@ public class StartMenuUI : MonoBehaviour
             new Vector2(-160,-12),new Vector2(170,32),15);
         menu.sfxLabel=menu.Label(textTemplate,settingsRoot,"Hiệu ứng (SFX)",
             new Vector2(-160,-60),new Vector2(170,32),15);
+        menu.environmentLabel=menu.Label(textTemplate,settingsRoot,"Âm thanh môi trường",
+            new Vector2(-160,-86),new Vector2(177,30),15);
         menu.BuildVolumeBar(textTemplate,settingsRoot);
         menu.MakeButton(template,settingsRoot,"Khôi phục mặc định",
             new Vector2(0,-86),menu.RestoreDefaultSettings);
@@ -409,12 +411,13 @@ public class StartMenuUI : MonoBehaviour
         // Settings use a centered two-column grid, not the main menu's vertical list.
         // The bar is a custom hit target to work in native Windows overlay mode.
         float row1=Mathf.Clamp(h*.2f,60f,76f);
-        float row2=row1-48f,row3=row2-48f;
+        float row2=row1-38f,row3=row2-38f,row4=row3-38f;
         float labelX=-Mathf.Min(w*.265f,155f);
         float labelWidth=Mathf.Min(w*.32f,177f);
         Place((RectTransform)sizeLabel.transform,new Vector2(labelX,row1),new Vector2(labelWidth,30));
         Place((RectTransform)musicLabel.transform,new Vector2(labelX,row2),new Vector2(labelWidth,30));
         Place((RectTransform)sfxLabel.transform,new Vector2(labelX,row3),new Vector2(labelWidth,30));
+        Place((RectTransform)environmentLabel.transform,new Vector2(labelX,row4),new Vector2(labelWidth,30));
         float choiceWidth=Mathf.Clamp(w*.12f,52f,76f);
         float gap=Mathf.Clamp(w*.01f,4f,9f);
         // Reserve the left column for the row label; radio boxes start at
@@ -431,7 +434,9 @@ public class StartMenuUI : MonoBehaviour
         Place((RectTransform)volumeValueLabel.transform,new Vector2(42f+barWidth*.5f+27f,row2),new Vector2(60f,30f));
         Place(sfxVolumeBar.Track,new Vector2(42f,row3),new Vector2(barWidth,28f));
         Place((RectTransform)sfxValueLabel.transform,new Vector2(42f+barWidth*.5f+27f,row3),new Vector2(60f,30f));
-        bgmVolumeBar.Refresh(true);sfxVolumeBar.Refresh(true);
+        Place(environmentVolumeBar.Track,new Vector2(42f,row4),new Vector2(barWidth,28f));
+        Place((RectTransform)environmentValueLabel.transform,new Vector2(42f+barWidth*.5f+27f,row4),new Vector2(60f,30f));
+        bgmVolumeBar.Refresh(true);sfxVolumeBar.Refresh(true);environmentVolumeBar.Refresh(true);
         var settingsButtons=settingsPage.GetComponentsInChildren<Button>(true);
         // First three are radio choices, last two are the bottom actions.
         int actionIndex=0;
@@ -440,7 +445,7 @@ public class StartMenuUI : MonoBehaviour
             bool isRadio=false;
             foreach(var b in sizeButtons)if(settingsButtons[i]==b)isRadio=true;
             if(isRadio)continue;
-            float actionY=row3-48f-actionIndex*46f;
+            float actionY=row4-39f-actionIndex*41f;
             Place((RectTransform)settingsButtons[i].transform,
                 new Vector2(0,actionY),new Vector2(Mathf.Min(210,w*.48f),bh));
             actionIndex++;
@@ -474,6 +479,8 @@ public class StartMenuUI : MonoBehaviour
         sfxValueLabel=Label(template,parent,"100%",new Vector2(0,-60),new Vector2(55,30),15);
         bgmVolumeBar=new AudioVolumeBar("Opening Volume Bar",parent,GameAudioChannel.Bgm,volumeValueLabel);
         sfxVolumeBar=new AudioVolumeBar("Opening SFX Volume Bar",parent,GameAudioChannel.Sfx,sfxValueLabel);
+        environmentValueLabel=Label(template,parent,"100%",new Vector2(0,-86),new Vector2(55,30),15);
+        environmentVolumeBar=new AudioVolumeBar("Opening Environment Volume Bar",parent,GameAudioChannel.Environment,environmentValueLabel);
         // Preserve the existing BGM control references/API for native routing.
         volumeTrack=bgmVolumeBar.Track;volumeFill=bgmVolumeBar.Fill;volumeKnob=bgmVolumeBar.Knob;
         // Do not create a built-in uGUI Slider: native overlay mouse dragging
@@ -486,7 +493,7 @@ public class StartMenuUI : MonoBehaviour
             manager==null || manager.HasPendingConfirmation || volumeTrack==null)
             return false;
         EndVolumeDrag();
-        volumeDragging=bgmVolumeBar.TryBeginDrag(screenPoint)||sfxVolumeBar.TryBeginDrag(screenPoint);
+        volumeDragging=bgmVolumeBar.TryBeginDrag(screenPoint)||sfxVolumeBar.TryBeginDrag(screenPoint)||environmentVolumeBar.TryBeginDrag(screenPoint);
         return volumeDragging;
     }
 
@@ -494,13 +501,14 @@ public class StartMenuUI : MonoBehaviour
     {
         if(!volumeDragging || volumeTrack==null || !settingsPage.activeInHierarchy)return;
         if(entryLocked || manager==null || manager.HasPendingConfirmation) {EndVolumeDrag();return;}
-        bgmVolumeBar.Drag(screenPoint);sfxVolumeBar.Drag(screenPoint);
+        bgmVolumeBar.Drag(screenPoint);sfxVolumeBar.Drag(screenPoint);environmentVolumeBar.Drag(screenPoint);
     }
 
     public void EndVolumeDrag()
     {
         if(bgmVolumeBar!=null)bgmVolumeBar.EndDrag();
         if(sfxVolumeBar!=null)sfxVolumeBar.EndDrag();
+        if(environmentVolumeBar!=null)environmentVolumeBar.EndDrag();
         volumeDragging=false;
     }
 
@@ -539,12 +547,12 @@ public class StartMenuUI : MonoBehaviour
             var label=sizeButtons[i].GetComponentInChildren<TextMeshProUGUI>(true);
             if(label!=null)label.text=(selected?"● ":"○ ")+widths[i];
         }
-        bgmVolumeBar.Refresh(true);sfxVolumeBar.Refresh(true);
+        bgmVolumeBar.Refresh(true);sfxVolumeBar.Refresh(true);environmentVolumeBar.Refresh(true);
     }
     private void Update()
     {
         if(settingsPage!=null && settingsPage.activeInHierarchy)
-        {bgmVolumeBar.Refresh();sfxVolumeBar.Refresh();}
+        {bgmVolumeBar.Refresh();sfxVolumeBar.Refresh();environmentVolumeBar.Refresh();}
     }
     private void ExitGame(){Application.Quit();}
     public void SetOpeningMenuReady(bool ready)

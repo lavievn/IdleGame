@@ -41,10 +41,10 @@ internal static class WeatherPhase2Smoke
         yield return new WaitForSecondsRealtime(1.5f);
         float heavyWind = adapter.RainGraphic.AverageWind;
         Check(Mathf.Abs(lightWind) > 1f && Mathf.Abs(heavyWind) > 2f &&
-            Mathf.Approximately(Read<float>(adapter.RainGraphic, "dropSize"), .30f),
-            "Native particles fall diagonally with a 30 percent rendered drop scale");
+            Mathf.Approximately(Read<float>(adapter.RainGraphic, "dropSize"), .60f),
+            "Native particles fall diagonally with a 60 percent rendered drop scale");
         VerifyRainWind(data);
-        pass(FormattableString.Invariant($"Rain wind: native horizontal velocity {lightWind:F2}/{heavyWind:F2} for light/heavy rain, seeded left/right changes with smooth boundaries, drop scale 0.30."));
+        pass(FormattableString.Invariant($"Rain wind: native horizontal velocity {lightWind:F2}/{heavyWind:F2} for light/heavy rain, seeded left/right changes with smooth boundaries, drop scale 0.60."));
         Check(impacts.VisibleImpacts > light && impacts.PeakStrength > lightStrength &&
             impacts.VisibleImpacts <= RainImpactCanvasGraphic.Capacity && adapter.Weather.Haze > 0f,
             "Heavy rain produces denser, stronger splashes and distant haze");

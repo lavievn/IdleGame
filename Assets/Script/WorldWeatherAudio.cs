@@ -3,8 +3,7 @@ using System.Collections.Generic;
 using TuTienCore;
 using UnityEngine;
 
-// Uses the same master SFX setting as combat. Only the fixed, reusable
-// sources for configured clips are created.
+// Reuses sources for map ambience and weather on the environmental volume channel.
 internal sealed class WorldWeatherAudio
 {
     private sealed class Loop
@@ -74,9 +73,9 @@ internal sealed class WorldWeatherAudio
     internal void Update(GameObject host, WorldWeatherAudioSettings settings, WorldWeatherVisual visual,
         WorldClimateFrame frame, TerrainType terrain, string id, bool active, bool outdoors, float splash, bool safeVillage = false)
     {
-        float sfx = AudioVolumeSettings.Get(GameAudioChannel.Sfx);
-        float envGain = Mathf.Clamp01(settings.environmentVolume) * sfx;
-        float weatherGain = Mathf.Clamp01(settings.weatherVolume) * sfx;
+        float environment = AudioVolumeSettings.Get(GameAudioChannel.Environment);
+        float envGain = Mathf.Clamp01(settings.environmentVolume) * environment;
+        float weatherGain = Mathf.Clamp01(settings.weatherVolume) * environment;
         float step = Time.unscaledDeltaTime / Mathf.Max(.1f, settings.fadeSeconds);
         bool night = frame.Phase == WorldDayPhase.Night;
         bool village = !string.IsNullOrEmpty(id) && settings.villageMapIds != null && Array.IndexOf(settings.villageMapIds, id) >= 0;

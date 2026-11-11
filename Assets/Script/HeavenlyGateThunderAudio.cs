@@ -34,7 +34,7 @@ internal sealed class HeavenlyGateThunderAudio
         while (due.Count > 0 && due.Peek() <= clock)
         {
             due.Dequeue();
-            float gain = Mathf.Clamp01(volume) * AudioVolumeSettings.Get(GameAudioChannel.Sfx);
+            float gain = Mathf.Clamp01(volume) * AudioVolumeSettings.Get(GameAudioChannel.Environment);
             if (gain <= 0f) continue;
             if (clip == null && !resolved)
             {

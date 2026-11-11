@@ -19,6 +19,18 @@ internal static class IntegratedPlaytestSmoke
         HeroController hero, string evidence, Func<int,int,IEnumerator> resize, Func<string,IEnumerator> capture, Action<string> pass)
     {
         Audit(evidence, pass);
+        yield return resize(600, 338);
+        var menu = game.GetComponent<StartMenuUI>();
+        menu.GetType().GetMethod("OpenSettings", Fields).Invoke(menu, null);
+        yield return null;
+        var openingEnv = Read<AudioVolumeBar>(menu, "environmentVolumeBar").Track;
+        var openingSfx = Read<AudioVolumeBar>(menu, "sfxVolumeBar").Track;
+        Check(openingEnv.gameObject.activeInHierarchy && openingEnv.anchoredPosition.y < openingSfx.anchoredPosition.y &&
+            AudioVolumeSettings.Key(GameAudioChannel.Environment) != AudioVolumeSettings.Key(GameAudioChannel.Sfx) &&
+            AudioVolumeSettings.Key(GameAudioChannel.Environment) != AudioVolumeSettings.Key(GameAudioChannel.Bgm),
+            "Opening has a visible separate environment channel");
+        yield return capture("opening-environment-volume");
+        menu.GetType().GetMethod("CloseSettings", Fields).Invoke(menu, null);
         yield return resize(800, 450);
         game.OnNewGameClicked();
         game.OnConfirmResetClicked();
@@ -29,16 +41,28 @@ internal static class IntegratedPlaytestSmoke
         var bridge = hero.heroRect.GetComponent<CultivationSpriteBridge>();
         Check(bridge != null && bridge.BodyGraphic.sprite.texture.name.StartsWith("sword_", StringComparison.Ordinal),
             "The deployed hero is using PR 12 frames");
+        ui.ToggleMusicVolume();
+        var volumePanel = Read<MusicVolumePanelUI>(ui, "musicVolumePanel");
+        var gameEnv = Read<AudioVolumeBar>(volumePanel, "environmentBar").Track;
+        Check(gameEnv.gameObject.activeInHierarchy &&
+            volumePanel.IsVolumeTrack(gameEnv.GetComponent<CustomInteractable>()), "Gameplay has an environment volume drag target");
+        yield return capture("gameplay-environment-volume");
+        volumePanel.Hide();
+        pass("Opening and gameplay expose a separate environmental volume track.");
         var frame = bridge.BodyGraphic.sprite;
         ui.SetPaused(false);
         yield return Wait(() => bridge.BodyGraphic.sprite != frame, 2f, "Hero animation advances in MainGame");
+        yield return new WaitForSecondsRealtime(.30f);
+        Check(hero.CurrentState == HeroState.Idle && hero.LastMovementSpeed == 0f &&
+            hero.MovementDistanceThisFrame == 0f && bridge.CurrentMotion == CultivationSpriteBridge.Motion.Idle,
+            "Safe village plays Idle while the Hero is stationary");
         yield return capture("integrated-hero-village");
-        pass("PR 12 Hero PNG frames render and animate on the deployed Hero in Hàn Vụ thôn.");
+        pass("PR 12 Hero Idle frames animate in Hàn Vụ without moving the Hero.");
 
         var weatherAudio = Read<WorldWeatherAudio>(game, "weatherAudio");
         var mix = Read<WorldWeatherAudioSettings>(game, "worldWeatherAudioSettings");
-        float bedTarget = .50f * mix.environmentVolume * AudioVolumeSettings.Get(GameAudioChannel.Sfx);
-        Check(bedTarget > 0f, "SFX master is audible for the integration fixture");
+        float bedTarget = .50f * mix.environmentVolume * AudioVolumeSettings.Get(GameAudioChannel.Environment);
+        Check(bedTarget > 0f, "Environment master is audible for the integration fixture");
         GameObject host = null;
         yield return Wait(() => (host = game.transform.Find("Map ambience layers")?.gameObject) != null &&
             GroupAtGain(host, "Meadow_", bedTarget), 5, "All Meadow clips play at half gain");
@@ -52,8 +76,10 @@ internal static class IntegratedPlaytestSmoke
             "The same 20 map clips retain their gain and playheads through night and rain");
         var vendor = Read<WorldClimateAssetAdapter>(game, "worldClimateAssets") as WorldClimateVendorAdapter;
         yield return Wait(() => vendor != null && vendor.ActiveParticles > 0, 5, "Real Rain Maker emitter");
+        Check(Mathf.Approximately(Read<float>(vendor.RainGraphic, "dropSize"), .60f),
+            "Actual rain uses the doubled 0.60 drop scale");
         yield return capture("integrated-night-rain");
-        pass($"All 20 Meadow clips play at 0.50 × the SFX bus ({bedTarget:F3}). Night/rain keep the group and playheads. Rain Maker and the weather loop still run.");
+        pass($"All 20 Meadow clips play at 0.50 × the Environment bus ({bedTarget:F3}). Night/rain keep the group and playheads. Rain Maker and the weather loop still run.");
 
         Preview(game, 12f, WorldWeather.HeavyRain);
         Check(game.TryTravelToWorldMap(StoryOrigin.HanVu.Forest), "Travel from Hàn Vụ to forest via real handler");
@@ -66,6 +92,19 @@ internal static class IntegratedPlaytestSmoke
             Resources.LoadAll<AudioClip>("WorldMapMusic").Contains(x.clip)), "Regular BGM still plays from local playlist");
         yield return capture("integrated-forest-heavy-rain");
         pass("Travel crossfades all 20 Meadow clips to all 20 Primeval clips at equal gain. Heavy rain and BGM stay separate.");
+
+        Clear(game, combat);
+        var modifier = new CombatStatModifier { sourceId = "owned:movement-probe", stat = CombatStatId.MovementSpeed, flat = 900f };
+        game.HeroData.combatStatModifiers.Add(modifier);
+        yield return Wait(() => Mathf.Abs(hero.LastMovementSpeed - 100f) < .2f &&
+            bridge.CurrentMotion == CultivationSpriteBridge.Motion.Walk, 5f, "Exploration Walk at 100");
+        var space = EnvironmentManager.Instance;
+        float reach = space.AttackRange(hero.attackMode, true);
+        Wave(game, combat, space, hero, new Vector2(-reach - 105f, 0f));
+        yield return Wait(() => Mathf.Abs(hero.LastMovementSpeed - 200f) < .3f &&
+            bridge.CurrentMotion == CultivationSpriteBridge.Motion.Run, 5f, "Enemy approach Run at 200");
+        game.HeroData.combatStatModifiers.Remove(modifier);
+        pass("Walk measures 100 and enemy approach Run measures 200 with an owned movement stat modifier present.");
 
         var forest = game.HeroData.worldMapId;
         Set(game, "previewWorldClimate", false);

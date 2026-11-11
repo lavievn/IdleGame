@@ -11,7 +11,7 @@ public sealed class MusicVolumePanelUI
     private readonly TextMeshProUGUI valueText;
     private readonly TextMeshProUGUI muteText;
     private float lastAudibleVolume;
-    private readonly AudioVolumeBar bgmBar,sfxBar;
+    private readonly AudioVolumeBar bgmBar,sfxBar,environmentBar;
 
     private MusicVolumePanelUI(UIManager owner, Transform parent)
     {
@@ -22,7 +22,7 @@ public sealed class MusicVolumePanelUI
         root.anchorMin = root.anchorMax = new Vector2(1, 1);
         root.pivot = new Vector2(1, 1);
         root.anchoredPosition = new Vector2(-82, -32);
-        root.sizeDelta = new Vector2(300, 220);
+        root.sizeDelta = new Vector2(300, 273);
         var background = panel.GetComponent<UnityEngine.UI.Image>();
         background.color = new Color(.08f, .13f, .20f, .96f);
         background.raycastTarget = false;
@@ -37,18 +37,21 @@ public sealed class MusicVolumePanelUI
         owner.MakeLabel(root,"Hiệu ứng (SFX)",new Vector2(100,-98),new Vector2(180,25));
         valueText = owner.MakeLabel(root, "", new Vector2(255, -40), new Vector2(65, 25));
         var sfxValue=owner.MakeLabel(root,"",new Vector2(255,-98),new Vector2(65,25));
+        owner.MakeLabel(root,"Âm thanh môi trường",new Vector2(108,-156),new Vector2(195,25));
+        var environmentValue=owner.MakeLabel(root,"",new Vector2(255,-156),new Vector2(65,25));
         bgmBar=new AudioVolumeBar("Gameplay BGM Volume Bar",root,GameAudioChannel.Bgm,valueText);
         sfxBar=new AudioVolumeBar("Gameplay SFX Volume Bar",root,GameAudioChannel.Sfx,sfxValue);
+        environmentBar=new AudioVolumeBar("Gameplay Environment Volume Bar",root,GameAudioChannel.Environment,environmentValue);
 
         owner.SmallButton(root, "VolumeMinus", "−", new Vector2(0, 1), new Vector2(0, 1),
-            new Vector2(40, -153), new Vector2(46, 27), () => ChangeBy(-10));
+            new Vector2(40, -210), new Vector2(46, 27), () => ChangeBy(-10));
         var mute = owner.SmallButton(root, "VolumeMute", "Tắt nhạc", new Vector2(0, 1),
-            new Vector2(0, 1), new Vector2(92, -153), new Vector2(116, 27), ToggleMute);
+            new Vector2(0, 1), new Vector2(92, -210), new Vector2(116, 27), ToggleMute);
         muteText = mute.GetComponentInChildren<TextMeshProUGUI>(true);
         owner.SmallButton(root, "VolumePlus", "+", new Vector2(0, 1), new Vector2(0, 1),
-            new Vector2(214, -153), new Vector2(46, 27), () => ChangeBy(10));
+            new Vector2(214, -210), new Vector2(46, 27), () => ChangeBy(10));
         owner.SmallButton(root,"AudioDefaults","Khôi phục mặc định",new Vector2(0,1),new Vector2(0,1),
-            new Vector2(40,-189),new Vector2(220,27),()=>{EndDrag();AudioVolumeSettings.RestoreDefaults();Refresh();});
+            new Vector2(40,-245),new Vector2(220,27),()=>{EndDrag();AudioVolumeSettings.RestoreDefaults();Refresh();});
 
         float volume = MapBgmController.CurrentVolume;
         lastAudibleVolume = volume > 0f ? volume : .6f;
@@ -94,9 +97,9 @@ public sealed class MusicVolumePanelUI
         root.anchorMin = root.anchorMax = new Vector2(1, 1);
         root.pivot = new Vector2(1, 1);
         root.anchoredPosition = new Vector2(-82, -32);
-        root.sizeDelta = new Vector2(300, 220);
-        PlaceTrack(bgmBar.Track,-65f);PlaceTrack(sfxBar.Track,-123f);
-        bgmBar.Refresh(true);sfxBar.Refresh(true);
+        root.sizeDelta = new Vector2(300, 273);
+        PlaceTrack(bgmBar.Track,-65f);PlaceTrack(sfxBar.Track,-123f);PlaceTrack(environmentBar.Track,-181f);
+        bgmBar.Refresh(true);sfxBar.Refresh(true);environmentBar.Refresh(true);
     }
     private static void PlaceTrack(RectTransform track,float y)
     {
@@ -106,16 +109,16 @@ public sealed class MusicVolumePanelUI
     public bool TryBeginDrag(Vector2 point)
     {
         if(!IsOpen)return false;
-        EndDrag();return bgmBar.TryBeginDrag(point)||sfxBar.TryBeginDrag(point);
+        EndDrag();return bgmBar.TryBeginDrag(point)||sfxBar.TryBeginDrag(point)||environmentBar.TryBeginDrag(point);
     }
-    public bool IsDragging => bgmBar.IsDragging||sfxBar.IsDragging;
+    public bool IsDragging => bgmBar.IsDragging||sfxBar.IsDragging||environmentBar.IsDragging;
     public bool IsVolumeTrack(CustomInteractable item)
     {
-        return item!=null && (item.transform==bgmBar.Track || item.transform==sfxBar.Track);
+        return item!=null && (item.transform==bgmBar.Track || item.transform==sfxBar.Track || item.transform==environmentBar.Track);
     }
-    public void Drag(Vector2 point) {bgmBar.Drag(point);sfxBar.Drag(point);Refresh();}
-    public void EndDrag() {bgmBar.EndDrag();sfxBar.EndDrag();}
-    public void Tick() {if(IsOpen) {bgmBar.Refresh();sfxBar.Refresh();}}
+    public void Drag(Vector2 point) {bgmBar.Drag(point);sfxBar.Drag(point);environmentBar.Drag(point);Refresh();}
+    public void EndDrag() {bgmBar.EndDrag();sfxBar.EndDrag();environmentBar.EndDrag();}
+    public void Tick() {if(IsOpen) {bgmBar.Refresh();sfxBar.Refresh();environmentBar.Refresh();}}
 
     private void ChangeBy(int percentagePoints)
     {
@@ -146,6 +149,6 @@ public sealed class MusicVolumePanelUI
         int value = Mathf.RoundToInt(MapBgmController.CurrentVolume * 100f);
         if (valueText != null) valueText.text = value + "%";
         if (muteText != null) muteText.text = value == 0 ? "Bật nhạc" : "Tắt nhạc";
-        bgmBar.Refresh();sfxBar.Refresh();
+        bgmBar.Refresh();sfxBar.Refresh();environmentBar.Refresh();
     }
 }

@@ -86,7 +86,7 @@ public sealed class HeroFormation : MonoBehaviour
         for(int i=0;i<steps.Count;i++)
         {
             var step=steps[i];step.start=space.Position(step.hero.heroRect).x;
-            step.speed=step.hero.EffectiveMoveSpeed();step.end=step.start;
+            step.speed=step.hero.ExplorationMoveSpeed;step.end=step.start;
             step.velocity=Mathf.Min(step.speed,step.hero.LastMovementSpeed);
             steps[i]=step;MarchSpeed=Mathf.Min(MarchSpeed,step.speed);
         }
