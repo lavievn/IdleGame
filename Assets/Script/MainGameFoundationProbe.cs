@@ -134,6 +134,7 @@ public sealed partial class MainGameFoundationProbe : MonoBehaviour
             Array.IndexOf(Environment.GetCommandLineArgs(), "-foundationCombatVisualHp") >= 0 ||
             Array.IndexOf(Environment.GetCommandLineArgs(), "-foundationSkillUiVfx") >= 0 ||
             Array.IndexOf(Environment.GetCommandLineArgs(), "-foundationDevelopment017") >= 0 ||
+            Array.IndexOf(Environment.GetCommandLineArgs(), "-foundationIntegrated") >= 0 ||
             Array.IndexOf(Environment.GetCommandLineArgs(), "-foundationHanVuOrigin") >= 0 ||
             Array.IndexOf(Environment.GetCommandLineArgs(), "-foundationWorldClimate") >= 0 ||
             Array.IndexOf(Environment.GetCommandLineArgs(), "-foundationWorldClimateSoak") >= 0 ||
@@ -655,6 +656,14 @@ public sealed partial class MainGameFoundationProbe : MonoBehaviour
             CombatBalance.ResetDevProfiles();
             yield return Resize(800,450);
             yield return Development015Smoke.Run(gm, saves, ui, combat, Evidence, Capture, Pass, false);
+            Status(1,"PASS");
+            yield break;
+        }
+        if (Array.IndexOf(Environment.GetCommandLineArgs(), "-foundationIntegrated") >= 0)
+        {
+            phase = 1;
+            CombatBalance.ResetDevProfiles();
+            yield return IntegratedPlaytestSmoke.Run(gm, saves, ui, combat, hero, Evidence, Resize, Capture, Pass);
             Status(1,"PASS");
             yield break;
         }

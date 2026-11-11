@@ -1,10 +1,10 @@
 param(
- [ValidateSet('Editor','Check','Mono','Native','Build','Player','Replay','Observe','MainGame','MainGameTrial','MainGame015','MainGame016','CombatRefinement','CombatVisualHp','SkillUiVfx','MainGame017','MainGameWorldClimate','MainGameWorldClimateSoak','MainGameWorldClimateVendor','MainGameHanVu')][string]$Mode='Editor',
+ [ValidateSet('Editor','Check','Mono','Native','Build','Player','Replay','Observe','MainGame','MainGameTrial','MainGame015','MainGame016','CombatRefinement','CombatVisualHp','SkillUiVfx','MainGame017','MainGameWorldClimate','MainGameWorldClimateSoak','MainGameWorldClimateVendor','MainGameHanVu','MainGameIntegrated')][string]$Mode='Editor',
  [string]$StorageRoot=$(if($env:IDLEGAME_HOME){$env:IDLEGAME_HOME}else{'D:\IdleGame'}),
  [string]$UnityEditor='C:\Program Files\Unity\Hub\Editor\6000.5.0f1\Editor\Unity.exe',
  [string]$Group='cultivation-related',
  [string]$Method='CultivationV11CapacityVerifier.RunNative',
- [ValidateSet('Run','Capacity','TrialV13','TrialReplay','TrialProfile','TrialBalance','TrialManual','Playable015','Playable015Replay','Playable016','Playable016Replay','CombatRefinement','CombatVisualHp','SkillUiVfx','SkillUiVfxReplay','Development017','WorldClimate','WorldClimateReplay','WorldClimateVendor','WorldClimateVendorSoak','HanVuOrigin')][string]$PlayerMode='Run',
+ [ValidateSet('Run','Capacity','TrialV13','TrialReplay','TrialProfile','TrialBalance','TrialManual','Playable015','Playable015Replay','Playable016','Playable016Replay','CombatRefinement','CombatVisualHp','SkillUiVfx','SkillUiVfxReplay','Development017','WorldClimate','WorldClimateReplay','WorldClimateVendor','WorldClimateVendorSoak','HanVuOrigin','Integrated','IntegratedWarp')][string]$PlayerMode='Run',
  [string]$WindowsOutputRoot='',
  [string]$ReplayProfile=''
 )
@@ -44,14 +44,15 @@ if(Get-Process Unity -ErrorAction SilentlyContinue | Where-Object { $_.Path -eq 
 $log=Join-Path $store ('Logs\Unity-'+$Mode+'-'+(Get-Date -Format 'yyyyMMdd-HHmmss')+'.log')
 $argsList=@('-projectPath',('"'+$project+'"'),'-logFile',('"'+$log+'"'))
 if($Mode -eq 'Check'){$argsList+=@('-batchmode','-nographics','-quit')}
-if($Mode -in @('Native','MainGame','MainGameTrial','MainGame015','MainGame016','CombatRefinement','CombatVisualHp','SkillUiVfx','MainGame017','MainGameHanVu','MainGameWorldClimate','MainGameWorldClimateSoak','MainGameWorldClimateVendor')){
- if($Mode -in @('MainGame','MainGameTrial','MainGame015','MainGame016','CombatRefinement','CombatVisualHp','SkillUiVfx','MainGame017','MainGameHanVu','MainGameWorldClimate','MainGameWorldClimateSoak','MainGameWorldClimateVendor')){$Method='MainGameFoundationProbe.RunIsolated'}
+if($Mode -in @('Native','MainGameIntegrated','MainGame','MainGameTrial','MainGame015','MainGame016','CombatRefinement','CombatVisualHp','SkillUiVfx','MainGame017','MainGameHanVu','MainGameWorldClimate','MainGameWorldClimateSoak','MainGameWorldClimateVendor')){
+ if($Mode -in @('MainGameIntegrated','MainGame','MainGameTrial','MainGame015','MainGame016','CombatRefinement','CombatVisualHp','SkillUiVfx','MainGame017','MainGameHanVu','MainGameWorldClimate','MainGameWorldClimateSoak','MainGameWorldClimateVendor')){$Method='MainGameFoundationProbe.RunIsolated'}
  if($Method -notmatch '^[A-Za-z][A-Za-z0-9_]*\.[A-Za-z][A-Za-z0-9_]*$'){throw 'Explicit static verifier method required'}
  $argsList+=@('-batchmode','-executeMethod',$Method)
  if($Mode -eq 'Native'){$argsList+='-nographics'}
  if($Mode -eq 'MainGameWorldClimate'){$argsList+=@('-foundationValidationRun','-foundationWorldClimate','-foundationSourceHead',(git rev-parse HEAD))}
  if($Mode -eq 'MainGameWorldClimateVendor'){$argsList+=@('-foundationValidationRun','-foundationWorldClimateVendor','-foundationSourceHead',(git rev-parse HEAD))}
  if($Mode -eq 'MainGameWorldClimateSoak'){$argsList+=@('-foundationValidationRun','-foundationWorldClimateSoak','-foundationSourceHead',(git rev-parse HEAD))}
+ if($Mode -eq 'MainGameIntegrated'){$argsList+=@('-foundationValidationRun','-foundationIntegrated','-foundationSourceHead',(git rev-parse HEAD))}
  if($Mode -eq 'MainGameHanVu'){$argsList+=@('-foundationValidationRun','-foundationHanVuOrigin','-foundationSourceHead',(git rev-parse HEAD))}
  if($Mode -eq 'MainGame017'){$argsList+=@('-foundationValidationRun','-foundationDevelopment017','-foundationSourceHead',(git rev-parse HEAD))}
  if($Mode -eq 'SkillUiVfx'){$argsList+=@('-foundationValidationRun','-foundationSkillUiVfx','-foundationSourceHead',(git rev-parse HEAD))}
