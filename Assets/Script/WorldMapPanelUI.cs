@@ -209,11 +209,10 @@ public sealed class WorldMapPanelUI
         }
         Vector2 position = WorldMapPolygons.NormalizedPoint(
             (RectTransform)artwork.transform, screenPoint);
+        WorldMapCatalog.TryGet(hero.worldMapId, out var current);
         string id = WorldMapPolygons.HitTest(position, candidate =>
-        {
-            return (hero.worldMapVisited != null && hero.worldMapVisited.Contains(candidate)) ||
-                WorldMapCatalog.TravelBlockReason(hero,candidate) == null;
-        });
+            (hero.worldMapVisited != null && hero.worldMapVisited.Contains(candidate)) ||
+            (current != null && current.Links.Contains(candidate)));
         selectedMapId = id ?? "";
         Refresh();
         return true;
@@ -317,12 +316,12 @@ public sealed class WorldMapPanelUI
         RebuildFog(hero);
         WorldMapNode selected;
         bool selectedExists = WorldMapCatalog.TryGet(selectedMapId, out selected);
-        bool selectedAccessible = selectedExists &&
-            WorldMapCatalog.TravelBlockReason(hero, selectedMapId) == null;
+        string blocked = selectedExists ? WorldMapCatalog.TravelBlockReason(hero, selectedMapId) : null;
+        bool selectedAccessible = selectedExists && blocked == null;
         heading.text = "BẢN ĐỒ · " + current.Id + " · " + StoryOrigin.MapName(hero, current);
         travel.gameObject.SetActive(selectedAccessible);
         summary.text = selectedAccessible ? StoryOrigin.MapName(hero, selected) + " · " + selected.TerrainLabel +
-            " · Cấp gợi ý " + selected.SuggestedLevel : "";
+            " · Cấp gợi ý " + selected.SuggestedLevel : selectedMapId == current.Id ? "" : blocked ?? "";
         if (!WorldMapPolygons.MatchesArtwork(artwork.sprite))
         {
             travel.gameObject.SetActive(false);

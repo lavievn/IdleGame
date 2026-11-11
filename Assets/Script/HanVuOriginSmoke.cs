@@ -43,21 +43,27 @@ internal static class HanVuOriginSmoke
         Check(game.HeroData.worldMapId == destination, "Correct manual destination");
     }
 
-    private static IEnumerator SelectForest(GameManager game, UIManager ui)
+    private static WorldMapPanelUI SelectPolygon(UIManager ui, string id)
     {
-        Click(ui, "WorldMapButton");
-        yield return null;
         var map = (WorldMapPanelUI)typeof(UIManager).GetField("worldMapUI", Members).GetValue(ui);
         var art = (RectTransform)typeof(WorldMapPanelUI).GetField("artRect", Members).GetValue(map);
-        var polygon = WorldMapPolygons.Find(Origin.Forest);
-        Check(map.IsOpen && polygon != null, "World Map opens with the authored forest polygon");
+        var polygon = WorldMapPolygons.Find(id);
+        Check(map.IsOpen && polygon != null, "World Map opens with the authored polygon");
         var position = polygon.vertices.Aggregate(Vector2.zero, (sum, point) => sum + point) /
             polygon.vertices.Count;
         var local = new Vector2(art.rect.xMin + art.rect.width * position.x,
             art.rect.yMin + art.rect.height * position.y);
         var screen = RectTransformUtility.WorldToScreenPoint(null, art.TransformPoint(local));
-        Check(map.HandleMapClick(screen) && game.HeroData.worldMapId == Origin.Village,
-            "Selecting a visible forest polygon leaves the player in the village");
+        Check(map.HandleMapClick(screen), "Map accepts the polygon hit");
+        return map;
+    }
+
+    private static IEnumerator SelectForest(GameManager game, UIManager ui)
+    {
+        Click(ui, "WorldMapButton");
+        yield return null;
+        SelectPolygon(ui, Origin.Forest);
+        Check(game.HeroData.worldMapId == Origin.Village, "Selection leaves the player in the village");
         Click(ui, "WorldMapTravelSelected");
         yield return Ready(game, ui);
         Check(game.HeroData.worldMapId == Origin.Forest, "Travel button explicitly enters the forest");
@@ -210,8 +216,15 @@ internal static class HanVuOriginSmoke
             "Unseen encounter absent from journal");
         yield return capture("optional-han-vu-village");
         yield return SelectForest(game, ui);
-        Check(WorldMapCatalog.TravelBlockReason(game.HeroData, Origin.Village).Contains("5 wave"),
-            "Ordinary map's clear gate still applies on a return route");
+        Click(ui, "WorldMapButton");
+        yield return null;
+        var map = SelectPolygon(ui, Origin.Village);
+        var summary = (TMPro.TextMeshProUGUI)typeof(WorldMapPanelUI).GetField("summary", Members).GetValue(map);
+        var travel = (RectTransform)typeof(WorldMapPanelUI).GetField("travel", Members).GetValue(map);
+        Check(summary.text.Contains("5 wave") && !travel.gameObject.activeSelf,
+            "Ordinary map's clear gate stays visible and blocks the return route");
+        map.Close();
+        yield return null;
         var activeTime = game.Cultivation.ActiveSeconds;
         for (int i = 0; i < 5; i++) yield return ClearWave(game, ui, combat, hero, space, false);
         data = game.HeroData;
