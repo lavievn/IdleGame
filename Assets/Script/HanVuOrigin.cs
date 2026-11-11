@@ -6,6 +6,7 @@ using Random = UnityEngine.Random;
 namespace TuTienCore
 {
     public enum OriginStage { Gather, Return, SearchForest, SearchElite, Complete }
+    public enum HerbalParticipation { Offered, Accepted, Declined }
 
     [Serializable]
     public sealed class OriginActor
@@ -33,6 +34,10 @@ namespace TuTienCore
         public OriginStage stage;
         public int herbWaves;
         public int searchWaves;
+        public HerbalParticipation herbalParticipation;
+        public bool declinedHerbalOffer;
+        public bool hideStoryPrompts;
+        public List<OriginEncounterRecord> encounters;
     }
 
     public sealed class OriginDefinition
@@ -63,6 +68,7 @@ namespace TuTienCore
         public static readonly OriginDefinition HanVu = new OriginDefinition(
             "hanvu", "hanvu.find_medicine", "TV-20", "Hàn Vụ thôn", "TV-16", "TV-11");
         public const string QuestName = "Tìm thuốc cứu người";
+        public const int SaveVersion = 2;
 
         public static OriginDefinition Definition(EntityDataSO hero) =>
             hero?.originStory?.originId == HanVu.Id ? HanVu : null;
@@ -78,7 +84,7 @@ namespace TuTienCore
             SynergyMath.GenerateRootProfile(hero);
             hero.originStory = new OriginStoryState
             {
-                version = 1,
+                version = SaveVersion,
                 originId = HanVu.Id,
                 guardian = OriginActor.Create(HanVu.GuardianId, Random.Range(0, 2) == 0 ? GenderType.Nam : GenderType.Nu),
                 companion = OriginActor.Create(HanVu.CompanionId, Opposite(hero.gender))
@@ -91,13 +97,20 @@ namespace TuTienCore
             if (state == null) return true;
             if (string.IsNullOrEmpty(state.originId)) return state.version == 0;
             var origin = Definition(hero);
-            if (origin == null || state.version != 1 || hero.race != RaceType.NhanToc ||
+            if (origin == null || (state.version != 1 && state.version != SaveVersion) || hero.race != RaceType.NhanToc ||
                 (hero.gender != GenderType.Nam && hero.gender != GenderType.Nu) ||
                 !IsActor(state.guardian, origin.GuardianId) || !IsActor(state.companion, origin.CompanionId) ||
                 state.companion.gender != Opposite(hero.gender) || state.stage < OriginStage.Gather ||
                 state.stage > OriginStage.Complete || state.herbWaves < 0 || state.herbWaves > OriginDefinition.Waves ||
                 state.searchWaves < 0 || state.searchWaves > OriginDefinition.Waves)
                 return false;
+            if (state.version == SaveVersion &&
+                (state.herbalParticipation < HerbalParticipation.Offered ||
+                 state.herbalParticipation > HerbalParticipation.Declined ||
+                 (state.herbalParticipation != HerbalParticipation.Accepted &&
+                  (state.stage != OriginStage.Gather || state.herbWaves != 0)) ||
+                 (state.herbalParticipation == HerbalParticipation.Declined && !state.declinedHerbalOffer) ||
+                 !HanVuEncounters.IsValid(state))) return false;
             return (state.herbWaves == OriginDefinition.Waves) == (state.stage >= OriginStage.Return) &&
                 (state.searchWaves == OriginDefinition.Waves) == (state.stage == OriginStage.Complete) &&
                 (state.stage >= OriginStage.SearchElite || state.searchWaves == 0);
@@ -129,44 +142,37 @@ namespace TuTienCore
         {
             var origin = Definition(hero);
             return origin != null && hero.worldMapId == origin.EliteMap &&
+                hero.originStory.herbalParticipation == HerbalParticipation.Accepted &&
                 hero.originStory.stage == OriginStage.SearchElite &&
-                hero.worldMapLoopWave == OriginDefinition.Waves;
+                hero.originStory.searchWaves == OriginDefinition.Waves - 1;
         }
 
-        // Null falls through to the normal map-clear rule. Allowed is an
-        // explicit exception for the peaceful village and known return paths.
-        public static bool TravelOverride(EntityDataSO hero, string target, out string reason)
+        public static void UpgradeSave(EntityDataSO hero)
         {
-            reason = null;
-            var origin = Definition(hero);
-            if (origin == null) return false;
-            var stage = hero.originStory.stage;
-            if (IsSafe(hero) && target == origin.Forest) return true;
-            if (hero.worldMapId == origin.Forest && target == origin.Village) return true;
-            if (hero.worldMapId == origin.EliteMap && target == origin.Forest) return true;
-            if (stage == OriginStage.Complete) return false;
-            if (hero.worldMapId == origin.Forest && target == origin.EliteMap && stage == OriginStage.SearchElite)
-                return true;
-            reason = "Hãy theo chỉ dẫn trong Nhật ký Hàn Vụ trước khi đi xa hơn.";
-            return true;
-        }
-
-        // Origin chapters checkpoint completed waves. Leaving or dying during
-        // an unfinished wave replays that wave, with no duplicate story grants.
-        public static void RestoreOpeningWave(EntityDataSO hero)
-        {
-            var origin = Definition(hero);
-            if (origin == null) return;
             var state = hero.originStory;
-            int waves;
-            if (hero.worldMapId == origin.Forest && state.stage == OriginStage.Gather)
-                waves = state.herbWaves;
-            else if (hero.worldMapId == origin.EliteMap && state.stage == OriginStage.SearchElite)
-                waves = state.searchWaves;
-            else return;
-            hero.worldMapWaveProgress = waves;
-            hero.worldMapLoopWave = waves + 1;
-            hero.completedWavesInMap = waves;
+            if (state == null || state.version != 1) return;
+            state.herbalParticipation = state.herbWaves > 0 || state.stage != OriginStage.Gather
+                ? HerbalParticipation.Accepted : HerbalParticipation.Offered;
+            state.declinedHerbalOffer = false;
+            state.hideStoryPrompts = false;
+            state.encounters = null;
+            state.version = SaveVersion;
+            hero.isDirty = true;
+        }
+
+        public static bool CanOfferHerbs(EntityDataSO hero) => IsSafe(hero) &&
+            hero.originStory.stage == OriginStage.Gather &&
+            hero.originStory.herbalParticipation != HerbalParticipation.Accepted;
+
+        public static bool ChooseHerbs(EntityDataSO hero, bool accept)
+        {
+            if (!CanOfferHerbs(hero)) return false;
+            var state = hero.originStory;
+            if (!accept && state.herbalParticipation == HerbalParticipation.Declined) return false;
+            state.herbalParticipation = accept ? HerbalParticipation.Accepted : HerbalParticipation.Declined;
+            if (!accept) state.declinedHerbalOffer = true;
+            hero.isDirty = true;
+            return true;
         }
 
         private static string GuardianTitle(OriginStoryState state) =>
@@ -182,40 +188,49 @@ namespace TuTienCore
                 state.introduced = true;
                 hero.isDirty = true;
                 return GuardianTitle(state) + " " + state.guardian.name +
-                    " mấy hôm nay ho nặng quá… Ta phải vào rừng tìm ít thảo dược.";
+                    " lại ho. Lát rảnh, ta ghé hỏi xem người còn thuốc không.";
             }
             return null;
         }
 
-        public static string AfterWave(EntityDataSO hero, int wave)
+        // Called only after CombatManager accepts the final kill of a wave.
+        // Quest counts follow completed encounters independently of map wave numbers.
+        internal static bool CreditWave(EntityDataSO hero, bool defeatedStoryElite, out string narration)
         {
+            narration = null;
             var origin = Definition(hero);
-            if (origin == null) return null;
+            if (origin == null || hero.originStory.herbalParticipation != HerbalParticipation.Accepted) return false;
             var state = hero.originStory;
-            if (hero.worldMapId == origin.Forest && state.stage == OriginStage.Gather && wave == state.herbWaves + 1)
+            if (hero.worldMapId == origin.Forest && state.stage == OriginStage.Gather)
             {
-                state.herbWaves = wave;
-                hero.isDirty = true;
-                if (wave < OriginDefinition.Waves) return null;
-                state.stage = OriginStage.Return;
-                return "Đã đủ thảo dược. Ta phải về Hàn Vụ thôn sắc thuốc.";
+                state.herbWaves++;
+                if (state.herbWaves == OriginDefinition.Waves)
+                {
+                    state.stage = OriginStage.Return;
+                    narration = "Đã đủ lá bạc. Khi về làng, ta có thể sắc thuốc.";
+                }
             }
-            if (hero.worldMapId == origin.EliteMap && state.stage == OriginStage.SearchElite && wave == state.searchWaves + 1)
+            else if (hero.worldMapId == origin.EliteMap && state.stage == OriginStage.SearchElite &&
+                defeatedStoryElite == IsEliteWave(hero))
             {
-                state.searchWaves = wave;
-                hero.isDirty = true;
-                if (wave < OriginDefinition.Waves) return null;
-                state.stage = OriginStage.Complete;
-                return "Nút dây này… giống nút " + state.companion.name + " vẫn buộc. Vì sao nó lại ở đây?";
+                state.searchWaves++;
+                if (defeatedStoryElite)
+                {
+                    state.stage = OriginStage.Complete;
+                    narration = "Nút dây này… giống nút " + state.companion.name + " vẫn buộc. Vì sao nó lại ở đây?";
+                }
             }
-            return null;
+            else return false;
+            hero.isDirty = true;
+            return true;
         }
 
         public static bool CanInteract(EntityDataSO hero)
         {
             var origin = Definition(hero);
             return origin != null && (IsSafe(hero) ||
-                (hero.worldMapId == origin.Forest && hero.originStory.stage == OriginStage.SearchForest));
+                (hero.worldMapId == origin.Forest && hero.originStory.herbalParticipation == HerbalParticipation.Accepted &&
+                 hero.originStory.stage == OriginStage.SearchForest));
         }
 
         public static string Interact(EntityDataSO hero)
@@ -253,13 +268,15 @@ namespace TuTienCore
 
         public static bool HintMap(EntityDataSO hero)
         {
-            if (Definition(hero) == null) return false;
+            if (Definition(hero) == null || hero.originStory.hideStoryPrompts ||
+                hero.originStory.herbalParticipation != HerbalParticipation.Accepted) return false;
+            var origin = Definition(hero);
             switch (hero.originStory.stage)
             {
-                case OriginStage.Gather: return IsSafe(hero);
+                case OriginStage.Gather: return hero.worldMapId != origin.Forest;
                 case OriginStage.Return: return !IsSafe(hero);
-                case OriginStage.SearchForest: return IsSafe(hero);
-                case OriginStage.SearchElite: return hero.worldMapId != HanVu.EliteMap;
+                case OriginStage.SearchForest: return hero.worldMapId != origin.Forest;
+                case OriginStage.SearchElite: return hero.worldMapId != origin.EliteMap;
                 default: return false;
             }
         }
@@ -267,19 +284,21 @@ namespace TuTienCore
         public static string Hint(EntityDataSO hero)
         {
             var state = hero.originStory;
+            if (state.hideStoryPrompts || state.herbalParticipation != HerbalParticipation.Accepted) return "";
             switch (state.stage)
             {
-                case OriginStage.Gather: return IsSafe(hero)
-                    ? "Bấm tên map để mở Bản đồ, chọn Cô Hồn Lâm rồi bấm Di chuyển."
-                    : "Hạ 5 đợt sói, thảo dược " + state.herbWaves + "/5. Xem chiến lợi phẩm thường trong Kho đồ.";
-                case OriginStage.Return: return IsSafe(hero) ? "Chọn Sắc thuốc để giúp người nuôi dưỡng."
-                    : "Bấm tên map để mở Bản đồ và tự về Hàn Vụ thôn.";
-                case OriginStage.SearchForest: return IsSafe(hero) ? "Trở lại Cô Hồn Lâm tìm dấu của " + state.companion.name + "."
-                    : "Chọn Xem dấu vết. Nhật ký lưu lại manh mối.";
+                case OriginStage.Gather: return hero.worldMapId == HanVu.Forest
+                    ? "Lá bạc " + state.herbWaves + "/5. Xem chiến lợi phẩm trong Kho đồ."
+                    : "Lá bạc mọc ở Cô Hồn Lâm. Có thể trở lại khi thuận đường.";
+                case OriginStage.Return: return IsSafe(hero) ? "Đã đủ lá bạc để sắc thuốc."
+                    : "Có thể trở về Hàn Vụ thôn để sắc thuốc.";
+                case OriginStage.SearchForest: return hero.worldMapId == HanVu.Forest
+                    ? "Có thể xem dấu vết ở ngã rẽ."
+                    : "Cô Hồn Lâm là nơi " + state.companion.name + " được nhắc tới lần cuối.";
                 case OriginStage.SearchElite: return hero.worldMapId == HanVu.EliteMap
-                    ? "Đi hết 5 đợt ở Ma Tùng Sâm. Sói đầu đàn xuất hiện ở đợt cuối."
-                    : "Mở Bản đồ và tự đi đến Ma Tùng Sâm qua Cô Hồn Lâm.";
-                default: return "Mở Nhật ký Hàn Vụ để xem vật chứng và những điều còn bỏ ngỏ.";
+                    ? "Đợt tìm kiếm " + state.searchWaves + "/5. Sói đầu đàn xuất hiện ở đợt cuối."
+                    : "Mảnh giấy chỉ về Ma Tùng Sâm.";
+                default: return "";
             }
         }
 
@@ -303,6 +322,10 @@ namespace TuTienCore
             if (state.introduced)
                 lines.Add("Ghi nhận · Ta lớn lên ở Hàn Vụ, được " + state.guardian.name +
                     " nuôi dưỡng. " + state.companion.name + " là bạn thuở nhỏ. Gần đây người ho nặng.");
+            if (state.declinedHerbalOffer)
+                lines.Add("Lựa chọn · Đã từ chối lời nhờ tìm thuốc.");
+            if (state.herbalParticipation == HerbalParticipation.Accepted)
+                lines.Add("Lựa chọn · Đã nhận lời tìm lá bạc.");
             if (state.heardCompanion)
                 lines.Add("Lời kể · " + state.companion.name + " chỉ nơi tìm cây lá bạc ở bìa Cô Hồn Lâm.");
             if (state.herbWaves > 0)
@@ -323,6 +346,7 @@ namespace TuTienCore
                 lines.Add("Suy đoán · Nút dây giống cách " + state.companion.name +
                     " thường buộc. Ai đã để nó lại, và người ấy đang ở đâu?");
             }
+            HanVuEncounters.AddJournal(state, lines);
             return lines;
         }
     }

@@ -251,7 +251,7 @@ public partial class SaveManager : MonoBehaviour
                         return false; // No silent reroll/migration for corrupted world saves.
                     }
                 }
-                TuTienCore.StoryOrigin.RestoreOpeningWave(entityData);
+                TuTienCore.StoryOrigin.UpgradeSave(entityData);
                 entityData.NormalizeMapProgress();
                 entityData.NormalizeCombatStats();
                 EquipmentInventory.Normalize(entityData);

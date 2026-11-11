@@ -456,8 +456,7 @@ namespace TuTienCore
                 return "Không tìm thấy map hợp lệ.";
             if (id == hero.worldMapId) return "Bạn đang ở map này.";
             if (!current.Links.Contains(id)) return "Chỉ được đi tới map kề trực tiếp.";
-            if (StoryOrigin.TravelOverride(hero, id, out string originReason)) return originReason;
-            if (!IsCleared(hero, current.Id)) return "Cần hoàn thành 5 wave của map hiện tại ít nhất một lần.";
+            if (!StoryOrigin.IsSafe(hero) && !IsCleared(hero, current.Id)) return "Cần hoàn thành 5 wave của map hiện tại ít nhất một lần.";
             if (target.IsBoss) return "Map Boss endgame: chưa chốt vật phẩm / cảnh giới mở khóa.";
             return null;
         }
@@ -468,7 +467,6 @@ namespace TuTienCore
             WorldMapNode target;
             if (!TryGet(targetId, out target)) return false;
             ApplyMap(hero, target);
-            StoryOrigin.RestoreOpeningWave(hero);
             if (!hero.worldMapVisited.Contains(targetId)) hero.worldMapVisited.Add(targetId);
             return true;
         }

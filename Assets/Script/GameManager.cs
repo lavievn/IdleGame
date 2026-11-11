@@ -1031,7 +1031,6 @@ public partial class GameManager : MonoBehaviour
         if (runtimeHeroData != null)
         {
             runtimeHeroData.RestartRegionAfterDefeat();
-            StoryOrigin.RestoreOpeningWave(runtimeHeroData);
             RestoreProgress();
             UpdateEventLog(WorldMapCatalog.Enabled(runtimeHeroData)
                 ? "Thất bại: đánh lại wave " + runtimeHeroData.worldMapLoopWave + " tại " + runtimeHeroData.mapName +
@@ -1273,6 +1272,39 @@ public partial class GameManager : MonoBehaviour
         return true;
     }
 
+    internal bool TryChooseHerbs(bool accept)
+    {
+        if (!IsGameplayHUDVisible || HasTribulationLiability || !StoryOrigin.ChooseHerbs(runtimeHeroData, accept))
+            return false;
+        CommitOriginChange(accept ? "Ta đã nhận lời tìm lá bạc." : "Ta xin để chuyện tìm thuốc lại sau.");
+        return true;
+    }
+
+    internal OriginEncounter OpenOriginEncounter()
+    {
+        if (!IsGameplayHUDVisible || HasTribulationLiability) return null;
+        var offer = HanVuEncounters.Available(runtimeHeroData);
+        if (offer != null && HanVuEncounters.Observe(runtimeHeroData, offer.Id)) CommitOriginChange(null);
+        return offer;
+    }
+
+    internal bool TryChooseOriginEncounter(string id, EncounterChoice choice)
+    {
+        if (!IsGameplayHUDVisible || HasTribulationLiability) return false;
+        var offer = HanVuEncounters.Available(runtimeHeroData);
+        if (offer == null || !HanVuEncounters.Choose(runtimeHeroData, id, choice)) return false;
+        CommitOriginChange(choice == EncounterChoice.Participated ? offer.Result : offer.Decline + ".");
+        return true;
+    }
+
+    internal void ToggleOriginPrompts()
+    {
+        if (!IsGameplayHUDVisible || HasTribulationLiability || StoryOrigin.Definition(runtimeHeroData) == null) return;
+        runtimeHeroData.originStory.hideStoryPrompts = !runtimeHeroData.originStory.hideStoryPrompts;
+        runtimeHeroData.isDirty = true;
+        CommitOriginChange(null);
+    }
+
     private void CommitOriginChange(string narration)
     {
         if (narration != null)
@@ -1353,20 +1385,21 @@ public partial class GameManager : MonoBehaviour
         nextWaveCoroutine = StartCoroutine(WaitAndCallNextWave());
     }
 
-    public void OnMonsterDied(GameObject deadMonster)
+    public void OnMonsterDied(GameObject deadMonster) => FinishMonsterDeath(deadMonster, false, false);
+
+    internal void OnAcceptedMonsterDied(GameObject deadMonster, bool storyElite) =>
+        FinishMonsterDeath(deadMonster, true, storyElite);
+
+    private void FinishMonsterDeath(GameObject deadMonster, bool accepted, bool storyElite)
     {
         if (!activeMonsters.Remove(deadMonster)) return;
         if (hasDeployed && activeMonsters.Count == 0 && nextWaveCoroutine == null)
         {
             if (runtimeHeroData != null)
             {
-                int wave = runtimeHeroData.worldMapLoopWave;
-                var story = runtimeHeroData.originStory;
-                int previousStoryWaves = story == null ? 0 : story.herbWaves + story.searchWaves;
                 bool changed = runtimeHeroData.CompleteWave();
-                string narration = StoryOrigin.AfterWave(runtimeHeroData, wave);
                 RestoreProgress();
-                if (story != null && previousStoryWaves != story.herbWaves + story.searchWaves)
+                if (accepted && StoryOrigin.CreditWave(runtimeHeroData, storyElite, out string narration))
                     CommitOriginChange(narration);
                 if (changed)
                 {

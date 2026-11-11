@@ -177,6 +177,7 @@ public partial class CombatManager : MonoBehaviour
         public int lifeId;
         internal CombatLootRewards.KillKey lootKey;
         internal bool acceptedLethalDamage;
+        internal bool storyElite;
     }
     private bool resumeEncounterAfterEnable;
     private int monsterLifeSequence;
@@ -238,6 +239,7 @@ public partial class CombatManager : MonoBehaviour
             var info = new ActiveMonsterInfo();
             info.lifeId = ++monsterLifeSequence;
             info.go = m;
+            info.storyElite = originElite;
             info.controller = m.GetComponent<MonsterController>();
             info.lootKey=lootRewards.Register(info.lifeId,info.controller!=null?info.controller.SpawnVersion:0);
             info.data = Instantiate(baseMonsterData);
@@ -847,7 +849,7 @@ public partial class CombatManager : MonoBehaviour
         }
         monsterSpawner.DespawnMonster(target.go);
         if (target.data!=null) Destroy(target.data);
-        if (gameManager!=null) gameManager.OnMonsterDied(target.go);
+        if (gameManager!=null) gameManager.OnAcceptedMonsterDied(target.go, target.storyElite);
         if (activeMonsters.Count==0) isBattling=false;
     }
 
