@@ -105,7 +105,7 @@ public sealed partial class WindowsDevelopmentAcceptanceV10:MonoBehaviour
         {
             CombatBalance.ResetDevProfiles();
             yield return Resize(800,450);
-            yield return HanVuOriginSmoke.Run(gm,saves,ui,combat,hero,space,Capture,Pass);
+            yield return HanVuOriginSmoke.Run(gm,saves,ui,combat,hero,space,Resize,Capture,Pass);
             Require(result.uiIssues.Count==0,"Hàn Vụ window preset");
             yield break;
         }

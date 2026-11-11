@@ -97,7 +97,17 @@ internal static class HanVuOriginSmoke
             CheckName(cast.entityName, cast.gender);
             CheckName(cast.originStory.guardian.name, cast.originStory.guardian.gender);
             CheckName(cast.originStory.companion.name, cast.originStory.companion.gender);
-            guardianGenders.Add(cast.originStory.guardian.gender);
+            if (guardianGenders.Add(cast.originStory.guardian.gender))
+            {
+                var lines = HanVuNarrative.Lines(cast, HanVuConversation.Opening);
+                var friend = cast.originStory.companion;
+                string title = cast.originStory.guardian.gender == GenderType.Nam ? "Ông " : "Bà ";
+                Check(lines.Length == 6 && lines[0].Speaker == title + cast.originStory.guardian.name &&
+                    lines[1].Speaker == cast.entityName && lines[4].Text.Contains(friend.name),
+                    "Both guardian titles and randomized names enter the opening script");
+                Check(HanVuNarrative.Lines(cast, HanVuConversation.Woodcutter)[0].Text.Contains(
+                    friend.gender == GenderType.Nam ? "Cậu ấy" : "Cô ấy"), "Woodcutter uses companion gender");
+            }
             rootCounts.Add(cast.spiritRoots.Count);
         }
         Check(guardianGenders.Count == 2 && rootCounts.SetEquals(new[] { 1, 2, 3, 4 }),
@@ -149,6 +159,99 @@ internal static class HanVuOriginSmoke
             "Duplicate kill and wave callbacks are inert");
     }
 
+    private static T Field<T>(object owner, string name) => (T)owner.GetType().GetField(name, Members).GetValue(owner);
+
+    private static void CheckLine(UIManager ui, HanVuLine line)
+    {
+        var label = Field<TMPro.TextMeshProUGUI>(ui, "originLabel");
+        label.ForceMeshUpdate();
+        Check(label.text == line.Speaker + "\n" + line.Text && !label.isTextOverflowing,
+            "Expected visible dialogue line: " + line.Speaker + " " + line.Text);
+    }
+
+    private static IEnumerator ReadDialogue(UIManager ui, EntityDataSO data, HanVuConversation scene)
+    {
+        yield return null;
+        var lines = HanVuNarrative.Lines(data, scene);
+        for (int i = 0; i < lines.Length; i++)
+        {
+            CheckLine(ui, lines[i]);
+            if (i == lines.Length - 1) break;
+            Click(ui, "HanVuNext");
+            yield return null;
+        }
+    }
+
+    private static void CheckCardCount(UIManager ui, int expected)
+    {
+        var hud = Field<HudW3View>(ui, "w3").Root;
+        var cards = Enumerable.Range(0, 3).Select(i => (RectTransform)hud.Find("Hero Card " + i))
+            .Where(card => card.gameObject.activeInHierarchy).OrderByDescending(card => card.anchoredPosition.x).ToArray();
+        Check(cards.Length == expected, "Expected " + expected + " deployed Hero cards");
+        for (int i = 1; i < cards.Length; i++)
+            Check(Mathf.Abs(cards[i - 1].anchoredPosition.x - cards[i].anchoredPosition.x - cards[i].rect.width -
+                Mathf.Max(2, ui.hudLayout.gap)) < 1f, "Visible cards are contiguous");
+    }
+
+    private static IEnumerator CheckPresets(GameManager game, UIManager ui, CombatManager combat,
+        Func<int,int,IEnumerator> resize, Func<string,IEnumerator> capture, Action<string> pass)
+    {
+        var hud = Field<HudW3View>(ui, "w3").Root;
+        var primary = (RectTransform)hud.Find("Hero Card 0");
+        var journal = (RectTransform)hud.Find("HanVuJournal");
+        var prompts = (RectTransform)hud.Find("HanVuPrompts");
+        var menu = (RectTransform)hud.Find("SystemMenuButton");
+        foreach (var size in new[] { new Vector2Int(600,338), new Vector2Int(800,450), new Vector2Int(1150,647) })
+        {
+            yield return resize(size.x, size.y);
+            Check(Screen.width == size.x && Screen.height == size.y, "Requested native render dimensions " + size.x);
+            CheckCardCount(ui, 1);
+            Check(journal.parent == hud && prompts.parent == hud && journal.anchoredPosition.y <
+                primary.anchoredPosition.y - primary.rect.height &&
+                prompts.anchoredPosition.x >= journal.anchoredPosition.x + journal.rect.width &&
+                menu.anchoredPosition.y <= prompts.anchoredPosition.y - prompts.rect.height &&
+                prompts.anchoredPosition.x + prompts.rect.width <= size.x,
+                "Journal, hints and Menu remain below Hero and within the viewport");
+            Click(ui, "HanVuJournal");
+            yield return null;
+            Check(Field<TMPro.TextMeshProUGUI>(ui, "originLabel").text.StartsWith("Nhật ký"),
+                "Journal button works in each preset");
+            Click(ui, "HanVuPrompts");
+            Check(game.HeroData.originStory.hideStoryPrompts, "Hint button stores hidden state");
+            yield return null;
+            yield return capture("narrative-hud-" + size.x);
+            Click(ui, "HanVuPrompts");
+            Check(!game.HeroData.originStory.hideStoryPrompts, "Hint button restores prompts");
+            Click(ui, "HanVuJournal");
+            yield return null;
+        }
+        ui.SetPaused(false);
+        game.CycleTestCompanions();
+        yield return null;
+        CheckCardCount(ui, 2);
+        game.CycleTestCompanions();
+        yield return null;
+        CheckCardCount(ui, 3);
+        yield return capture("narrative-hud-three-heroes");
+        var follower = game.TestCompanionAt(0);
+        var state = combat.StateFor(follower);
+        int hp = state.CurrentHP;
+        state.CurrentHP = 0;
+        follower.Die();
+        yield return null;
+        CheckCardCount(ui, 2);
+        state.CurrentHP = hp;
+        follower.SpawnHero(false);
+        yield return null;
+        CheckCardCount(ui, 3);
+        game.CycleTestCompanions();
+        yield return null;
+        CheckCardCount(ui, 1);
+        ui.SetPaused(true);
+        yield return resize(800,450);
+        pass("HUD 600/800/1150 shows compact buttons and handles 1/2/3 Heroes, defeat, respawn and withdrawal.");
+    }
+
     private const string TravelerMap = "TV-24";
     private const string MerchantId = "hanvu.merchant_rumor";
     private const string BasketId = "hanvu.herb_basket";
@@ -160,12 +263,12 @@ internal static class HanVuOriginSmoke
     private static string Json(Dictionary<string, string> fields) =>
         "{" + string.Join(",", fields.Select(pair => "\"" + pair.Key + "\":" + pair.Value)) + "}";
 
-    private static void WriteOldSave(GameManager game, SaveManager saves, bool priorOrigin, int herbs)
+    private static void WriteOldSave(GameManager game, SaveManager saves, int version, int herbs)
     {
         var clone = UnityEngine.Object.Instantiate(game.HeroData);
-        if (priorOrigin)
+        if (version > 0)
         {
-            clone.originStory.version = 1;
+            clone.originStory.version = version;
             clone.originStory.stage = OriginStage.Gather;
             clone.originStory.herbWaves = herbs;
             clone.originStory.searchWaves = 0;
@@ -178,11 +281,14 @@ internal static class HanVuOriginSmoke
         }
         Check(CultivationSaveJson.TryObject(JsonUtility.ToJson(clone), out var fields, out var error), error);
         UnityEngine.Object.Destroy(clone);
-        if (priorOrigin)
+        if (version > 0)
         {
             Check(CultivationSaveJson.TryObject(fields["originStory"], out var story, out error), error);
-            foreach (string key in new[] { "herbalParticipation", "declinedHerbalOffer", "hideStoryPrompts", "encounters" })
+            foreach (string key in new[] { "heardOpeningTrip", "heardWoodcutter", "sawTrailKnot", "sawTrailNote" })
                 story.Remove(key);
+            if (version == 1)
+                foreach (string key in new[] { "herbalParticipation", "declinedHerbalOffer", "hideStoryPrompts", "encounters" })
+                    story.Remove(key);
             fields["originStory"] = Json(story);
         }
         else fields.Remove("originStory");
@@ -192,7 +298,7 @@ internal static class HanVuOriginSmoke
 
     internal static IEnumerator Run(GameManager game, SaveManager saves, UIManager ui,
         CombatManager combat, HeroController hero, EnvironmentManager space,
-        Func<string,IEnumerator> capture, Action<string> pass)
+        Func<int,int,IEnumerator> resize, Func<string,IEnumerator> capture, Action<string> pass)
     {
         QualitySettings.vSyncCount = 0;
         Application.targetFrameRate = 60;
@@ -214,7 +320,26 @@ internal static class HanVuOriginSmoke
             WorldMapCatalog.TravelBlockReason(data, Origin.EliteMap) != null, "Adjacent departures and actual adjacency");
         Check(Record(game, MerchantId) == null && !StoryOrigin.Journal(data).Any(x => x.Contains("bán hàng")),
             "Unseen encounter absent from journal");
-        yield return capture("optional-han-vu-village");
+        yield return resize(600,338);
+        CheckLine(ui, HanVuNarrative.Lines(data, HanVuConversation.Opening)[0]);
+        yield return capture("narrative-opening-600");
+        Click(ui, "HanVuNext");
+        yield return null;
+        CheckLine(ui, HanVuNarrative.Lines(data, HanVuConversation.Opening)[1]);
+        yield return Restore(game, ui, identity);
+        Check(!game.HeroData.originStory.heardOpeningTrip &&
+            game.HeroData.originStory.herbalParticipation == HerbalParticipation.Offered,
+            "Save/Load midway through opening neither completes conversation nor accepts");
+        yield return CheckPresets(game, ui, combat, resize, capture, pass);
+        Click(ui, "HanVuJournal");
+        yield return null;
+        Click(ui, "HanVuReplay");
+        yield return ReadDialogue(ui, game.HeroData, HanVuConversation.Opening);
+        Check(game.HeroData.originStory.heardOpeningTrip && game.HeroData.originStory.herbalParticipation == HerbalParticipation.Offered,
+            "Only the displayed companion line records testimony");
+        Click(ui, "HanVuDismiss");
+        yield return null;
+        pass("Opening orders six lines with generated names and gender, can be skipped, replayed and saved mid-dialogue.");
         yield return SelectForest(game, ui);
         Click(ui, "WorldMapButton");
         yield return null;
@@ -226,13 +351,38 @@ internal static class HanVuOriginSmoke
         map.Close();
         yield return null;
         var activeTime = game.Cultivation.ActiveSeconds;
-        for (int i = 0; i < 5; i++) yield return ClearWave(game, ui, combat, hero, space, false);
+        Check(!game.HeroData.originStory.heardWoodcutter && !game.HeroData.originStory.sawTrailKnot &&
+            !game.HeroData.originStory.sawTrailNote &&
+            !StoryOrigin.Journal(game.HeroData).Any(line => line.Contains("đốn củi")), "Unvisited evidence absent");
+        yield return ClearWave(game, ui, combat, hero, space, false);
+        Check(!game.HeroData.originStory.sawTrailNote, "A single wave does not reveal the note");
+        ui.SetPaused(false);
+        yield return Wait(() => game.HeroData.originStory.sawTrailKnot, 15, "Actual exploration reveals knot");
+        Check(game.IsWaitingForExploration && !game.HeroData.originStory.heardWoodcutter,
+            "Knot comes from movement and does not invent NPC contact");
+        ui.SetPaused(true);
+        yield return ClearWave(game, ui, combat, hero, space, false);
+        Check(game.HeroData.originStory.sawTrailNote && StoryOrigin.ItemCount(game.HeroData, Origin.TrailId) == 0,
+            "Wave observation leaves the quest item unclaimed");
+        ui.SetPaused(false);
+        Click(ui, "HanVuWoodcutter");
+        yield return ReadDialogue(ui, game.HeroData, HanVuConversation.Woodcutter);
+        Check(Time.timeScale > 0f && game.HeroData.originStory.heardWoodcutter, "Woodcutter is optional and nonblocking");
+        yield return capture("narrative-woodcutter");
+        Click(ui, "HanVuDismiss");
+        ui.SetPaused(true);
+        for (int i = 2; i < 5; i++) yield return ClearWave(game, ui, combat, hero, space, false);
         data = game.HeroData;
         Check(data.originStory.herbalParticipation == HerbalParticipation.Offered &&
             data.originStory.herbWaves == 0 && WorldMapCatalog.IsCleared(data, Origin.Forest) &&
             game.Cultivation.ActiveSeconds > activeTime, "Unaccepted story leaves farm, travel unlock and cultivation active");
         yield return Restore(game, ui, identity);
-        pass("Safe start and UI travel without quest, standard return gate, five farm waves, cultivation and Save/Load.");
+        var discovered = StoryOrigin.Journal(game.HeroData);
+        Check(discovered.Count(line => line.Contains(HanVuNarrative.TrailKnot)) == 1 &&
+            discovered.Count(line => line.Contains(HanVuNarrative.TrailNote)) == 1 &&
+            discovered.Count(line => line.StartsWith("Lời kể · Người đốn củi")) == 1,
+            "Save/Load keeps distinct facts and optional testimony once");
+        pass("Free travel and farming preserve real forest discoveries from movement, waves and optional woodcutter.");
 
         ui.SetPaused(false);
         Click(ui, "HanVuEncounter");
@@ -273,13 +423,13 @@ internal static class HanVuOriginSmoke
         Check(game.HeroData.originStory.herbalParticipation == HerbalParticipation.Offered, "Closing quest offer is neutral");
         yield return null;
         Click(ui, "HanVuTalk");
-        yield return null;
+        yield return ReadDialogue(ui, game.HeroData, HanVuConversation.Opening);
         Click(ui, "HanVuDecline");
         Check(game.HeroData.originStory.herbalParticipation == HerbalParticipation.Declined &&
             WorldMapCatalog.TravelBlockReason(game.HeroData, Origin.Forest) == null, "Quest refusal has no travel penalty");
         yield return Restore(game, ui, identity);
         Click(ui, "HanVuTalk");
-        yield return null;
+        yield return ReadDialogue(ui, game.HeroData, HanVuConversation.Opening);
         Click(ui, "HanVuAccept");
         Check(game.HeroData.originStory.herbalParticipation == HerbalParticipation.Accepted &&
             game.HeroData.originStory.herbWaves == 0, "Explicit acceptance grants no retroactive herbs");
@@ -287,7 +437,7 @@ internal static class HanVuOriginSmoke
         Click(ui, "HanVuJournal");
         yield return null;
         Click(ui, "HanVuPrompts");
-        Click(ui, "HanVuDismiss");
+        Click(ui, "HanVuJournal");
         yield return Go(game, ui, Origin.Forest);
         for (int i = 0; i < 2; i++) yield return ClearWave(game, ui, combat, hero, space, false);
         yield return Go(game, ui, TravelerMap);
@@ -314,6 +464,11 @@ internal static class HanVuOriginSmoke
 
         yield return Go(game, ui, Origin.Village);
         Click(ui, "HanVuTalk");
+        yield return ReadDialogue(ui, game.HeroData, HanVuConversation.BeforeMedicine);
+        Check(game.HeroData.originStory.stage == OriginStage.Return &&
+            StoryOrigin.ItemCount(game.HeroData, Origin.HerbId) == 5, "Companion trip is mentioned before herbs are spent");
+        Click(ui, "HanVuAccept");
+        yield return ReadDialogue(ui, game.HeroData, HanVuConversation.AfterMedicine);
         Check(game.HeroData.originStory.stage == OriginStage.SearchForest &&
             StoryOrigin.ItemCount(game.HeroData, Origin.HerbId) == 0, "Medicine consumed once");
         yield return Go(game, ui, Origin.Forest);
@@ -332,7 +487,7 @@ internal static class HanVuOriginSmoke
         data = game.HeroData;
         journal = StoryOrigin.Journal(data);
         Check(data.originStory.stage == OriginStage.Complete && StoryOrigin.ItemCount(data, Origin.ClueId) == 1 &&
-            journal.Count(x => x.StartsWith("Vật chứng · Dây vải")) == 1 && journal.Any(x => x.StartsWith("Suy đoán")),
+            journal.Count(x => x.StartsWith("Vật chứng · Dải vải")) == 1 && journal.Any(x => x.StartsWith("Suy đoán")),
             "Exactly one authentic clue and separate inference");
         yield return Restore(game, ui, identity);
         yield return Go(game, ui, Origin.Forest);
@@ -341,23 +496,28 @@ internal static class HanVuOriginSmoke
             "No elite clue replay on return");
         pass("Real accepted story Elite death awards one clue. Ordinary kills, duplicate callbacks and revisits cannot replay it.");
 
-        WriteOldSave(game, saves, true, 2);
+        WriteOldSave(game, saves, 2, 2);
+        yield return Ready(game, ui);
+        Check(Identity(game.HeroData) == identity && game.HeroData.originStory.version == StoryOrigin.SaveVersion &&
+            game.HeroData.originStory.hideStoryPrompts && Record(game, BasketId)?.choice == EncounterChoice.Participated &&
+            !game.HeroData.originStory.heardWoodcutter, "Version 2 retains choices and invents no observations");
+        WriteOldSave(game, saves, 1, 2);
         yield return Ready(game, ui);
         Check(Identity(game.HeroData) == identity && game.HeroData.originStory.version == StoryOrigin.SaveVersion &&
             game.HeroData.originStory.herbalParticipation == HerbalParticipation.Accepted &&
             game.HeroData.originStory.herbWaves == 2 && game.HeroData.worldMapId == Origin.EliteMap,
             "Version 1 progressed snapshot migrates without changing names, location or count");
-        WriteOldSave(game, saves, true, 0);
+        WriteOldSave(game, saves, 1, 0);
         yield return Ready(game, ui);
         Check(Identity(game.HeroData) == identity &&
             game.HeroData.originStory.herbalParticipation == HerbalParticipation.Offered,
             "Version 1 untouched quest becomes an offer");
-        WriteOldSave(game, saves, false, 0);
+        WriteOldSave(game, saves, 0, 0);
         yield return Ready(game, ui);
         Check(game.HeroData.entityName == "Tên Đã Lưu" && game.HeroData.race == RaceType.YeuThu &&
             StoryOrigin.Definition(game.HeroData) == null && game.HeroData.worldMapId == Origin.EliteMap,
             "Origin-less snapshot keeps old identity and map");
-        pass("Version 1 Hàn Vụ migration preserves prior progress and identity. Origin-less snapshots remain compatible.");
+        pass("Version 1 and 2 Hàn Vụ saves preserve prior progress and identity. Origin-less snapshots remain compatible.");
     }
 }
 #endif

@@ -660,7 +660,7 @@ public sealed partial class MainGameFoundationProbe : MonoBehaviour
             phase = 1;
             CombatBalance.ResetDevProfiles();
             yield return Resize(800,450);
-            yield return HanVuOriginSmoke.Run(gm,saves,ui,combat,hero,space,Capture,Pass);
+            yield return HanVuOriginSmoke.Run(gm,saves,ui,combat,hero,space,Resize,Capture,Pass);
             Status(1,"PASS");
             yield break;
         }
