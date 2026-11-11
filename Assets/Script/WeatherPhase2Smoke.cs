@@ -46,8 +46,21 @@ internal static class WeatherPhase2Smoke
         yield return capture("phase2-heavy-splash");
 
         var rect = space.BattleArea.rect;
-        float floor = impacts.GroundAt(rect.center.x, out bool water);
-        Check(!water, "No ripple region is inferred from a wet-looking biome");
+        var liveDepth = impacts.ActiveDepthRange();
+        Check(liveDepth.x >= rect.yMin && liveDepth.y <= rect.yMax &&
+            liveDepth.x < rect.yMin + .22f * rect.height && liveDepth.y > rect.yMax - .22f * rect.height,
+            "Live dry splashes reach both the far and near bands inside BattleArea");
+        float min = float.PositiveInfinity, max = float.NegativeInfinity;
+        for (uint seed = 1; seed <= 256; seed++)
+        {
+            float depth = impacts.GroundAt(rect.center.x, seed, out bool water);
+            Check(!water && depth >= rect.yMin && depth <= rect.yMax, "Random depths stay inside the dry BattleArea");
+            min = Mathf.Min(min, depth);
+            max = Mathf.Max(max, depth);
+        }
+        Check(max - min > rect.height * .95f, "Random drop targets cover the full battle depth");
+        pass(FormattableString.Invariant($"Random dry impact depths: {min:F1}..{max:F1}, bounds {rect.yMin:F1}..{rect.yMax:F1}; live {liveDepth.x:F1}..{liveDepth.y:F1}."));
+        float floor = rect.center.y;
         settings.surfaces = new[] { new WorldWeatherSurface
         {
             mapId = data.worldMapId, horizontalRange = new Vector2(0f, rect.width * .3f), height = floor + 9f, water = true
@@ -74,7 +87,9 @@ internal static class WeatherPhase2Smoke
 
         VerifyStormSchedule(settings, data);
         JumpBeforeStrike(data, settings);
-        yield return Wait(() => adapter.Weather.Flash > 0f, 3f, "A heavy-rain sky flash");
+        // The shader projection is rate limited. Capture after the flash has
+        // reached the actual render target, not just the scheduler state.
+        yield return Wait(() => Read<Vector2>(adapter, "lastFlash").x > 0f, 3f, "A rendered heavy-rain sky flash");
         yield return capture("phase2-lightning");
         yield return new WaitForSecondsRealtime(4.4f);
         Check(audioRuntime.ThunderPlayed == 0 && game.GetComponents<AudioSource>().Length == initialSources,
@@ -224,10 +239,23 @@ internal static class WeatherPhase2Smoke
 
     private static void JumpBeforeStrike(EntityDataSO data, WorldWeatherPresentationSettings settings)
     {
-        long slot = (long)(Seconds(data) / settings.lightningInterval) + 1;
-        double strike = WorldWeatherStorm.StrikeAt(slot, settings.lightningInterval,
-            data.worldClimate.seed, data.worldMapId, data.mapNumber);
-        SetSeconds(data, strike - .25);
+        long firstSlot = (long)(Seconds(data) / settings.lightningInterval) + 1;
+        var frame = WorldClimate.Sample(data.worldClimate, 780, data.mapTerrain,
+            data.worldMapId, data.mapNumber, false, WorldWeather.HeavyRain);
+        for (long slot = firstSlot; slot < firstSlot + 24; slot++)
+        {
+            double strike = WorldWeatherStorm.StrikeAt(slot, settings.lightningInterval,
+                data.worldClimate.seed, data.worldMapId, data.mapNumber);
+            var forecast = new WorldWeatherStorm();
+            SetSeconds(data, strike - .25);
+            forecast.Step(settings, frame, data.worldClimate, data.worldMapId, data.mapNumber, 780, true, true);
+            SetSeconds(data, strike + .02);
+            var visual = forecast.Step(settings, frame, data.worldClimate, data.worldMapId, data.mapNumber, 780, true, true);
+            if (visual.BoltPosition < .20f || visual.BoltPosition > .39f) continue;
+            SetSeconds(data, strike - .25);
+            return;
+        }
+        throw new InvalidOperationException("No owned fixture strike outside the HUD.");
     }
 
     private static double MoveBeforeDrySlot(EntityDataSO data)

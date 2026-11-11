@@ -23,7 +23,8 @@ public sealed class WorldClimateVendorAdapter : WorldClimateAssetAdapter
     private RectTransform rainLayer;
     private RainMakerCanvasGraphic rainGraphic;
     private float maxRainRate, rainWorldWidth;
-    private float lastRainRate, fallSpeed, horizontalWind, groundY;
+    private float lastRainRate, fallSpeed, horizontalWind;
+    private Rect groundBounds;
     private double groundScroll;
     private WorldWeatherVisual weather;
     private Vector2 lastFlash;
@@ -34,12 +35,12 @@ public sealed class WorldClimateVendorAdapter : WorldClimateAssetAdapter
     internal int ActiveParticles => emitter != null ? emitter.particleCount : 0;
     internal RainMakerCanvasGraphic RainGraphic => rainGraphic;
 
-    internal override void SetWeatherVisual(WorldWeatherVisual visual, double scroll, float floor)
+    internal override void SetWeatherVisual(WorldWeatherVisual visual, double scroll, Rect battleBounds)
     {
         if (visual.Reset) StopRain2D();
         weather = visual;
         groundScroll = scroll;
-        groundY = floor;
+        groundBounds = battleBounds;
     }
 
     internal override void SetGroundScroll(double scroll)
@@ -168,7 +169,11 @@ public sealed class WorldClimateVendorAdapter : WorldClimateAssetAdapter
         if (!Mathf.Approximately(speed, fallSpeed))
         {
             var main = emitter.main;
-            main.startSpeed = new ParticleSystem.MinMaxCurve(speed * .85f, speed * 1.25f);
+            float slowest = speed * .85f;
+            main.startSpeed = new ParticleSystem.MinMaxCurve(slowest, speed * 1.25f);
+            // Allow even a slow drop to reach the front edge of the battle floor.
+            float longestFlight = RainWorldHeight * 1.15f / slowest;
+            main.startLifetime = new ParticleSystem.MinMaxCurve(longestFlight + .05f, longestFlight + .14f);
             fallSpeed = speed;
         }
         if (!Mathf.Approximately(horizontalWind, weather.Wind))
@@ -180,7 +185,7 @@ public sealed class WorldClimateVendorAdapter : WorldClimateAssetAdapter
             wind.y = wind.z = 0f;
             horizontalWind = weather.Wind;
         }
-        impacts.SetSurface(weather, viewport, groundScroll, groundY);
+        impacts.SetSurface(weather, viewport, groundScroll, groundBounds);
         rainGraphic.SetPresentation(viewport, strength, settings);
         float rate = maxRainRate * Mathf.Clamp01(strength * (settings != null ? settings.rainIntensity : 1f));
         if (lastRainRate != rate)

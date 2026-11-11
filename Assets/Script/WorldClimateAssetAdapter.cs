@@ -5,7 +5,7 @@ using UnityEngine;
 public abstract class WorldClimateAssetAdapter : MonoBehaviour
 {
     internal virtual void SetSkyScroll(float viewportWidths) { }
-    internal virtual void SetWeatherVisual(WorldWeatherVisual visual, double groundScroll, float groundY) { }
+    internal virtual void SetWeatherVisual(WorldWeatherVisual visual, double groundScroll, Rect groundBounds) { }
     internal virtual void SetGroundScroll(double groundScroll) { }
     internal virtual float ConsumeRainImpact() => 0f;
 

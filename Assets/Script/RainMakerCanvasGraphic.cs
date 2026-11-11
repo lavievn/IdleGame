@@ -54,7 +54,7 @@ public sealed class RainMakerCanvasGraphic : MaskableGraphic
         {
             var particle = particles[i];
             Vector2 current = (Vector2)particle.position * scale + viewport.center;
-            float ground = impacts.GroundAt(current.x, out bool water);
+            float ground = impacts.GroundAt(current.x, particle.randomSeed, out bool water);
             if (current.y > ground) continue;
             Vector2 movement = (Vector2)particle.totalVelocity * (Time.deltaTime * scale);
             if (movement.y < 0f && current.y - movement.y > ground)

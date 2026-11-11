@@ -14,9 +14,9 @@ public sealed class RainImpactCanvasGraphic : MaskableGraphic
 
     private readonly Impact[] impacts = new Impact[Capacity];
     private WorldWeatherVisual weather;
-    private Rect viewport;
+    private Rect viewport, battleBounds;
     private double scroll;
-    private float floor, tileWidth;
+    private float tileWidth;
     private int next;
     internal int Generation { get; private set; }
     internal int VisibleImpacts { get; private set; }
@@ -26,11 +26,11 @@ public sealed class RainImpactCanvasGraphic : MaskableGraphic
     internal bool DetectImpacts => weather.Settings != null &&
         (weather.Settings.groundSplash && weather.Settings.splashIntensity > 0f || weather.Settings.waterRipples);
 
-    internal void SetSurface(WorldWeatherVisual visual, Rect view, double groundScroll, float groundY)
+    internal void SetSurface(WorldWeatherVisual visual, Rect view, double groundScroll, Rect ground)
     {
         weather = visual;
         viewport = view;
-        floor = groundY;
+        battleBounds = ground;
         scroll = groundScroll;
         tileWidth = view.width;
     }
@@ -42,10 +42,11 @@ public sealed class RainImpactCanvasGraphic : MaskableGraphic
         if (VisibleImpacts > 0) SetVerticesDirty();
     }
 
-    internal float GroundAt(float battleX, out bool water)
+    internal float GroundAt(float battleX, uint dropSeed, out bool water)
     {
         water = false;
-        float ground = floor;
+        float depth = DropDepth(dropSeed);
+        float ground = Mathf.Lerp(battleBounds.yMin, battleBounds.yMax, depth);
         var surfaces = weather.Settings?.surfaces;
         if (surfaces == null || tileWidth <= 0f) return ground;
         float x = Mathf.Repeat((float)(battleX - scroll - viewport.xMin), tileWidth);
@@ -59,6 +60,18 @@ public sealed class RainImpactCanvasGraphic : MaskableGraphic
             water = surface.water;
         }
         return ground;
+    }
+
+    // One depth per native particle. Independent of frame timing and gameplay RNG.
+    private static float DropDepth(uint seed)
+    {
+        unchecked
+        {
+            seed = (seed ^ (seed >> 16)) * 0x7feb352du;
+            seed = (seed ^ (seed >> 15)) * 0x846ca68bu;
+            seed ^= seed >> 16;
+            return ((seed & 0x00ffffff) + .5f) / 16777216f;
+        }
     }
 
     internal void Emit(Vector2 battle, float strength, bool water)
@@ -96,6 +109,18 @@ public sealed class RainImpactCanvasGraphic : MaskableGraphic
     }
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
+    internal Vector2 ActiveDepthRange()
+    {
+        float min = float.PositiveInfinity, max = float.NegativeInfinity;
+        foreach (var impact in impacts)
+        {
+            if (impact.EndTime <= Time.time || impact.Water) continue;
+            min = Mathf.Min(min, impact.Y);
+            max = Mathf.Max(max, impact.Y);
+        }
+        return new Vector2(min, max);
+    }
+
     internal bool TryGetImpactPosition(bool water, out Vector2 battle)
     {
         foreach (var impact in impacts)

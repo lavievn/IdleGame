@@ -51,7 +51,7 @@ public partial class GroundPresentation
         }
 
         Rect viewport = ClimateViewport();
-        adapter.SetWeatherVisual(visual, climateGroundScroll, Mathf.Clamp(grassY, space.BattleArea.rect.yMin, space.BattleArea.rect.yMax));
+        adapter.SetWeatherVisual(visual, climateGroundScroll, space.BattleArea.rect);
         Texture sky = null;
         if (hdrSky && viewport.width > 0f && viewport.height > 0f)
         {
