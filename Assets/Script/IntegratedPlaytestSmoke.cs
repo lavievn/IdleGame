@@ -36,9 +36,12 @@ internal static class IntegratedPlaytestSmoke
         pass("PR 12 Hero PNG frames render and animate on the deployed Hero in Hàn Vụ thôn.");
 
         var weatherAudio = Read<WorldWeatherAudio>(game, "weatherAudio");
+        var mix = Read<WorldWeatherAudioSettings>(game, "worldWeatherAudioSettings");
+        float bedTarget = .33f * mix.environmentVolume * AudioVolumeSettings.Get(GameAudioChannel.Sfx);
+        Check(bedTarget > 0f, "SFX master is audible for the integration fixture");
         GameObject host = null;
         yield return Wait(() => (host = game.transform.Find("Map ambience layers")?.gameObject) != null &&
-            Find(host, "Meadow_base")?.volume > .15f, 5, "Village environment loops");
+            Find(host, "Meadow_base")?.volume >= bedTarget * .97f, 5, "Village environment loops");
         var villageBed = Find(host, "Meadow_base");
         var oldVolume = villageBed.volume;
         int oldTime = villageBed.timeSamples;
