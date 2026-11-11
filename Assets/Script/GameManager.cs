@@ -479,16 +479,11 @@ public partial class GameManager : MonoBehaviour
         runtimeHeroData.mapNumber = 1; runtimeHeroData.completedWavesInMap = 0; runtimeHeroData.mapProgressVersion = 1;
         runtimeHeroData.mapVisits = 1;
         runtimeHeroData.regionIndex = -1; runtimeHeroData.mapName = ""; WorldNames.AssignMap(runtimeHeroData);
-        // A NEW run starts in one of the five confirmed world-map births.
-        // Old saves retain their unmodified legacy sequential maps.
-        if (!WorldMapCatalog.StartNew(runtimeHeroData))
-            Debug.LogWarning("[WorldMap] World catalog unavailable; new run remains in legacy mode.");
-
+        StoryOrigin.InitializeNewHero(runtimeHeroData);
+        if (!WorldMapCatalog.StartNew(runtimeHeroData, StoryOrigin.HanVu.Village))
         {
-            runtimeHeroData.gender = Random.Range(0, 2) == 0 ? GenderType.Nam : GenderType.Nu;
-            runtimeHeroData.entityName = NameDatabase.GetRandomName(runtimeHeroData.gender);
-            runtimeHeroData.race = SynergyMath.GenerateRandomRace();
-            SynergyMath.GenerateRootProfile(runtimeHeroData);
+            runtimeHeroData.originStory = null;
+            Debug.LogError("[StoryOrigin] Hàn Vụ map unavailable; new run remains in legacy mode.");
         }
 
         InitializeCultivation();
@@ -735,6 +730,12 @@ public partial class GameManager : MonoBehaviour
             var space=environmentManager!=null?environmentManager:EnvironmentManager.Instance;
             if(space!=null)space.BeginCameraEntryHandoff();
             if(UIManager.Instance!=null)UIManager.Instance.ShowMapTitle(runtimeHeroData.mapName);
+            string narration = StoryOrigin.Arrive(runtimeHeroData);
+            if (narration != null)
+            {
+                CommitOriginChange(narration);
+                UIManager.Instance?.ShowOriginOpening(runtimeHeroData);
+            }
             CallNextWave();
         }
         TraceEntryFrame("GameManager after gameplay release and first wave");
@@ -1036,7 +1037,7 @@ public partial class GameManager : MonoBehaviour
             runtimeHeroData.RestartRegionAfterDefeat();
             RestoreProgress();
             UpdateEventLog(WorldMapCatalog.Enabled(runtimeHeroData)
-                ? "Thất bại: đánh lại wave 1 tại " + runtimeHeroData.mapName +
+                ? "Thất bại: đánh lại wave " + runtimeHeroData.worldMapLoopWave + " tại " + runtimeHeroData.mapName +
                     ". Giữ cấp, trang bị và lịch sử map đã mở."
                 : "Thất bại: quay về map đầu của " + WorldNames.Region(runtimeHeroData.regionTheme) +
                     ", đợt 1/5. Giữ cấp và chỉ số nhân vật.");
@@ -1261,16 +1262,90 @@ public partial class GameManager : MonoBehaviour
         return true;
     }
 
+    internal bool TryOriginInteraction()
+    {
+        if (!IsGameplayHUDVisible || HasTribulationLiability) return false;
+        var state = runtimeHeroData.originStory;
+        if (state == null) return false;
+        var stage = state.stage;
+        string narration = StoryOrigin.Interact(runtimeHeroData);
+        if (narration == null) return false;
+        if (stage != state.stage) CommitOriginChange(narration);
+        else if (UIManager.Instance != null) UIManager.Instance.ShowOriginNotice(runtimeHeroData, narration);
+        return true;
+    }
+
+    internal void RecordOriginTrip()
+    {
+        if (IsGameplayHUDVisible && !HasTribulationLiability && HanVuNarrative.RecordTrip(runtimeHeroData))
+            CommitOriginChange(null);
+    }
+
+    internal bool TryTalkToWoodcutter()
+    {
+        if (!IsGameplayHUDVisible || HasTribulationLiability || !HanVuNarrative.AtWoodcutter(runtimeHeroData))
+            return false;
+        if (HanVuNarrative.TalkToWoodcutter(runtimeHeroData)) CommitOriginChange(null);
+        return true;
+    }
+
+    internal bool TryChooseHerbs(bool accept)
+    {
+        if (!IsGameplayHUDVisible || HasTribulationLiability || !StoryOrigin.ChooseHerbs(runtimeHeroData, accept))
+            return false;
+        CommitOriginChange(accept ? "Ta đã nhận lời tìm lá bạc." : "Ta xin để chuyện tìm thuốc lại sau.");
+        return true;
+    }
+
+    internal OriginEncounter OpenOriginEncounter()
+    {
+        if (!IsGameplayHUDVisible || HasTribulationLiability) return null;
+        var offer = HanVuEncounters.Available(runtimeHeroData);
+        if (offer != null && HanVuEncounters.Observe(runtimeHeroData, offer.Id)) CommitOriginChange(null);
+        return offer;
+    }
+
+    internal bool TryChooseOriginEncounter(string id, EncounterChoice choice)
+    {
+        if (!IsGameplayHUDVisible || HasTribulationLiability) return false;
+        var offer = HanVuEncounters.Available(runtimeHeroData);
+        if (offer == null || !HanVuEncounters.Choose(runtimeHeroData, id, choice)) return false;
+        CommitOriginChange(choice == EncounterChoice.Participated ? offer.Result : offer.Decline + ".");
+        return true;
+    }
+
+    internal void ToggleOriginPrompts()
+    {
+        if (!IsGameplayHUDVisible || HasTribulationLiability || StoryOrigin.Definition(runtimeHeroData) == null) return;
+        runtimeHeroData.originStory.hideStoryPrompts = !runtimeHeroData.originStory.hideStoryPrompts;
+        runtimeHeroData.isDirty = true;
+        CommitOriginChange(null);
+    }
+
+    private void CommitOriginChange(string narration)
+    {
+        if (narration != null)
+        {
+            UpdateEventLog(narration);
+            if (UIManager.Instance != null) UIManager.Instance.ShowOriginNotice(runtimeHeroData, narration);
+        }
+        CaptureSelectedStance();
+        if (saveManager != null && !saveManager.SaveGame(runtimeHeroData, SaveSlot.AutoSave))
+            UpdateEventLog("Chưa lưu được mốc truyện Hàn Vụ. Có thể thử lưu lại.");
+    }
+
     private void CallNextWave()
     {
-        if (HasTribulationLiability || !hasDeployed || enteringGameplay || monsterSpawner == null || activeMonsters.Count>0) return;
+        if (HasTribulationLiability || !hasDeployed || enteringGameplay || monsterSpawner == null ||
+            activeMonsters.Count > 0 || StoryOrigin.IsSafe(runtimeHeroData)) return;
         waitingForExploration=false;explorationDistance=0d;
         foreach(var hero in HeroController.ActiveHeroes)
             if(hero!=null)hero.TracePosition("CallNextWave before spawn");
         activeMonsters.Clear();
 
         RestoreProgress();
-        int spawnCount = retryWaveSize > 0 ? retryWaveSize : Random.Range(1, 4);
+        int spawnCount = StoryOrigin.IsEliteWave(runtimeHeroData) ? 1 :
+            retryWaveSize > 0 ? retryWaveSize : Random.Range(1, 4);
         retryWaveSize = 0;
         waveSpawnCount = spawnCount;
         for (int i = 0; i < spawnCount; i++)
@@ -1327,7 +1402,12 @@ public partial class GameManager : MonoBehaviour
         nextWaveCoroutine = StartCoroutine(WaitAndCallNextWave());
     }
 
-    public void OnMonsterDied(GameObject deadMonster)
+    public void OnMonsterDied(GameObject deadMonster) => FinishMonsterDeath(deadMonster, false, false);
+
+    internal void OnAcceptedMonsterDied(GameObject deadMonster, bool storyElite) =>
+        FinishMonsterDeath(deadMonster, true, storyElite);
+
+    private void FinishMonsterDeath(GameObject deadMonster, bool accepted, bool storyElite)
     {
         if (!activeMonsters.Remove(deadMonster)) return;
         if (hasDeployed && activeMonsters.Count == 0 && nextWaveCoroutine == null)
@@ -1336,6 +1416,13 @@ public partial class GameManager : MonoBehaviour
             {
                 bool changed = runtimeHeroData.CompleteWave();
                 RestoreProgress();
+                if (accepted)
+                {
+                    bool credited = StoryOrigin.CreditWave(runtimeHeroData, storyElite, out string narration);
+                    bool sawNote = runtimeHeroData.worldMapWaveProgress >= 2 && HanVuNarrative.ObserveNote(runtimeHeroData);
+                    if (credited || sawNote)
+                        CommitOriginChange(narration ?? (sawNote ? HanVuNarrative.TrailNote : null));
+                }
                 if (changed)
                 {
                     if (WorldMapCatalog.Enabled(runtimeHeroData))
@@ -1380,6 +1467,8 @@ public partial class GameManager : MonoBehaviour
         // Per-frame minimum, never sum, centroid/camera delta or a fastest Hero.
         // New/unticked members contribute zero; death removes them next sample.
         explorationDistance+=common;
+        if (common > 0f && explorationDistance >= CurrentDistancePerWave * HanVuNarrative.TrailExplorationFraction &&
+            HanVuNarrative.ObserveKnot(runtimeHeroData)) CommitOriginChange(HanVuNarrative.TrailKnot);
         if(explorationDistance>=CurrentDistancePerWave)
         {
             CallNextWave(); // Drops excess distance; one threshold = one wave.

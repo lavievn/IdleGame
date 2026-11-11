@@ -71,11 +71,10 @@ public sealed class WorldMapOutlineGraphic : MaskableGraphic
         if (!WorldMapCatalog.Enabled(hero)) return;
         WorldMapNode current;
         if (!WorldMapCatalog.TryGet(hero.worldMapId, out current)) return;
-        bool allowedToExplore = WorldMapCatalog.IsCleared(hero, current.Id);
         foreach (var shape in WorldMapPolygons.Load().polygons)
         {
             if (shape == null || !WorldMapPolygons.ValidPolygon(shape.vertices)) continue;
-            bool adjacent = allowedToExplore && current.Links.Contains(shape.mapId) &&
+            bool adjacent = current.Links.Contains(shape.mapId) &&
                 WorldMapCatalog.TravelBlockReason(hero,shape.mapId) == null;
             bool selected = shape.mapId == selectedId &&
                 (adjacent || hero.worldMapVisited != null && hero.worldMapVisited.Contains(shape.mapId));

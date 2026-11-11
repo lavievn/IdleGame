@@ -129,6 +129,10 @@ partial class MotionRegression
 
     static void Main(string[] args)
     {
+        if(args.Length==1 && args[0]=="--han-vu-origin")
+        {
+            IdentityMapTests(); StoryOriginTests(); WorldMapRegressionTests(); return;
+        }
         if(args.Length==1 && args[0]=="--lightning-014")
         {
             Run("Warning is non-damaging and frozen at zero elapsed",()=>

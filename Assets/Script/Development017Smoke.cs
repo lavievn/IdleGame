@@ -103,6 +103,11 @@ internal static class Development017Smoke
         UnityEngine.Random.InitState(17017);
         game.OnNewGameClicked();game.OnConfirmResetClicked();
         yield return Ready(game,ui);
+        if (StoryOrigin.IsSafe(game.HeroData))
+        {
+            Check(game.TryTravelToWorldMap(StoryOrigin.HanVu.Forest),"Travel from Hàn Vụ to the loot map");
+            yield return Ready(game,ui);
+        }
         var data=game.HeroData;
         var actor=combat.CurrentHeroCombatState;
         var cfg=game.ProductionLoot;
