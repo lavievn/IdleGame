@@ -105,7 +105,7 @@ internal static class HanVuOriginSmoke
                 Check(lines.Length == 6 && lines[0].Speaker == title + cast.originStory.guardian.name &&
                     lines[1].Speaker == cast.entityName && lines[4].Text.Contains(friend.name),
                     "Both guardian titles and randomized names enter the opening script");
-                Check(HanVuNarrative.Lines(cast, HanVuConversation.Woodcutter)[0].Text.Contains(
+                Check(HanVuNarrative.Lines(cast, HanVuConversation.Woodcutter)[1].Text.Contains(
                     friend.gender == GenderType.Nam ? "Cậu ấy" : "Cô ấy"), "Woodcutter uses companion gender");
             }
             rootCounts.Add(cast.spiritRoots.Count);
@@ -166,7 +166,8 @@ internal static class HanVuOriginSmoke
         var label = Field<TMPro.TextMeshProUGUI>(ui, "originLabel");
         label.ForceMeshUpdate();
         Check(label.text == line.Speaker + "\n" + line.Text && !label.isTextOverflowing,
-            "Expected visible dialogue line: " + line.Speaker + " " + line.Text);
+            "Expected visible dialogue line: " + line.Speaker + " " + line.Text +
+            " | overflow=" + label.isTextOverflowing + " actual=" + label.text);
     }
 
     private static IEnumerator ReadDialogue(UIManager ui, EntityDataSO data, HanVuConversation scene)

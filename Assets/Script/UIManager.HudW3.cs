@@ -187,7 +187,7 @@ public partial class UIManager
         appliedHudLayout=hudLayout.Revision;
         w3.Layout(w,h,hudLayout);
         float m=Mathf.Max(4,hudLayout.margin),gap=Mathf.Max(2,hudLayout.gap);
-        float cardsBottom=m+Mathf.Max(hudLayout.heroCardHeight,HudW3View.PrimaryCardHeight)+gap;
+        float cardsBottom=m+w3.VisibleCardHeight+gap;
         LayoutOriginControls(w, m, cardsBottom, w3.CardWidth);
         float top=Mathf.Max(hudLayout.systemTop,cardsBottom + (originControlsVisible ? 24f + gap : 0f));
         var buttons=new[]{statsButton,inventoryButton,martialButton,menuButton};
@@ -245,7 +245,13 @@ public partial class UIManager
         RefreshWorldMapAvailability();
         RefreshB2PauseFeedback();
         RefreshHudTheme();
-        if(w3!=null)w3.Render(hudGame,CombatManager.Instance,inventoryUseArtTheme?inventoryArtTheme:null);
+        if (w3 != null)
+        {
+            float previousHeight = w3.VisibleCardHeight;
+            w3.Render(hudGame, CombatManager.Instance, inventoryUseArtTheme ? inventoryArtTheme : null);
+            if (w3.VisibleCardHeight != previousHeight)
+                LayoutReadableUI();
+        }
         if(logToggleLabel!=null)
         {
             string value=showCompactLog?"Ẩn log":"Chiến báo";

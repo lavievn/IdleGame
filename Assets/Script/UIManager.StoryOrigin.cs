@@ -133,11 +133,7 @@ public partial class UIManager
         if (originJournalOpen)
             originPage += direction;
         else if (dialogue != null)
-        {
             dialogueIndex = Mathf.Clamp(dialogueIndex + direction, 0, dialogue.Length - 1);
-            if (HanVuNarrative.TellsOfTrip(conversation, dialogueIndex))
-                GameForUI()?.RecordOriginTrip();
-        }
     }
 
     private bool LastLine => dialogue != null && dialogueIndex == dialogue.Length - 1;
@@ -240,6 +236,8 @@ public partial class UIManager
         {
             var line = dialogue[dialogueIndex];
             originLabel.text = line.Speaker + "\n" + line.Text;
+            if (!data.originStory.heardOpeningTrip && HanVuNarrative.TellsOfTrip(conversation, dialogueIndex))
+                hudGame.RecordOriginTrip();
             originAcceptLabel.text = canPrepare ? "Sắc thuốc" : "Nhận lời";
             originDeclineLabel.text = "Để sau";
         }
@@ -265,8 +263,9 @@ public partial class UIManager
 
     private void HighlightOriginMap(bool active)
     {
-        if (originMapCaption == null || active == originMapHighlighted) return;
-        originMapCaption.color = active ? new Color(1f, .91f, .71f) : Color.white;
+        if (originMapCaption == null) return;
+        if (active) originMapCaption.color = new Color(1f, .91f, .71f);
+        else if (originMapHighlighted) originMapCaption.color = Color.white;
         originMapHighlighted = active;
     }
 }

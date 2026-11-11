@@ -40,7 +40,7 @@ namespace TuTienCore
                     {
                         new HanVuLine(guardian, "Khụ… Con khoác thêm áo đi. Sáng nay sương phủ tới tận bậc cửa."),
                         new HanVuLine(hero.entityName, "Con ấm rồi. " + Elder(story) + " lại thức vì ho cả đêm phải không?"),
-                        new HanVuLine(guardian, "Chợp mắt được một lúc. Gói thuốc cũ chỉ còn một nhúm, để " + elder + " pha loãng ra."),
+                        new HanVuLine(guardian, "Khụ… Cũng chợp mắt được một lúc. Thuốc cũ còn một nhúm, để " + elder + " pha loãng ra."),
                         new HanVuLine(hero.entityName, "Thầy lang dặn lá bạc mọc ở bìa Cô Hồn Lâm. Khi sương tan, con có thể đi hái."),
                         new HanVuLine(guardian, friend + " sáng nay mang giỏ lên núi. Hai đứa từ bé vẫn chia nhau gùi củi ở đấy."),
                         new HanVuLine(hero.entityName, "Nếu gặp " + friend + ", con sẽ nhắn về ăn cơm. " + Elder(story) + " cứ nghỉ, để con lo bếp.")
@@ -49,8 +49,7 @@ namespace TuTienCore
                     return new[]
                     {
                         new HanVuLine(hero.entityName, "Con mang lá bạc về rồi. " + Elder(story) + " ngồi tựa lưng cho dễ thở nhé."),
-                        new HanVuLine(guardian, "Sáng nay " + friend + " mang giỏ lên núi tìm thêm vị thuốc. " + elder +
-                            " vẫn để phần cơm cho " + Friend(story).ToLowerInvariant() + "."),
+                        new HanVuLine(guardian, "Sáng nay " + friend + " mang giỏ lên núi tìm vị thuốc khác. Cơm vẫn để phần."),
                         new HanVuLine(hero.entityName, "Con sắc thuốc trước. Để con kê cái gối cao lên một chút.")
                     };
                 case HanVuConversation.AfterMedicine:
@@ -62,8 +61,8 @@ namespace TuTienCore
                 case HanVuConversation.Woodcutter:
                     return new[]
                     {
-                        new HanVuLine("Người đốn củi", "Có, tôi thấy " + friend + " xách giỏ lá. " + Friend(story) +
-                            " thong thả hỏi lối rẽ phía bắc, chỗ bóng thông phủ kín đường."),
+                        new HanVuLine("Người đốn củi", "Có, tôi thấy " + friend + " xách giỏ lá qua đây."),
+                        new HanVuLine("Người đốn củi", Friend(story) + " thong thả hỏi lối rẽ phía bắc, chỗ rợp bóng thông."),
                         new HanVuLine(hero.entityName, "Cảm ơn bác. Khi qua lối rẽ đó, cháu sẽ để ý.")
                     };
                 default:
