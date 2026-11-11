@@ -8,6 +8,24 @@ public sealed class CultivationSpriteBridge : MonoBehaviour
     public const string DefaultHeroVisualKey="Swordsman";
     public const string DefaultHeroTexturePath="CultivationSprites/Swordsman_Normal";
     public enum Pose { Normal, Attack, Hit }
+    public enum Motion { Idle, Walk, Run }
+    // One path-based profile for every weapon. No serialized Sprite GUIDs are
+    // needed: Unity imports the supplied full canvases as textures.
+    [System.Serializable]
+    private sealed class HeroAnimationProfile
+    {
+        public string idlePrefix="", walkPrefix="", runPrefix="", hitPrefix="";
+        public int idleCount=0, walkCount=0, runCount=0, hitCount=0;
+        public float idleFps=24f, walkFps=24f, runFps=24f, hitFps=30f;
+        public float feetX=220f, feetY=17f, pixelsPerUnit=6f;
+    }
+    private HeroAnimationProfile heroProfile;
+    private HeroController heroController;
+    private Sprite[] walkFrames, runFrames;
+    private Motion motion;
+    private float motionStartedAt;
+    private bool usingHeroFrame;
+    public Motion CurrentMotion => motion;
     // Presentation windows only. CombatManager owns damage, projectiles and
     // attack cadence; these durations never grant damage immunity or delay a hit.
     private const float AttackDisplayDuration = .16f;
@@ -35,7 +53,8 @@ public sealed class CultivationSpriteBridge : MonoBehaviour
     private string fallbackClass;
     private bool normalTint,attackTint,hitTint;
     private Vector2 normalFoot=SourceFeet,attackFoot=SourceFeet,hitFoot=SourceFeet;
-    private Vector2 FrameFoot => pose==Pose.Hit && hit!=null?hitFoot:
+    private Vector2 FrameFoot => usingHeroFrame
+        ? new Vector2(heroProfile.feetX,heroProfile.feetY) : pose==Pose.Hit && hit!=null?hitFoot:
         pose==Pose.Attack && attack!=null?attackFoot:normalFoot;
     private Pose pose = Pose.Normal;
     private float returnAt;
@@ -69,6 +88,7 @@ public sealed class CultivationSpriteBridge : MonoBehaviour
         var bridge = controller.heroRect.GetComponent<CultivationSpriteBridge>();
         if (bridge == null) bridge = controller.heroRect.gameObject.AddComponent<CultivationSpriteBridge>();
         bridge.healthFill = controller.hpFillImage;
+        bridge.heroController = controller;
         bridge.Init(false, DefaultHeroVisualKey); // Character identity is independent of weapon/combat mode.
     }
     public static void AttachMonster(MonsterController controller)
@@ -131,11 +151,6 @@ public sealed class CultivationSpriteBridge : MonoBehaviour
             // red overlay. Keep white Image tint so that it is not applied twice.
             string prefix = enemy ? "Enemy_" : "";
             string path = "CultivationSprites/" + prefix + type;
-            // Hero uses the existing default Normal bitmap for every action request.
-            // Old Archer/Mage sample sheets remain assets (including enemy fallback references).
-            // Combat owns timing; a future animation adapter can consume action metadata here.
-            // Load each fallback only if its complete sequence is unavailable.
-            // Loading it first leaked a created Sprite when frame[0] replaced it.
             normalFoot=attackFoot=hitFoot=SourceFeet;
             normalTint=attackTint=hitTint=false;
             if(enemy)
@@ -147,7 +162,17 @@ public sealed class CultivationSpriteBridge : MonoBehaviour
             else
             {
                 normal=LoadFrame(DefaultHeroTexturePath);
-                attack=hit=null; // No attack/weapon-specific replacement of the Hero body.
+                attack=hit=null; // Preserve the current single Normal frame for unsupported actions.
+                var profile=Resources.Load<TextAsset>("HeroAnimation/SharedHero");
+                if(profile!=null)
+                {
+                    heroProfile=new HeroAnimationProfile();
+                    JsonUtility.FromJsonOverwrite(profile.text,heroProfile);
+                    normalFrames=LoadSequence(heroProfile.idlePrefix,heroProfile.idleCount);
+                    walkFrames=LoadSequence(heroProfile.walkPrefix,heroProfile.walkCount);
+                    runFrames=LoadSequence(heroProfile.runPrefix,heroProfile.runCount);
+                    hitFrames=LoadSequence(heroProfile.hitPrefix,heroProfile.hitCount);
+                }
             }
         }
         if (normal == null)
@@ -207,20 +232,37 @@ public sealed class CultivationSpriteBridge : MonoBehaviour
         tint=frame!=null;
         return frame;
     }
-    private static Sprite[] LoadSequence(string path)
+    private static Sprite[] LoadSequence(string prefix,int count)
     {
-        var frames=new Sprite[3];
-        for(int i=0;i<3;i++)
+        if(string.IsNullOrEmpty(prefix) || count<=0)return null;
+        var frames=new Sprite[count];
+        // Export numbering is zero-based, with a trailing five-digit index.
+        // Direct paths make ordering deterministic regardless of import order.
+        for(int i=0;i<count;i++)
         {
-            frames[i]=LoadFrame(path+"_"+(i+1));
+            frames[i]=LoadFrame(prefix+i.ToString("D5"));
             if(frames[i]==null)
             {
-                for(int j=0;j<=i;j++)if(frames[j]!=null)Destroy(frames[j]);
-                return null;
+                foreach(var frame in frames)if(frame!=null)Destroy(frame);
+                return null; // Never play a partial sequence.
             }
         }
         return frames;
     }
+    private void UpdateMotion()
+    {
+        if(enemy || heroController==null || Time.timeScale<=0f)return;
+        Motion next=Motion.Idle;
+        if(heroController.IsDeployed && heroController.MovementFrame==Time.frameCount &&
+            heroController.MovementDistanceThisFrame>.001f)
+            next=heroController.IsExplorationMovement?Motion.Walk:Motion.Run;
+        if(next==motion)return;
+        motion=next;motionStartedAt=Time.time;
+    }
+    private Sprite[] MotionFrames => motion==Motion.Walk?walkFrames:
+        motion==Motion.Run?runFrames:normalFrames;
+    private float MotionFps => motion==Motion.Walk?heroProfile.walkFps:
+        motion==Motion.Run?heroProfile.runFps:heroProfile.idleFps;
     private void Show(Pose requested, float duration)
     {
         if (image == null || !isActiveAndEnabled) return;
@@ -232,12 +274,18 @@ public sealed class CultivationSpriteBridge : MonoBehaviour
         if(attackFrames!=null && requested==Pose.Attack && pose==Pose.Attack && Time.time<returnAt)return;
         pose = requested;
         poseStartedAt = Time.time;
+        // Hit is visual-only, plays once at the profile FPS, and can still be
+        // interrupted by Attack. The Attack window remains exactly .16 seconds.
+        if(requested==Pose.Hit && hitFrames!=null)
+            duration=hitFrames.Length/Mathf.Max(.01f,heroProfile.hitFps);
         returnAt = Time.time + duration;
         Apply();
     }
     private void ResetPose()
     {
         pose = Pose.Normal;
+        motion=Motion.Idle;
+        motionStartedAt=Time.time;
         poseStartedAt = Time.time;
         returnAt = 0f;
         Apply();
@@ -249,27 +297,28 @@ public sealed class CultivationSpriteBridge : MonoBehaviour
     private void Update()
     {
         if (image == null) return;
+        UpdateMotion();
         if (pose != Pose.Normal && Time.time >= returnAt)
         {
             pose = Pose.Normal;
             poseStartedAt = returnAt;
             Apply();
         }
-        if(normalFrames!=null)Apply();
+        if(heroProfile!=null)Apply();
         else ApplyLayout();
     }
     private void Apply()
     {
         if (image == null || normal == null) return;
-        var frames=pose==Pose.Hit?hitFrames:pose==Pose.Attack?attackFrames:normalFrames;
-        if(frames!=null)
+        var frames=pose==Pose.Hit?hitFrames:pose==Pose.Attack?attackFrames:MotionFrames;
+        usingHeroFrame=!enemy && frames!=null;
+        if(usingHeroFrame)
         {
-            float duration=pose==Pose.Hit?HitDisplayDuration:
-                pose==Pose.Attack?AttackDisplayDuration:.42f;
-            int index=pose==Pose.Normal
-                ? Mathf.FloorToInt(Mathf.Max(0f,Time.time-poseStartedAt)/(.42f/3f))%3
-                : Mathf.Clamp(Mathf.FloorToInt((Time.time-poseStartedAt)/
-                    (duration/3f)),0,2);
+            bool loop=pose==Pose.Normal; // Idle/Walk/Run loop; Hit is one-shot.
+            float fps=loop?MotionFps:heroProfile.hitFps;
+            float elapsed=Mathf.Max(0f,Time.time-(loop?motionStartedAt:poseStartedAt));
+            int index=Mathf.FloorToInt(elapsed*Mathf.Max(.01f,fps));
+            index=loop?index%frames.Length:Mathf.Min(index,frames.Length-1);
             image.sprite=frames[index];
         }
         else image.sprite = pose == Pose.Hit && hit != null ? hit :
@@ -288,7 +337,8 @@ public sealed class CultivationSpriteBridge : MonoBehaviour
         body.anchorMin = body.anchorMax = new Vector2(.5f, 0f);
         body.pivot = new Vector2(FrameFoot.x / frame.width, FrameFoot.y / frame.height);
         body.anchoredPosition = Vector2.zero;
-        body.sizeDelta = new Vector2(frame.width / SourcePixelsPerUnit, frame.height / SourcePixelsPerUnit);
+        float ppu=usingHeroFrame?Mathf.Max(.01f,heroProfile.pixelsPerUnit):SourcePixelsPerUnit;
+        body.sizeDelta = new Vector2(frame.width / ppu, frame.height / ppu);
         float scale = Mathf.Max(.01f, enemy ? monsterScale : heroScale);
         bool flip = enemy ? monsterFlipHorizontal : heroFlipHorizontal;
         body.localScale = new Vector3(flip ? -scale : scale, scale, 1f);
@@ -311,14 +361,14 @@ public sealed class CultivationSpriteBridge : MonoBehaviour
     }
     private void ReleaseSprites()
     {
-        if(normalFrames!=null) { foreach(var frame in normalFrames) if(frame!=null)Destroy(frame); }
-        else if(normal!=null)Destroy(normal);
-        if(attackFrames!=null) { foreach(var frame in attackFrames) if(frame!=null)Destroy(frame); }
-        else if(attack!=null)Destroy(attack);
-        if(hitFrames!=null) { foreach(var frame in hitFrames) if(frame!=null)Destroy(frame); }
-        else if(hit!=null)Destroy(hit);
-        normalFrames=attackFrames=hitFrames=null;
+        foreach(var frames in new[]{normalFrames,walkFrames,runFrames,attackFrames,hitFrames})
+            if(frames!=null)foreach(var frame in frames)if(frame!=null)Destroy(frame);
+        if(normal!=null)Destroy(normal);
+        if(attack!=null)Destroy(attack);
+        if(hit!=null)Destroy(hit);
+        normalFrames=walkFrames=runFrames=attackFrames=hitFrames=null;
         normal=attack=hit=null;
+        heroProfile=null;usingHeroFrame=false;
     }
     private void OnDestroy()
     {

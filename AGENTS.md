@@ -64,6 +64,20 @@ tương ứng trong thư mục đó. Không cần cài plugin, gọi mạng ho�
 Không tuyên bố auto-trigger đã được nghiệm thu nếu mới chỉ kiểm tra file.
 
 
+
+## Hướng dẫn lập trình tối giản (Karpathy-inspired)
+
+Khi sửa, đánh giá hoặc tái cấu trúc mã, đọc thêm
+[karpathy-guidelines](.agents/skills/karpathy-guidelines/SKILL.md).
+Đây là skill hướng dẫn hành vi: nêu giả định, chọn thay đổi nhỏ nhất, tránh
+refactor ngoài phạm vi và xác minh mục tiêu bằng bằng chứng. Không tự cài
+plugin/SDK hoặc nạp skill mới trên toàn máy.
+
+**Ưu tiên khi xung đột:** yêu cầu task > quy tắc dự án đã đối chiếu mã >
+hướng dẫn chung của karpathy-guidelines. Không biến guideline thành cớ
+trì hoãn những hạng mục đã rõ hoặc tăng test không cần thiết. Trên Cloud,
+không tuyên bố Unity/Windows Player PASS nếu chỉ xem nguồn hoặc kiểm tra tĩnh.
+
 ## Local Windows storage (07/11/2026)
 
 On hason's workstation, the active worktree is `D:/IdleGame/Project` and development
