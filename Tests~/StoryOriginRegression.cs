@@ -30,30 +30,36 @@ partial class MotionRegression
                 "Both genders and all Human root counts appear");
         });
 
-        Run("Hàn Vụ events are ordered, scoped to the route and award each item once", () =>
+        Run("Hàn Vụ separates optional progress, world travel and encounter decisions", () =>
         {
             var hero = ScriptableObject.CreateInstance<EntityDataSO>();
             StoryOrigin.InitializeNewHero(hero);
             var origin = StoryOrigin.HanVu;
             hero.worldMapId = origin.Village;
             Check(StoryOrigin.IsSafe(hero) && StoryOrigin.Arrive(hero) != null &&
-                StoryOrigin.Arrive(hero) == null, "Intro once");
-            Check(StoryOrigin.TravelOverride(hero, origin.Forest, out var reason) && reason == null,
-                "Peaceful village can reach forest");
+                StoryOrigin.Arrive(hero) == null && !StoryOrigin.HintMap(hero), "Quiet intro without taking a quest");
+            var merchant = HanVuEncounters.Available(hero);
+            Check(merchant != null && hero.originStory.encounters == null, "Unseen offer creates no record");
+            Check(HanVuEncounters.Observe(hero, merchant.Id) && !HanVuEncounters.Observe(hero, merchant.Id) &&
+                !HanVuEncounters.Choose(hero, merchant.Id, EncounterChoice.Pending), "Opening records only observation");
+            Check(HanVuEncounters.Choose(hero, merchant.Id, EncounterChoice.Declined) &&
+                !HanVuEncounters.Choose(hero, merchant.Id, EncounterChoice.Participated) &&
+                HanVuEncounters.Available(hero) == null, "Refusal is final for this encounter");
             StoryOrigin.Interact(hero);
-            StoryOrigin.Interact(hero);
-            Check(StoryOrigin.Journal(hero).Count == 3, "Talk fact appears once");
+            Check(StoryOrigin.ChooseHerbs(hero, false), "Explicit quest decline");
             hero.worldMapId = origin.Forest;
-            Check(StoryOrigin.IsWolfMap(hero), "Forest wolf profile");
+            Check(!StoryOrigin.CreditWave(hero, false, out _) && StoryOrigin.ItemCount(hero, origin.HerbId) == 0,
+                "Declined quest receives no herbs from farm");
+            hero.worldMapId = origin.Village;
+            Check(StoryOrigin.ChooseHerbs(hero, true) && !StoryOrigin.ChooseHerbs(hero, true), "Later opt-in");
+            hero.worldMapId = origin.Forest;
             for (int wave = 1; wave <= 5; wave++)
             {
-                StoryOrigin.AfterWave(hero, wave);
-                StoryOrigin.AfterWave(hero, wave);
-                Check(StoryOrigin.ItemCount(hero, origin.HerbId) == wave, "One herb per wave ordinal");
+                Check(StoryOrigin.CreditWave(hero, false, out _) && StoryOrigin.ItemCount(hero, origin.HerbId) == wave,
+                    "Accepted wave contributes exactly one herb");
             }
-            Check(hero.originStory.stage == OriginStage.Return && StoryOrigin.HintMap(hero), "Prompt manual return");
-            Check(StoryOrigin.TravelOverride(hero, origin.EliteMap, out reason) && reason != null,
-                "Elite blocked before trail");
+            Check(!StoryOrigin.CreditWave(hero, false, out _) && hero.originStory.stage == OriginStage.Return,
+                "Herbs capped at five");
             hero.worldMapId = origin.Village;
             StoryOrigin.Interact(hero);
             StoryOrigin.Interact(hero);
@@ -63,18 +69,15 @@ partial class MotionRegression
             Check(StoryOrigin.Interact(hero) == null && StoryOrigin.ItemCount(hero, origin.TrailId) == 1,
                 "Trail once");
             hero.worldMapId = origin.EliteMap;
-            Check(StoryOrigin.AfterWave(hero, 5) == null, "Out-of-order boss does not grant a clue");
-            for (int wave = 1; wave <= 4; wave++) StoryOrigin.AfterWave(hero, wave);
-            StoryOrigin.RestoreOpeningWave(hero);
-            Check(hero.worldMapLoopWave == 5 && StoryOrigin.IsEliteWave(hero), "Resume at actual elite wave");
-            StoryOrigin.AfterWave(hero, 5);
-            Check(StoryOrigin.AfterWave(hero, 5) == null && !StoryOrigin.IsEliteWave(hero) &&
-                StoryOrigin.ItemCount(hero, origin.ClueId) == 1 && StoryOrigin.IsValid(hero),
-                "Completion is exactly once");
+            Check(!StoryOrigin.CreditWave(hero, true, out _), "Premature elite rejected");
+            for (int wave = 1; wave <= 4; wave++) StoryOrigin.CreditWave(hero, false, out _);
+            Check(StoryOrigin.IsEliteWave(hero) && !StoryOrigin.CreditWave(hero, false, out _),
+                "Only the genuine elite can finish the quest");
+            Check(StoryOrigin.CreditWave(hero, true, out _) && !StoryOrigin.CreditWave(hero, true, out _) &&
+                StoryOrigin.ItemCount(hero, origin.ClueId) == 1 && StoryOrigin.IsValid(hero), "One clue");
             Check(StoryOrigin.Journal(hero).Any(line => line.StartsWith("Suy đoán")), "Inference separately recorded");
             hero.originStory = null;
-            Check(StoryOrigin.IsValid(hero) && !StoryOrigin.IsWolfMap(hero) &&
-                !StoryOrigin.TravelOverride(hero, origin.Forest, out reason), "Legacy campaign keeps normal map rules");
+            Check(StoryOrigin.IsValid(hero) && !StoryOrigin.IsWolfMap(hero), "Origin-less hero");
         });
     }
 }

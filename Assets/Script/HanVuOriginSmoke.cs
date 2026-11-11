@@ -112,7 +112,9 @@ internal static class HanVuOriginSmoke
         var position = space.Position(hero.heroRect);
         foreach (var enemy in actors)
         {
-            Check(enemy.data.race == RaceType.YeuThu && enemy.data.monsterAnimal == "Lang" &&
+            Check(enemy.storyElite == elite, "Authoritative elite marker");
+            if (StoryOrigin.IsWolfMap(game.HeroData))
+                Check(enemy.data.race == RaceType.YeuThu && enemy.data.monsterAnimal == "Lang" &&
                 enemy.data.entityName == (elite ? "Sói đầu đàn" : "Sói rừng") &&
                 enemy.controller.SpriteIdentityKey == "Wolf" && enemy.controller.attackMode == AttackMode.Melee &&
                 enemy.controller.SkillIds.Length == 0, "Beast, Wolf sprite key, melee-only, no active skills");
@@ -141,6 +143,47 @@ internal static class HanVuOriginSmoke
             "Duplicate kill and wave callbacks are inert");
     }
 
+    private const string TravelerMap = "TV-24";
+    private const string MerchantId = "hanvu.merchant_rumor";
+    private const string BasketId = "hanvu.herb_basket";
+    private const string TravelerId = "hanvu.wounded_traveler";
+
+    private static OriginEncounterRecord Record(GameManager game, string id) =>
+        game.HeroData.originStory.encounters?.Find(entry => entry.id == id);
+
+    private static string Json(Dictionary<string, string> fields) =>
+        "{" + string.Join(",", fields.Select(pair => "\"" + pair.Key + "\":" + pair.Value)) + "}";
+
+    private static void WriteOldSave(GameManager game, SaveManager saves, bool priorOrigin, int herbs)
+    {
+        var clone = UnityEngine.Object.Instantiate(game.HeroData);
+        if (priorOrigin)
+        {
+            clone.originStory.version = 1;
+            clone.originStory.stage = OriginStage.Gather;
+            clone.originStory.herbWaves = herbs;
+            clone.originStory.searchWaves = 0;
+        }
+        else
+        {
+            clone.originStory = null;
+            clone.entityName = "Tên Đã Lưu";
+            clone.race = RaceType.YeuThu;
+        }
+        Check(CultivationSaveJson.TryObject(JsonUtility.ToJson(clone), out var fields, out var error), error);
+        UnityEngine.Object.Destroy(clone);
+        if (priorOrigin)
+        {
+            Check(CultivationSaveJson.TryObject(fields["originStory"], out var story, out error), error);
+            foreach (string key in new[] { "herbalParticipation", "declinedHerbalOffer", "hideStoryPrompts", "encounters" })
+                story.Remove(key);
+            fields["originStory"] = Json(story);
+        }
+        else fields.Remove("originStory");
+        saves.SaveGame(SaveSlot.ManualSave2.ToString(), Json(fields));
+        Check(game.LoadAndContinue(SaveSlot.ManualSave2), "Load earlier snapshot");
+    }
+
     internal static IEnumerator Run(GameManager game, SaveManager saves, UIManager ui,
         CombatManager combat, HeroController hero, EnvironmentManager space,
         Func<string,IEnumerator> capture, Action<string> pass)
@@ -150,107 +193,158 @@ internal static class HanVuOriginSmoke
         UnityEngine.Random.InitState(17312);
         VerifyGeneratedCast();
         UnityEngine.Random.InitState(17312);
-        game.OnNewGameClicked(); game.OnConfirmResetClicked();
+        game.OnNewGameClicked();
+        game.OnConfirmResetClicked();
         yield return Ready(game, ui);
         var data = game.HeroData;
         string identity = Identity(data);
-        Check(StoryOrigin.IsValid(data) && StoryOrigin.IsSafe(data) && data.mapName == Origin.VillageName &&
-            data.originStory.introduced && data.race == RaceType.NhanToc &&
-            data.originStory.guardian.race == RaceType.NhanToc &&
-            data.originStory.companion.gender == StoryOrigin.Opposite(data.gender), "Hàn Vụ New Game identity");
+        Check(StoryOrigin.IsValid(data) && StoryOrigin.IsSafe(data) && data.originStory.introduced &&
+            data.originStory.herbalParticipation == HerbalParticipation.Offered &&
+            !data.originStory.heardCompanion && !StoryOrigin.HintMap(data), "Fresh optional origin");
         Call(game, "CallNextWave");
         Check(Enemies(combat).Count == 0 && !game.IsWaitingForExploration &&
-            !WorldMapCatalog.IsCleared(data, Origin.Village), "Village cannot spawn or clear a wave");
-        Click(ui, "HanVuTalk");
-        Click(ui, "HanVuTalk");
-        Check(data.originStory.heardCompanion && StoryOrigin.Journal(data).Count == 3, "One journal entry for repeated NPC talk");
-        yield return capture("han-vu-village");
-        yield return Restore(game, ui, identity);
-        Check(!game.TryTravelToWorldMap(Origin.EliteMap), "No story bypass from village");
-        pass("New Game, Human identities, safe village, intro and replayable NPC dialogue survive Save/Load.");
-
+            !WorldMapCatalog.IsCleared(data, Origin.Village), "Village stays safe");
+        Check(WorldMapCatalog.TravelBlockReason(data, TravelerMap) == null &&
+            WorldMapCatalog.TravelBlockReason(data, Origin.EliteMap) != null, "Adjacent departures and actual adjacency");
+        Check(Record(game, MerchantId) == null && !StoryOrigin.Journal(data).Any(x => x.Contains("bán hàng")),
+            "Unseen encounter absent from journal");
+        yield return capture("optional-han-vu-village");
         yield return SelectForest(game, ui);
-        for (int wave = 1; wave <= 4; wave++)
-        {
-            yield return ClearWave(game, ui, combat, hero, space, false);
-            Check(StoryOrigin.ItemCount(game.HeroData, Origin.HerbId) == wave, "One herb per completed wave");
-        }
-        Call(game, "CallNextWave");
-        Check(Enemies(combat).Count > 0 && game.HeroData.worldMapLoopWave == 5, "Wave five is active");
+        Check(WorldMapCatalog.TravelBlockReason(game.HeroData, Origin.Village).Contains("5 wave"),
+            "Ordinary map's clear gate still applies on a return route");
+        var activeTime = game.Cultivation.ActiveSeconds;
+        for (int i = 0; i < 5; i++) yield return ClearWave(game, ui, combat, hero, space, false);
+        data = game.HeroData;
+        Check(data.originStory.herbalParticipation == HerbalParticipation.Offered &&
+            data.originStory.herbWaves == 0 && WorldMapCatalog.IsCleared(data, Origin.Forest) &&
+            game.Cultivation.ActiveSeconds > activeTime, "Unaccepted story leaves farm, travel unlock and cultivation active");
         yield return Restore(game, ui, identity);
-        Check(game.HeroData.worldMapLoopWave == 5 && StoryOrigin.ItemCount(game.HeroData, Origin.HerbId) == 4,
-            "Reload mid-wave five preserves completed waves only");
+        pass("Safe start and UI travel without quest, standard return gate, five farm waves, cultivation and Save/Load.");
+
+        ui.SetPaused(false);
+        Click(ui, "HanVuEncounter");
+        yield return null;
+        Check(Time.timeScale > 0f && Record(game, BasketId)?.choice == EncounterChoice.Pending,
+            "Opening encounter observes it while combat runs");
+        yield return capture("optional-han-vu-encounter");
+        Click(ui, "HanVuAccept");
+        Check(Time.timeScale > 0f && Record(game, BasketId).choice == EncounterChoice.Participated &&
+            !game.TryChooseOriginEncounter(BasketId, EncounterChoice.Participated), "Participate once");
+        ui.SetPaused(true);
+        yield return Go(game, ui, TravelerMap);
+        Click(ui, "HanVuEncounter");
+        yield return null;
+        Click(ui, "HanVuDecline");
+        Check(Record(game, TravelerId)?.choice == EncounterChoice.Declined &&
+            HanVuEncounters.Available(game.HeroData) == null, "Refusal persists with no reopening");
+        for (int i = 0; i < 5; i++) yield return ClearWave(game, ui, combat, hero, space, false);
+        yield return Go(game, ui, Origin.Village);
+        Click(ui, "HanVuEncounter");
+        yield return null;
+        Click(ui, "HanVuDismiss");
+        var journal = StoryOrigin.Journal(game.HeroData);
+        Check(Record(game, MerchantId)?.choice == EncounterChoice.Pending &&
+            journal.Any(x => x.StartsWith("Ghi nhận") && x.Contains("bán hàng")) &&
+            !journal.Any(x => x.Contains("Xin phép đi") || x.Contains("sương trong rừng")) &&
+            game.HeroData.originStory.herbWaves == 0, "Closing records the observation only");
+        yield return Restore(game, ui, identity);
+        Check(Record(game, MerchantId).choice == EncounterChoice.Pending &&
+            Record(game, TravelerId).choice == EncounterChoice.Declined &&
+            Record(game, BasketId).choice == EncounterChoice.Participated, "All three dispositions round trip");
+        Check(game.OpenOriginEncounter()?.Id == MerchantId, "Pending encounter remains reopenable");
+        pass("Three optional encounters exercise participation, refusal and no response. Outcomes and discovery persist.");
+
+        Click(ui, "HanVuTalk");
+        yield return null;
+        Click(ui, "HanVuDismiss");
+        Check(game.HeroData.originStory.herbalParticipation == HerbalParticipation.Offered, "Closing quest offer is neutral");
+        yield return null;
+        Click(ui, "HanVuTalk");
+        yield return null;
+        Click(ui, "HanVuDecline");
+        Check(game.HeroData.originStory.herbalParticipation == HerbalParticipation.Declined &&
+            WorldMapCatalog.TravelBlockReason(game.HeroData, Origin.Forest) == null, "Quest refusal has no travel penalty");
+        yield return Restore(game, ui, identity);
+        Click(ui, "HanVuTalk");
+        yield return null;
+        Click(ui, "HanVuAccept");
+        Check(game.HeroData.originStory.herbalParticipation == HerbalParticipation.Accepted &&
+            game.HeroData.originStory.herbWaves == 0, "Explicit acceptance grants no retroactive herbs");
+        yield return null;
+        Click(ui, "HanVuJournal");
+        yield return null;
+        Click(ui, "HanVuPrompts");
+        Click(ui, "HanVuDismiss");
+        yield return Go(game, ui, Origin.Forest);
+        for (int i = 0; i < 2; i++) yield return ClearWave(game, ui, combat, hero, space, false);
+        yield return Go(game, ui, TravelerMap);
+        yield return ClearWave(game, ui, combat, hero, space, false);
+        yield return Go(game, ui, Origin.Forest);
+        Check(game.HeroData.worldMapLoopWave == 1 && game.HeroData.originStory.herbWaves == 2,
+            "Travel leaves quest count independent of world wave index");
+        for (int i = 0; i < 2; i++) yield return ClearWave(game, ui, combat, hero, space, false);
+        Call(game, "CallNextWave");
+        yield return Restore(game, ui, identity);
+        Check(game.HeroData.worldMapLoopWave == 3 && game.HeroData.originStory.hideStoryPrompts &&
+            StoryOrigin.ItemCount(game.HeroData, Origin.HerbId) == 4, "Reload before the fifth qualifying completion");
         Call(combat, "DealDamageToHero", int.MaxValue / 16);
-        Check(!game.IsGameplayHUDVisible && game.HeroData.worldMapLoopWave == 5, "Defeat stays on wave five");
+        Check(!game.IsGameplayHUDVisible && game.HeroData.worldMapLoopWave == 1, "Defeat uses regular world reset");
         game.OnRetryClicked();
         yield return Ready(game, ui);
         Check(Identity(game.HeroData) == identity && StoryOrigin.ItemCount(game.HeroData, Origin.HerbId) == 4,
-            "Retry preserves identity and quest items");
+            "Retry preserves identity and herbs");
         yield return ClearWave(game, ui, combat, hero, space, false);
-        Check(game.HeroData.originStory.stage == OriginStage.Return && StoryOrigin.HintMap(game.HeroData) &&
-            StoryOrigin.ItemCount(game.HeroData, Origin.HerbId) == 5 &&
-            WorldMapCatalog.IsCleared(game.HeroData, Origin.Forest), "Deterministic herb supply and return hint");
+        Check(game.HeroData.originStory.stage == OriginStage.Return && !StoryOrigin.HintMap(game.HeroData) &&
+            StoryOrigin.ItemCount(game.HeroData, Origin.HerbId) == 5, "Five exact herbs with prompts disabled");
         yield return Restore(game, ui, identity);
-        pass("Five approved wolf waves, deterministic herbs, mid-wave Save/Load and actual combat defeat/retry; duplicate callbacks inert.");
+        pass("Herbal decline and later acceptance, five qualifying waves only, unrelated waves, travel, Retry and hidden prompts.");
 
         yield return Go(game, ui, Origin.Village);
-        Check(Enemies(combat).Count == 0, "Returning to village stays peaceful");
         Click(ui, "HanVuTalk");
         Check(game.HeroData.originStory.stage == OriginStage.SearchForest &&
             StoryOrigin.ItemCount(game.HeroData, Origin.HerbId) == 0, "Medicine consumed once");
-        Click(ui, "HanVuTalk");
-        Check(game.HeroData.originStory.stage == OriginStage.SearchForest, "Repeated medicine interaction is inert");
-        yield return Restore(game, ui, identity);
         yield return Go(game, ui, Origin.Forest);
         ui.SetPaused(false);
         Click(ui, "HanVuTalk");
         Check(Time.timeScale > 0f && game.HeroData.originStory.stage == OriginStage.SearchElite &&
             StoryOrigin.ItemCount(game.HeroData, Origin.TrailId) == 1 && Enemies(combat).Count > 0,
-            "Trail interaction advances once without freezing combat");
-        yield return null;
-        Click(ui, "HanVuJournal");
-        Check(Time.timeScale > 0f, "Journal leaves gameplay ticking");
-        Click(ui, "HanVuDismiss");
-        Check(Time.timeScale > 0f, "Dismissing hints never pauses");
+            "Trail interaction works during combat");
         ui.SetPaused(true);
-        yield return Restore(game, ui, identity);
-        pass("Medicine, trail clue and journal are idempotent and non-blocking.");
-
         yield return Go(game, ui, Origin.EliteMap);
-        for (int wave = 1; wave <= 5; wave++)
-            yield return ClearWave(game, ui, combat, hero, space, wave == 5);
-        data = game.HeroData;
-        var journal = StoryOrigin.Journal(data);
-        Check(data.originStory.stage == OriginStage.Complete && StoryOrigin.ItemCount(data, Origin.ClueId) == 1 &&
-            journal.Any(x => x.StartsWith("Vật chứng · Dây vải")) && journal.Any(x => x.StartsWith("Suy đoán")),
-            "One elite clue; journal separates observations from conjecture");
+        for (int i = 0; i < 4; i++) yield return ClearWave(game, ui, combat, hero, space, false);
+        Check(!StoryOrigin.CreditWave(game.HeroData, false, out _) &&
+            StoryOrigin.ItemCount(game.HeroData, Origin.ClueId) == 0, "Ordinary wolf cannot grant elite clue");
         yield return Restore(game, ui, identity);
-        Click(ui, "HanVuJournal");
-        yield return capture("han-vu-journal");
-        Call(game, "CallNextWave");
-        Check(!StoryOrigin.IsEliteWave(game.HeroData) && Enemies(combat).All(e => e.data.entityName == "Sói rừng"),
-            "Elite does not respawn as a story reward");
+        yield return ClearWave(game, ui, combat, hero, space, true);
+        data = game.HeroData;
+        journal = StoryOrigin.Journal(data);
+        Check(data.originStory.stage == OriginStage.Complete && StoryOrigin.ItemCount(data, Origin.ClueId) == 1 &&
+            journal.Count(x => x.StartsWith("Vật chứng · Dây vải")) == 1 && journal.Any(x => x.StartsWith("Suy đoán")),
+            "Exactly one authentic clue and separate inference");
+        yield return Restore(game, ui, identity);
         yield return Go(game, ui, Origin.Forest);
         yield return Go(game, ui, Origin.EliteMap);
-        Check(StoryOrigin.ItemCount(game.HeroData, Origin.ClueId) == 1, "No clue replay on return");
-        pass("Final-wave elite granted one ambiguous clue; saves and revisits retain it without replay.");
+        Check(StoryOrigin.ItemCount(game.HeroData, Origin.ClueId) == 1 && !StoryOrigin.IsEliteWave(game.HeroData),
+            "No elite clue replay on return");
+        pass("Real accepted story Elite death awards one clue. Ordinary kills, duplicate callbacks and revisits cannot replay it.");
 
-        var legacy = UnityEngine.Object.Instantiate(game.HeroData);
-        legacy.originStory = null;
-        legacy.entityName = "Tên Đã Lưu";
-        legacy.race = RaceType.YeuThu;
-        Check(CultivationSaveJson.TryObject(JsonUtility.ToJson(legacy), out var fields, out var error), error);
-        UnityEngine.Object.Destroy(legacy);
-        fields.Remove("originStory");
-        var json = "{" + string.Join(",", fields.Select(pair => "\"" + pair.Key + "\":" + pair.Value)) + "}";
-        saves.SaveGame(SaveSlot.ManualSave2.ToString(), json);
-        Check(saves.HasSave(SaveSlot.ManualSave2), "Write a real origin-less fixture");
-        Check(game.LoadAndContinue(SaveSlot.ManualSave2), "Load legacy fixture");
+        WriteOldSave(game, saves, true, 2);
+        yield return Ready(game, ui);
+        Check(Identity(game.HeroData) == identity && game.HeroData.originStory.version == StoryOrigin.SaveVersion &&
+            game.HeroData.originStory.herbalParticipation == HerbalParticipation.Accepted &&
+            game.HeroData.originStory.herbWaves == 2 && game.HeroData.worldMapId == Origin.EliteMap,
+            "Version 1 progressed snapshot migrates without changing names, location or count");
+        WriteOldSave(game, saves, true, 0);
+        yield return Ready(game, ui);
+        Check(Identity(game.HeroData) == identity &&
+            game.HeroData.originStory.herbalParticipation == HerbalParticipation.Offered,
+            "Version 1 untouched quest becomes an offer");
+        WriteOldSave(game, saves, false, 0);
         yield return Ready(game, ui);
         Check(game.HeroData.entityName == "Tên Đã Lưu" && game.HeroData.race == RaceType.YeuThu &&
             StoryOrigin.Definition(game.HeroData) == null && game.HeroData.worldMapId == Origin.EliteMap,
-            "Legacy identity, race and map remain intact");
-        pass("Origin-less Save loads through the real candidate path without replay or replacement of old identity.");
+            "Origin-less snapshot keeps old identity and map");
+        pass("Version 1 Hàn Vụ migration preserves prior progress and identity. Origin-less snapshots remain compatible.");
     }
 }
 #endif
