@@ -53,7 +53,7 @@ public sealed partial class WindowsDevelopmentAcceptanceV10:MonoBehaviour
         try{VerifyRoot();manager.ConfigureSaveDirectoryBeforeAwake(Path.Combine(root,"saves"));
             var mode=Arg("-ownedV10Mode");
             if (mode=="v15playable" || mode=="v15playablereplay" || mode=="v16playable" || mode=="v16playablereplay" || mode=="combatrefinement" || mode=="combatvisualhp" ||
-                mode=="skilluivfx" || mode=="skilluivfxreplay" || mode=="v17equipment")
+                mode=="skilluivfx" || mode=="skilluivfxreplay" || mode=="v17equipment" || mode=="worldclimate" || mode=="worldclimatereplay")
                 manager.ConfigureOwnedDevelopmentLoopBeforeAwake();
             if(IsOwnedGateMode(Arg("-ownedV10Mode"))){var p=HeavenlyGateV13Fixtures.Profile();manager.ConfigureCultivationPlaytestBeforeAwake(p,false);manager.ConfigureTribulationFixtureBeforeAwake(HeavenlyGateV13Fixtures.Configuration(),HeavenlyGateV13Fixtures.Penalty());manager.GetComponent<GameManager>().ConfigureCultivationPlaytest(p);}Debug.Log("[WINDOWS V10] SAVE_DIRECTORY_BEFORE_AWAKE "+manager.SaveDirectory);}
         catch{Application.Quit(2);throw;}
@@ -101,6 +101,17 @@ public sealed partial class WindowsDevelopmentAcceptanceV10:MonoBehaviour
         yield return new WaitForSecondsRealtime(1);
         gm=UnityEngine.Object.FindFirstObjectByType<GameManager>();saves=SaveManager.Instance;ui=UIManager.Instance;hero=UnityEngine.Object.FindFirstObjectByType<HeroController>();combat=UnityEngine.Object.FindFirstObjectByType<CombatManager>();space=UnityEngine.Object.FindFirstObjectByType<EnvironmentManager>();
         Require(gm!=null && saves!=null && ui!=null && Debug.isDebugBuild,"Real development Player managers");Require(!ui.inventoryLayoutDebug,"Player Inventory debug layout is off by default");AssertIsolated();result.saveDirectory=saves.SaveDirectory;
+        if (result.mode == "worldclimate")
+        {
+            yield return WorldClimateSmoke.Run(gm, saves, ui, space, Resize, Capture, Pass);
+            Require(result.uiIssues.Count == 0, "World climate window presets");
+            yield break;
+        }
+        if (result.mode == "worldclimatereplay")
+        {
+            yield return WorldClimateSmoke.Reopen(gm, saves, ui, Pass);
+            yield break;
+        }
         if(result.mode=="v17equipment")
         {
             yield return Resize(800,450);
