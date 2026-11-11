@@ -18,6 +18,7 @@ public partial class GameManager
 #endif
 
     private bool skipClimateFrame;
+    private bool vendorAssetsResolved;
 
     private void OnApplicationFocus(bool focused)
     {
@@ -44,6 +45,11 @@ public partial class GameManager
             runtimeHeroData.isDirty = true;
 
         if (environmentManager == null) return;
+        if (!vendorAssetsResolved && (worldClimateHdrSky || worldClimateRain2D))
+        {
+            vendorAssetsResolved = true;
+            if (worldClimateAssets == null) worldClimateAssets = WorldClimateVendorAdapter.TryInstall(gameObject);
+        }
         var data = runtimeHeroData;
         var state = data.worldClimate;
         WorldWeather? weatherOverride = null;

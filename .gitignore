@@ -104,3 +104,12 @@ InitTestScene*.unity*
 
 # Auto-generated cache in Assets folder
 /[Aa]ssets/[Ss]ceneDependencyCache*
+
+
+# Licensed weather assets stay on the local machine.
+/Assets/Free HDR Skyboxes Pack/
+/Assets/Free HDR Skyboxes Pack.meta
+/Assets/RainMaker/
+/Assets/RainMaker.meta
+/Assets/Resources/WorldClimateVendor/
+/Assets/Resources/WorldClimateVendor.meta
