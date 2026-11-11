@@ -14,21 +14,34 @@ namespace TuTienCore
 
     public static class NameDatabase
     {
-        private static readonly string[] MaleNames = { "Hàn Lập", "Vương Lâm", "Tiêu Viêm", "Thạch Hạo", "Đường Tam", "Diệp Phàm", "Mạnh Hạo", "Tần Vũ", "Lâm Lôi", "Kỷ Ninh" };
-        private static readonly string[] FemaleNames = { "Bích Dao", "Lục Tuyết Kỳ", "Ngoan Nhân", "Mỹ Đỗ Toa", "Huân Nhi", "Cửu U", "Tử Nguyệt", "Cơ Tử Nguyệt", "Nhan Như Ngọc", "An Diệu Y" };
+        // Hán-Việt one-syllable name pools. Family name always leads; personal name
+        // follows, with an optional middle character. Never infer gender from a name.
+        private static readonly string[] Surnames = {
+            "Trần", "Lý", "Vương", "Lâm", "Triệu", "Tần", "Hàn", "Diệp", "Tô", "Giang",
+            "Thẩm", "Cố", "Bạch", "Lục", "Đường", "Tống", "Ngụy", "Chu", "Hứa", "La"
+        };
+        private static readonly string[] MiddleNames = {
+            "Thanh", "Vân", "Tử", "Thiên", "Minh", "Ngọc", "Nhược", "An", "Gia", "Dịch",
+            "Cảnh", "Hoài", "Tĩnh", "Huyền", "Mặc", "Tu", "Kỳ", "Linh", "Nhất", "Trường"
+        };
+        private static readonly string[] MaleGivenNames = {
+            "Phong", "Hạo", "Hiên", "Thần", "Quân", "Viễn", "Uyên", "Hành", "Nhiên", "Dật",
+            "Du", "Bách", "Khải", "Trạch", "Sâm", "Thành", "Dương", "Húc", "Thừa", "Triệt"
+        };
+        private static readonly string[] FemaleGivenNames = {
+            "Ninh", "Dao", "Tuyết", "Nhu", "Uyển", "Yên", "Lam", "Hàm", "Nguyệt", "Vi",
+            "Chỉ", "Oanh", "Đình", "Dung", "Huyên", "Tâm", "Di", "Ngưng", "Thư", "San"
+        };
+
         public static string GetRandomName(GenderType gender)
         {
-            var sources = new List<string>(gender == GenderType.Nam ? MaleNames : FemaleNames);
-            int count = Random.Range(1, 4);
-            var words = new List<string>();
-            for (int i = 0; i < count; i++)
-            {
-                int index = Random.Range(0, sources.Count);
-                string[] parts = sources[index].Split(new[] { ' ' }, System.StringSplitOptions.RemoveEmptyEntries);
-                words.Add(parts[Random.Range(0, System.Math.Min(3, parts.Length))]);
-                sources.RemoveAt(index); // At most one syllable from each source name.
-            }
-            return string.Join(" ", words.ToArray());
+            string surname = Surnames[Random.Range(0, Surnames.Length)];
+            string[] givenNames = gender == GenderType.Nam ? MaleGivenNames : FemaleGivenNames;
+            string given = givenNames[Random.Range(0, givenNames.Length)];
+            // Chinese-style full names normally contain two or three spoken syllables.
+            if (Random.Range(0, 2) == 0) return surname + " " + given;
+            string middle = MiddleNames[Random.Range(0, MiddleNames.Length)];
+            return surname + " " + middle + " " + given;
         }
     }
 

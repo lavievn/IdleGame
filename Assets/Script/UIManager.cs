@@ -885,6 +885,7 @@ public partial class UIManager : MonoBehaviour
             LayoutReadableUI();
         RefreshCombatHUDVisibility();
         TickHudW3();
+        TickOriginPresentation();
         progressionRefreshElapsed+=Time.unscaledDeltaTime;
         if(progressionRefreshElapsed>=.2f){progressionRefreshElapsed=0f;RefreshCharacterProgression();}
     }

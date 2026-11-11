@@ -15,6 +15,7 @@ public class EntityDataSO : ScriptableObject
     public CombatSkillProgress combatSkills = new CombatSkillProgress();
     public string tribulationJson=""; // Independent versioned component; empty on historical/production Heroes.
     public string cultivationJson = "";
+    public OriginStoryState originStory;
     public int currentExp = 0;
     public int expToNextLevel = 100;
     public int baseHealth = 400;

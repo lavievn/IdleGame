@@ -115,6 +115,11 @@ public partial class SaveManager : MonoBehaviour
             return false;
         }
         
+        if (!TuTienCore.StoryOrigin.IsValid(entityData))
+        {
+            Debug.LogWarning("[SaveManager] Refusing invalid origin snapshot.");
+            return false;
+        }
         // Serialize ScriptableObject thành JSON string ở Main Thread
         string jsonData = JsonUtility.ToJson(entityData, true);
         
@@ -159,6 +164,7 @@ public partial class SaveManager : MonoBehaviour
                 string trialComponent;if(!ReadTrialRoot(jsonData,out trialComponent,out reason)||!TribulationSaveTransaction.Validate(trialComponent,cultivationComponent,CultivationProfile,TrialConfiguration,TrialPenalty,out reason))return false;
                 if(!allowActiveTrial&&!string.IsNullOrEmpty(trialComponent)&&TribulationSaveTransaction.Read(trialComponent).outcome=="Active"){Debug.LogWarning("[SaveManager] TrialRecoveryRequired; checkpoint retained without award or penalty.");return false;}
                 entityData.tribulationJson="";
+                entityData.originStory = null; // Missing field keeps the old journey unchanged.
                 // Missing Realm fields must not inherit the ScriptableObject template.
                 entityData.cultivationJson=""; // Never inherit an inline template/session snapshot.
                 entityData.realmComponentVersion=0;entityData.realmId=null;entityData.realmEntryLevel=0;
@@ -211,6 +217,11 @@ public partial class SaveManager : MonoBehaviour
                 JsonUtility.FromJsonOverwrite(jsonData, entityData);
                 entityData.tribulationJson=trialComponent;
                 entityData.combatSkills = combatSkills;
+                if (!TuTienCore.StoryOrigin.IsValid(entityData))
+                {
+                    Debug.LogWarning("[SaveManager] Invalid origin snapshot in " + slot);
+                    return false;
+                }
                 // A partial load of only inventory/equipment must NEVER count
                 // as a successful progress rollback. Verify ALL present
                 // authoritative progression fields before normalization.
@@ -240,6 +251,7 @@ public partial class SaveManager : MonoBehaviour
                         return false; // No silent reroll/migration for corrupted world saves.
                     }
                 }
+                TuTienCore.StoryOrigin.UpgradeSave(entityData);
                 entityData.NormalizeMapProgress();
                 entityData.NormalizeCombatStats();
                 EquipmentInventory.Normalize(entityData);

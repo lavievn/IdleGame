@@ -177,6 +177,7 @@ public partial class CombatManager : MonoBehaviour
         public int lifeId;
         internal CombatLootRewards.KillKey lootKey;
         internal bool acceptedLethalDamage;
+        internal bool storyElite;
     }
     private bool resumeEncounterAfterEnable;
     private int monsterLifeSequence;
@@ -230,19 +231,25 @@ public partial class CombatManager : MonoBehaviour
     {
         ClearBattle(true,true); // Wave change retires old damage, not Magic visuals.
         lootRewards.BeginEncounter(LootRecipient);
+        bool originWolves = StoryOrigin.IsWolfMap(runtimeHeroData);
+        bool originElite = StoryOrigin.IsEliteWave(runtimeHeroData);
         foreach (var m in monsters)
         {
             if (m == null) continue;
             var info = new ActiveMonsterInfo();
             info.lifeId = ++monsterLifeSequence;
             info.go = m;
+            info.storyElite = originElite;
             info.controller = m.GetComponent<MonsterController>();
             info.lootKey=lootRewards.Register(info.lifeId,info.controller!=null?info.controller.SpawnVersion:0);
             info.data = Instantiate(baseMonsterData);
             WorldMapNode worldNode = null;
             bool onWorldMap = WorldMapCatalog.Enabled(runtimeHeroData) &&
                 WorldMapCatalog.TryGet(runtimeHeroData.worldMapId, out worldNode);
-            if (onWorldMap)
+            if (originWolves)
+                info.data.currentLevel = originElite ? 3 :
+                    runtimeHeroData.worldMapId == StoryOrigin.HanVu.Forest ? 1 : 2;
+            else if (onWorldMap)
             {
                 // Per-map test band does not scale with the Hero's level.
                 info.data.currentLevel = Mathf.Clamp(worldNode.SuggestedLevel +
@@ -257,13 +264,21 @@ public partial class CombatManager : MonoBehaviour
             info.data.baseHealth = CombatBalance.MonsterHealth(info.data.currentLevel);
             info.data.baseDamage = CombatBalance.MonsterAttack(info.data.currentLevel);
             info.data.baseAttackSpeed = CombatBalance.MonsterSpeed(info.data.currentLevel);
+            if (originElite) info.data.baseHealth += info.data.baseHealth / 2;
             info.data.addedHealth = 0;
             info.data.addedDamage = 0;
             info.data.gender = Random.Range(0,2) == 0 ? GenderType.Nam : GenderType.Nu;
             info.data.entityName = NameDatabase.GetRandomName(info.data.gender);
-            info.data.race = SynergyMath.GenerateMonsterRace(runtimeHeroData.mapTerrain);
+            info.data.race = originWolves ? RaceType.YeuThu : SynergyMath.GenerateMonsterRace(runtimeHeroData.mapTerrain);
             SynergyMath.GenerateRootProfile(info.data);
-            if (onWorldMap)
+            if (originWolves)
+            {
+                info.data.monsterAnimal = "Lang";
+                info.data.monsterClass = WorldNames.ClassifyAnimal(info.data.monsterAnimal);
+                info.data.entityName = originElite ? "Sói đầu đàn" : "Sói rừng";
+                if (info.controller != null) info.controller.ConfigureOriginWolf();
+            }
+            else if (onWorldMap)
             {
                 // Draw one candidate from the current node's seven species or
                 // one hostile human role. Bosses require separate future logic.
@@ -834,7 +849,7 @@ public partial class CombatManager : MonoBehaviour
         }
         monsterSpawner.DespawnMonster(target.go);
         if (target.data!=null) Destroy(target.data);
-        if (gameManager!=null) gameManager.OnMonsterDied(target.go);
+        if (gameManager!=null) gameManager.OnAcceptedMonsterDied(target.go, target.storyElite);
         if (activeMonsters.Count==0) isBattling=false;
     }
 

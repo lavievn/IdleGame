@@ -354,7 +354,7 @@ namespace TuTienCore
         private static void ApplyMap(EntityDataSO hero, WorldMapNode node)
         {
             hero.worldMapId = node.Id;
-            hero.mapName = node.Name;
+            hero.mapName = StoryOrigin.MapName(hero, node);
             hero.mapTerrain = node.Terrain;
             hero.regionTheme = MusicTheme(node.Terrain);
             hero.regionIndex = -1;
@@ -366,7 +366,7 @@ namespace TuTienCore
             hero.isDirty = true;
         }
 
-        public static bool StartNew(EntityDataSO hero)
+        public static bool StartNew(EntityDataSO hero, string startId = null)
         {
             if (hero == null) return false;
             EnsureLoaded();
@@ -375,7 +375,9 @@ namespace TuTienCore
             var valid = new List<WorldMapNode>();
             foreach (var id in startIds) { WorldMapNode n; if (nodes.TryGetValue(id, out n)) valid.Add(n); }
             if (valid.Count == 0) return false;
-            WorldMapNode selected = valid[UnityEngine.Random.Range(0, valid.Count)];
+            WorldMapNode selected;
+            if (startId == null) selected = valid[UnityEngine.Random.Range(0, valid.Count)];
+            else if (!nodes.TryGetValue(startId, out selected) || selected.IsBoss) return false;
             hero.worldMapVersion = 1;
             hero.worldMapVisited = new List<string> { selected.Id };
             hero.worldMapCleared = new List<string>();
@@ -408,7 +410,7 @@ namespace TuTienCore
                 hero.worldMapCleared.Add(node.Id);
                 hero.isDirty = true;
             }
-            hero.mapName = node.Name;
+            hero.mapName = StoryOrigin.MapName(hero, node);
             hero.mapTerrain = node.Terrain;
             hero.regionTheme = MusicTheme(node.Terrain);
             hero.regionIndex = -1;
@@ -416,7 +418,7 @@ namespace TuTienCore
 
         public static bool CompleteWave(EntityDataSO hero)
         {
-            if (!Enabled(hero)) return false;
+            if (!Enabled(hero) || StoryOrigin.IsSafe(hero)) return false;
             Normalize(hero);
             // Repeat waves 1..5 indefinitely at this node. No automatic
             // transition to a neighboring map, even after the first clear.
@@ -454,7 +456,7 @@ namespace TuTienCore
                 return "Không tìm thấy map hợp lệ.";
             if (id == hero.worldMapId) return "Bạn đang ở map này.";
             if (!current.Links.Contains(id)) return "Chỉ được đi tới map kề trực tiếp.";
-            if (!IsCleared(hero, current.Id)) return "Cần hoàn thành 5 wave của map hiện tại ít nhất một lần.";
+            if (!StoryOrigin.IsSafe(hero) && !IsCleared(hero, current.Id)) return "Cần hoàn thành 5 wave của map hiện tại ít nhất một lần.";
             if (target.IsBoss) return "Map Boss endgame: chưa chốt vật phẩm / cảnh giới mở khóa.";
             return null;
         }
