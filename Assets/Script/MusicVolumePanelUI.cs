@@ -22,7 +22,7 @@ public sealed class MusicVolumePanelUI
         root.anchorMin = root.anchorMax = new Vector2(1, 1);
         root.pivot = new Vector2(1, 1);
         root.anchoredPosition = new Vector2(-82, -32);
-        root.sizeDelta = new Vector2(300, 273);
+        root.sizeDelta = new Vector2(300, 281);
         var background = panel.GetComponent<UnityEngine.UI.Image>();
         background.color = new Color(.08f, .13f, .20f, .96f);
         background.raycastTarget = false;
@@ -97,7 +97,7 @@ public sealed class MusicVolumePanelUI
         root.anchorMin = root.anchorMax = new Vector2(1, 1);
         root.pivot = new Vector2(1, 1);
         root.anchoredPosition = new Vector2(-82, -32);
-        root.sizeDelta = new Vector2(300, 273);
+        root.sizeDelta = new Vector2(300, 281);
         PlaceTrack(bgmBar.Track,-65f);PlaceTrack(sfxBar.Track,-123f);PlaceTrack(environmentBar.Track,-181f);
         bgmBar.Refresh(true);sfxBar.Refresh(true);environmentBar.Refresh(true);
     }

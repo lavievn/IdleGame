@@ -21,6 +21,7 @@ internal static class IntegratedPlaytestSmoke
         Audit(evidence, pass);
         yield return resize(600, 338);
         var menu = game.GetComponent<StartMenuUI>();
+        yield return Wait(() => Read<bool>(menu, "openingMenuReady") && Read<CanvasGroup>(menu, "rootFade").alpha > .95f, 30f, "Opening settings are visible after title reveal");
         menu.GetType().GetMethod("OpenSettings", Fields).Invoke(menu, null);
         yield return null;
         var openingEnv = Read<AudioVolumeBar>(menu, "environmentVolumeBar").Track;
@@ -93,7 +94,9 @@ internal static class IntegratedPlaytestSmoke
         yield return capture("integrated-forest-heavy-rain");
         pass("Travel crossfades all 20 Meadow clips to all 20 Primeval clips at equal gain. Heavy rain and BGM stay separate.");
 
+        yield return Ready(game, ui);
         Clear(game, combat);
+        ui.SetPaused(false);
         var modifier = new CombatStatModifier { sourceId = "owned:movement-probe", stat = CombatStatId.MovementSpeed, flat = 900f };
         game.HeroData.combatStatModifiers.Add(modifier);
         yield return Wait(() => Mathf.Abs(hero.LastMovementSpeed - 100f) < .2f &&
