@@ -182,6 +182,7 @@ internal static class WorldClimateSmoke
         var trees = Read<List<RectTransform>>(ground, "farTiles");
         var terrain = Read<List<RectTransform>>(ground, "tiles");
         Check(skyTiles.Count == 3 && mountains.Count == 3 && trees.Count == 3 && terrain.Count == 3, "All art layers installed");
+        Set(game, "worldClimateHdrSky", false);
         Set(game, "previewWorldClimate", true);
         Set(game, "previewWorldWeather", WorldWeather.Clear);
         yield return resize(800, 450);
@@ -200,6 +201,7 @@ internal static class WorldClimateSmoke
         Set(game, "worldClimateLighting", true);
         Set(game, "previewWorldHour", 12f);
         Set(game, "previewWorldWeather", WorldWeather.HeavyRain);
+        Set(game, "worldClimateHdrSky", true);
         var adapter = game.gameObject.AddComponent<WorldClimateFixtureAdapter>();
         Set(game, "worldClimateAssets", adapter);
         float startingPhase = ground.DistantPhase;
