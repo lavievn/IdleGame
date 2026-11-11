@@ -2,6 +2,26 @@
 
 Nhánh local `integration/hero-hanvu-weather-audio` ở `D:/IdleGame/Projects/IntegratedPlaytest`.
 
+## Cập nhật bản thử mix theo tiền tố — 12/11/2026
+
+Bản Windows Development hiện tại dùng mã `350049e`. [Mở launcher với hồ sơ riêng](<D:/IdleGame/Builds/IntegratedPrefixMix/build/Play-Integrated-Isolated.cmd>) · [EXE](<D:/IdleGame/Builds/IntegratedPrefixMix/build/IdleGameV10.exe>).
+
+- Build có đủ 190 OGG nguồn. Mỗi map chọn một tiền tố và chạy đồng thời đủ 20 clip thuộc nhóm đó, mỗi clip có gain cơ sở `0,50`. Làng, đồng bằng, thảo nguyên, cao nguyên, tuyết và sa mạc dùng `Meadow`. Rừng dùng `Primeval`. Hồ và đầm lầy dùng `Morning`. Ven biển dùng `Pebble`. Các nhóm tiền tố còn lại có trong bản thử và chưa được gán vào map. Giới hạn voice thực tăng lên 64 để hai nhóm 20 clip có thể fade chồng khi Travel.
+- **Âm thanh môi trường** là thanh riêng trong Cài đặt ở menu chính và bảng Âm lượng trong game. Mặc định 100%, lưu riêng. Điều khiển ambience, âm thanh thời tiết và sấm Thiên Quan. Ở mức 100%, mỗi clip trong nhóm phát với gain `0,50`. [Ảnh menu 600×338](<D:/IdleGame/Builds/IntegratedPrefixMix/profiles/idlegame-v10-c482be7ed8ff48b4a7251f432367020e/evidence/opening-environment-volume.png>) · [Ảnh trong game 800×450](<D:/IdleGame/Builds/IntegratedPrefixMix/profiles/idlegame-v10-c482be7ed8ff48b4a7251f432367020e/evidence/gameplay-environment-volume.png>).
+- Kích thước hạt mưa tăng từ `0,30` lên `0,60` theo cấu hình Rain Maker. Hero có tốc độ mặc định và Run 200 đơn vị/giây khi tiếp cận địch. Walk khám phá là 100 đơn vị/giây, độc lập với trang bị và buff. Map an toàn chạy Idle và Hero đứng yên. Thiên Quan tiếp tục dùng luồng tiếp cận của thử thách.
+
+| Kiểm thử bản cập nhật | Kết quả |
+| --- | --- |
+| MainGame, Unity 6000.5.0f1 | **PASS 8/8**. Ba thanh âm lượng, 133 map và biến thể làng, Rain Maker, Travel, Idle/Walk/Run, Save/Load, Thiên Quan và Retry. [Log](<D:/IdleGame/Logs/Unity-MainGameIntegrated-20261112-003925.log>) |
+| Windows Development build | **PASS**. Mono2x, 0 lỗi, 58 cảnh báo. [Log](<D:/IdleGame/Builds/IntegratedPrefixMix/build.log>) |
+| Windows tích hợp, RTX 2080 | **PASS 8/8**. Hai nhóm 20 clip đều phát thực khi chuyển map. Hạt mưa và tốc độ Hero được kiểm tra trên Player. [JSON](<D:/IdleGame/Builds/IntegratedPrefixMix/profiles/idlegame-v10-c482be7ed8ff48b4a7251f432367020e/evidence/player-result.json>) · [Bảng map](<D:/IdleGame/Builds/IntegratedPrefixMix/profiles/idlegame-v10-c482be7ed8ff48b4a7251f432367020e/evidence/map-ambience.tsv>) |
+| Windows Hàn Vụ, WARP | **PASS 7/7**. Hội thoại, đi lại tự do, kỳ ngộ, thảo dược, Elite và tương thích Save. [JSON](<D:/IdleGame/Builds/IntegratedPrefixMix/profiles/idlegame-v10-8f9b17c8e34a4d649b3cd2cd0f3b465c/evidence/player-result.json>) |
+| Thoát Player tự động | **PASS** ở hai lượt smoke. Nhật ký sự kiện Windows không có Application Error cho đường dẫn build trong khoảng kiểm thử. |
+
+Thao tác chuột/phím vật lý và mức âm nghe qua loa **NOT RUN**. Log Player vẫn có cảnh báo video hiện hữu. Các commit code local gồm `cb13338`, `ee92f75` và `350049e`. Worktree còn thay đổi thiết lập và metadata do Unity sinh từ đợt tích hợp.
+
+## Bản thử tích hợp trước cập nhật
+
 | Phần | Checkpoint nguồn | Merge local |
 | --- | --- | --- |
 | Nền Development 0.1.7 | `fafc02d` | — |
