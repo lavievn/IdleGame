@@ -8,8 +8,13 @@ public sealed class MapBgmController : MonoBehaviour
     private const float TransitionSeconds = 1.25f;
     private const float PlaylistFadeSeconds = 10f;
     private const int TrialGroup = -3;
+    private const int AllMapsGroup = 6;
     private readonly AudioSource[] sources = new AudioSource[2];
     private MapBgmCatalog catalog;
+    private AudioClip[] allMapTracks;
+    private string currentMapKey, legacyMapKey;
+    private int legacyMapNumber;
+    private RegionTheme legacyRegion;
     private GameManager gameManager;
     private int activeIndex;
     private int currentGroup = -2;
@@ -108,12 +113,14 @@ public sealed class MapBgmController : MonoBehaviour
         // Keep the regional theme during entry, confirmation and Retry.
         if (gameManager.HeroData == null)
             return 0;
-        return GroupForRegion(gameManager.HeroData.regionTheme);
+        if (allMapTracks == null) allMapTracks = Resources.LoadAll<AudioClip>("WorldMapMusic");
+        return allMapTracks.Length > 0 ? AllMapsGroup : GroupForRegion(gameManager.HeroData.regionTheme);
     }
 
     private AudioClip[] TracksFor(int group)
     {
-        if (catalog == null) return new AudioClip[0];
+        if (group == AllMapsGroup) return allMapTracks;
+        if (catalog == null) return System.Array.Empty<AudioClip>();
         if (group == -1)
             return catalog.opening == null ? new AudioClip[0] : new [] { catalog.opening };
         return catalog.GetTracks(group);
@@ -175,11 +182,26 @@ public sealed class MapBgmController : MonoBehaviour
         }
 
         int desired = inTrial ? TrialGroup : DesiredGroup();
+        var hero = gameManager != null ? gameManager.HeroData : null;
+        string desiredMap = desired == AllMapsGroup && hero != null
+            ? hero.worldMapId : null;
+        if (desired == AllMapsGroup && string.IsNullOrEmpty(desiredMap) && hero != null)
+        {
+            // Legacy worlds use the regional map counter instead of a catalog node.
+            if (legacyMapNumber != hero.mapNumber || legacyRegion != hero.regionTheme || legacyMapKey == null)
+            {
+                legacyMapNumber = hero.mapNumber;
+                legacyRegion = hero.regionTheme;
+                legacyMapKey = legacyRegion + ":" + legacyMapNumber;
+            }
+            desiredMap = legacyMapKey;
+        }
+        bool changed = desired != currentGroup || desiredMap != currentMapKey;
         // Finish the current fade with both sources intact. On completion
         // observe the latest state, so obsolete requests are never replayed.
         if (fading)
         {
-            if (desired != currentGroup && fadeDuration > TransitionSeconds)
+            if (changed && fadeDuration > TransitionSeconds)
             {
                 elapsed *= TransitionSeconds / fadeDuration;
                 fadeDuration = TransitionSeconds;
@@ -196,10 +218,11 @@ public sealed class MapBgmController : MonoBehaviour
             fading = false;
         }
 
-        if (desired != currentGroup)
+        if (changed)
         {
+            if (desired != currentGroup) previousTrack = null;
             currentGroup = desired;
-            previousTrack = null;
+            currentMapKey = desiredMap;
             CrossfadeToNext(TransitionSeconds);
             return;
         }
@@ -230,6 +253,7 @@ public sealed class MapBgmController : MonoBehaviour
             source.volume = 0f;
         }
         currentGroup = -2;
+        currentMapKey = null;
         trialMusicActive = fading = false;
     }
 

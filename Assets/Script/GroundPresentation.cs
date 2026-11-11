@@ -4,7 +4,7 @@ using UnityEngine.UI;
 
 // Presentation only: never scale/move the Ground coordinate system used by AI.
 [DefaultExecutionOrder(200)] // Sort after combat movement, Ground pan, and spawned visuals.
-public class GroundPresentation : MonoBehaviour
+public partial class GroundPresentation : MonoBehaviour
 {
     private EnvironmentManager space;
     private RectTransform originalGrass;
@@ -29,7 +29,10 @@ public class GroundPresentation : MonoBehaviour
     }
     private readonly TileLoop groundLoop = new TileLoop(), nearLoop = new TileLoop(),
         distantLoop = new TileLoop(), skyLoop = new TileLoop();
-    private float skyPhase;
+    private const float SkySizeMultiplier = .5f;
+    private const float SkySpeedMultiplier = .5f;
+    private float skyPhase, projectedSkyScroll;
+    private double climateGroundScroll;
     private const float GroundLayer2OffsetPixels = -50f;
     private const float GroundLayer3OffsetPixels = -100f;
     private const float SkyOffsetPixels = -10f;
@@ -345,11 +348,7 @@ public class GroundPresentation : MonoBehaviour
     public void SetTerrainTint(Color color)
     {
         terrainTint = color;
-        foreach (var rect in tiles) rect.GetComponent<Image>().color = UsesTerrainArtwork ? Color.white : color;
-        foreach (var far in farTiles)
-            if (far != null) far.GetComponent<Image>().color = UsesTerrainArtwork ? Color.white : farTint;
-        foreach (var distant in distantTiles)
-            if (distant != null) distant.GetComponent<Image>().color = UsesTerrainArtwork ? Color.white : distantTint;
+        ApplyTerrainColors();
     }
     public void Scroll(float amount)
     {
@@ -358,9 +357,14 @@ public class GroundPresentation : MonoBehaviour
         float width = space.Width;
         if (width <= 0f) return;
         LayoutTiles(amount);
-        LayoutFarTiles(amount * Mathf.Clamp01(farParallaxSpeed));
+        climateGroundScroll += amount;
+        if (climateAdapter != null) climateAdapter.SetGroundScroll(climateGroundScroll);
+        float ground2Pan = amount * Mathf.Clamp01(farParallaxSpeed);
+        LayoutFarTiles(ground2Pan);
         LayoutDistantTiles(amount * Mathf.Clamp01(distantParallaxSpeed));
-        LayoutSky();
+        float skyPan = ground2Pan * SkySpeedMultiplier;
+        projectedSkyScroll += skyPan / width;
+        LayoutSky(skyPan);
         for (int i = 0; i < decorations.Count; i++)
         {
             var d = decorations[i]; if (d == null) continue;
@@ -440,11 +444,11 @@ public class GroundPresentation : MonoBehaviour
         if (next == activeArtwork) return;
         activeArtwork = next;
         bool use = UsesTerrainArtwork;
-        SetLayerSprite(tiles, use ? next.Ground : legacyGround, use ? Color.white : terrainTint);
-        SetLayerSprite(farTiles, use ? next.Near : legacyNear, use ? Color.white : farTint);
-        SetLayerSprite(distantTiles, use ? next.Far : legacyFar, use ? Color.white : distantTint);
-        SetLayerSprite(skyTiles, use ? next.Sky : legacyFar, Color.white);
-        foreach (var rect in skyTiles) rect.gameObject.SetActive(use);
+        SetLayerSprite(tiles, use ? next.Ground : legacyGround, GroundTint);
+        SetLayerSprite(farTiles, use ? next.Near : legacyNear, NearTint);
+        SetLayerSprite(distantTiles, use ? next.Far : legacyFar, DistantTint);
+        SetLayerSprite(skyTiles, use ? next.Sky : legacyFar, worldSkyTint);
+        SetLegacySkyVisibility();
         // The old small grass props belong to the preview set, not the PNG art.
         foreach (var rect in decorations) if (rect != null) rect.gameObject.SetActive(!use);
         previousDepthOrder.Clear();
@@ -468,14 +472,14 @@ public class GroundPresentation : MonoBehaviour
     {
         return width * sprite.rect.height / Mathf.Max(1f, sprite.rect.width);
     }
-    private void LayoutSky()
+    private void LayoutSky(float amount = 0f)
     {
         if (!UsesTerrainArtwork) return;
         // BattleArea is the 100-unit FLOOR, not the visible viewport. Convert
         // the compact gameplay pixel height through its stable width projection.
         float viewportHeight = space.Width * ManagementWindowLayout.CombatHeight(Screen.height) /
             Mathf.Max(1, ManagementWindowLayout.CombatPixels(Screen.width));
-        float width = space.Width * Mathf.Max(1f, skyScale);
+        float width = space.Width * Mathf.Max(1f, skyScale * SkySizeMultiplier);
         float skyY = space.BattleArea.rect.yMin + viewportHeight + skyOffset.y +
             ScreenPixelsToBattleUnits(SkyOffsetPixels);
         for (int i = 0; i < skyTiles.Count; i++)
@@ -486,7 +490,7 @@ public class GroundPresentation : MonoBehaviour
             position.y = skyY;
             rect.anchoredPosition = position;
         }
-        PlaceLoop(skyTiles, skyLoop, ref skyPhase, space.BattleArea.rect.xMin + skyOffset.x, 0f, "Sky");
+        PlaceLoop(skyTiles, skyLoop, ref skyPhase, space.BattleArea.rect.xMin + skyOffset.x, amount, "Sky");
     }
     private void LayoutFarTiles(float amount = 0f) =>
         LayoutParallaxTiles(farTiles, nearLoop, ref farPhase, farLayerScale, amount, "Background2", GroundLayer2OffsetPixels);
@@ -525,7 +529,6 @@ public class GroundPresentation : MonoBehaviour
             var position = tiles[i].anchoredPosition;
             position.y = UsesTerrainArtwork ? grassY - grassHeight * .5f + height * .5f - GroundDropUnits() : grassY;
             tiles[i].anchoredPosition = position;
-            tiles[i].GetComponent<Image>().color = UsesTerrainArtwork ? Color.white : terrainTint;
         }
         PlaceLoop(tiles, groundLoop, ref phase, space.BattleArea.rect.xMin, amount, "Ground");
     }
@@ -673,7 +676,8 @@ public class GroundPresentation : MonoBehaviour
                 if (previousDepthOrder[i] != depthVisuals[i].Rect) { changed = true; break; }
         if (!changed) return;
 
-        int firstActorIndex = skyTiles.Count + distantTiles.Count + farTiles.Count + tiles.Count;
+        int firstActorIndex = skyTiles.Count + distantTiles.Count + farTiles.Count + tiles.Count +
+            (projectedSky != null ? 1 : 0);
         for (int i = 0; i < depthVisuals.Count; i++)
             depthVisuals[i].Rect.SetSiblingIndex(firstActorIndex + i);
         previousDepthOrder.Clear();
@@ -692,6 +696,7 @@ public class GroundPresentation : MonoBehaviour
             hiddenTrialLayers.Clear();
             return;
         }
+        ClearWorldClimate();
         HideTrialLayers(skyTiles);
         HideTrialLayers(distantTiles);
         HideTrialLayers(farTiles);
@@ -719,6 +724,8 @@ public class GroundPresentation : MonoBehaviour
     }
     void OnDestroy()
     {
+        StopClimateRain();
+        if (projectedSky != null) Destroy(projectedSky.gameObject);
         if (sourceImage != null) sourceImage.enabled = true;
         foreach (var far in farTiles)
             if (far != null) Destroy(far.gameObject);
