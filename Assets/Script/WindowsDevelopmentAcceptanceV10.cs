@@ -53,8 +53,9 @@ public sealed partial class WindowsDevelopmentAcceptanceV10:MonoBehaviour
         try{VerifyRoot();manager.ConfigureSaveDirectoryBeforeAwake(Path.Combine(root,"saves"));
             var mode=Arg("-ownedV10Mode");
             if (mode=="v15playable" || mode=="v15playablereplay" || mode=="v16playable" || mode=="v16playablereplay" || mode=="combatrefinement" || mode=="combatvisualhp" ||
-                mode=="skilluivfx" || mode=="skilluivfxreplay" || mode=="v17equipment" || mode=="hanvu" || mode=="integrated" || mode=="worldclimate" || mode=="worldclimatereplay" || mode=="worldclimatevendor" || mode=="worldclimatevendorsoak")
+                mode=="skilluivfx" || mode=="skilluivfxreplay" || mode=="v17equipment" || mode=="hanvu" || mode=="integrated" || mode=="integratedobserve" || mode=="worldclimate" || mode=="worldclimatereplay" || mode=="worldclimatevendor" || mode=="worldclimatevendorsoak")
                 manager.ConfigureOwnedDevelopmentLoopBeforeAwake();
+            if (mode=="integratedobserve") Debug.Log("[WINDOWS V10] Integrated manual playtest uses the DEV Gate and isolated Saves.");
             if(IsOwnedGateMode(Arg("-ownedV10Mode"))){var p=HeavenlyGateV13Fixtures.Profile();manager.ConfigureCultivationPlaytestBeforeAwake(p,false);manager.ConfigureTribulationFixtureBeforeAwake(HeavenlyGateV13Fixtures.Configuration(),HeavenlyGateV13Fixtures.Penalty());manager.GetComponent<GameManager>().ConfigureCultivationPlaytest(p);}Debug.Log("[WINDOWS V10] SAVE_DIRECTORY_BEFORE_AWAKE "+manager.SaveDirectory);}
         catch{Application.Quit(2);throw;}
     }
@@ -198,7 +199,7 @@ public sealed partial class WindowsDevelopmentAcceptanceV10:MonoBehaviour
         if(result.mode=="replay"){
             string component,error;Require(CultivationGameplayState.TryReadHeroJson(File.ReadAllText(Path.Combine(SavePath,"ManualSave2.json")),saves.CultivationProfile,out component,out error),"Restart source");
             Require(gm.LoadAndContinue(SaveSlot.ManualSave2),"Separate Player process Load");yield return Ready();Require(gm.HeroData.cultivationJson==component,"Restart exact checkpoint; no offline award");Pass("Separate OS Player process loads migrated ManualSave2 with exact checkpoint and retained compatibility metadata/backup; no offline grant.");yield break;}
-        if(result.mode=="observe"){Pass("Observe-only owned Player ready for real manual input; no method-driven gameplay fixture.");WriteResult();while(true)yield return new WaitForSecondsRealtime(2);}
+        if(result.mode=="observe" || result.mode=="integratedobserve"){Pass("Observe-only owned Player ready for real manual input; no method-driven gameplay fixture.");WriteResult();while(true)yield return new WaitForSecondsRealtime(2);}
         if(result.mode=="v12tribulation"){yield return TribulationV12();yield break;}
         if(result.mode=="v12performance"){yield return PerformanceV12();yield break;}
         if(result.mode=="v11capacity"){yield return CapacityV11();yield break;}
