@@ -2,30 +2,79 @@
 
 [PR #16](https://github.com/lavievn/IdleGame/pull/16) · `feature/dynamic-sky-weather-cycle` · baseline `f695df96547c57296562cbd6f1b061d359933814`. Worktree thử nghiệm ở `D:/IdleGame/Projects/DynamicSkyWeather`.
 
-## Phần chạy được
+## Tích hợp asset trên Windows
+
+Worktree `D:/IdleGame/Projects/DynamicSkyWeather`, nhánh `feature/dynamic-sky-weather-cycle`. HEAD đầu đợt tích hợp là `b282d55390a993df4c3c4b535bd3fe18b4d7e210`.
+
+| Asset | Kết quả import và cấu hình |
+| --- | --- |
+| BG Studio Free HDR Skyboxes Pack 1.0 | Import texture và material từ cache `D:/IdleGame/Caches/Asset Store-5.x`. Unity 6000.5.0f1 nhận cả năm cubemap BC6H ở 2048×2048 mỗi mặt và material `Skybox/Cubemap`. Bình minh dùng Sky-1, ban ngày dùng Sky-2, nhiều mây dùng Sky-3, hoàng hôn dùng Sky-4. Pha đêm dùng Sky-3 với độ phơi sáng thấp và sắc xanh vì bộ ảnh thiếu panorama đêm riêng. Sky-5 được kiểm tra khi import. |
+| Digital Ruby Rain Maker 2.1.2 | Import prefab 2D và các phụ thuộc của prefab. Dùng emitter `RainPrefab2D/RainFallParticleSystem` và texture hạt của gói. Shader gốc `Legacy Shaders/Particles/Alpha Blended` và controller gắn `Camera.main` được bỏ qua trong lúc chạy. Mesh UI phủ viewport dùng shader UI của Unity, không nhận ánh sáng Renderer2D, không nhận raycast và nằm dưới Canvas HUD. |
+
+WorldClimateAssetAdapter chiếu cubemap HDR bằng shader của project sang RenderTexture tối đa 640×480, tái sử dụng giữa các frame và cập nhật tối đa 18 lần/giây khi pha hoặc thời tiết thay đổi. Texture được ghép ở đúng lớp sky cũ trong Battle Canvas. Núi, cây, nền đất và camera tracking dùng luồng cũ. Tắt HDR hoặc thiếu tài nguyên sẽ khôi phục PNG gốc. Adapter đặt emitter theo kích thước viewport, nội suy mật độ từ WorldClimate, giới hạn tốc độ sinh ở 360 hạt/giây và tổng hạt ở 420. Khi kết thúc nội suy về khô, emitter dừng, xóa hạt và ẩn lớp rain.
+
+### Mở lại trên máy có quyền dùng asset
+
+1. Mở worktree bằng Unity **6000.5.0f1**. Từ **Window → Package Manager → My Assets**, chọn **Free HDR Skyboxes Pack 1.0** và **Rain Maker 2.1.2**.
+2. Chọn import các thư mục texture, material và ReadMe của gói BG Studio, cùng `RainMaker/Prefab` và Readme của gói Digital Ruby. Giữ metadata gốc của các file được chọn.
+3. Chạy **Bach Luyen → Environment → Link local weather assets**. Unity tạo `Assets/Resources/WorldClimateVendor/Assets.asset` từ tài nguyên đã import. Mở `Assets/Scenes/MainGame.unity`; bật **World Climate Lighting**, **World Climate Hdr Sky**, **World Climate Rain 2D** trong GameManager. Có thể thử nhanh từng pha bằng **Preview World Climate** trong Editor.
+
+Asset nhà cung cấp, metadata đi kèm và cấu hình liên kết nằm trong các thư mục được Git ignore. Repo có adapter, shader projection và lệnh liên kết do project viết. [BG Studio](https://assetstore.unity.com/packages/2d/textures-materials/sky/free-hdr-skyboxes-pack-175525) · [Digital Ruby](https://assetstore.unity.com/packages/vfx/particles/environment/rain-maker-2d-and-3d-rain-particle-system-for-unity-34938)
+
+### Kiểm thử asset thật
+
+| Môi trường | Kết quả |
+| --- | --- |
+| Unity 6000.5.0f1, import và MainGame Play Mode | Hai lượt import và linker exit 0. Kiểm tra GUID 1.067 file, 0 lỗi và 0 cảnh báo. MainGame **7/7 nhóm** sau khi khai báo CanvasRenderer cho lớp mưa. Ở 800×450 có 50 vệt mưa nhẹ, 159 vệt mưa lớn. Khô dừng và xóa hết hạt. Tắt HDR phục hồi PNG. |
+| Windows Development build | Mono2x, D3D11, **0 lỗi, 57 cảnh báo**, 14,8 giây. Build tại đường dẫn cũ, bằng `2e88beb4ae872f56c855ba1522184917da6a5916`. Bản Acceptance sau tích hợp asset **NOT RUN**. |
+| Windows Player, Direct3D 11 trên NVIDIA RTX 2080 | **7/7 nhóm hình ảnh**. Chụp đủ các giờ 06:30, 12:00, 18:30 và 22:00. Luma đo trong RT tương ứng 0,243 / 0,527 / 0,506 / 0,262. Ở 800×450 có 52 vệt mưa nhẹ, 171 vệt mưa lớn và 326 hạt native ở mẫu mưa lớn. Kiểm tra pan, độ phủ và clipping ở 600×338, 800×450, 1150×647. Ảnh chụp hiển thị vệt xanh nhạt và chữ HUD rõ ở cả ba kích thước. |
+| Windows Player, 30 phút với asset thật | **PASS phần chạy**. 1.805,0 giây hoạt động / 1.822,3 giây thực, 109.060 frame, trung bình 59,85 FPS với giới hạn 60, frame dài nhất 1.297,3 ms. Đỉnh 353 hạt, 48.364 frame có hạt và 60.696 frame không hạt. Unity cấp phát 324,4–404,5 MiB, Mono dùng 8,2–8,7 MiB trong các mẫu. |
+| Windows Player khi thoát | **FAIL khi thoát sau khi ghi kết quả**. Exit `-1073741819`, Event Viewer ghi `UnityPlayer.dll 0xc0000005`, offset `0x1dd029`. Đây là cùng chữ ký đã thấy trước khi import hai gói. |
+| Hồi quy MainGame của climate và Save | **PASS 7/7 nhóm**. Đồng hồ, biome, Save cũ/tương lai, Save/Load, Travel, Retry và fallback qua adapter tổng hợp. Fixture map ướt chạy lại **7/7 nhóm**. [Log hồi quy](<D:/IdleGame/Logs/Unity-MainGameWorldClimate-20261111-193716.log>) · [log fixture](<D:/IdleGame/Logs/Unity-MainGameWorldClimateVendor-20261111-193644.log>). |
+| Chuột/phím native trong lượt tích hợp | **NOT RUN**. Fixture dùng handler và cấu hình preview trong bảy kiểm tra hình ảnh, sau đó tắt preview để chạy theo đồng hồ thật. Các hồ sơ kiểm thử tách riêng. |
+
+Mẫu từ bản Development ở Lạc Vân Trạch, 800×450, seed 3. Fixture dọn wave để giữ Hero khám phá. Số liệu lấy từ Unity Profiler, không bao gồm phép đo toàn bộ bộ nhớ tiến trình hoặc VRAM. Mức cấp phát Unity tăng qua hai lần đổi ngày trong khi Mono quanh 8–9 MiB.
+
+| Giây hoạt động / thực | Ngày | Thời tiết | FPS trung bình tích lũy | Hạt hiện tại / đỉnh | Unity cấp phát (MiB) | Mono đang dùng (MiB) |
+| --- | --- | --- | --- | --- | --- | --- |
+| 300 / 300 | 0 | HeavyRain | 59.6 | 333 / 353 | 324.6 | 8.3 |
+| 600 / 600 | 0 | Fog | 59.8 | 0 / 353 | 324.4 | 8.7 |
+| 900 / 900 | 1 | LightRain | 59.8 | 118 / 353 | 365.4 | 8.2 |
+| 1200 / 1217 | 1 | LightRain | 59.8 | 116 / 353 | 365.6 | 8.4 |
+| 1500 / 1517 | 2 | Fog | 59.8 | 0 / 353 | 404.5 | 8.7 |
+| 1800 / 1817 | 2 | Fog | 59.8 | 0 / 353 | 404.4 | 8.4 |
+
+Các ảnh bằng chứng chứa sky và texture Rain Maker nên được lưu cục bộ ở ổ D. Bấm mở trên máy đã chạy thử.
+
+- [Bình minh](<D:/IdleGame/Builds/DynamicSkyWeather/profiles/idlegame-v10-cc39f492a4864f98b1a0bfcad212755a/evidence/vendor-hdr-06.5.png>) · [ban ngày](<D:/IdleGame/Builds/DynamicSkyWeather/profiles/idlegame-v10-cc39f492a4864f98b1a0bfcad212755a/evidence/vendor-hdr-12.0.png>) · [hoàng hôn](<D:/IdleGame/Builds/DynamicSkyWeather/profiles/idlegame-v10-cc39f492a4864f98b1a0bfcad212755a/evidence/vendor-hdr-18.5.png>) · [ban đêm](<D:/IdleGame/Builds/DynamicSkyWeather/profiles/idlegame-v10-cc39f492a4864f98b1a0bfcad212755a/evidence/vendor-hdr-22.0.png>).
+- [Mưa nhẹ](<D:/IdleGame/Builds/DynamicSkyWeather/profiles/idlegame-v10-cc39f492a4864f98b1a0bfcad212755a/evidence/vendor-light-rain-800.png>) · [mưa lớn 600×338](<D:/IdleGame/Builds/DynamicSkyWeather/profiles/idlegame-v10-cc39f492a4864f98b1a0bfcad212755a/evidence/vendor-heavy-rain-600.png>) · [mưa lớn 800×450](<D:/IdleGame/Builds/DynamicSkyWeather/profiles/idlegame-v10-cc39f492a4864f98b1a0bfcad212755a/evidence/vendor-heavy-rain-800.png>) · [mưa lớn 1150×647](<D:/IdleGame/Builds/DynamicSkyWeather/profiles/idlegame-v10-cc39f492a4864f98b1a0bfcad212755a/evidence/vendor-heavy-rain-1150.png>).
+- [Import HDR](<D:/IdleGame/Logs/Unity-WorldClimate-Imported-Sky.log>) · [import Rain Maker](<D:/IdleGame/Logs/Unity-WorldClimate-Imported-Rain.log>) · [liên kết asset](<D:/IdleGame/Logs/Unity-WorldClimate-VendorSetup.log>) · [Play Mode](<D:/IdleGame/Logs/Unity-MainGameWorldClimateVendor-20261111-190417.log>) · [Windows build](<D:/IdleGame/Builds/DynamicSkyWeather/build.log>) · [Windows Player](<D:/IdleGame/Builds/DynamicSkyWeather/profiles/idlegame-v10-cc39f492a4864f98b1a0bfcad212755a/player.log>).
+- [Ảnh sau 30 phút](<D:/IdleGame/Builds/DynamicSkyWeather/profiles/idlegame-v10-cc39f492a4864f98b1a0bfcad212755a/evidence/vendor-soak-30min.png>) · [kết quả Windows JSON](<D:/IdleGame/Builds/DynamicSkyWeather/profiles/idlegame-v10-cc39f492a4864f98b1a0bfcad212755a/evidence/player-result.json>).
+- [Mở Windows Player bằng profile thử riêng](<D:/IdleGame/Builds/DynamicSkyWeather/build/Play-Dynamic-Sky-Weather-Isolated.cmd>) · [EXE](<D:/IdleGame/Builds/DynamicSkyWeather/build/IdleGameV10.exe>).
+
+Chạy lại bằng `Tools/Local-IdleGame.ps1 -Mode MainGameWorldClimateVendor` trong worktree đã liên kết asset. Sau khi build, dùng `-Mode Player -PlayerMode WorldClimateVendorSoak -WindowsOutputRoot D:/IdleGame/Builds/DynamicSkyWeather`. Để cửa sổ Player có focus và giữ game ở foreground trong 30 phút vì đồng hồ tự dừng khi mất focus.
+
+### Sương mù
+
+Weather FX Free 1.0.6 có shader sương 2D và được nhà phát hành liệt kê hỗ trợ URP trên Unity 6000.3.25. Có thể thử riêng shader sương ở lớp cảnh xa và dùng cường độ từ WorldClimate. Tích hợp và tương thích Renderer2D/Overlay 6000.5.0f1 **NOT RUN**. [Unity Asset Store](https://assetstore.unity.com/packages/vfx/shaders/weather-fx-free-rain-snow-sampler-412712) · [Mô tả của tác giả](https://heyheythere.itch.io/weather-fx-free).
+
+### Commit tích hợp
+
+- `ee52b54943c12167c86a8d895bf7471e73248d70` thêm adapter HDR và Rain Maker cùng quy trình liên kết asset cục bộ.
+- `753f5027f5eb146d5edccd68ba3dbc4db644ea6c` thêm kiểm thử MainGame và Windows với asset thật.
+- `2e88beb4ae872f56c855ba1522184917da6a5916` khai báo CanvasRenderer cho UI mưa.
+- Commit báo cáo có trong [lịch sử PR #16](https://github.com/lavievn/IdleGame/pull/16/commits). Git status vẫn gồm bảy file thiết lập Unity đã thay đổi và 15 file .meta chưa theo dõi từ trước đợt tích hợp. Các thay đổi đó được giữ ngoài commit.
+
+## Đồng hồ và thời tiết
+
 
 - Một ngày dài **780 giây hoạt động**, mỗi giờ trong game dài 32,5 giây. Game mới bắt đầu ngày 0 lúc 05:00. Các pha là bình minh 05:00–08:00, ban ngày 08:00–17:00, hoàng hôn 17:00–20:00 và ban đêm 20:00–05:00. Màu chuyển mượt trên các lớp nền. HUD, chữ và sprite nhân vật giữ màu hiển thị riêng.
 - Đồng hồ dùng delta không scale khi gameplay đang chạy. Pause, màn hình tiêu đề, entry, màn hình thua, mất focus và Thiên Quan giữ nguyên thời gian. Editor batch được tính như phiên đang hoạt động để chạy fixture. Load tiếp tục từ snapshot, thời gian đóng game không được cộng.
 - Một lượt thời tiết kéo dài 4 giờ trong game, tương đương 130 giây theo cấu hình mặc định. Seed, ngày, map và lượt xác định thời tiết. Trọng số khác nhau cho đồng bằng, rừng, cao nguyên/đồi núi, đầm lầy, sa mạc, vùng nước, vùng tuyết và thảo nguyên. Trời quang, nhiều mây, sương, mưa nhẹ và mưa lớn có các mức riêng, nội suy trong 8 giây. Các map trong danh sách indoor và Thiên Quan không dùng mưa. Catalog hiện tại chưa có cờ indoor, nên danh sách có thể cấu hình riêng trong Inspector.
 - Save có một thành phần tùy chọn `worldClimate` v1, gồm seed, ngày và phần ngày. Trạng thái thời tiết và mức blend được tính lại từ các giá trị đó cùng map đang lưu. Save cũ dùng ngày 0 lúc 05:00 và seed tương thích cố định 780. Save có phiên bản khí hậu tương lai được từ chối trước khi áp vào nhân vật hoặc ghi đè qua luồng lưu hiện có.
-- MainGame dùng URP Renderer2D và Battle Canvas Screen Space Overlay. Bản thử nghiệm dùng sky PNG hiện hữu với tint. Điểm gắn adapter nhận texture 2D đã chiếu, đặt sau lớp núi, cây, mặt đất và actor. PNG chỉ tắt khi có texture 2D hợp lệ để thay thế. Adapter nhận viewport BattleArea cho Rain Maker 2D, chỉ được gọi khi cường độ mưa lớn hơn 0 và được dừng khi trời quang hoặc tắt cờ.
 
-Trong Inspector của GameManager, **World Day Seconds** chỉnh độ dài ngày. **World Climate Lighting**, **World Climate Hdr Sky** và **World Climate Rain 2D** bật/tắt riêng từng phần hiển thị. **Preview World Climate** cho phép chọn giờ và thời tiết trong Editor hoặc Development Build qua cấu hình Inspector. Preview chỉ ảnh hưởng hiển thị, còn snapshot giữ đồng hồ thật.
+## Kiểm thử bản PNG fallback trước khi import asset
 
-## Asset Store
-
-| Gói | Kết quả |
-| --- | --- |
-| BG Studio, Free HDR Skyboxes Pack 1.0 | **BLOCKED — ASSET IMPORT**. Không thấy file gói hoặc texture HDR của gói trong các thư mục đã kiểm tra. [Unity Asset Store](https://assetstore.unity.com/packages/2d/textures-materials/sky/free-hdr-skyboxes-pack-175525) |
-| Digital Ruby, Rain Maker 2D and 3D Rain Particle System 2.1.2 | **BLOCKED — ASSET IMPORT**. Không thấy file gói, script hoặc prefab Rain Maker trong các thư mục đã kiểm tra. [Unity Asset Store](https://assetstore.unity.com/packages/vfx/particles/environment/rain-maker-2d-and-3d-rain-particle-system-for-unity-34938) |
-
-Đã kiểm tra Asset Store cache mặc định dưới `%APPDATA%/Unity`, cache Unity cục bộ, `D:/IdleGame/Caches`, thư mục Assets và Packages của project, các thư mục build/automation và Downloads. `ASSETSTORE_CACHE_PATH` chưa đặt trong phạm vi Process, User hoặc Machine trước lượt mở thử. Hộp thoại Windows Firewall che Unity Editor, nên chưa kiểm tra được danh sách My Assets của Unity ID. [Vị trí cache Unity 6.5](https://docs.unity.com/en-us/engine/6000.5/manual/packages-list/package-manager-caches/upm-config-cache-as)
-
-Khi mở được Editor, vào **Window → Package Manager → My Assets** bằng Unity ID đã sở hữu gói. Tải rồi import lần lượt vào project thử nghiệm, chỉ chọn các file cần thiết và giữ .meta đi kèm. Repository công khai. Package, demo và file nhà cung cấp được giữ cục bộ. [Hướng dẫn import chính thức](https://docs.unity.com/en-us/engine/6000.5/manual/packages-list/managing-packages-window/upm-ui-actions-ap/upm-ui-import)
-
-Các phương án Weather FX Free, Rain Particles, Cinematic Weather VFX Bundle, Free Quick Effects Vol. 1 và URP Dynamic Weather System đều **NOT RUN**. Đợt này ưu tiên hai gói người dùng chỉ định. Chất liệu URP, camera follow của Rain Maker, mật độ hạt, màu hạt trong Windows và HDR thực ở từng biome đều **NOT RUN** cho đến khi có package thật. Hiện năm trạng thái khí hậu điều khiển tint và xuất cường độ cho adapter. Sương và mưa chưa có hiệu ứng hạt trong bản fallback.
-
-## Kiểm thử và bằng chứng
 
 | Môi trường | Kết quả |
 | --- | --- |
@@ -44,8 +93,7 @@ Các phương án Weather FX Free, Rain Particles, Cinematic Weather VFX Bundle,
 
 ![Cùng map lúc 22 giờ](evidence/dynamic-sky-weather/legacy-night.png)
 
-- [Launcher với hồ sơ riêng](<D:/IdleGame/Builds/DynamicSkyWeather/build/Play-Dynamic-Sky-Weather-Isolated.cmd>) chạy `D:/IdleGame/Builds/DynamicSkyWeather/build/IdleGameV10.exe` bằng Direct3D 11.
-- Log [Unity compile](<D:/IdleGame/Logs/Unity-Check-20261111-144023.log>), [MainGame](<D:/IdleGame/Logs/Unity-MainGameWorldClimate-20261111-144641.log>), [build](<D:/IdleGame/Builds/DynamicSkyWeather/build.log>) và [soak](<D:/IdleGame/Logs/Unity-MainGameWorldClimateSoak-20261111-145435.log>).
+- Log [Unity compile](<D:/IdleGame/Logs/Unity-Check-20261111-144023.log>), [MainGame](<D:/IdleGame/Logs/Unity-MainGameWorldClimate-20261111-144641.log>), [build](<D:/IdleGame/Logs/WorldClimate-Baseline-build.log>) và [soak](<D:/IdleGame/Logs/Unity-MainGameWorldClimateSoak-20261111-145435.log>).
 - [Số liệu soak dạng JSON](<D:/IdleGame/Projects/DynamicSkyWeather/.utmp/foundation-c3c0a3ff6b784090ba25d593a3dd7989/evidence/result.json>) và [ảnh sau 30 phút](<D:/IdleGame/Projects/DynamicSkyWeather/.utmp/foundation-c3c0a3ff6b784090ba25d593a3dd7989/evidence/climate-soak-30min.png>).
 - Kết quả [MainGame](<D:/IdleGame/Projects/DynamicSkyWeather/.utmp/foundation-e9f464495a1841dcb8916a84a466e668/evidence/result.json>), [WARP](<D:/IdleGame/Builds/DynamicSkyWeather/profiles/idlegame-v10-71ea06e919f54c6ba11b660e6e290c9b/evidence/player-result.json>), [RTX 2080](<D:/IdleGame/Builds/DynamicSkyWeather/profiles/idlegame-v10-71f8bf70aeb941b9987a0a24fe8c5212/evidence/player-result.json>), [replay](<D:/IdleGame/Builds/DynamicSkyWeather/profiles/idlegame-v10-9819ecc8d12d419094990be18ff3b6e5/evidence/player-result.json>) và [hồi quy 0.1.7](<D:/IdleGame/Builds/DynamicSkyWeather/profiles/idlegame-v10-bea1a5272c2048abae864ea2d8dfe18e/evidence/player-result.json>).
 - [Log camera](<D:/IdleGame/Logs/Unity-DynamicSkyWeather-Camera.log>) và [CSV camera/awareness](<D:/IdleGame/Projects/DynamicSkyWeather/.utmp/foundation-0559923be1e24d328962018073f60283/evidence/camera-awareness.csv>).
@@ -53,14 +101,4 @@ Các phương án Weather FX Free, Rain Particles, Cinematic Weather VFX Bundle,
 
 Chạy lại từ worktree bằng `Tools/Local-IdleGame.ps1` với `-Mode MainGameWorldClimate`, `-Mode MainGameWorldClimateSoak`, hoặc `-Mode Player -PlayerMode WorldClimate -WindowsOutputRoot D:/IdleGame/Builds/DynamicSkyWeather`. Các lệnh thử dùng profile có marker trên ổ D.
 
-### Kiểm tra tiếp với asset thật
-
-1. Thử từng gói trong một Unity 6000.5.0f1 dùng Renderer2D. Xác minh đúng nội dung HDR cho từng pha và đúng shader Rain Maker trước khi gắn vào MainGame.
-2. Chọn **Preview World Climate** và thử 06:00, 12:00, 19:00 và 22:00. Bật/tắt HDR khi pan và resize. Quan sát vùng trời không có lỗ, mảng trắng hoặc PNG chồng ảnh.
-3. Thử mưa nhẹ và mưa lớn ở 600×338, 800×450 và 1150×647. Kiểm tra màu hạt trong Windows, rain follow sau pan/travel, cường độ tăng/giảm, không phát mưa khi vào Thiên Quan. Ghi draw calls, bộ nhớ và số hạt. Rain Maker phải tắt audio trong thử nghiệm.
-
-## Git
-
-- `641dc6f` đưa vào clock, Save, trọng số biome, tint và điểm gắn asset.
-- `9229113ba61ffa95279ab81179243e375d2462a7` thêm smoke MainGame/Windows, khôi phục từ tiến trình mới và bài chạy 30 phút. Đây là mã nguồn của bản Player kiểm thử.
-- Commit tài liệu và ảnh được liệt kê trong [PR #16](https://github.com/lavievn/IdleGame/pull/16/commits). Unity tự sinh một số tệp .meta, cấu hình import/build và fixture trong worktree. Những tệp đó nằm ngoài các commit.
+Fixture chạy lại ở Lạc Vân Trạch được cố định trong commit e66b18e. Lượt Windows 30 phút cũng dùng Lạc Vân Trạch.
