@@ -158,6 +158,11 @@ public partial class SaveManager : MonoBehaviour
                 if(!ValidateCultivationJson(jsonData,out cultivationComponent,allowLegacy)){Debug.LogWarning("[SaveManager] Refusing cultivation load: "+LastCultivationFailure);return false;}
                 string trialComponent;if(!ReadTrialRoot(jsonData,out trialComponent,out reason)||!TribulationSaveTransaction.Validate(trialComponent,cultivationComponent,CultivationProfile,TrialConfiguration,TrialPenalty,out reason))return false;
                 if(!allowActiveTrial&&!string.IsNullOrEmpty(trialComponent)&&TribulationSaveTransaction.Read(trialComponent).outcome=="Active"){Debug.LogWarning("[SaveManager] TrialRecoveryRequired; checkpoint retained without award or penalty.");return false;}
+                if (!WorldClimateState.TryRead(jsonData, out var climate))
+                {
+                    Debug.LogWarning("[SaveManager] Invalid or unsupported world climate in " + slot);
+                    return false;
+                }
                 entityData.tribulationJson="";
                 // Missing Realm fields must not inherit the ScriptableObject template.
                 entityData.cultivationJson=""; // Never inherit an inline template/session snapshot.
@@ -211,6 +216,7 @@ public partial class SaveManager : MonoBehaviour
                 JsonUtility.FromJsonOverwrite(jsonData, entityData);
                 entityData.tribulationJson=trialComponent;
                 entityData.combatSkills = combatSkills;
+                entityData.worldClimate = climate;
                 // A partial load of only inventory/equipment must NEVER count
                 // as a successful progress rollback. Verify ALL present
                 // authoritative progression fields before normalization.
@@ -418,7 +424,7 @@ public partial class SaveManager : MonoBehaviour
     {
         string reason;
         RealmVersionProbe realm;bool legacyRealm;
-        if (!CombatSkillProgress.TryRead(data, out _)) return false;
+        if (!CombatSkillProgress.TryRead(data, out _) || !WorldClimateState.TryRead(data, out _)) return false;
         if (!TryValidateEquipmentJson(data, out reason) || !TryValidateRealmJson(data,out realm,out legacyRealm,out reason))
         {
             Debug.LogWarning("[SaveManager] Refusing write to " + slotName + ": " + reason);
@@ -459,6 +465,11 @@ public partial class SaveManager : MonoBehaviour
             if(File.Exists(finalPath)) {
                 string existingJson = File.ReadAllText(finalPath);
                 if (!CombatSkillProgress.TryRead(existingJson, out _)) return false;
+                if (!WorldClimateState.TryRead(existingJson, out _))
+                {
+                    Debug.LogWarning("[SaveManager] Preserving incompatible world climate in " + slotName);
+                    return false;
+                }
                 string existingComponent;
                 if(!ValidateCultivationJson(existingJson,out existingComponent,true)) {
                     Debug.LogWarning("[SaveManager] Preserving incompatible cultivation slot: "+LastCultivationFailure);return false;

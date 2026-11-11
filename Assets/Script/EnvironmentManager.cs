@@ -329,6 +329,17 @@ public class EnvironmentManager : MonoBehaviour
         if (groundPresentation != null) groundPresentation.SetTrialHidden(hidden);
     }
 
+    internal void ApplyWorldClimate(WorldClimateFrame frame, bool lighting, bool hdrSky, bool rain2D,
+        WorldClimateAssetAdapter adapter)
+    {
+        if (groundPresentation != null) groundPresentation.ApplyWorldClimate(frame, lighting, hdrSky, rain2D, adapter);
+    }
+
+    internal void ClearWorldClimate()
+    {
+        if (groundPresentation != null) groundPresentation.ClearWorldClimate();
+    }
+
     public bool HasLoopingTerrain => groundPresentation != null;
     public void SetTerrainTint(Color color) { EnsureGroundPresentation(); if (groundPresentation != null) groundPresentation.SetTerrainTint(color); }
     private void EnsureGroundPresentation()

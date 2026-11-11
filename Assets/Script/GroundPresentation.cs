@@ -4,7 +4,7 @@ using UnityEngine.UI;
 
 // Presentation only: never scale/move the Ground coordinate system used by AI.
 [DefaultExecutionOrder(200)] // Sort after combat movement, Ground pan, and spawned visuals.
-public class GroundPresentation : MonoBehaviour
+public partial class GroundPresentation : MonoBehaviour
 {
     private EnvironmentManager space;
     private RectTransform originalGrass;
@@ -345,11 +345,7 @@ public class GroundPresentation : MonoBehaviour
     public void SetTerrainTint(Color color)
     {
         terrainTint = color;
-        foreach (var rect in tiles) rect.GetComponent<Image>().color = UsesTerrainArtwork ? Color.white : color;
-        foreach (var far in farTiles)
-            if (far != null) far.GetComponent<Image>().color = UsesTerrainArtwork ? Color.white : farTint;
-        foreach (var distant in distantTiles)
-            if (distant != null) distant.GetComponent<Image>().color = UsesTerrainArtwork ? Color.white : distantTint;
+        ApplyTerrainColors();
     }
     public void Scroll(float amount)
     {
@@ -440,11 +436,11 @@ public class GroundPresentation : MonoBehaviour
         if (next == activeArtwork) return;
         activeArtwork = next;
         bool use = UsesTerrainArtwork;
-        SetLayerSprite(tiles, use ? next.Ground : legacyGround, use ? Color.white : terrainTint);
-        SetLayerSprite(farTiles, use ? next.Near : legacyNear, use ? Color.white : farTint);
-        SetLayerSprite(distantTiles, use ? next.Far : legacyFar, use ? Color.white : distantTint);
-        SetLayerSprite(skyTiles, use ? next.Sky : legacyFar, Color.white);
-        foreach (var rect in skyTiles) rect.gameObject.SetActive(use);
+        SetLayerSprite(tiles, use ? next.Ground : legacyGround, GroundTint);
+        SetLayerSprite(farTiles, use ? next.Near : legacyNear, NearTint);
+        SetLayerSprite(distantTiles, use ? next.Far : legacyFar, DistantTint);
+        SetLayerSprite(skyTiles, use ? next.Sky : legacyFar, worldSkyTint);
+        SetLegacySkyVisibility();
         // The old small grass props belong to the preview set, not the PNG art.
         foreach (var rect in decorations) if (rect != null) rect.gameObject.SetActive(!use);
         previousDepthOrder.Clear();
@@ -525,7 +521,6 @@ public class GroundPresentation : MonoBehaviour
             var position = tiles[i].anchoredPosition;
             position.y = UsesTerrainArtwork ? grassY - grassHeight * .5f + height * .5f - GroundDropUnits() : grassY;
             tiles[i].anchoredPosition = position;
-            tiles[i].GetComponent<Image>().color = UsesTerrainArtwork ? Color.white : terrainTint;
         }
         PlaceLoop(tiles, groundLoop, ref phase, space.BattleArea.rect.xMin, amount, "Ground");
     }
@@ -673,7 +668,8 @@ public class GroundPresentation : MonoBehaviour
                 if (previousDepthOrder[i] != depthVisuals[i].Rect) { changed = true; break; }
         if (!changed) return;
 
-        int firstActorIndex = skyTiles.Count + distantTiles.Count + farTiles.Count + tiles.Count;
+        int firstActorIndex = skyTiles.Count + distantTiles.Count + farTiles.Count + tiles.Count +
+            (projectedSky != null ? 1 : 0);
         for (int i = 0; i < depthVisuals.Count; i++)
             depthVisuals[i].Rect.SetSiblingIndex(firstActorIndex + i);
         previousDepthOrder.Clear();
@@ -692,6 +688,7 @@ public class GroundPresentation : MonoBehaviour
             hiddenTrialLayers.Clear();
             return;
         }
+        ClearWorldClimate();
         HideTrialLayers(skyTiles);
         HideTrialLayers(distantTiles);
         HideTrialLayers(farTiles);
@@ -719,6 +716,8 @@ public class GroundPresentation : MonoBehaviour
     }
     void OnDestroy()
     {
+        StopClimateRain();
+        if (projectedSky != null) Destroy(projectedSky.gameObject);
         if (sourceImage != null) sourceImage.enabled = true;
         foreach (var far in farTiles)
             if (far != null) Destroy(far.gameObject);

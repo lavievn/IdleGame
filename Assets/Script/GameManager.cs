@@ -460,6 +460,7 @@ public partial class GameManager : MonoBehaviour
         damageHistory.Clear();
         if (runtimeHeroData != null) Destroy(runtimeHeroData);
         runtimeHeroData = Instantiate(heroDataSO);
+        runtimeHeroData.worldClimate = WorldClimateState.AtDawn(System.Guid.NewGuid().GetHashCode());
         runtimeHeroData.currentLevel = 1;
         runtimeHeroData.currentExp = 0;
         runtimeHeroData.expToNextLevel = 100;
@@ -1291,6 +1292,7 @@ public partial class GameManager : MonoBehaviour
 
     void LateUpdate()
     {
+        TickWorldClimate();
         if(HasTribulationLiability)return; // Isolated trial owns world/combat until durable result.
         TickCultivation(); // Sole cultivation clock; runs before entry can release the pause.
         TraceEntryFrame("GameManager.LateUpdate before entry handoff");
@@ -1417,6 +1419,7 @@ public partial class GameManager : MonoBehaviour
 
     private void OnDisable()
     {
+        if (environmentManager != null) environmentManager.ClearWorldClimate();
 #if DEVELOPMENT_BUILD && !UNITY_EDITOR
         Application.wantsToQuit -= AllowQuitDuringTrial;
 #endif
