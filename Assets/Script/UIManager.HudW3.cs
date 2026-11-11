@@ -132,8 +132,9 @@ public partial class UIManager
         inventoryButton.GetComponentInChildren<TextMeshProUGUI>(true).text="Hòm đồ";
         martialButton=SmallButton(w3.Root,"WeaponSkillsButton","Võ học",Vector2.zero,Vector2.zero,Vector2.zero,Vector2.one,OpenWeaponSkills);
         menuButton=SmallButton(w3.Root,"SystemMenuButton","Menu",Vector2.zero,Vector2.zero,Vector2.zero,Vector2.one,ToggleSystemMenu);
-        logToggle=SmallButton(w3.Root,"CompactLogToggle","Nhật ký",Vector2.zero,Vector2.zero,Vector2.zero,Vector2.one,ToggleCompactLog);
+        logToggle=SmallButton(w3.Root,"CompactLogToggle","Chiến báo",Vector2.zero,Vector2.zero,Vector2.zero,Vector2.one,ToggleCompactLog);
         logToggleLabel=logToggle.GetComponentInChildren<TextMeshProUGUI>(true);
+        InstallOriginPresentation();
 
         toolsPage=MakePage("SystemTools","CÔNG CỤ & HIỂN THỊ",(RectTransform)systemMenu.transform);
         MakeMenuButton(mainPage,"Tools","Công cụ & hiển thị",7,()=>ShowPage(toolsPage));
@@ -187,7 +188,8 @@ public partial class UIManager
         w3.Layout(w,h,hudLayout);
         float m=Mathf.Max(4,hudLayout.margin),gap=Mathf.Max(2,hudLayout.gap);
         float cardsBottom=m+Mathf.Max(hudLayout.heroCardHeight,HudW3View.PrimaryCardHeight)+gap;
-        float top=Mathf.Max(hudLayout.systemTop,cardsBottom);
+        LayoutOriginControls(w, m, cardsBottom, w3.CardWidth);
+        float top=Mathf.Max(hudLayout.systemTop,cardsBottom + (originControlsVisible ? 24f + gap : 0f));
         var buttons=new[]{statsButton,inventoryButton,martialButton,menuButton};
         for(int i=0;i<buttons.Length;i++)
             HudW3View.Place(buttons[i],w-m-hudLayout.systemButtonWidth,top+i*(hudLayout.systemButtonHeight+gap+2),hudLayout.systemButtonWidth,hudLayout.systemButtonHeight);
@@ -246,7 +248,7 @@ public partial class UIManager
         if(w3!=null)w3.Render(hudGame,CombatManager.Instance,inventoryUseArtTheme?inventoryArtTheme:null);
         if(logToggleLabel!=null)
         {
-            string value=showCompactLog?"Ẩn nhật ký":"Nhật ký";
+            string value=showCompactLog?"Ẩn log":"Chiến báo";
             if(logToggleLabel.text!=value)logToggleLabel.text=value;
         }
     }

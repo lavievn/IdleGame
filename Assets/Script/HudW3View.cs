@@ -21,6 +21,8 @@ internal sealed class HudW3View
     private int lastWave=-1;
     private int lastDistance=-1,lastTarget=-1;
     private bool lastExploring;
+    private float right, margin, gap, cardHeight;
+    internal float CardWidth { get; private set; }
 
     private sealed class Card
     {
@@ -31,7 +33,7 @@ internal sealed class HudW3View
         internal EntityDataSO Data;
         internal string LastName;
         internal int LastLevel=-1,LastHP=-1,LastMax=-1;
-        internal bool LastDead;
+        internal int Slot = -1;
     }
 
     internal HudW3View(UIManager owner, Transform parent)
@@ -45,6 +47,7 @@ internal sealed class HudW3View
             var c=cards[i]=new Card();
             c.Root=ui.Surface(Root,"Hero Card "+i,UIManager.SurfaceKind.Card);
             ui.BindClick(c.Root,()=>{});
+            c.Root.gameObject.SetActive(false);
             c.Header=ui.Surface(c.Root,"Header",UIManager.SurfaceKind.Header);
             c.Avatar=ui.Surface(c.Root,"Avatar Frame",UIManager.SurfaceKind.Avatar);
             var portrait=Rect(c.Avatar,"Portrait");
@@ -119,14 +122,16 @@ internal sealed class HudW3View
     }
     internal void Layout(float width,float height,HudW3Layout l)
     {
-        float margin=Mathf.Max(4,l.margin),gap=Mathf.Max(2,l.gap);
-        float cw=Mathf.Clamp(l.heroCardWidth,120,Mathf.Max(120,(width-margin-170-2*gap)/3));
-        float ch=Mathf.Max(72,l.heroCardHeight);
-        float left=width-margin-3*cw-2*gap;
+        margin=Mathf.Max(4,l.margin);
+        gap=Mathf.Max(2,l.gap);
+        CardWidth=Mathf.Clamp(l.heroCardWidth,120,Mathf.Max(120,(width-margin-170-2*gap)/3));
+        cardHeight=Mathf.Max(72,l.heroCardHeight);
+        right=width-margin;
+        float cw=CardWidth;
         for(int i=0;i<cards.Length;i++)
         {
             var c=cards[i];
-            Place(c.Root,left+i*(cw+gap),margin,cw,i == 0 ? Mathf.Max(ch, PrimaryCardHeight) : ch);
+            c.Slot = -1;
             Place(c.Header,1,1,cw-2,20);
             Place(c.Avatar,5,25,32,32);
             Place(c.Level.rectTransform,39,22,cw-43,16);
@@ -146,13 +151,25 @@ internal sealed class HudW3View
     }
     internal void Render(GameManager game,CombatManager combat,InventoryArtTheme art)
     {
-        for(int i=0;i<cards.Length;i++)
+        int slot = 0;
+        for (int i = 0; i < cards.Length; i++)
         {
-            HeroCombatState state=combat==null?null:i==0?combat.CurrentHeroCombatState:
-                combat.StateFor(game==null?null:game.TestCompanionAt(i-1));
-            RenderCard(cards[i],state,i,art);
+            var state = combat == null ? null : i == 0 ? combat.CurrentHeroCombatState :
+                combat.StateFor(game?.TestCompanionAt(i - 1));
+            var card = cards[i];
+            bool deployed = state?.CanFight == true;
+            if (card.Root.gameObject.activeSelf != deployed) card.Root.gameObject.SetActive(deployed);
+            if (!deployed) continue;
+            if (card.Slot != slot)
+            {
+                card.Slot = slot;
+                Place(card.Root, right - CardWidth - slot * (CardWidth + gap), margin,
+                    CardWidth, i == 0 ? Mathf.Max(cardHeight, PrimaryCardHeight) : cardHeight);
+            }
+            slot++;
+            RenderCard(card, state, i, art);
         }
-        RenderWeaponCooldown(cards[0], combat);
+        if (cards[0].Root.gameObject.activeSelf) RenderWeaponCooldown(cards[0], combat);
         var data=game==null?null:game.HeroData;
         string title=MapName(data);
         bool mapChanged=title!=lastMap;
@@ -214,24 +231,26 @@ internal sealed class HudW3View
     }
     private static void RenderCard(Card c,HeroCombatState state,int index,InventoryArtTheme art)
     {
-        var data=state==null?null:state.Data;
-        bool empty=data==null;
-        string name=empty?"Chưa có Hero":data.entityName;
-        int level=empty?0:data.currentLevel,hp=empty?0:state.CurrentHP,max=empty?0:state.MaxHP;
-        bool dead=!empty && hp<=0;
-        string mana = empty || index > 0 ? "Mana —" :
+        var data = state.Data;
+        string name = data.entityName;
+        int level = data.currentLevel, hp = state.CurrentHP, max = state.MaxHP;
+        string mana = index > 0 ? "Mana —" :
             "Mana " + Mathf.FloorToInt(state.CurrentMana) + "/" + Mathf.FloorToInt(state.MaxMana);
         if (c.ManaLabel.text != mana) c.ManaLabel.text = mana;
-        if(data!=c.Data || name!=c.LastName || level!=c.LastLevel || hp!=c.LastHP || max!=c.LastMax || dead!=c.LastDead)
+        if (data != c.Data || name != c.LastName || level != c.LastLevel || hp != c.LastHP || max != c.LastMax)
         {
-            c.Data=data;c.LastName=name;c.LastLevel=level;c.LastHP=hp;c.LastMax=max;c.LastDead=dead;
-            c.Name.text=name;
-            c.Level.text=empty?"Ô trống":(dead?"Đã gục · ":index>0?"B2 · ":"")+"Cấp "+level;
-            c.Health.text=empty?"HP —":"HP "+hp+"/"+max;
-            c.Fill.rectTransform.anchorMax=new Vector2(max>0?Mathf.Clamp01((float)hp/max):0,1);
-            c.Name.color=dead?new Color(1,.56f,.5f):empty?new Color(.55f,.64f,.65f):new Color(.92f,.89f,.75f);
+            c.Data = data;
+            c.LastName = name;
+            c.LastLevel = level;
+            c.LastHP = hp;
+            c.LastMax = max;
+            c.Name.text = name;
+            c.Level.text = (index > 0 ? "B2 · " : "") + "Cấp " + level;
+            c.Health.text = "HP " + hp + "/" + max;
+            c.Fill.rectTransform.anchorMax = new Vector2(max > 0 ? Mathf.Clamp01((float)hp / max) : 0, 1);
+            c.Name.color = new Color(.92f, .89f, .75f);
         }
-        Sprite portrait=empty || art==null?null:art.hudHeroPortrait;
+        Sprite portrait = art == null ? null : art.hudHeroPortrait;
         if(c.Portrait.sprite!=portrait)c.Portrait.sprite=portrait;
         c.Portrait.enabled=portrait!=null;
         c.EmptyAvatar.enabled=portrait==null;

@@ -1,23 +1,27 @@
 using TMPro;
 using TuTienCore;
 using UnityEngine;
-using UnityEngine.UI;
 using UnityEngine.Events;
+using UnityEngine.UI;
 
 public partial class UIManager
 {
-    private RectTransform originPanel, originTalk, originEncounterButton, originJournal, originDismiss;
-    private RectTransform originPrev, originNext, originPromptButton, originAccept, originDecline;
+    private RectTransform originPanel, originTalk, originWoodcutter, originEncounterButton, originJournal;
+    private RectTransform originDismiss, originPrev, originNext, originPromptButton, originAccept, originDecline, originReplay;
     private TextMeshProUGUI originLabel, originMapCaption, originTalkLabel;
     private TextMeshProUGUI originPromptLabel, originAcceptLabel, originDeclineLabel;
-    private EntityDataSO originHero, originNoticeHero;
-    private OriginStage originHintStage;
-    private string originHintMap;
-    private bool originDismissed, originJournalOpen, originMapHighlighted, originManualNotice, offeringHerbs;
+    private EntityDataSO originHero, originNoticeHero, openingHero;
+    private string originMap;
+    private bool originJournalOpen, originMapHighlighted, originManualNotice;
+    private bool originControlsVisible;
     private OriginEncounter openEncounter;
-    private int originPage;
+    private HanVuConversation conversation;
+    private HanVuLine[] dialogue;
+    private int originPage, dialogueIndex;
     private string originNotice, originNoticeMap;
     private float originNoticeUntil;
+
+    internal void ShowOriginOpening(EntityDataSO data) => openingHero = data;
 
     internal void ShowOriginNotice(EntityDataSO data, string text)
     {
@@ -44,138 +48,219 @@ public partial class UIManager
         var backdrop = panel.GetComponent<Image>();
         backdrop.color = new Color(.07f, .12f, .16f, .88f);
         backdrop.raycastTarget = false;
-        originLabel = MakeLabel(originPanel, "", new Vector2(165f, -35f), new Vector2(310f, 62f));
+        originLabel = MakeLabel(originPanel, "", new Vector2(150f, -29f), new Vector2(286f, 52f));
         originLabel.alignment = TextAlignmentOptions.TopLeft;
         originLabel.enableWordWrapping = true;
         originLabel.overflowMode = TextOverflowModes.Ellipsis;
         ReadableText(originLabel, 12f);
-        originTalk = StoryButton("HanVuTalk", "Trò chuyện", 6f, 89f, OpenOriginTalk);
+        originTalk = StoryButton("HanVuTalk", "Trò chuyện", 6f, 101f, OpenOriginTalk);
         originTalkLabel = originTalk.GetComponentInChildren<TextMeshProUGUI>(true);
-        originEncounterButton = StoryButton("HanVuEncounter", "Kỳ ngộ", 99f, 70f, OpenOriginEncounter);
-        originJournal = StoryButton("HanVuJournal", "Nhật ký", 173f, 70f, ToggleOriginJournal);
-        originDismiss = StoryButton("HanVuDismiss", "Đóng", 249f, 75f, DismissOriginHint);
-        originPrev = StoryButton("HanVuPrev", "‹", 6f, 30f, () => originPage--);
-        originNext = StoryButton("HanVuNext", "›", 40f, 30f, () => originPage++);
-        originPromptButton = StoryButton("HanVuPrompts", "Tắt gợi ý", 77f, 135f,
-            () => GameForUI()?.ToggleOriginPrompts());
-        originPromptLabel = originPromptButton.GetComponentInChildren<TextMeshProUGUI>(true);
-        originAccept = StoryButton("HanVuAccept", "Nhận lời", 6f, 107f, () => ChooseOriginOffer(true));
-        originDecline = StoryButton("HanVuDecline", "Từ chối", 117f, 116f, () => ChooseOriginOffer(false));
+        originEncounterButton = StoryButton("HanVuEncounter", "Kỳ ngộ", 111f, 75f, OpenOriginEncounter);
+        originDismiss = StoryButton("HanVuDismiss", "Đóng", 229f, 65f, CloseOriginPresentation);
+        originPrev = StoryButton("HanVuPrev", "Trước", 6f, 50f, () => MoveOriginLine(-1));
+        originNext = StoryButton("HanVuNext", "Tiếp", 60f, 50f, () => MoveOriginLine(1));
+        originAccept = StoryButton("HanVuAccept", "Nhận lời", 60f, 85f, () => ChooseOriginOffer(true));
+        originDecline = StoryButton("HanVuDecline", "Để sau", 149f, 76f, () => ChooseOriginOffer(false));
+        originReplay = StoryButton("HanVuReplay", "Xem lại mở đầu", 115f, 110f, () =>
+        {
+            var data = GameForUI()?.HeroData;
+            if (StoryOrigin.IsSafe(data)) BeginOriginConversation(data, HanVuConversation.Opening);
+        });
         originAcceptLabel = originAccept.GetComponentInChildren<TextMeshProUGUI>(true);
         originDeclineLabel = originDecline.GetComponentInChildren<TextMeshProUGUI>(true);
+        originWoodcutter = SmallButton(w3.Root, "HanVuWoodcutter", "Người đốn củi", Vector2.zero, Vector2.zero,
+            new Vector2(8f, 8f), new Vector2(114f, 25f), OpenWoodcutter);
+        originJournal = SmallButton(w3.Root, "HanVuJournal", "Nhật ký", Vector2.zero, Vector2.zero,
+            Vector2.zero, Vector2.one, ToggleOriginJournal);
+        originPromptButton = SmallButton(w3.Root, "HanVuPrompts", "Ẩn gợi ý", Vector2.zero, Vector2.zero,
+            Vector2.zero, Vector2.one, () => GameForUI()?.ToggleOriginPrompts());
+        originPromptLabel = originPromptButton.GetComponentInChildren<TextMeshProUGUI>(true);
         originMapCaption = worldMapButton?.GetComponentInChildren<TextMeshProUGUI>(true);
+        originPanel.gameObject.SetActive(false);
+        originWoodcutter.gameObject.SetActive(false);
+        originJournal.gameObject.SetActive(false);
+        originPromptButton.gameObject.SetActive(false);
+    }
+
+    private void LayoutOriginControls(float width, float margin, float top, float cardWidth)
+    {
+        float buttonWidth = (cardWidth - 4f) / 2f;
+        float left = width - margin - cardWidth;
+        HudW3View.Place(originJournal, left, top, buttonWidth, 24f);
+        HudW3View.Place(originPromptButton, left + buttonWidth + 4f, top, buttonWidth, 24f);
+        LayoutHudButton(originJournal, 11f);
+        LayoutHudButton(originPromptButton, 11f);
     }
 
     private void OpenOriginTalk()
     {
         var game = GameForUI();
-        if (game?.TryOriginInteraction() != true) return;
-        originManualNotice = true;
-        originDismissed = false;
-        offeringHerbs = StoryOrigin.CanOfferHerbs(game.HeroData);
+        if (game == null) return;
+        var data = game.HeroData;
+        if (StoryOrigin.IsSafe(data))
+        {
+            var stage = data.originStory.stage;
+            BeginOriginConversation(data, stage == OriginStage.Return ? HanVuConversation.BeforeMedicine :
+                stage > OriginStage.Return ? HanVuConversation.AfterMedicine : HanVuConversation.Opening);
+        }
+        else if (game.TryOriginInteraction())
+            originManualNotice = true;
+    }
+
+    private void OpenWoodcutter()
+    {
+        var game = GameForUI();
+        if (game?.TryTalkToWoodcutter() == true)
+            BeginOriginConversation(game.HeroData, HanVuConversation.Woodcutter);
+    }
+
+    private void BeginOriginConversation(EntityDataSO data, HanVuConversation kind)
+    {
+        originJournalOpen = false;
+        openEncounter = null;
+        conversation = kind;
+        dialogueIndex = 0;
+        dialogue = HanVuNarrative.Lines(data, kind);
     }
 
     private void OpenOriginEncounter()
     {
         openEncounter = GameForUI()?.OpenOriginEncounter();
-        if (openEncounter != null) originDismissed = false;
     }
+
+    private void MoveOriginLine(int direction)
+    {
+        if (originJournalOpen)
+            originPage += direction;
+        else if (dialogue != null)
+        {
+            dialogueIndex = Mathf.Clamp(dialogueIndex + direction, 0, dialogue.Length - 1);
+            if (HanVuNarrative.TellsOfTrip(conversation, dialogueIndex))
+                GameForUI()?.RecordOriginTrip();
+        }
+    }
+
+    private bool LastLine => dialogue != null && dialogueIndex == dialogue.Length - 1;
 
     private void ChooseOriginOffer(bool accept)
     {
         var game = GameForUI();
         if (game == null) return;
-        bool chosen = offeringHerbs ? game.TryChooseHerbs(accept) : openEncounter != null &&
-            game.TryChooseOriginEncounter(openEncounter.Id, accept ? EncounterChoice.Participated : EncounterChoice.Declined);
-        offeringHerbs = false;
+        if (conversation == HanVuConversation.BeforeMedicine && LastLine && accept)
+        {
+            if (game.TryOriginInteraction())
+                BeginOriginConversation(game.HeroData, HanVuConversation.AfterMedicine);
+            return;
+        }
+        bool chosen = conversation == HanVuConversation.Opening && LastLine
+            ? game.TryChooseHerbs(accept)
+            : openEncounter != null &&
+              game.TryChooseOriginEncounter(openEncounter.Id, accept ? EncounterChoice.Participated : EncounterChoice.Declined);
+        if (!chosen) return;
+        conversation = HanVuConversation.None;
+        dialogue = null;
         openEncounter = null;
-        originManualNotice = chosen;
+        originManualNotice = true;
     }
 
     internal void ToggleOriginJournal()
     {
-        originJournalOpen = !originJournalOpen;
+        bool open = !originJournalOpen;
+        CloseOriginPresentation();
+        originJournalOpen = open;
         originPage = 0;
     }
 
-    internal void DismissOriginHint()
+    private void CloseOriginPresentation()
     {
-        bool dismissHint = !originJournalOpen && !offeringHerbs && openEncounter == null;
         originJournalOpen = false;
-        offeringHerbs = false;
+        conversation = HanVuConversation.None;
+        dialogue = null;
         openEncounter = null;
-        if (dismissHint) originDismissed = true;
         originNotice = null;
     }
 
     private void TickOriginPresentation()
     {
+        if (w3 == null) return;
         var data = hudGame?.HeroData;
-        bool available = w3 != null && w3.Root.gameObject.activeSelf &&
-            StoryOrigin.Definition(data) != null && !hudGame.HasTribulationLiability;
-        if (!available)
+        bool visible = w3.Root.gameObject.activeSelf && StoryOrigin.Definition(data) != null &&
+            !hudGame.HasTribulationLiability;
+        if (originControlsVisible != visible)
         {
-            if (originPanel != null) originPanel.gameObject.SetActive(false);
+            originControlsVisible = visible;
+            LayoutReadableUI();
+        }
+        originJournal.gameObject.SetActive(visible);
+        originPromptButton.gameObject.SetActive(visible);
+        if (!visible)
+        {
+            originPanel.gameObject.SetActive(false);
+            originWoodcutter.gameObject.SetActive(false);
             HighlightOriginMap(false);
             return;
         }
-        if (originPanel == null) InstallOriginPresentation();
-        originPanel.gameObject.SetActive(true);
-        if (originHero != data || originHintMap != data.worldMapId)
+        if (originHero != data || originMap != data.worldMapId)
         {
             originHero = data;
-            originHintMap = data.worldMapId;
-            originDismissed = false;
-            originJournalOpen = false;
-            offeringHerbs = false;
-            openEncounter = null;
+            originMap = data.worldMapId;
+            CloseOriginPresentation();
         }
-        if (originHintStage != data.originStory.stage)
+        if (openingHero == data)
         {
-            originHintStage = data.originStory.stage;
-            originDismissed = false;
+            openingHero = null;
+            if (StoryOrigin.IsSafe(data) && !data.originStory.hideStoryPrompts)
+                BeginOriginConversation(data, HanVuConversation.Opening);
         }
         var encounter = HanVuEncounters.Available(data);
         if (openEncounter != null && openEncounter != encounter) openEncounter = null;
-        bool choice = offeringHerbs || openEncounter != null;
-        bool idle = !originJournalOpen && !choice;
+        bool idle = !originJournalOpen && dialogue == null && openEncounter == null;
         bool talk = idle && StoryOrigin.CanInteract(data);
+        bool canOfferHerbs = conversation == HanVuConversation.Opening && LastLine && StoryOrigin.CanOfferHerbs(data);
+        bool canPrepare = conversation == HanVuConversation.BeforeMedicine && LastLine;
         originTalk.gameObject.SetActive(talk);
         if (talk) originTalkLabel.text = StoryOrigin.InteractionLabel(data);
+        originWoodcutter.gameObject.SetActive(idle && HanVuNarrative.AtWoodcutter(data));
         originEncounterButton.gameObject.SetActive(idle && encounter != null);
-        originJournal.gameObject.SetActive(idle);
-        originPromptButton.gameObject.SetActive(originJournalOpen);
-        originAccept.gameObject.SetActive(choice);
-        originDecline.gameObject.SetActive(choice && (!offeringHerbs ||
-            data.originStory.herbalParticipation != HerbalParticipation.Declined));
-        originPrev.gameObject.SetActive(originJournalOpen && originPage > 0);
-        originNext.gameObject.SetActive(false);
+        originPromptLabel.text = data.originStory.hideStoryPrompts ? "Hiện gợi ý" : "Ẩn gợi ý";
+        originAccept.gameObject.SetActive(openEncounter != null || canOfferHerbs || canPrepare);
+        originDecline.gameObject.SetActive(openEncounter != null ||
+            (canOfferHerbs && data.originStory.herbalParticipation != HerbalParticipation.Declined));
+        originPrev.gameObject.SetActive(originJournalOpen ? originPage > 0 : dialogue != null && dialogueIndex > 0);
+        originNext.gameObject.SetActive(dialogue != null && !LastLine);
+        originReplay.gameObject.SetActive(originJournalOpen && StoryOrigin.IsSafe(data));
         if (originJournalOpen)
         {
             var entries = StoryOrigin.Journal(data);
             originPage = Mathf.Clamp(originPage, 0, entries.Count - 1);
             originNext.gameObject.SetActive(originPage < entries.Count - 1);
             originLabel.text = "Nhật ký " + (originPage + 1) + "/" + entries.Count + "\n" + entries[originPage];
-            originPromptLabel.text = data.originStory.hideStoryPrompts ? "Bật gợi ý truyện" : "Tắt gợi ý truyện";
         }
-        else if (choice)
+        else if (dialogue != null)
         {
-            originLabel.text = offeringHerbs ? originNotice ?? "Có thể tìm lá bạc để sắc thuốc." :
-                openEncounter.Title + "\n" + openEncounter.Observation;
-            originAcceptLabel.text = offeringHerbs ? "Nhận lời" : openEncounter.Participate;
-            originDeclineLabel.text = offeringHerbs ? "Để sau" : openEncounter.Decline;
+            var line = dialogue[dialogueIndex];
+            originLabel.text = line.Speaker + "\n" + line.Text;
+            originAcceptLabel.text = canPrepare ? "Sắc thuốc" : "Nhận lời";
+            originDeclineLabel.text = "Để sau";
+        }
+        else if (openEncounter != null)
+        {
+            originLabel.text = openEncounter.Title + "\n" + openEncounter.Observation;
+            originAcceptLabel.text = openEncounter.Participate;
+            originDeclineLabel.text = openEncounter.Decline;
         }
         else
         {
-            bool notice = !originDismissed && originNotice != null && originNoticeHero == data &&
-                originNoticeMap == data.worldMapId && Time.realtimeSinceStartup < originNoticeUntil &&
-                (!data.originStory.hideStoryPrompts || originManualNotice);
-            originLabel.text = notice ? originNotice : originDismissed ? "" : StoryOrigin.Hint(data);
+            bool notice = originNotice != null && originNoticeHero == data && originNoticeMap == data.worldMapId &&
+                Time.realtimeSinceStartup < originNoticeUntil && (!data.originStory.hideStoryPrompts || originManualNotice);
+            originLabel.text = notice ? originNotice : StoryOrigin.Hint(data);
         }
         bool hasText = originLabel.text.Length > 0;
-        originDismiss.gameObject.SetActive(hasText || choice);
-        originPanel.sizeDelta = new Vector2(330f, hasText ? 102f : 30f);
-        HighlightOriginMap(idle && !originDismissed && StoryOrigin.HintMap(data));
+        originDismiss.gameObject.SetActive(hasText && (!idle || originNotice != null));
+        originPanel.sizeDelta = new Vector2(300f, hasText ? 88f : 30f);
+        originPanel.GetComponent<Image>().enabled = hasText;
+        originPanel.gameObject.SetActive(hasText || talk || (idle && encounter != null));
+        HighlightOriginMap(idle && StoryOrigin.HintMap(data));
     }
 
     private void HighlightOriginMap(bool active)

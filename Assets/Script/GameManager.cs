@@ -731,7 +731,11 @@ public partial class GameManager : MonoBehaviour
             if(space!=null)space.BeginCameraEntryHandoff();
             if(UIManager.Instance!=null)UIManager.Instance.ShowMapTitle(runtimeHeroData.mapName);
             string narration = StoryOrigin.Arrive(runtimeHeroData);
-            if (narration != null) CommitOriginChange(narration);
+            if (narration != null)
+            {
+                CommitOriginChange(narration);
+                UIManager.Instance?.ShowOriginOpening(runtimeHeroData);
+            }
             CallNextWave();
         }
         TraceEntryFrame("GameManager after gameplay release and first wave");
@@ -1264,11 +1268,24 @@ public partial class GameManager : MonoBehaviour
         var state = runtimeHeroData.originStory;
         if (state == null) return false;
         var stage = state.stage;
-        bool heardCompanion = state.heardCompanion;
         string narration = StoryOrigin.Interact(runtimeHeroData);
         if (narration == null) return false;
-        if (stage != state.stage || heardCompanion != state.heardCompanion) CommitOriginChange(narration);
+        if (stage != state.stage) CommitOriginChange(narration);
         else if (UIManager.Instance != null) UIManager.Instance.ShowOriginNotice(runtimeHeroData, narration);
+        return true;
+    }
+
+    internal void RecordOriginTrip()
+    {
+        if (IsGameplayHUDVisible && !HasTribulationLiability && HanVuNarrative.RecordTrip(runtimeHeroData))
+            CommitOriginChange(null);
+    }
+
+    internal bool TryTalkToWoodcutter()
+    {
+        if (!IsGameplayHUDVisible || HasTribulationLiability || !HanVuNarrative.AtWoodcutter(runtimeHeroData))
+            return false;
+        if (HanVuNarrative.TalkToWoodcutter(runtimeHeroData)) CommitOriginChange(null);
         return true;
     }
 
@@ -1399,8 +1416,13 @@ public partial class GameManager : MonoBehaviour
             {
                 bool changed = runtimeHeroData.CompleteWave();
                 RestoreProgress();
-                if (accepted && StoryOrigin.CreditWave(runtimeHeroData, storyElite, out string narration))
-                    CommitOriginChange(narration);
+                if (accepted)
+                {
+                    bool credited = StoryOrigin.CreditWave(runtimeHeroData, storyElite, out string narration);
+                    bool sawNote = runtimeHeroData.worldMapWaveProgress >= 2 && HanVuNarrative.ObserveNote(runtimeHeroData);
+                    if (credited || sawNote)
+                        CommitOriginChange(narration ?? (sawNote ? HanVuNarrative.TrailNote : null));
+                }
                 if (changed)
                 {
                     if (WorldMapCatalog.Enabled(runtimeHeroData))
@@ -1445,6 +1467,8 @@ public partial class GameManager : MonoBehaviour
         // Per-frame minimum, never sum, centroid/camera delta or a fastest Hero.
         // New/unticked members contribute zero; death removes them next sample.
         explorationDistance+=common;
+        if (common > 0f && explorationDistance >= CurrentDistancePerWave * HanVuNarrative.TrailExplorationFraction &&
+            HanVuNarrative.ObserveKnot(runtimeHeroData)) CommitOriginChange(HanVuNarrative.TrailKnot);
         if(explorationDistance>=CurrentDistancePerWave)
         {
             CallNextWave(); // Drops excess distance; one threshold = one wave.

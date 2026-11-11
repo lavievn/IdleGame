@@ -30,7 +30,11 @@ namespace TuTienCore
         public OriginActor guardian;
         public OriginActor companion;
         public bool introduced;
-        public bool heardCompanion;
+        public bool heardCompanion; // Testimony already recorded by older saves.
+        public bool heardOpeningTrip;
+        public bool heardWoodcutter;
+        public bool sawTrailKnot;
+        public bool sawTrailNote;
         public OriginStage stage;
         public int herbWaves;
         public int searchWaves;
@@ -68,7 +72,7 @@ namespace TuTienCore
         public static readonly OriginDefinition HanVu = new OriginDefinition(
             "hanvu", "hanvu.find_medicine", "TV-20", "Hàn Vụ thôn", "TV-16", "TV-11");
         public const string QuestName = "Tìm thuốc cứu người";
-        public const int SaveVersion = 2;
+        public const int SaveVersion = 3;
 
         public static OriginDefinition Definition(EntityDataSO hero) =>
             hero?.originStory?.originId == HanVu.Id ? HanVu : null;
@@ -97,14 +101,14 @@ namespace TuTienCore
             if (state == null) return true;
             if (string.IsNullOrEmpty(state.originId)) return state.version == 0;
             var origin = Definition(hero);
-            if (origin == null || (state.version != 1 && state.version != SaveVersion) || hero.race != RaceType.NhanToc ||
+            if (origin == null || (state.version < 1 || state.version > SaveVersion) || hero.race != RaceType.NhanToc ||
                 (hero.gender != GenderType.Nam && hero.gender != GenderType.Nu) ||
                 !IsActor(state.guardian, origin.GuardianId) || !IsActor(state.companion, origin.CompanionId) ||
                 state.companion.gender != Opposite(hero.gender) || state.stage < OriginStage.Gather ||
                 state.stage > OriginStage.Complete || state.herbWaves < 0 || state.herbWaves > OriginDefinition.Waves ||
                 state.searchWaves < 0 || state.searchWaves > OriginDefinition.Waves)
                 return false;
-            if (state.version == SaveVersion &&
+            if (state.version >= 2 &&
                 (state.herbalParticipation < HerbalParticipation.Offered ||
                  state.herbalParticipation > HerbalParticipation.Declined ||
                  (state.herbalParticipation != HerbalParticipation.Accepted &&
@@ -150,12 +154,19 @@ namespace TuTienCore
         public static void UpgradeSave(EntityDataSO hero)
         {
             var state = hero.originStory;
-            if (state == null || state.version != 1) return;
-            state.herbalParticipation = state.herbWaves > 0 || state.stage != OriginStage.Gather
-                ? HerbalParticipation.Accepted : HerbalParticipation.Offered;
-            state.declinedHerbalOffer = false;
-            state.hideStoryPrompts = false;
-            state.encounters = null;
+            if (state == null || state.version < 1 || state.version >= SaveVersion) return;
+            if (state.version == 1)
+            {
+                state.herbalParticipation = state.herbWaves > 0 || state.stage != OriginStage.Gather
+                    ? HerbalParticipation.Accepted : HerbalParticipation.Offered;
+                state.declinedHerbalOffer = false;
+                state.hideStoryPrompts = false;
+                state.encounters = null;
+            }
+            state.heardOpeningTrip = false;
+            state.heardWoodcutter = false;
+            state.sawTrailKnot = false;
+            state.sawTrailNote = false;
             state.version = SaveVersion;
             hero.isDirty = true;
         }
@@ -188,7 +199,7 @@ namespace TuTienCore
                 state.introduced = true;
                 hero.isDirty = true;
                 return GuardianTitle(state) + " " + state.guardian.name +
-                    " lại ho. Lát rảnh, ta ghé hỏi xem người còn thuốc không.";
+                    " ho khẽ bên bếp.";
             }
             return null;
         }
@@ -217,7 +228,7 @@ namespace TuTienCore
                 if (defeatedStoryElite)
                 {
                     state.stage = OriginStage.Complete;
-                    narration = "Nút dây này… giống nút " + state.companion.name + " vẫn buộc. Vì sao nó lại ở đây?";
+                    narration = "Cạnh gốc thông có dải vải thắt nút đôi. Có lẽ ai đó đánh dấu lối về.";
                 }
             }
             else return false;
@@ -239,9 +250,10 @@ namespace TuTienCore
             var state = hero.originStory;
             if (!IsSafe(hero))
             {
+                HanVuNarrative.ObserveNote(hero);
                 state.stage = OriginStage.SearchElite;
                 hero.isDirty = true;
-                return "Có một mảnh giấy ghim ở ngã rẽ. Dòng còn đọc được chỉ về Ma Tùng Sâm.";
+                return HanVuNarrative.TrailNote;
             }
             string guardian = state.guardian.name;
             string elder = state.guardian.gender == GenderType.Nam ? "ông" : "bà";
@@ -250,20 +262,17 @@ namespace TuTienCore
             {
                 state.stage = OriginStage.SearchForest;
                 hero.isDirty = true;
-                return "Sắc thuốc xong, " + guardian + " dịu cơn ho. “" + companion +
-                    " đã vào Cô Hồn Lâm tìm vị thuốc khác. Cháu xem ở ngã rẽ giúp " + elder + ".”";
+                return "Sắc thuốc xong, " + guardian + " dịu cơn ho.";
             }
             if (state.stage == OriginStage.Gather)
             {
-                if (!state.heardCompanion) { state.heardCompanion = true; hero.isDirty = true; }
-                return companion + ": “Hai đứa mình lớn lên hái củi ở đây. Cậu tìm thuốc cho " + elder +
-                    " nhé, dọc bìa Cô Hồn Lâm có cây lá bạc.”";
+                return guardian + ": “Con khoác thêm áo đi. Sáng nay sương dày lắm.”";
             }
             return guardian + ": “" + elder + " đã đỡ ho. " + companion + " vẫn chưa về.”";
         }
 
         public static string InteractionLabel(EntityDataSO hero) => IsSafe(hero)
-            ? (hero.originStory.stage == OriginStage.Return ? "Sắc thuốc" : "Trò chuyện")
+            ? (hero.originStory.stage == OriginStage.Return ? "Mang thuốc về" : "Trò chuyện")
             : "Xem dấu vết";
 
         public static bool HintMap(EntityDataSO hero)
@@ -335,17 +344,17 @@ namespace TuTienCore
             if (state.stage >= OriginStage.SearchForest)
             {
                 lines.Add("Ghi nhận · Người nuôi dưỡng tạm dịu cơn ho sau khi uống thuốc.");
-                lines.Add("Lời kể · Theo " + state.guardian.name + ", " + state.companion.name +
-                    " đã vào rừng tìm một vị thuốc khác.");
+
             }
             if (ItemCount(hero, HanVu.TrailId) == 1)
-                lines.Add("Vật chứng · Mảnh giấy ở ngã rẽ Cô Hồn Lâm còn dòng chữ “Ma Tùng Sâm”.");
+                lines.Add("Vật chứng · " + HanVuNarrative.TrailNote);
             if (ItemCount(hero, HanVu.ClueId) == 1)
             {
-                lines.Add("Vật chứng · Dây vải sờn, buộc nút đôi. Tìm thấy gần sói đầu đàn ở Ma Tùng Sâm.");
-                lines.Add("Suy đoán · Nút dây giống cách " + state.companion.name +
-                    " thường buộc. Ai đã để nó lại, và người ấy đang ở đâu?");
+                lines.Add("Vật chứng · Dải vải thắt nút đôi buộc ở gốc thông, gần chỗ sói đầu đàn tại Ma Tùng Sâm.");
+                lines.Add("Suy đoán · Có thể " + state.companion.name +
+                    " từng qua đây. Cũng có thể đây là dấu của người đi rừng.");
             }
+            HanVuNarrative.AddJournal(hero, lines);
             HanVuEncounters.AddJournal(state, lines);
             return lines;
         }
