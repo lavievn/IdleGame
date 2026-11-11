@@ -6,13 +6,16 @@ public sealed class WorldWeatherPresentationSettings
 {
     [Range(0f, 1.5f)] public float rainIntensity = 1f;
     [Range(.3f, 2f)] public float rainSpeed = 1f;
-    [Range(.3f, 2f)] public float dropSize = 1f;
+    internal const float DefaultDropSize = .30f;
+    [Range(.1f, 2f)] public float dropSize = DefaultDropSize;
+    [Tooltip("Fixed direction, or a left/right preference when Random Rain Wind is enabled.")]
     [Range(-1f, 1f)] public float windDirection = -.65f;
-    [Range(0f, 8f)] public float windStrength = 3.5f;
+    [Range(0f, 8f)] public float windStrength = 5f;
     [Range(0f, 5f)] public float gustStrength = 2.5f;
     [Range(0f, 2f)] public float splashIntensity = 1f;
     [Range(0f, .5f)] public float stormHaze = .18f;
     public bool rainWind = true;
+    public bool randomRainWind = true;
     public bool groundSplash = true;
     public bool waterRipples = true;
     public bool distantHaze = true;

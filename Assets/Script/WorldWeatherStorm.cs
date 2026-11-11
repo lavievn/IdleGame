@@ -28,6 +28,8 @@ internal readonly struct WorldWeatherVisual
 // one strike. Entry, restart and clock seeks establish a new baseline.
 internal sealed class WorldWeatherStorm
 {
+    internal const float RainWindPeriod = 14f;
+    private const float WindBlendSeconds = 4f;
     private double last = double.NaN;
     private double thunderAt = double.NaN;
     private float remaining, boltPosition;
@@ -51,10 +53,17 @@ internal sealed class WorldWeatherStorm
         mapNumber = number;
         bool heavy = outdoors && frame.Weather == WorldWeather.HeavyRain;
         float gustWave = Mathf.Sin((float)(now % 17.0) * (2f * Mathf.PI / 17f) + (seed & 7));
-        float gustStrength = heavy ? Mathf.Max(0f, gustWave) * settings.gustStrength * frame.Rain : 0f;
-        float wind = settings.rainWind && outdoors
-            ? frame.Rain * settings.windDirection * settings.windStrength + gustStrength : 0f;
-        bool gust = active && !reset && settings.rainWind && !gustAbove && gustStrength > settings.gustStrength * .55f;
+        bool windy = settings.rainWind && outdoors && frame.Rain > 0f && settings.windStrength > 0f;
+        float gustStrength = windy && heavy ? Mathf.Max(0f, gustWave) * settings.gustStrength * frame.Rain : 0f;
+        float wind = 0f;
+        if (windy)
+        {
+            float direction = settings.randomRainWind
+                ? SampleWindDirection(now, seed, id, number, settings.windDirection)
+                : settings.windDirection;
+            wind = direction * (Mathf.Sqrt(frame.Rain) * settings.windStrength + gustStrength);
+        }
+        bool gust = active && !reset && windy && !gustAbove && gustStrength > settings.gustStrength * .55f;
         gustAbove = gustStrength > settings.gustStrength * .55f;
         float haze = settings.distantHaze && outdoors ? settings.stormHaze * Mathf.SmoothStep(0f, 1f, frame.Rain) : 0f;
         if (reset || !heavy || !settings.lightning || !active)
@@ -90,6 +99,23 @@ internal sealed class WorldWeatherStorm
         thunderAt = double.NaN;
         remaining = 0f;
         gustAbove = false;
+    }
+
+    private static float SampleWindDirection(double now, int seed, string id, int number, float bias)
+    {
+        long slot = (long)(now / RainWindPeriod);
+        float blend = (float)(now - slot * (double)RainWindPeriod) / WindBlendSeconds;
+        float next = WindKey(slot, seed, id, number, bias);
+        if (blend >= 1f) return next;
+        return Mathf.SmoothStep(WindKey(slot - 1, seed, id, number, bias), next, blend);
+    }
+
+    private static float WindKey(long slot, int seed, string id, int number, float bias)
+    {
+        float leftChance = .5f - .25f * bias;
+        float sign = Unit(slot, seed ^ 0x6d2b79f5, id, number) < leftChance ? -1f : 1f;
+        float strength = Mathf.Lerp(.65f, 1f, Unit(slot, seed ^ 0x1b873593, id, number));
+        return sign * strength;
     }
 
     private static float Unit(long slot, int seed, string id, int number)

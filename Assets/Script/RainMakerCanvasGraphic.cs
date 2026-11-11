@@ -12,7 +12,7 @@ public sealed class RainMakerCanvasGraphic : MaskableGraphic
     private Texture2D drops;
     private RainImpactCanvasGraphic impacts;
     private Rect viewport;
-    private float intensity, dropSize = 1f, splashIntensity = 1f;
+    private float intensity, dropSize = WorldWeatherPresentationSettings.DefaultDropSize, splashIntensity = 1f;
     private int liveCount;
 
     public override Texture mainTexture => drops != null ? drops : base.mainTexture;
@@ -34,7 +34,7 @@ public sealed class RainMakerCanvasGraphic : MaskableGraphic
     {
         viewport = view;
         intensity = strength;
-        dropSize = settings != null ? settings.dropSize : 1f;
+        dropSize = settings != null ? settings.dropSize : WorldWeatherPresentationSettings.DefaultDropSize;
         splashIntensity = settings != null ? settings.splashIntensity : 1f;
     }
 

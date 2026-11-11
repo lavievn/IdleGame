@@ -27,17 +27,24 @@ internal static class WeatherPhase2Smoke
         Set(game, "previewWorldHour", 12f);
         Set(game, "previewWorldWeather", WorldWeather.LightRain);
         ui.SetPaused(false);
+        SettleWind(data);
         yield return new WaitForSecondsRealtime(1.5f);
         var impacts = adapter.ImpactGraphic;
         Check(impacts != null && impacts.VisibleImpacts > 0 && impacts.VisibleRipples == 0, "Light rain impacts a dry floor");
         float lightStrength = impacts.PeakStrength;
         int light = impacts.VisibleImpacts;
-        float lightWind = Mathf.Abs(adapter.RainGraphic.AverageWind);
+        float lightWind = adapter.RainGraphic.AverageWind;
         yield return capture("phase2-light-splash");
 
         Set(game, "previewWorldWeather", WorldWeather.HeavyRain);
+        SettleWind(data);
         yield return new WaitForSecondsRealtime(1.5f);
-        float heavyWind = Mathf.Abs(adapter.RainGraphic.AverageWind);
+        float heavyWind = adapter.RainGraphic.AverageWind;
+        Check(Mathf.Abs(lightWind) > 1f && Mathf.Abs(heavyWind) > 2f &&
+            Mathf.Approximately(Read<float>(adapter.RainGraphic, "dropSize"), .30f),
+            "Native particles fall diagonally with a 30 percent rendered drop scale");
+        VerifyRainWind(data);
+        pass(FormattableString.Invariant($"Rain wind: native horizontal velocity {lightWind:F2}/{heavyWind:F2} for light/heavy rain, seeded left/right changes with smooth boundaries, drop scale 0.30."));
         Check(impacts.VisibleImpacts > light && impacts.PeakStrength > lightStrength &&
             impacts.VisibleImpacts <= RainImpactCanvasGraphic.Capacity && adapter.Weather.Haze > 0f,
             "Heavy rain produces denser, stronger splashes and distant haze");
@@ -188,6 +195,47 @@ internal static class WeatherPhase2Smoke
         pass(playlist.Length > 0
             ? "Travel clears splashes, picks a different streaming BGM, and fades the old track. Save/Load/Retry preserve climate and source counts."
             : "Travel clears splashes. Save/Load/Retry preserve climate and source counts; local playlist was absent.");
+    }
+
+    private static void SettleWind(EntityDataSO data)
+    {
+        float period = WorldWeatherStorm.RainWindPeriod;
+        SetSeconds(data, Math.Ceiling(Seconds(data) / period) * period + period * .5);
+    }
+
+    private static void VerifyRainWind(EntityDataSO data)
+    {
+        var settings = new WorldWeatherPresentationSettings { gustStrength = 0f };
+        var weather = WorldClimate.Sample(data.worldClimate, 780f, data.mapTerrain, data.worldMapId,
+            data.mapNumber, false, WorldWeather.LightRain);
+        var storm = new WorldWeatherStorm();
+        var state = data.worldClimate;
+        float WindAt(double time)
+        {
+            state.day = (int)(time / 780.0);
+            state.dayFraction = time / 780.0 - state.day;
+            return storm.Step(settings, weather, state, data.worldMapId, data.mapNumber, 780f, true, true).Wind;
+        }
+        bool left = false, right = false;
+        float period = WorldWeatherStorm.RainWindPeriod;
+        for (int slot = 1; slot <= 32; slot++)
+        {
+            double boundary = slot * period;
+            float sample = WindAt(boundary + 7);
+            left |= sample < -1f;
+            right |= sample > 1f;
+            Check(Mathf.Abs(WindAt(boundary - .01) - WindAt(boundary + .01)) < .03f,
+                "Random wind is continuous across a new wind interval");
+        }
+        float remembered = WindAt(147);
+        WindAt(203);
+        Check(left && right && Mathf.Approximately(remembered, WindAt(147)), "Wind uses both directions and is repeatable");
+        settings.randomRainWind = false;
+        settings.windDirection = 1f;
+        float fixedWind = WindAt(147);
+        Check(fixedWind > 1f && Mathf.Approximately(fixedWind, WindAt(203)), "Fixed wind direction stays available");
+        settings.windStrength = 0f;
+        Check(WindAt(147) == 0f, "Zero wind strength means vertical rain");
     }
 
     private static void VerifyStormSchedule(WorldWeatherPresentationSettings settings, EntityDataSO data)
