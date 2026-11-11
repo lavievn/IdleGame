@@ -23,10 +23,32 @@ public sealed class WorldClimateVendorAdapter : WorldClimateAssetAdapter
     private RectTransform rainLayer;
     private RainMakerCanvasGraphic rainGraphic;
     private float maxRainRate, rainWorldWidth;
-    private float lastRainRate;
+    private float lastRainRate, fallSpeed, horizontalWind, groundY;
+    private double groundScroll;
+    private WorldWeatherVisual weather;
+    private Vector2 lastFlash;
+    private RainImpactCanvasGraphic impacts;
+    internal RainImpactCanvasGraphic ImpactGraphic => impacts;
+    internal WorldWeatherVisual Weather => weather;
 
     internal int ActiveParticles => emitter != null ? emitter.particleCount : 0;
     internal RainMakerCanvasGraphic RainGraphic => rainGraphic;
+
+    internal override void SetWeatherVisual(WorldWeatherVisual visual, double scroll, float floor)
+    {
+        if (visual.Reset) StopRain2D();
+        weather = visual;
+        groundScroll = scroll;
+        groundY = floor;
+    }
+
+    internal override void SetGroundScroll(double scroll)
+    {
+        groundScroll = scroll;
+        if (impacts != null) impacts.SetScroll(scroll);
+    }
+
+    internal override float ConsumeRainImpact() => impacts != null ? impacts.ConsumeSound() : 0f;
 
     internal static WorldClimateVendorAdapter TryInstall(GameObject owner)
     {
@@ -71,14 +93,17 @@ public sealed class WorldClimateVendorAdapter : WorldClimateAssetAdapter
         }
 
         Vector4 mix = SkyMix(frame);
+        Vector2 flash = new Vector2(weather.Flash, weather.BoltPosition);
         Cubemap twilight = frame.Hour < 12f ? assets.dawnSky : assets.duskSky;
-        if (resized || (Time.unscaledTime >= nextSkyUpdate && (mix != lastSkyMix || twilight != lastTwilight || skyScroll != lastSkyScroll)))
+        if (resized || (Time.unscaledTime >= nextSkyUpdate && (mix != lastSkyMix || twilight != lastTwilight || skyScroll != lastSkyScroll || flash != lastFlash)))
         {
             projection.SetTexture("_TwilightSky", twilight);
             projection.SetVector("_SkyMix", mix);
             projection.SetFloat("_Aspect", aspect);
             projection.SetFloat("_SkyScroll", skyScroll);
             lastSkyScroll = skyScroll;
+            projection.SetVector("_Storm", new Vector4(flash.x, flash.y, 0f, 0f));
+            lastFlash = flash;
             Graphics.Blit(null, projectedSky, projection);
             lastSkyMix = mix;
             lastTwilight = twilight;
@@ -137,7 +162,27 @@ public sealed class WorldClimateVendorAdapter : WorldClimateAssetAdapter
             shape.scale = new Vector3(worldWidth * 1.16f, .03f, .03f);
             rainWorldWidth = worldWidth;
         }
-        float rate = maxRainRate * Mathf.Clamp01(intensity);
+        var settings = weather.Settings;
+        float strength = Mathf.Clamp01(intensity);
+        float speed = Mathf.Lerp(12f, 19f, Mathf.InverseLerp(.32f, .88f, strength)) * (settings != null ? settings.rainSpeed : 1f);
+        if (!Mathf.Approximately(speed, fallSpeed))
+        {
+            var main = emitter.main;
+            main.startSpeed = new ParticleSystem.MinMaxCurve(speed * .85f, speed * 1.25f);
+            fallSpeed = speed;
+        }
+        if (!Mathf.Approximately(horizontalWind, weather.Wind))
+        {
+            var wind = emitter.velocityOverLifetime;
+            wind.enabled = !Mathf.Approximately(weather.Wind, 0f);
+            wind.space = ParticleSystemSimulationSpace.World;
+            wind.x = weather.Wind;
+            wind.y = wind.z = 0f;
+            horizontalWind = weather.Wind;
+        }
+        impacts.SetSurface(weather, viewport, groundScroll, groundY);
+        rainGraphic.SetPresentation(viewport, strength, settings);
+        float rate = maxRainRate * Mathf.Clamp01(strength * (settings != null ? settings.rainIntensity : 1f));
         if (lastRainRate != rate)
         {
             var emission = emitter.emission;
@@ -207,12 +252,21 @@ public sealed class WorldClimateVendorAdapter : WorldClimateAssetAdapter
         rect.anchorMin = Vector2.zero;
         rect.anchorMax = Vector2.one;
         rect.offsetMin = rect.offsetMax = Vector2.zero;
-        rainGraphic.Configure(emitter, assets.rainTexture);
+        var splash = new GameObject("Rain ground impacts", typeof(RectTransform), typeof(RainImpactCanvasGraphic));
+        impacts = splash.GetComponent<RainImpactCanvasGraphic>();
+        impacts.raycastTarget = false;
+        var splashRect = impacts.rectTransform;
+        splashRect.SetParent(rainLayer, false);
+        splashRect.anchorMin = Vector2.zero;
+        splashRect.anchorMax = Vector2.one;
+        splashRect.offsetMin = splashRect.offsetMax = Vector2.zero;
+        rainGraphic.Configure(emitter, assets.rainTexture, impacts);
     }
 
     public override void StopRain2D()
     {
         if (emitter != null) emitter.Stop(false, ParticleSystemStopBehavior.StopEmittingAndClear);
+        if (impacts != null) impacts.Clear();
         if (rainLayer != null) rainLayer.gameObject.SetActive(false);
     }
 

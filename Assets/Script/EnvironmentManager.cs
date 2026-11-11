@@ -330,9 +330,9 @@ public class EnvironmentManager : MonoBehaviour
     }
 
     internal void ApplyWorldClimate(WorldClimateFrame frame, bool lighting, bool hdrSky, bool rain2D,
-        WorldClimateAssetAdapter adapter)
+        WorldClimateAssetAdapter adapter, WorldWeatherVisual visual = default)
     {
-        if (groundPresentation != null) groundPresentation.ApplyWorldClimate(frame, lighting, hdrSky, rain2D, adapter);
+        if (groundPresentation != null) groundPresentation.ApplyWorldClimate(frame, lighting, hdrSky, rain2D, adapter, visual);
     }
 
     internal void ClearWorldClimate()

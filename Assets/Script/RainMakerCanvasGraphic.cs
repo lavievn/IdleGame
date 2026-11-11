@@ -10,26 +10,77 @@ public sealed class RainMakerCanvasGraphic : MaskableGraphic
         new ParticleSystem.Particle[WorldClimateVendorAdapter.MaxRainParticles];
     private ParticleSystem emitter;
     private Texture2D drops;
+    private RainImpactCanvasGraphic impacts;
+    private Rect viewport;
+    private float intensity, dropSize = 1f, splashIntensity = 1f;
+    private int liveCount;
 
     public override Texture mainTexture => drops != null ? drops : base.mainTexture;
     internal int VisibleDrops { get; private set; }
     internal int OccupiedColumns { get; private set; }
+    internal float AverageWind { get; private set; }
 
-    internal void Configure(ParticleSystem source, Texture2D texture)
+    internal void Configure(ParticleSystem source, Texture2D texture, RainImpactCanvasGraphic impactGraphic)
     {
         emitter = source;
         drops = texture;
+        impacts = impactGraphic;
         raycastTarget = false;
         color = new Color(.73f, .87f, 1f, .83f);
         SetMaterialDirty();
     }
 
-    private void LateUpdate() => SetVerticesDirty();
+    internal void SetPresentation(Rect view, float strength, WorldWeatherPresentationSettings settings)
+    {
+        viewport = view;
+        intensity = strength;
+        dropSize = settings != null ? settings.dropSize : 1f;
+        splashIntensity = settings != null ? settings.splashIntensity : 1f;
+    }
+
+    private void LateUpdate()
+    {
+        if (emitter == null) return;
+        liveCount = emitter.GetParticles(particles);
+        if (impacts != null && impacts.DetectImpacts && Time.deltaTime > 0f && liveCount > 0) CollideWithGround();
+        SetVerticesDirty();
+    }
+
+    private void CollideWithGround()
+    {
+        float scale = rectTransform.rect.height / WorldClimateVendorAdapter.RainWorldHeight;
+        bool changed = false;
+        for (int i = 0; i < liveCount; i++)
+        {
+            var particle = particles[i];
+            Vector2 current = (Vector2)particle.position * scale + viewport.center;
+            float ground = impacts.GroundAt(current.x, out bool water);
+            if (current.y > ground) continue;
+            Vector2 movement = (Vector2)particle.totalVelocity * (Time.deltaTime * scale);
+            if (movement.y < 0f && current.y - movement.y > ground)
+            {
+                float fraction = (current.y - ground) / movement.y;
+                float impactX = current.x - movement.x * fraction;
+                if (impactX >= viewport.xMin && impactX < viewport.xMax)
+                {
+                    float force = Mathf.Clamp01(Mathf.Abs(particle.totalVelocity.y) / 25f) *
+                        Mathf.Lerp(.35f, 1.3f, intensity) * splashIntensity;
+                    impacts.Emit(new Vector2(impactX, ground), force, water);
+                }
+            }
+            particle.remainingLifetime = -1f;
+            particles[i] = particle;
+            changed = true;
+        }
+        if (changed) emitter.SetParticles(particles, liveCount);
+    }
 
     protected override void OnDisable()
     {
         VisibleDrops = 0;
         OccupiedColumns = 0;
+        liveCount = 0;
+        AverageWind = 0f;
         base.OnDisable();
     }
 
@@ -42,17 +93,19 @@ public sealed class RainMakerCanvasGraphic : MaskableGraphic
         Rect bounds = rectTransform.rect;
         if (bounds.width <= 0f || bounds.height <= 0f) return;
         float scale = bounds.height / WorldClimateVendorAdapter.RainWorldHeight;
-        int count = emitter.GetParticles(particles);
-        for (int i = 0; i < count; i++)
+        float horizontal = 0f;
+        for (int i = 0; i < liveCount; i++)
         {
             var particle = particles[i];
+            if (particle.remainingLifetime <= 0f) continue;
             Vector2 position = (Vector2)particle.position * scale;
-            float length = Mathf.Lerp(.22f, .46f, (particle.randomSeed & 255) / 255f) * scale;
+            float size = Mathf.Lerp(.68f, 1.18f, intensity) * dropSize;
+            float length = Mathf.Lerp(.22f, .46f, (particle.randomSeed & 255) / 255f) * scale * size;
             if (position.x < bounds.xMin - length || position.x > bounds.xMax + length ||
                 position.y < bounds.yMin - length || position.y > bounds.yMax + length) continue;
-            Vector2 forward = new Vector2(particle.velocity.x - 1.6f, particle.velocity.y).normalized;
+            Vector2 forward = ((Vector2)particle.totalVelocity).normalized;
             if (forward == Vector2.zero) forward = Vector2.down;
-            Vector2 across = new Vector2(-forward.y, forward.x) * (.022f * scale);
+            Vector2 across = new Vector2(-forward.y, forward.x) * (.022f * scale * size);
             Vector2 top = position - forward * (length * .5f);
             Vector2 bottom = position + forward * (length * .5f);
             var tint = (Color32)color;
@@ -66,9 +119,11 @@ public sealed class RainMakerCanvasGraphic : MaskableGraphic
             if (bounds.Contains(position))
             {
                 VisibleDrops++;
+                horizontal += particle.totalVelocity.x;
                 int column = Mathf.Min(3, (int)(4f * (position.x - bounds.xMin) / bounds.width));
                 OccupiedColumns |= 1 << column;
             }
         }
+        AverageWind = VisibleDrops > 0 ? horizontal / VisibleDrops : 0f;
     }
 }

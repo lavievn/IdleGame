@@ -5,6 +5,9 @@ using UnityEngine;
 public abstract class WorldClimateAssetAdapter : MonoBehaviour
 {
     internal virtual void SetSkyScroll(float viewportWidths) { }
+    internal virtual void SetWeatherVisual(WorldWeatherVisual visual, double groundScroll, float groundY) { }
+    internal virtual void SetGroundScroll(double groundScroll) { }
+    internal virtual float ConsumeRainImpact() => 0f;
 
     // Supply a view-projected 2D texture, including phase/weather treatment.
     // Return false until the texture can replace the legacy sky completely.

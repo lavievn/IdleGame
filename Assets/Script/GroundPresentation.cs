@@ -32,6 +32,7 @@ public partial class GroundPresentation : MonoBehaviour
     private const float SkySizeMultiplier = .5f;
     private const float SkySpeedMultiplier = .5f;
     private float skyPhase, projectedSkyScroll;
+    private double climateGroundScroll;
     private const float GroundLayer2OffsetPixels = -50f;
     private const float GroundLayer3OffsetPixels = -100f;
     private const float SkyOffsetPixels = -10f;
@@ -356,6 +357,8 @@ public partial class GroundPresentation : MonoBehaviour
         float width = space.Width;
         if (width <= 0f) return;
         LayoutTiles(amount);
+        climateGroundScroll += amount;
+        if (climateAdapter != null) climateAdapter.SetGroundScroll(climateGroundScroll);
         float ground2Pan = amount * Mathf.Clamp01(farParallaxSpeed);
         LayoutFarTiles(ground2Pan);
         LayoutDistantTiles(amount * Mathf.Clamp01(distantParallaxSpeed));

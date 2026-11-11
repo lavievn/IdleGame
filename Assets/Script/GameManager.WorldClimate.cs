@@ -17,6 +17,10 @@ public partial class GameManager
     [SerializeField] private WorldWeather previewWorldWeather;
 #endif
 
+    [Header("Rain, wind and storm visuals")]
+    [SerializeField] private WorldWeatherPresentationSettings worldWeatherPresentation = new WorldWeatherPresentationSettings();
+    private readonly WorldWeatherStorm weatherStorm = new WorldWeatherStorm();
+    private EntityDataSO weatherOwner;
     private bool skipClimateFrame;
     private bool vendorAssetsResolved;
 
@@ -35,12 +39,14 @@ public partial class GameManager
         skipClimateFrame = false;
         if (runtimeHeroData == null || !hasDeployed || HasTribulationLiability)
         {
+            weatherStorm.Reset();
             if (environmentManager != null) environmentManager.ClearWorldClimate();
             return;
         }
 
-        if (IsGameplayHUDVisible && !HasPendingConfirmation && !skipFrame &&
-            Time.timeScale > 0f && (Application.isFocused || Application.isBatchMode) &&
+        bool running = IsGameplayHUDVisible && !HasPendingConfirmation &&
+            Time.timeScale > 0f && (Application.isFocused || Application.isBatchMode);
+        if (running && !skipFrame &&
             WorldClimate.Advance(ref runtimeHeroData.worldClimate, Time.unscaledDeltaTime, worldDaySeconds))
             runtimeHeroData.isDirty = true;
 
@@ -65,7 +71,14 @@ public partial class GameManager
             Array.IndexOf(worldClimateIndoorMapIds, data.worldMapId) >= 0;
         var frame = WorldClimate.Sample(state, worldDaySeconds, data.mapTerrain,
             data.worldMapId, data.mapNumber, indoor, weatherOverride);
+        if (weatherOwner != data)
+        {
+            weatherOwner = data;
+            weatherStorm.Reset();
+        }
+        var visual = weatherStorm.Step(worldWeatherPresentation, frame, data.worldClimate, data.worldMapId,
+            data.mapNumber, worldDaySeconds, running, !indoor);
         environmentManager.ApplyWorldClimate(frame, worldClimateLighting,
-            worldClimateHdrSky && !indoor, worldClimateRain2D && !indoor, worldClimateAssets);
+            worldClimateHdrSky && !indoor, worldClimateRain2D && !indoor, worldClimateAssets, visual);
     }
 }

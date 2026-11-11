@@ -19,7 +19,7 @@ Shader "Hidden/IdleGame/WorldClimateSkyProjection"
             #include "UnityCG.cginc"
 
             samplerCUBE _ClearSky, _CloudySky, _TwilightSky;
-            float4 _SkyMix;
+            float4 _SkyMix, _Storm;
             float _Aspect, _SkyScroll;
 
             half4 frag(v2f_img input) : SV_Target
@@ -37,6 +37,13 @@ Shader "Hidden/IdleGame/WorldClimateSkyProjection"
                 float3 night = clouds * float3(.085, .13, .26);
                 float3 light = day * (1 - _SkyMix.x - _SkyMix.y) + warm * _SkyMix.x + night * _SkyMix.y;
                 light = max(0, light * _SkyMix.w);
+                // A small, distant sky-only pulse and bolt. Terrain and HUD are separate.
+                float y = (uv.y - .54) * 3.85;
+                float zigzag = (abs(frac(y * 3) - .5) - .25) * .032;
+                float boltX = _Storm.y + zigzag + y * .034;
+                float bolt = (1 - smoothstep(.001, .0035, abs(uv.x - boltX))) * step(0, y) * step(y, 1);
+                float glow = exp(-14 * abs(uv.x - _Storm.y)) * smoothstep(.42, .85, uv.y);
+                light += _Storm.x * (glow * .58 + bolt * 1.8) * float3(.74, .86, 1);
                 return half4(1 - exp(-light), 1);
             }
             ENDCG

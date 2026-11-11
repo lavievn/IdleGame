@@ -9,17 +9,28 @@ public partial class GroundPresentation
     private WorldClimateAssetAdapter climateAdapter;
     private RawImage projectedSky;
     private bool rainRunning;
+    private float stormHaze;
     private bool missingAssetsReported;
     private bool invalidSkyReported;
 
     private Color GroundTint => (UsesTerrainArtwork ? Color.white : terrainTint) * worldLandTint;
     private Color NearTint => (UsesTerrainArtwork ? Color.white : farTint) * worldLandTint;
-    private Color DistantTint => (UsesTerrainArtwork ? Color.white : distantTint) * worldLandTint;
+    private Color DistantTint
+    {
+        get
+        {
+            Color tint = (UsesTerrainArtwork ? Color.white : distantTint) * worldLandTint;
+            tint.a *= 1f - stormHaze;
+            return tint;
+        }
+    }
 
     internal void ApplyWorldClimate(WorldClimateFrame frame, bool lighting,
-        bool hdrSky, bool rain2D, WorldClimateAssetAdapter adapter)
+        bool hdrSky, bool rain2D, WorldClimateAssetAdapter adapter, WorldWeatherVisual visual = default)
     {
-        SetClimateTint(lighting ? frame.SkyTint : Color.white, lighting ? frame.LandTint : Color.white);
+        Color skyTint = lighting ? frame.SkyTint : Color.white;
+        SetClimateTint(Color.Lerp(skyTint, Color.white, visual.Flash), lighting ? frame.LandTint : Color.white);
+        SetStormHaze(visual.Haze);
         if (climateAdapter != adapter)
         {
             StopClimateRain();
@@ -40,6 +51,7 @@ public partial class GroundPresentation
         }
 
         Rect viewport = ClimateViewport();
+        adapter.SetWeatherVisual(visual, climateGroundScroll, Mathf.Clamp(grassY, space.BattleArea.rect.yMin, space.BattleArea.rect.yMax));
         Texture sky = null;
         if (hdrSky && viewport.width > 0f && viewport.height > 0f)
         {
@@ -70,6 +82,7 @@ public partial class GroundPresentation
     internal void ClearWorldClimate()
     {
         SetClimateTint(Color.white, Color.white);
+        SetStormHaze(0f);
         SetProjectedSky(null, default);
         StopClimateRain();
     }
@@ -130,6 +143,13 @@ public partial class GroundPresentation
         worldLandTint = land;
         TintTiles(skyTiles, worldSkyTint);
         ApplyTerrainColors();
+    }
+
+    private void SetStormHaze(float value)
+    {
+        if (Mathf.Approximately(stormHaze, value)) return;
+        stormHaze = value;
+        TintTiles(distantTiles, DistantTint);
     }
 
     private void ApplyTerrainColors()
