@@ -230,3 +230,14 @@ trong N3–N6. Chỉ quay lại sau task/công thức/nội dung được duyệ
 
 Các câu hỏi lore/thọ nguyên/bế quan/luân hồi trong baseline tiếp tục mở, không
 được biến thành điều kiện tự mở rộng công việc sau khi bàn giao audit này.
+
+## Bàn giao nhánh tạm
+
+- Commit `55a8a4f1b5c3e6a7d918d62ba814de55b0cacfe9`: audit, hai đặc tả, chỉ dẫn
+  thêm và bằng chứng; đã push `docs/cloud-narrative-integration-audit`.
+- [Draft PR #22](https://github.com/lavievn/IdleGame/pull/22) target
+  `docs/2026-11-12-canonical-direction` (#21), chỉ chứa diff nối tiếp tài liệu.
+  Khi chủ dự án merge vào nhánh local, đối chiếu những thay đổi local mới hơn
+  và giữ đầy đủ AGENTS/README thay vì thay nguyên file theo một head remote.
+- Commit tài liệu bàn giao tiếp theo bổ sung phần này; không đổi runtime hoặc
+  scope. Local/remote HEAD được đối chiếu sau push; không merge PR nào.
