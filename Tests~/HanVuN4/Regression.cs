@@ -316,5 +316,24 @@ partial class MotionRegression
                     MemoryFiles.ReadAllText(System.IO.Path.Combine(f.Saves.SaveDirectory,"ManualSave2.json"))==manual2,"manual slots untouched");
             }
         });
+        Run("REGRESSION N4 unknown origin fields cannot be silently discarded by a supported writer",()=>{
+            foreach(var location in new[]{"origin","guardian","encounter"})
+            {
+                var f=new N4Fixture(OriginStage.Gather);
+                Check(f.Game.OpenOriginEncounter()!=null,"record fixture");
+                string unknown=ReplaceStory(f.Saved,story=>{
+                    if(location=="origin")story["unrecognizedOutcome"]="true";
+                    else if(location=="guardian") {
+                        Check(CultivationSaveJson.TryObject(story["guardian"],out var actor,out _),"actor");
+                        actor["unrecognizedCondition"]="true";story["guardian"]=Json(actor);
+                    }
+                    else story["encounters"]="[{\"id\":\"hanvu.merchant_rumor\",\"choice\":0,\"unrecognizedReceipt\":1}]";
+                    return Json(story);
+                });
+                MemoryFiles.WriteAllBytes(f.Path,Encoding.UTF8.GetBytes(unknown));
+                Check(!f.Game.LoadFixture(SaveSlot.AutoSave) && f.Game.HeroData==f.Hero,"Load must preserve unknown "+location);
+                Check(!f.Saves.SaveGame(f.Hero,SaveSlot.AutoSave) && f.Saved==unknown,"write must preserve unknown "+location);
+            }
+        });
     }
 }
