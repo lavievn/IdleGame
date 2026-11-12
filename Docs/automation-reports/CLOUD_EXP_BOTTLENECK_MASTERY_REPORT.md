@@ -27,6 +27,10 @@ actual cultivation. Level999 clamp currentExp và mất phần dư. Các grant n
 Combat là Editor/probe/test; chúng vẫn đi qua AddExp. Trial combat không cấp
 kill EXP/loot. Qi Tick không gọi AddExp.
 
+Bốn vòng ép Level/points trong `MainGameFoundationProbe` trước đây bỏ qua kết
+quả AddExp. Nay chúng Require phải tăng Level và dừng rõ nếu award bị bank/cap/
+reject, tránh vòng vô hạn. Không bypass gate hoặc làm yếu assertion của probe.
+
 ```mermaid
 flowchart TD
     K[Kill được xác nhận] --> A[EntityDataSO.AddExp]
@@ -81,6 +85,12 @@ FromJsonOverwrite. SaveGame, normal writer, existing-slot guard và trial candid
 đều kiểm tra component. Migration cultivation dùng TryLoadSnapshot nên nhận cùng
 guard; các token root khác vẫn được cơ chế upgrade cũ bảo toàn.
 
+Kiểm tra component thuần dữ liệu đã chạy; SaveManager/migration được đối chiếu
+mã và compile, chưa chạy native/I/O. Explicit null ở entity cũng bị từ chối để
+trial candidate không thể ghi payload mà Load sau đó từ chối. Build cũ trước
+task chưa biết field này có thể bỏ nó khi Save lại; tính tương thích đã kiểm
+tra là dữ liệu cũ vào build mới, chưa chứng nhận downgrade client.
+
 BigInteger chỉ là bảo toàn số nguyên, không đặt cap/rate cân bằng. Khi chạm
 Level999, currentExp giữ giới hạn cũ và phần không thể tiêu còn trong reserve;
 không cấp points/growth thêm, không vứt phần dư. Sau terminal realm Level vẫn
@@ -108,12 +118,14 @@ chỉ chứng minh execution tại điểm hook, không khẳng định hit/dama
 award theo cast/hit/kill, lượng tăng, giới hạn và hỗ trợ companion chưa được chốt;
 không tự chọn. DTO roundtrip không phải player Save/Load Mastery PASS.
 
-## Kiểm thử checkpoint đầu tiên
+## Kết quả Cloud cuối
 
 - Trước sửa: chạy AddExp thật trên nền → **29 PASS / 2 FAIL**. Characterization
   xác nhận actual cap không được AddExp xét (Level1→2); ở Level999, +100 bị clamp
   mất. Ca trước sửa chưa có API gate/reserve; ca sau sửa dùng binding với profile
   successor và trial config thật của fixture để xác minh integration mới.
+  Có thể tái chạy nguyên mã nền bằng `Tests~/ExpBottleneckMastery/baseline.sh`:
+  git archive tạm, không đổi working tree; expected exit1 với hai FAIL trên.
 - Sau sửa: **50 PASS / 0 FAIL** qua `Tests~/ExpBottleneckMastery/run.sh`: 29 nhóm
   PR #19 cùng 21 nhóm EXP/Mastery. Normal/bank/Qi separation, terminal/no-path,
   minor/success/failure/duplicate/stale, multi-level points/growth, cap999/huge
@@ -122,6 +134,10 @@ không tự chọn. DTO roundtrip không phải player Save/Load Mastery PASS.
   92 warnings, bằng baseline. Không phải Unity import hoặc Player build.
 - **PASS GUID checker**: 0 errors, 64 warnings; nền62 cộng hai script mới chưa
   có .meta. Không tạo GUID giả; cần Unity import và commit metadata tại máy nhà.
+- **PASS** shell syntax, `git diff --check`; runner PR #19 riêng vẫn29 PASS.
+- **BLOCKED** runner Mono tổng: đúng12 lỗi có sẵn về Vector2/Mathf/TMP và hai
+  tham chiếu HeroHealthMultiplier cũ. Đã thêm source/reference mới vào runner,
+  không sửa stub hoặc assertion ngoài phạm vi và không chạy tới Save I/O.
 - **NOT TESTED:** Unity Edit/Play Mode, native JsonUtility/SaveManager roundtrip,
   fault/crash transaction, gameplay Retry/Travel/death, actual combat hooks và
   Windows Player. Data lifecycle/serialization PASS không thay thế các mục này.
@@ -130,9 +146,18 @@ không tự chọn. DTO roundtrip không phải player Save/Load Mastery PASS.
 ## Rủi ro và nghiệm thu tại máy nhà
 
 PR #19 là dependency; phải giữ target nhánh này, kiểm lại diff khi retarget sau
-khi PR #19 được xử lý. Cùng các authority EntityDataSO/SaveManager/GameManager và
-CombatManager nên có thể xung đột với nhánh animation/story/weather mới dù không
-đổi các hệ đó. Không tích hợp hoặc merge thử các PR đang mở trong task này.
+khi PR #19 được xử lý. GitHub báo mergeable với đúng nhánh nền tại checkpoint.
+So file với development_0.1.7 chung, không merge thử:
+
+| PR / head đã kiểm tra | File trùng với task này |
+| --- | --- |
+| #12 `5d41014` | Không có |
+| #13 `5915829`, #17 `cc27145` | EntityDataSO, CombatManager, SaveManager, MainGameFoundationProbe, Tests~/run.sh |
+| #16 `c00dae6` | EntityDataSO, SaveManager, MainGameFoundationProbe |
+| #18 `9349f5f` | Không có |
+
+Đây là file overlap, chưa kết luận conflict hunk hoặc nghiệm thu kết hợp.
+Không sửa truyện/Weather/animation/Inventory và không merge PR nào.
 
 Checklist Unity (fixture có đường dẫn riêng trước Awake, marker/quyền sở hữu):
 
@@ -149,3 +174,19 @@ Checklist Unity (fixture có đường dẫn riêng trước Awake, marker/quy�
 - [ ] Retry/Travel/death/Load/pause không tự grant; basic/skill release đúng family,
   swap lúc windup, canceled cast, volley multi-hit chỉ có evidence phù hợp.
 - [ ] Max Level với reserve rất lớn; không overflow, âm hoặc roll growth lại.
+
+## Checkpoint và bằng chứng
+
+- `029d4ad`: EXP runtime/component, Mastery contract/hooks, 50 nhóm và báo cáo;
+  push rồi mở [Draft PR #20](https://github.com/lavievn/IdleGame/pull/20), target PR #19.
+- `67ae8f8`: baseline tái chạy được, guard probe loops, mở rộng invalid/overflow
+  assertions và bằng chứng compile/runner/overlap; đã push.
+- `3146c58`: từ chối explicit null EXP trước candidate commit; 50 PASS và
+  standalone0 errors/92 warnings sau sửa; đã push.
+- Commit tài liệu cuối bổ sung kết quả, giới hạn và checklist; không đổi runtime.
+
+[Before:29 PASS/2 FAIL](evidence/exp-bottleneck-mastery/before.txt) ·
+[After:50 PASS/0 FAIL](evidence/exp-bottleneck-mastery/data-tests.txt) ·
+[Validation](evidence/exp-bottleneck-mastery/validation.txt) ·
+[Runner tổng BLOCKED](evidence/exp-bottleneck-mastery/full-runner-blocked.txt) ·
+[Branch overlap và SHA](evidence/exp-bottleneck-mastery/branch-overlap.json).
