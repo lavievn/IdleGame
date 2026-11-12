@@ -1,0 +1,41 @@
+PASS README.md: exact previous bytes preserved after additive prefix
+PASS AGENTS.md: exact previous bytes preserved after additive prefix
+PASS Docs/CORE_GAMEPLAY_LOOP_DIRECTION_2026-10-25.md: exact previous bytes preserved after additive prefix
+PASS all pre-PR21 README history preserved byte for byte
+PASS PR21 design decisions unchanged
+PASS AGENTS preparation contains additions only
+PASS AGENTS preparation contains additions only
+PASS AGENTS preparation contains additions only
+PASS PR12 Karpathy and PR21/current AGENTS insertions have distinct base positions
+PASS prepared AGENTS text keeps Karpathy, PR21 priority and this audit notice
+Prepared text SHA256: 197801917dc3415dc34233eb51087005cdb1a80eb5ee31caee34e76559b8b915
+PASS README.md: relative link Docs/automation-reports/NARRATIVE_INTEGRATION_AUDIT_2026-11-12.md
+PASS README.md: relative link Docs/story/NARRATIVE_EVENT_TIMELINE_FOUNDATION_2026-11-12.md
+PASS README.md: relative link Docs/story/HAN_VU_VERTICAL_SLICE_SPEC_2026-11-12.md
+PASS AGENTS.md: relative link Docs/automation-reports/NARRATIVE_INTEGRATION_AUDIT_2026-11-12.md
+PASS AGENTS.md: relative link Docs/story/NARRATIVE_EVENT_TIMELINE_FOUNDATION_2026-11-12.md
+PASS AGENTS.md: relative link Docs/story/HAN_VU_VERTICAL_SLICE_SPEC_2026-11-12.md
+PASS Docs/CORE_GAMEPLAY_LOOP_DIRECTION_2026-10-25.md: relative link NARRATIVE_DESIGN_BASELINE_2026-11-12.md
+PASS Docs/CORE_GAMEPLAY_LOOP_DIRECTION_2026-10-25.md: relative link ../README.md
+PASS Docs/CORE_GAMEPLAY_LOOP_DIRECTION_2026-10-25.md: relative link automation-reports/NARRATIVE_INTEGRATION_AUDIT_2026-11-12.md
+PASS Docs/automation-reports/NARRATIVE_INTEGRATION_AUDIT_2026-11-12.md: relative link ../NARRATIVE_DESIGN_BASELINE_2026-11-12.md
+PASS Docs/automation-reports/NARRATIVE_INTEGRATION_AUDIT_2026-11-12.md: relative link evidence/narrative-integration-2026-11-12/repository-pr-snapshot.json
+PASS Docs/automation-reports/NARRATIVE_INTEGRATION_AUDIT_2026-11-12.md: relative link evidence/narrative-integration-2026-11-12/AGENTS_PREPARED_UNION.txt
+PASS Docs/automation-reports/NARRATIVE_INTEGRATION_AUDIT_2026-11-12.md: relative link ../story/NARRATIVE_EVENT_TIMELINE_FOUNDATION_2026-11-12.md
+PASS Docs/automation-reports/NARRATIVE_INTEGRATION_AUDIT_2026-11-12.md: relative link ../story/HAN_VU_VERTICAL_SLICE_SPEC_2026-11-12.md
+PASS Docs/automation-reports/NARRATIVE_INTEGRATION_AUDIT_2026-11-12.md: relative link evidence/narrative-integration-2026-11-12/pr-file-overlap.json
+PASS Docs/automation-reports/NARRATIVE_INTEGRATION_AUDIT_2026-11-12.md: relative link evidence/narrative-integration-2026-11-12/checks.txt
+PASS Docs/automation-reports/NARRATIVE_INTEGRATION_AUDIT_2026-11-12.md: relative link DEVELOPMENT_017_REPORT.md
+PASS Docs/story/NARRATIVE_EVENT_TIMELINE_FOUNDATION_2026-11-12.md: relative link ../NARRATIVE_DESIGN_BASELINE_2026-11-12.md
+PASS Docs/story/NARRATIVE_EVENT_TIMELINE_FOUNDATION_2026-11-12.md: relative link ../automation-reports/NARRATIVE_INTEGRATION_AUDIT_2026-11-12.md
+PASS Docs/story/HAN_VU_VERTICAL_SLICE_SPEC_2026-11-12.md: relative link ../NARRATIVE_DESIGN_BASELINE_2026-11-12.md
+PASS Docs/story/HAN_VU_VERTICAL_SLICE_SPEC_2026-11-12.md: relative link NARRATIVE_EVENT_TIMELINE_FOUNDATION_2026-11-12.md
+New relative links checked: 21
+PASS only README/AGENTS/Docs changes; no C#, scene, assets or Save schema changed
+PASS runtime/config/tests/tools/skills exactly unchanged against PR21 base
+PASS original shared checkout HEAD/branch contents preserved and working tree clean
+PASS all reviewed GitHub head SHAs match fetched refs
+PASS no published combined head at captured snapshot; local merge remains owner-reported
+PASS git diff --check
+NOT TESTED: new domain/UnityStub, Unity Edit/Play, native Save I/O, Windows build/Player; documentation-only task.
+NOT RUN: old full Mono suite; 12 pre-existing blockers are inherited report evidence, not a fresh execution.

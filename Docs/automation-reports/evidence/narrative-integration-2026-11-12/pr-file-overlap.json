@@ -1,0 +1,91 @@
+[
+  {
+    "prs": [
+      21,
+      12
+    ],
+    "shared_paths_in_each_pr_diff": [
+      "AGENTS.md"
+    ],
+    "is_confirmed_merge_conflict": false
+  },
+  {
+    "prs": [
+      20,
+      19
+    ],
+    "shared_paths_in_each_pr_diff": [
+      "Tests~/DualProgressionAudit/Regression.cs",
+      "Tests~/DualProgressionAudit/Runner.cs",
+      "Tests~/DualProgressionAudit/run.sh"
+    ],
+    "is_confirmed_merge_conflict": false
+  },
+  {
+    "prs": [
+      20,
+      16
+    ],
+    "shared_paths_in_each_pr_diff": [
+      "Assets/DataScript/EntityDataSO.cs",
+      "Assets/Script/MainGameFoundationProbe.cs",
+      "Assets/Script/SaveManager.cs"
+    ],
+    "is_confirmed_merge_conflict": false
+  },
+  {
+    "prs": [
+      20,
+      13
+    ],
+    "shared_paths_in_each_pr_diff": [
+      "Assets/DataScript/EntityDataSO.cs",
+      "Assets/Script/CombatManager.cs",
+      "Assets/Script/MainGameFoundationProbe.cs",
+      "Assets/Script/SaveManager.cs",
+      "Tests~/run.sh"
+    ],
+    "is_confirmed_merge_conflict": false
+  },
+  {
+    "prs": [
+      17,
+      16
+    ],
+    "shared_paths_in_each_pr_diff": [
+      "Assets/Script/GameManager.cs"
+    ],
+    "is_confirmed_merge_conflict": false
+  },
+  {
+    "prs": [
+      17,
+      13
+    ],
+    "shared_paths_in_each_pr_diff": [
+      "Assets/Script/GameManager.cs",
+      "Assets/Script/HanVuNarrative.cs",
+      "Assets/Script/HanVuOriginSmoke.cs",
+      "Assets/Script/HudW3View.cs",
+      "Assets/Script/UIManager.StoryOrigin.cs",
+      "Tests~/StoryOriginRegression.cs"
+    ],
+    "is_confirmed_merge_conflict": false
+  },
+  {
+    "prs": [
+      16,
+      13
+    ],
+    "shared_paths_in_each_pr_diff": [
+      "Assets/DataScript/EntityDataSO.cs",
+      "Assets/Script/GameManager.cs",
+      "Assets/Script/MainGameFoundationProbe.cs",
+      "Assets/Script/SaveManager.cs",
+      "Assets/Script/WindowsDevelopmentAcceptanceV10.cs",
+      "Tools/Local-IdleGame.ps1",
+      "Tools/Run-WindowsAcceptanceV10.ps1"
+    ],
+    "is_confirmed_merge_conflict": false
+  }
+]
