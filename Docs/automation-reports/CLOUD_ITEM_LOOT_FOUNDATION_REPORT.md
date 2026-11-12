@@ -54,7 +54,7 @@ qua đường hiện có; nhiệm vụ này chỉ kiểm tra API dữ liệu, kh
 
 | Hạng mục | Đã có | Cấu trúc/placeholder hoặc chưa có | Rủi ro/ghi chú |
 | --- | --- | --- | --- |
-| Catalog | 13 EquipmentTemplate ID ổn định, hai hộ phù legacy và ID nguyên liệu rèn; factory/lookup | Catalog equipment nằm trong code, chưa có asset catalog chung hoặc import pipeline | Tài liệu 0.0.52 có đoạn cũ hơn mã hiện tại; không coi chúng là authority runtime. |
+| Catalog | 13 EquipmentTemplate ID ổn định, hai hộ phù legacy và ID nguyên liệu rèn; factory/lookup; nay có view chỉ đọc và validator cấu trúc | Catalog equipment nằm trong code, chưa có asset catalog chung hoặc import pipeline | Hai catalog equipment/legacy vẫn tách theo hợp đồng đã có; ID được kiểm tra không trùng. Tài liệu 0.0.52 có đoạn cũ hơn mã hiện tại. |
 | Vũ khí và ô | Unarmed/Sword/Bow/Staff; tám slot, nhẫn dùng hai vị trí với hai instance | Chưa có mọi archetype vũ khí/armor production | Không có class; kỹ năng xét family/source/tài nguyên, không xét class. |
 | Chỉ số | Main/extra riêng, flat/percent/element/tag; Physical Attack ID 1 khác MagicalAttack ID 15 | Range theo cấp/phẩm/realm và generator affix production chưa chốt | Common chỉ áp main; roll phụ lưu nguyên, không reroll khi Load. |
 | HP | Modifier dẫn xuất; đổi/tháo không ghi vào baseHealth hoặc meleeGrowthBonus | HP% vũ khí không phải luật chính thức | Không thay công thức HP/combat; kiểm tra cả ba họ vũ khí. |
@@ -79,7 +79,7 @@ phải balance production cuối. TODO thiết kế: stat ranges, tier scaling,
 rarity odds, giá/gold economy, yêu cầu level/realm, bảng riêng cho monster/map,
 affix generation production, nghề/recipe/failure. Không gán giá trị mới.
 
-## Checkpoint đầu: kiểm thử và lỗi đã tái hiện
+## Lỗi xác nhận và bản sửa
 
 Runner mới `Tests~/ItemLootFoundation/run.sh` biên dịch các lớp production
 Item/Loot/Inventory/Forge/stat thật với UnityStub có sẵn, không chạy SaveManager
@@ -89,15 +89,98 @@ ném lỗi nếu bị gọi; không thay factory, loot service hoặc Forge bằ
 - **PASS 9 nhóm**: catalog/factory/slots; bốn outcome độc lập; seeded streams;
   invalid template/overflow; stale receipt; loot → Inventory → Forge → JSON
   trong bộ nhớ; Physical/Magical và HP; legacy/missing template; deep copy/ID.
-- **FAIL 1 regression xác nhận**: `EquipmentFoundation.IsValid` chấp nhận item
+- **FAIL 1 regression trước sửa**: `EquipmentFoundation.IsValid` chấp nhận item
   có `forgeSchemaVersion` hoặc `forgeHistory.checkpointVersion` tương lai. Item
-  có thể đi qua AddInstance/Forge dù SaveManager sẽ từ chối version đó. Bản sửa
-  đang chờ checkpoint tiếp; không đổi schema để xử lý lỗi này.
+  đi qua AddInstance/Forge dù guard của SaveManager từ chối version đó. Probe
+  độc lập chạy đúng mã nền `fafc02d` xác nhận cả hai trường hợp: AddInstance
+  trả true, SpecialUp trả true, vật liệu từ 20 xuống 10, SupportsSaveVersions
+  trả false. Không tạo SaveManager hoặc ghi save để chứng minh lỗi.
+- **Bản sửa**: `IsValid` gọi guard `SupportsItemVersions` trước kiểm tra nội
+  dung. Các API nhận đồ/equip/preview/Forge vốn dùng IsValid nay cùng từ chối
+  dữ liệu không hỗ trợ; không sửa riêng từng callsite hoặc đổi version Save.
+  Regression sau sửa kiểm tra không đổi item/history/dirty flag/tồn kho.
+- **Lỗi ID trắng**: mã nền coi instanceId toàn khoảng trắng là hợp lệ. Nay từ
+  chối null/rỗng/toàn khoảng trắng; ID legacy không phải GUID vẫn giữ nguyên,
+  không tự cấp ID thay thế. Unknown template vẫn được giữ opaque theo luồng cũ.
+- **Catalog**: bổ sung `EquipmentFoundation.Templates` chỉ đọc trên chính
+  bảng hiện có và `TryValidateCatalog`. Validator kiểm ID/name, trùng ID,
+  enum slot/stat/family, metadata hữu hạn và skill tham chiếu/tương thích family.
+  Không thêm bảng catalog song song, template, stat range hoặc balance. API
+  phục vụ kiểm thử/công cụ; kiểm tra config loot lúc roll vẫn dùng đường cũ.
 - Lượt fixture đầu có hai lỗi kỳ vọng test: ghi Attack thành enum 0 (đúng là 1)
   và so nguyên metadata affix v0 sau normalize lên v1. Đã đối chiếu mã, sửa
   fixture, vẫn kiểm tra nguyên ID/roll/Forge history và tính idempotent.
-- Unity Editor/Play Mode, Windows Player, SaveManager round trip, UI, Retry và
-  Travel gameplay: **NOT TESTED** trong Cloud. Cần fixture cô lập trên máy nhà.
 
-Các mục bản sửa, kiểm thử cuối, commit, xung đột và checklist nghiệm thu sẽ được
-cập nhật ở checkpoint tiếp theo trong cùng Draft PR.
+## Kết quả kiểm thử cuối
+
+| Kiểm tra | Kết quả | Giới hạn |
+| --- | --- | --- |
+| Runner thuần dữ liệu | **PASS 19/19 nhóm** | Mono/UnityStub; không SaveManager/save I/O. |
+| Catalog/identity | **PASS** | Tất cả template, tám slot, ID không trùng giữa gear/charm/material, view chỉ đọc, bad enum/skill/ID; không phải asset importer. |
+| Loot independence/lifecycle | **PASS** | Bốn outcome, stream seed tái lập, đổi quantity/tắt peer, callback trùng, ID trùng do factory, map context stale, invalidate và lỗi từng nhánh. RNG/receipt/factory/Inventory production được chạy thật trong runner dữ liệu. |
+| Equipment/Forge/legacy | **PASS** | Tám slot, swap/tháo, Artifact/charm legacy, Physical/Magical, HP không ghi vĩnh viễn, Compare khớp modifier đã Forge, vật liệu/history, thiếu trường/template, version tương lai và deep copy. |
+| In-memory serialization | **PASS, UnityStub** | Giữ ID/roll/history/stock/equip, normalize idempotent. Không chứng minh Unity JsonUtility, file Save/Load hoặc gameplay Save/Load. |
+| Standalone Roslyn runtime compile | **PASS**, 0 lỗi / 92 cảnh báo | Cùng DLL Unity **6000.5.0f1**, UI/TMP/InputSystem có sẵn trong bản cài Cloud; baseline `fafc02d` cũng 0 lỗi / 92 cảnh báo. Không phải Editor import/build. |
+| `Tests~/run.sh --production-rewards` | **BLOCKED**, 12 lỗi có sẵn | 10 API UnityStub thiếu và 2 test HP legacy tham chiếu HeroHealthMultiplier. Các file gây lỗi không đổi so với nền; không sửa Combat/test ngoài phạm vi để ép PASS. |
+| GUID/.meta checker | **PASS**, 0 lỗi / 62 cảnh báo | Thiếu PackageCache nên các tham chiếu package còn chưa xác nhận. Không thêm asset hoặc GUID. |
+| Shell syntax, `git diff --check` | **PASS** | Không có lỗi cú pháp script/whitespace. |
+| Unity Editor/Edit/Play Mode, Unity serialization | **NOT TESTED** | Không mở Editor hoặc chạy fixture native trong phiên này. |
+| SaveManager, Retry/Travel gameplay, native Inventory/Forge UI | **NOT TESTED** | Chỉ truy vết mã và kiểm API dữ liệu. Không báo gameplay PASS. |
+| Windows build/Player, full progression/balance | **NOT TESTED** | Không dùng kết quả lịch sử làm bằng chứng cho nhánh mới. |
+
+[Kết quả 19 nhóm](evidence/item-loot-foundation/data-tests.txt),
+[baseline regression](evidence/item-loot-foundation/baseline-tests.txt),
+[probe lỗi phiên bản trên mã nền](evidence/item-loot-foundation/baseline-version-probe.txt),
+[tổng hợp compile/checker](evidence/item-loot-foundation/validation-summary.txt) và
+[12 lỗi runner tổng](evidence/item-loot-foundation/full-runner-errors.txt).
+
+### Tái chạy
+
+```bash
+bash Tests~/ItemLootFoundation/run.sh
+# Compiler C# 7.2+ và Mono có sẵn hoặc wrapper, không cần Editor:
+CSC=/path/to/csharp-compiler-wrapper MONO=/path/to/mono bash Tests~/ItemLootFoundation/run.sh
+python3 .agents/skills/unity-csharp-scripting/scripts/check_unity_project.py . --json
+bash -n Tests~/ItemLootFoundation/run.sh
+git diff --check
+```
+
+Phiên Cloud dùng Roslyn `csc.exe` và Mono có sẵn trong
+`.onboarding/unity/6000.5.0f1/Editor/Data/MonoBleedingEdge`. Không cài dependency,
+không cần cache asset hoặc save máy nhà. Test số lượng/tỷ lệ đều là fixture và
+không ghi đè MainGame. Runner cùng mã production được biên dịch lại mỗi lần.
+
+## Checkpoint, phạm vi và xung đột
+
+- `3834f7a`: audit ban đầu, runner và regression tái hiện lỗi trước sửa; đã push
+  và tạo [Draft PR #18](https://github.com/lavievn/IdleGame/pull/18).
+- `70454f0`: catalog view/validator, chặn version/ID không hợp lệ, 19 nhóm
+  regression và README tái chạy. **Chỉ đổi một file production**:
+  `Assets/Script/EquipmentFoundation.cs`.
+- Checkpoint sau cùng cập nhật báo cáo và lưu bằng chứng. PR giữ Draft;
+  nhắm vào `development_0.1.7`, không phụ thuộc PR #12/#13/#16/#17.
+- Khi kiểm tra, bốn nhánh PR không thay `EquipmentFoundation.cs` so với nền;
+  chưa thấy file production trùng với diff mới. Thay đổi catalog/validator
+  tương lai ở file này có thể cần tích hợp thủ công; chưa merge thử các PR.
+- Không sửa Weather/Time/Audio/HDR/Rain, truyện, HUD/animation/camera,
+  Combat balance, Cultivation, scene, loot config, schema hoặc SaveManager.
+  Không đổi công thức Forge, giá, odds, stat roll hoặc yêu cầu trang bị.
+- Kiểm tra remote HEAD bằng `git ls-remote --heads origin
+  feature/cloud-item-loot-foundation` và so với `git rev-parse HEAD` sau push.
+
+## Nghiệm thu trên máy nhà
+
+1. Dùng fixture Save cô lập theo `AGENTS.md`, không dùng save thật. Chạy native
+   EquipmentVersionGuardTests và các ca JSON/normalization/CombatLootTests.
+2. MainGame nhận gear/material từ death flow thật, xác nhận một receipt/kill;
+   hai nhóm có thể cùng rơi hoặc cùng không rơi, không phát đồ qua VFX lần nữa.
+3. Nhận item → Inventory → Equip/Unequip/Swap → Forge thường/đặc biệt → Manual
+   Save/Load: giữ đúng ID/raw roll/effective stat/history/stock; thử save legacy
+   thiếu trường và template không còn trong catalog.
+4. Retry/Travel/Load khi loot VFX đang sống: không cấp lại receipt cũ; item đã
+   cấp giữ theo checkpoint hiện hành. Không hứa chống farm lại qua crash bằng
+   ledger mới vì task không thêm ledger hoặc đổi chính sách checkpoint.
+5. Xác minh scene/Inspector vẫn giữ prototype 60% material và 8% Sword/Bow;
+   gameplay HP, skill source và các slot không hồi quy. Chưa chốt balance cao
+   hơn thì giữ TODO ở mục cấu hình, không tự mở loot Staff/armor/rare/gold.
+6. Chạy Windows Player và tương tác Inventory/Forge thật trước khi bỏ Draft.
