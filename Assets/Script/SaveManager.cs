@@ -149,6 +149,11 @@ public partial class SaveManager : MonoBehaviour
                     Debug.LogWarning("[SaveManager] Unsupported combat skill snapshot in " + slot);
                     return false;
                 }
+                if (!TuTienCore.StoryOrigin.IsValidSnapshotJson(jsonData))
+                {
+                    Debug.LogWarning("[SaveManager] Refusing incomplete or incompatible origin snapshot in " + slot);
+                    return false;
+                }
                 if (!TryValidateEquipmentJson(jsonData, out reason))
                 {
                     Debug.LogWarning("[SaveManager] Refusing load from " + slot + ": " + reason);
@@ -436,7 +441,8 @@ public partial class SaveManager : MonoBehaviour
     {
         string reason;
         RealmVersionProbe realm;bool legacyRealm;
-        if (!CombatSkillProgress.TryRead(data, out _) || !WorldClimateState.TryRead(data, out _)) return false;
+        if (!CombatSkillProgress.TryRead(data, out _) || !WorldClimateState.TryRead(data, out _) ||
+            !TuTienCore.StoryOrigin.IsValidSnapshotJson(data)) return false;
         if (!TryValidateEquipmentJson(data, out reason) || !TryValidateRealmJson(data,out realm,out legacyRealm,out reason))
         {
             Debug.LogWarning("[SaveManager] Refusing write to " + slotName + ": " + reason);
@@ -476,6 +482,12 @@ public partial class SaveManager : MonoBehaviour
             }
             if(File.Exists(finalPath)) {
                 string existingJson = File.ReadAllText(finalPath);
+                if (TuTienCore.CultivationSaveJson.TryObject(existingJson, out var existingRoot, out _) &&
+                    existingRoot.ContainsKey("originStory") && !TuTienCore.StoryOrigin.IsValidSnapshotJson(existingJson))
+                {
+                    Debug.LogWarning("[SaveManager] Preserving incomplete or incompatible origin slot.");
+                    return false;
+                }
                 if (!CombatSkillProgress.TryRead(existingJson, out _)) return false;
                 if (!WorldClimateState.TryRead(existingJson, out _))
                 {

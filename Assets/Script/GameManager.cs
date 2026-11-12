@@ -731,10 +731,9 @@ public partial class GameManager : MonoBehaviour
             var space=environmentManager!=null?environmentManager:EnvironmentManager.Instance;
             if(space!=null)space.BeginCameraEntryHandoff();
             if(UIManager.Instance!=null)UIManager.Instance.ShowMapTitle(runtimeHeroData.mapName);
-            string narration = StoryOrigin.Arrive(runtimeHeroData);
-            if (narration != null)
+            string narration = null;
+            if (TryCommitOriginChange(candidate => (narration = StoryOrigin.Arrive(candidate)) != null, () => narration))
             {
-                CommitOriginChange(narration);
                 UIManager.Instance?.ShowOriginOpening(runtimeHeroData);
             }
             CallNextWave();
@@ -1265,14 +1264,18 @@ public partial class GameManager : MonoBehaviour
 
     internal bool TryOriginInteraction()
     {
-        if (!IsGameplayHUDVisible || HasTribulationLiability) return false;
-        var state = runtimeHeroData.originStory;
-        if (state == null) return false;
-        var stage = state.stage;
-        string narration = StoryOrigin.Interact(runtimeHeroData);
+        string narration = null;
+        bool changed = false;
+        bool committed = TryCommitOriginChange(candidate =>
+        {
+            var stage = candidate.originStory.stage;
+            narration = StoryOrigin.Interact(candidate);
+            changed = stage != candidate.originStory.stage;
+            return changed;
+        }, () => narration);
+        if (changed) return committed;
         if (narration == null) return false;
-        if (stage != state.stage) CommitOriginChange(narration);
-        else if (UIManager.Instance != null) UIManager.Instance.ShowOriginNotice(runtimeHeroData, narration);
+        UIManager.Instance?.ShowOriginNotice(runtimeHeroData, narration);
         return true;
     }
 
@@ -1287,51 +1290,87 @@ public partial class GameManager : MonoBehaviour
         context!=null && IsGameplayHUDVisible && !HasTribulationLiability && heroController!=null &&
         context.Matches(runtimeHeroData,heroController,heroController.SpawnVersion);
 
-    internal void RecordOriginTrip()
-    {
-        if (IsGameplayHUDVisible && !HasTribulationLiability && HanVuNarrative.RecordTrip(runtimeHeroData))
-            CommitOriginChange(null);
-    }
+    internal void RecordOriginTrip() =>
+        TryCommitOriginChange(candidate => HanVuNarrative.RecordTrip(candidate));
 
     internal bool TryTalkToWoodcutter(int line)
     {
         if (!IsGameplayHUDVisible || HasTribulationLiability || !HanVuNarrative.AtWoodcutter(runtimeHeroData))
             return false;
-        if (HanVuNarrative.TalkToWoodcutter(runtimeHeroData, line)) CommitOriginChange(null);
-        return true;
+        bool changed = false;
+        bool committed = TryCommitOriginChange(candidate => changed = HanVuNarrative.TalkToWoodcutter(candidate, line));
+        return !changed || committed;
     }
 
-    internal bool TryChooseHerbs(bool accept)
-    {
-        if (!IsGameplayHUDVisible || HasTribulationLiability || !StoryOrigin.ChooseHerbs(runtimeHeroData, accept))
-            return false;
-        CommitOriginChange(accept ? "Ta đã nhận lời tìm lá bạc." : "Ta xin để chuyện tìm thuốc lại sau.");
-        return true;
-    }
+    internal bool TryChooseHerbs(bool accept) =>
+        TryCommitOriginChange(candidate => StoryOrigin.ChooseHerbs(candidate, accept),
+            () => accept ? "Ta đã nhận lời tìm lá bạc." : "Ta xin để chuyện tìm thuốc lại sau.");
 
     internal OriginEncounter OpenOriginEncounter()
     {
         if (!IsGameplayHUDVisible || HasTribulationLiability) return null;
         var offer = HanVuEncounters.Available(runtimeHeroData);
-        if (offer != null && HanVuEncounters.Observe(runtimeHeroData, offer.Id)) CommitOriginChange(null);
-        return offer;
+        if (offer == null) return null;
+        bool changed = false;
+        bool committed = TryCommitOriginChange(candidate => changed = HanVuEncounters.Observe(candidate, offer.Id));
+        return changed && !committed ? null : offer;
     }
 
     internal bool TryChooseOriginEncounter(string id, EncounterChoice choice)
     {
-        if (!IsGameplayHUDVisible || HasTribulationLiability) return false;
         var offer = HanVuEncounters.Available(runtimeHeroData);
-        if (offer == null || !HanVuEncounters.Choose(runtimeHeroData, id, choice)) return false;
-        CommitOriginChange(choice == EncounterChoice.Participated ? offer.Result : offer.Decline + ".");
-        return true;
+        return offer != null && TryCommitOriginChange(candidate => HanVuEncounters.Choose(candidate, id, choice),
+            () => choice == EncounterChoice.Participated ? offer.Result : offer.Decline + ".");
     }
 
-    internal void ToggleOriginPrompts()
+    internal void ToggleOriginPrompts() => TryCommitOriginChange(candidate =>
     {
-        if (!IsGameplayHUDVisible || HasTribulationLiability || StoryOrigin.Definition(runtimeHeroData) == null) return;
-        runtimeHeroData.originStory.hideStoryPrompts = !runtimeHeroData.originStory.hideStoryPrompts;
-        runtimeHeroData.isDirty = true;
-        CommitOriginChange(null);
+        candidate.originStory.hideStoryPrompts = !candidate.originStory.hideStoryPrompts;
+        candidate.isDirty = true;
+        return true;
+    });
+
+    // Synchronous main-thread boundary. Never retain a whole-Hero candidate for
+    // retry: the next attempt must capture the latest progression and inventory.
+    private bool committingOrigin;
+    private bool TryCommitOriginChange(System.Func<EntityDataSO, bool> change,
+        System.Func<string> narration = null)
+    {
+        var source = runtimeHeroData;
+        var context = CaptureOriginInteraction(source);
+        if (committingOrigin || !IsCurrentOriginInteraction(context) ||
+            StoryOrigin.Definition(source) == null || !StoryOrigin.IsValid(source)) return false;
+        committingOrigin = true;
+        EntityDataSO candidate = null;
+        try
+        {
+            string before = UnityEngine.JsonUtility.ToJson(source);
+            candidate = Instantiate(source);
+            candidate.originStory = StoryOrigin.CopyState(source.originStory);
+            candidate.SetSavedAttackMode(WeaponBasicAttack.Resolve(source));
+            if (!change(candidate)) return false;
+            if (!StoryOrigin.IsValid(candidate) || !IsCurrentOriginInteraction(context) ||
+                UnityEngine.JsonUtility.ToJson(source) != before) return false;
+            if (saveManager == null || !saveManager.SaveGame(candidate, SaveSlot.AutoSave))
+            {
+                UpdateEventLog("Chưa lưu được mốc truyện Hàn Vụ. Có thể thử lưu lại.");
+                return false;
+            }
+            // Do not restore an old snapshot onto a new Hero, spawn or map. The
+            // writer is synchronous; this also rejects unexpected reentrant changes.
+            if (!IsCurrentOriginInteraction(context) || UnityEngine.JsonUtility.ToJson(source) != before)
+                return false;
+            StoryOrigin.CopyState(candidate.originStory, source.originStory);
+            source.SetSavedAttackMode(WeaponBasicAttack.Resolve(candidate));
+            source.isDirty = false;
+            CommitOriginChange(narration?.Invoke());
+            return true;
+        }
+        finally
+        {
+            if (candidate != null) Destroy(candidate);
+            committingOrigin = false;
+        }
     }
 
     private void CommitOriginChange(string narration)
@@ -1341,9 +1380,6 @@ public partial class GameManager : MonoBehaviour
             UpdateEventLog(narration);
             if (UIManager.Instance != null) UIManager.Instance.ShowOriginNotice(runtimeHeroData, narration);
         }
-        CaptureSelectedStance();
-        if (saveManager != null && !saveManager.SaveGame(runtimeHeroData, SaveSlot.AutoSave))
-            UpdateEventLog("Chưa lưu được mốc truyện Hàn Vụ. Có thể thử lưu lại.");
     }
 
     private void CallNextWave()
@@ -1431,10 +1467,14 @@ public partial class GameManager : MonoBehaviour
                 RestoreProgress();
                 if (accepted)
                 {
-                    bool credited = StoryOrigin.CreditWave(runtimeHeroData, storyElite, out string narration);
-                    bool sawNote = runtimeHeroData.worldMapWaveProgress >= 2 && HanVuNarrative.ObserveNote(runtimeHeroData);
-                    if (credited || sawNote)
-                        CommitOriginChange(narration ?? (sawNote ? HanVuNarrative.TrailNote : null));
+                    string narration = null;
+                    TryCommitOriginChange(candidate =>
+                    {
+                        bool credited = StoryOrigin.CreditWave(candidate, storyElite, out narration);
+                        bool sawNote = candidate.worldMapWaveProgress >= 2 && HanVuNarrative.ObserveNote(candidate);
+                        if (narration == null && sawNote) narration = HanVuNarrative.TrailNote;
+                        return credited || sawNote;
+                    }, () => narration);
                 }
                 if (changed)
                 {
@@ -1481,7 +1521,8 @@ public partial class GameManager : MonoBehaviour
         // New/unticked members contribute zero; death removes them next sample.
         explorationDistance+=common;
         if (common > 0f && explorationDistance >= CurrentDistancePerWave * HanVuNarrative.TrailExplorationFraction &&
-            HanVuNarrative.ObserveKnot(runtimeHeroData)) CommitOriginChange(HanVuNarrative.TrailKnot);
+            HanVuNarrative.AtWoodcutter(runtimeHeroData) && !runtimeHeroData.originStory.sawTrailKnot)
+            TryCommitOriginChange(candidate => HanVuNarrative.ObserveKnot(candidate), () => HanVuNarrative.TrailKnot);
         if(explorationDistance>=CurrentDistancePerWave)
         {
             CallNextWave(); // Drops excess distance; one threshold = one wave.

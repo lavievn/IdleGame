@@ -1,0 +1,58 @@
+/tmp/tmp.yNieBqtyXK/PresentationBoundary.cs(56,19): warning CS0649: Field 'UIManager.worldMapButton' is never assigned to, and will always have its default value null
+/tmp/tmp.yNieBqtyXK/SaveManager.Tribulation.cs(12,16): warning CS0649: Field 'SaveManager.developmentProfileLock' is never assigned to, and will always have its default value null
+/tmp/tmp.yNieBqtyXK/EngineStub.cs(436,56): warning CS0067: The event 'VideoPlayer.errorReceived' is never used
+PASS indexed map positions import all 133 seeds without fabricated source artwork
+PASS world catalog has 133 unique maps, seven animals and five approved starts
+PASS new world Hero remains in current map, loops wave 1 after fifth clear
+PASS boss endgame is gated and world progress JSON is backward-compatible
+PASS Hàn Vụ identity reuses name pools and preserves Human root diversity
+PASS Hàn Vụ separates optional progress, world travel and encounter decisions
+PASS Hàn Vụ dialogue uses all saved gender combinations without changing identity
+PASS Hàn Vụ woodcutter records only the displayed answer, once and at the forest
+PASS Hàn Vụ ignored encounters remain pending across travel and do not imply refusal
+PASS Hàn Vụ clues, quest counts and hidden prompts are independent
+PASS Hàn Vụ v1 and v2 migration preserves cast and decisions and is idempotent
+PASS N4 successful save publishes medicine once and preserves canonical Hero/story identity
+Không ghi được bản lưu: Expected owned fixture fault: BeforeWrite
+PASS REGRESSION N4 failure before write leaves RAM and durable snapshot unchanged
+Không ghi được bản lưu: Owned in-memory interrupted write
+PASS REGRESSION N4 interrupted temp write leaves story and durable snapshot unchanged
+Không ghi được bản lưu: Expected owned fixture fault: BeforeReplace
+PASS REGRESSION N4 failure before replace leaves RAM and prior file intact
+PASS REGRESSION N4 canonical story stays unchanged while candidate temp is being written
+Không ghi được bản lưu: Expected owned fixture fault: AfterTempWrite
+PASS REGRESSION N4 fresh retry includes newer EXP loot and world progress
+Không ghi được bản lưu: Snapshot changed during atomic replace.
+PASS REGRESSION N4 existing CAS preserves a competing newer file and does not publish rejected story
+PASS N4 GameManager Load candidate path restores once and repeated Load never reruns medicine
+PASS N4 legacy absent and v1 v2 v3 preserve identities without new effects
+PASS N4 future and invalid origin Load never replace canonical Hero
+PASS REGRESSION N4 partial current origin component is rejected before canonical swap
+PASS REGRESSION N4 supported Hero cannot overwrite a future origin component
+Không ghi được bản lưu: Expected owned fixture fault: BeforeReplace
+Không ghi được bản lưu: Expected owned fixture fault: BeforeReplace
+Không ghi được bản lưu: Expected owned fixture fault: BeforeReplace
+Không ghi được bản lưu: Expected owned fixture fault: BeforeReplace
+Không ghi được bản lưu: Expected owned fixture fault: BeforeReplace
+Không ghi được bản lưu: Expected owned fixture fault: BeforeReplace
+Không ghi được bản lưu: Expected owned fixture fault: BeforeReplace
+PASS N4 every explicit story action remains retryable after failure and duplicates are no-ops
+Không ghi được bản lưu: Expected owned fixture fault: BeforeWrite
+Không ghi được bản lưu: Expected owned fixture fault: BeforeWrite
+Không ghi được bản lưu: Expected owned fixture fault: BeforeWrite
+Không ghi được bản lưu: Expected owned fixture fault: BeforeWrite
+PASS N4 automatic arrival wave and clue domain changes share the same persistence boundary
+PASS N4 detached origin snapshot copies all current fields actors and encounter records
+PASS N4 source changing during candidate capture is rejected before any write
+PASS N4 reentrant duplicate cannot enter a second save while first command is staged
+PASS N4 unexpected context change inside synchronous writer never restores old candidate onto replacement runtime
+Không ghi được bản lưu: Expected owned fixture fault: BeforeReplace
+PASS N4 real UI keeps failed choice open for retry and invalidates it after modeled Load
+PASS N4 origin strict preflight rejects each missing current field wrong scalar and partial nested record
+PASS N4 nonempty encounter arrays escaped actor names and explicit legacy null/sentinel remain compatible
+PASS N4 unrelated invalid future and partial components still block publication and preserve every slot
+Không ghi được bản lưu: Expected owned fixture fault: BeforeReplace
+PASS N4 retry preserves live Qi binding equipment Forge combat resources and manual slots
+PASS REGRESSION N4 unknown origin fields cannot be silently discarded by a supported writer
+RESULT 35 PASS, 0 FAIL (production host/SaveManager + in-memory OS/JSON boundary)
+NOT TESTED: native Unity JSON/clone/lifecycle, real Save I/O/fsync/crash, Windows Player.
