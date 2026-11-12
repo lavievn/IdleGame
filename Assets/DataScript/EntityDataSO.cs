@@ -15,6 +15,8 @@ public class EntityDataSO : ScriptableObject
     public CombatSkillProgress combatSkills = new CombatSkillProgress();
     public string tribulationJson=""; // Independent versioned component; empty on historical/production Heroes.
     public string cultivationJson = "";
+    public string experienceJson = ""; // Optional independently versioned EXP bank; absence means zero.
+    [System.NonSerialized] internal CultivationGameplayBinding experienceBinding;
     public int currentExp = 0;
     public int expToNextLevel = 100;
     public int baseHealth = 400;
@@ -289,9 +291,29 @@ public class EntityDataSO : ScriptableObject
 
     public bool AddExp(int amount)
     {
+        if (!ExperienceProgress.TryRead(experienceJson, out var xp) || !CanApplyExperience())
+        {
+            Debug.LogWarning("[EXP] Invalid experience state; award rejected without mutation.");
+            return false;
+        }
+        if (experienceBinding != null && experienceBinding.ShouldBankExperience(this))
+        {
+            xp.reserve = (ExperienceProgress.Amount(xp) + System.Math.Max(0, amount)).ToString(System.Globalization.CultureInfo.InvariantCulture);
+            experienceJson = ExperienceProgress.Capture(xp);
+            isDirty = true;
+            return false;
+        }
+        return ApplyExperience(System.Math.Max(0, amount), xp);
+    }
+
+    internal bool CanApplyExperience() => currentExp >= 0 && statPoints >= 0 &&
+        statPoints <= int.MaxValue - 998 && meleeGrowthBonus >= 0 && meleeGrowthBonus <= int.MaxValue - 99800;
+
+    internal bool ApplyExperience(System.Numerics.BigInteger amount, ExperienceSnapshot xp)
+    {
         ApplyHeroBalance();
         bool leveledUp = false;
-        long total = (long)currentExp + System.Math.Max(0, amount);
+        var total = currentExp + amount;
         while (currentLevel < 999 && total >= expToNextLevel)
         {
             total -= expToNextLevel;
@@ -303,7 +325,14 @@ public class EntityDataSO : ScriptableObject
             RebuildHeroStats();
             leveledUp = true;
         }
-        currentExp = (int)System.Math.Min(total, currentLevel == 999 ? expToNextLevel - 1L : int.MaxValue);
+        int maximum = currentLevel == 999 ? expToNextLevel - 1 : int.MaxValue;
+        if (total > maximum)
+        {
+            xp.reserve = (ExperienceProgress.Amount(xp) + total - maximum).ToString(System.Globalization.CultureInfo.InvariantCulture);
+            total = maximum;
+        }
+        currentExp = (int)total;
+        experienceJson = ExperienceProgress.Capture(xp);
         isDirty = true;
         return leveledUp;
     }

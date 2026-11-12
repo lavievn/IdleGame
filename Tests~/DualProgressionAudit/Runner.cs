@@ -43,8 +43,10 @@ partial class MotionRegression
         if(args.Length>0 && args[0]=="--simulate") {AuditSimulations(args.Length>1?args[1]:null);return;}
         CultivationCoreTests();BloodEssenceTests();CultivationBreakthroughTests();CultivationPersistenceTests();
         DualProgressionAuditTests();
+        ExpMasteryTests();
         Console.WriteLine("RESULT "+auditPassed+" PASS, "+auditFailed+" FAIL (production data APIs / UnityStub; no SaveManager or save I/O)");
-        Console.WriteLine("REQUIREMENT GAPS: EXP reserve/release; Weapon/Skill Mastery; production successors/trials/Blood; within-node spatial Qi; automatic injury treatment.");
+        Console.WriteLine("NOT TESTED: native Unity, SaveManager gameplay/I/O. Mastery awards remain unspecified; production successors/trials/Blood remain gated.");
         if(auditFailed>0)Environment.Exit(1);
     }
+    static partial void ExpMasteryTests();
 }

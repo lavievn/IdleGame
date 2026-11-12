@@ -1,0 +1,54 @@
+Tests~/UnityStub.cs(514,56): warning CS0067: The event 'VideoPlayer.errorReceived' is never used
+PASS revised cultivation Level EXP and foundation have independent authorities
+PASS revised cultivation thresholds validated and stages can regress without changing actual realm
+PASS revised Qi absorption refinement and bottleneck conserve reserve without kill dependency
+PASS revised Qi clock rejects invalid delta duplicate steps stale owners and overflow without mutation
+PASS revised spiritual Spend Restore Clamp are separate from cultivation and injury
+PASS revised blood passive accumulation unlock and capacity are explicit and preserve full progress
+PASS revised blood first activation requires owner charge alive HP strictly below30percent
+PASS revised blood extensions add time and linear locked debt without extra healing or realm stacking
+PASS revised blood modifiers use one owned source and only approved absolute stats
+PASS revised blood locked reference survives growth and settlement is exactly once
+PASS revised blood deficit becomes injury only and excess charges survive minor-stage regression
+PASS revised blood all lifecycle ends retain debt until explicit identity-checked settlement
+PASS revised recovery distinguishes regain foundation heal injury and restore spiritual energy
+PASS revised reserve can fund three successive explicit breakthroughs without EXP or automatic success
+PASS revised breakthrough uses actual foundation and injury not effective blood realm
+PASS revised breakthrough rejects missing unknown downward successors and invalid transfer atomically
+PASS revised DTO candidate load retains active debt locks recovery and rejects stale epoch callbacks
+PASS revised DTO rejects future missing unknown invalid and hidden liability before swapping candidate
+PASS revised crash recovery retains cost and manual snapshot rollback remains timeline-local
+PASS all three production profiles validate their actual source data and retain distinct identities
+POLICY terminal production cap has no successor/trial: Level continues; Qi remains independent.
+PASS battle EXP and production Qi remain independent at the cultivation bottleneck
+PASS World Qi table preserves all map rates and source seed without consuming combat RNG
+PASS schema3 clock round trip keeps fractional time and retires old callbacks without offline awards
+PASS travel boundary settles original node fraction once before using new supply
+PASS Kim Dan capacity is one charge at entry and increments at every minor stage
+PASS production component absence remains legacy while partial future and Blood payloads fail closed
+PASS REGRESSION reusable DTO capture clears the previous burn after settlement
+PASS REGRESSION repeated capture into the same DTO never duplicates settlement receipts
+PASS ten percent debt per use can exhaust foundation after passive top-ups without demoting actual realm
+PASS EXP normal awards preserve existing Level points and seeded growth
+PASS REGRESSION actual eligible bottleneck banks new EXP without moving existing EXP or Qi
+PASS EXP bank uses actual state at any Level and ignores temporary injury readiness
+PASS EXP terminal production and final configured realm keep Level advancing
+PASS EXP a successor without a matching valid executable trial does not bank
+PASS EXP entering a minor stage neither banks early nor releases a prior bank
+PASS EXP accepted major success releases multiple levels with exact points growth and remainder
+PASS EXP failure keeps bank and below-cap awards never release it
+PASS EXP duplicate success and stale restored source cannot spend a bank again
+PASS EXP wrong revision early success and invalid component leave both authorities unchanged
+PASS REGRESSION Level 999 conserves overflow and arbitrarily large banks exactly
+PASS EXP cross-Level-999 release awards final level once and retains remainder
+PASS EXP data component roundtrip retains bank and persisted release receipt
+PASS EXP legacy absence gives zero bank and never moves existing EXP
+PASS EXP future malformed negative partial and typed payloads fail closed
+PASS EXP data lifecycle dispose rebind travel pause and repeated restore award nothing
+PASS Mastery stable weapon IDs follow equipped family and separate weapon records
+PASS Mastery data contract serializes stable skill IDs independently of cooldown and Level
+PASS Mastery valid equipment-granted execution evidence works at bottleneck without awarding progression
+PASS Mastery duplicate callback stale owner epoch life spawn and battle are rejected
+PASS Mastery failed or unavailable execution selection and post-swap evidence never qualify
+RESULT 50 PASS, 0 FAIL (production data APIs / UnityStub; no SaveManager or save I/O)
+NOT TESTED: native Unity, SaveManager gameplay/I/O. Mastery awards remain unspecified; production successors/trials/Blood remain gated.
