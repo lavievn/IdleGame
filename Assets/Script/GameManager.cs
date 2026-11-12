@@ -1275,6 +1275,17 @@ public partial class GameManager : MonoBehaviour
         return true;
     }
 
+    internal OriginInteractionContext CaptureOriginInteraction(EntityDataSO expected)
+    {
+        return expected==runtimeHeroData && IsGameplayHUDVisible && !HasTribulationLiability && heroController!=null
+            ? new OriginInteractionContext(runtimeHeroData,heroController,heroController.SpawnVersion)
+            : default;
+    }
+
+    internal bool IsCurrentOriginInteraction(OriginInteractionContext context) =>
+        context!=null && IsGameplayHUDVisible && !HasTribulationLiability && heroController!=null &&
+        context.Matches(runtimeHeroData,heroController,heroController.SpawnVersion);
+
     internal void RecordOriginTrip()
     {
         if (IsGameplayHUDVisible && !HasTribulationLiability && HanVuNarrative.RecordTrip(runtimeHeroData))

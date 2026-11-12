@@ -1,5 +1,23 @@
 namespace TuTienCore
 {
+    // Transient intent context only. Not a Save field, receipt or story clock.
+    // Displayed dialogue belongs to the Hero/story/map/actor spawn that opened
+    // it, even if the view missed a hidden frame during entry or Retry.
+    internal sealed class OriginInteractionContext
+    {
+        readonly EntityDataSO hero;
+        readonly OriginStoryState story;
+        readonly string map;
+        readonly object actor;
+        readonly int spawn;
+        internal OriginInteractionContext(EntityDataSO hero,object actor,int spawn)
+        {this.hero=hero;story=hero?.originStory;map=hero?.worldMapId;this.actor=actor;this.spawn=spawn;}
+        internal bool Matches(EntityDataSO current,object currentActor,int currentSpawn) =>
+            hero!=null && story!=null && actor!=null && spawn>0 &&
+            ReferenceEquals(hero,current) && ReferenceEquals(story,current?.originStory) &&
+            ReferenceEquals(actor,currentActor) && spawn==currentSpawn && map==current.worldMapId;
+    }
+
     internal enum HanVuConversation { None, Opening, BeforeMedicine, AfterMedicine, Woodcutter }
 
     internal readonly struct HanVuLine
