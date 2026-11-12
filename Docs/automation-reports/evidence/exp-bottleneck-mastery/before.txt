@@ -1,0 +1,35 @@
+Tests~/UnityStub.cs(514,56): warning CS0067: The event 'VideoPlayer.errorReceived' is never used
+PASS revised cultivation Level EXP and foundation have independent authorities
+PASS revised cultivation thresholds validated and stages can regress without changing actual realm
+PASS revised Qi absorption refinement and bottleneck conserve reserve without kill dependency
+PASS revised Qi clock rejects invalid delta duplicate steps stale owners and overflow without mutation
+PASS revised spiritual Spend Restore Clamp are separate from cultivation and injury
+PASS revised blood passive accumulation unlock and capacity are explicit and preserve full progress
+PASS revised blood first activation requires owner charge alive HP strictly below30percent
+PASS revised blood extensions add time and linear locked debt without extra healing or realm stacking
+PASS revised blood modifiers use one owned source and only approved absolute stats
+PASS revised blood locked reference survives growth and settlement is exactly once
+PASS revised blood deficit becomes injury only and excess charges survive minor-stage regression
+PASS revised blood all lifecycle ends retain debt until explicit identity-checked settlement
+PASS revised recovery distinguishes regain foundation heal injury and restore spiritual energy
+PASS revised reserve can fund three successive explicit breakthroughs without EXP or automatic success
+PASS revised breakthrough uses actual foundation and injury not effective blood realm
+PASS revised breakthrough rejects missing unknown downward successors and invalid transfer atomically
+PASS revised DTO candidate load retains active debt locks recovery and rejects stale epoch callbacks
+PASS revised DTO rejects future missing unknown invalid and hidden liability before swapping candidate
+PASS revised crash recovery retains cost and manual snapshot rollback remains timeline-local
+PASS all three production profiles validate their actual source data and retain distinct identities
+GAP EXP is not reserved/released: current AddExp continues Level at realm bottleneck; no EXP reserve exists.
+PASS battle EXP and production Qi remain independent at the cultivation bottleneck
+PASS World Qi table preserves all map rates and source seed without consuming combat RNG
+PASS schema3 clock round trip keeps fractional time and retires old callbacks without offline awards
+PASS travel boundary settles original node fraction once before using new supply
+PASS Kim Dan capacity is one charge at entry and increments at every minor stage
+PASS production component absence remains legacy while partial future and Blood payloads fail closed
+PASS REGRESSION reusable DTO capture clears the previous burn after settlement
+PASS REGRESSION repeated capture into the same DTO never duplicates settlement receipts
+PASS ten percent debt per use can exhaust foundation after passive top-ups without demoting actual realm
+FAIL PRE-FIX eligible actual bottleneck must retain Level: Level advanced to 2; AddExp has no cultivation/bank integration
+FAIL PRE-FIX level 999 must conserve newly earned EXP: 100 EXP silently clamped; no reserve field
+RESULT 29 PASS, 2 FAIL (production data APIs / UnityStub; no SaveManager or save I/O)
+REQUIREMENT GAPS: EXP reserve/release; Weapon/Skill Mastery; production successors/trials/Blood; within-node spatial Qi; automatic injury treatment.

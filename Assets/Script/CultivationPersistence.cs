@@ -23,6 +23,13 @@ namespace TuTienCore
             var s=session.Current;var d=target??new CultivationComponentDto();d.version=ProposedVersion;d.configurationId=configurationId;d.ownerId=session.OwnerId.ToString("N");
             d.actualRealmId=s.Foundation.ActualRealmId;d.foundation=s.Foundation.Amount;d.unrefinedQi=s.Reserve.Amount;d.spiritualEnergy=s.Energy.Current;d.injury=s.Injury.Severity;
             d.bloodCharges=s.Blood.Charges;d.bloodProgress=s.Blood.AccumulationProgress;
+            // A caller may reuse a DTO (including a derived clock component).
+            // Replace codec-owned state so paid receipts and an old burn cannot
+            // survive as duplicate or hidden liability in the next snapshot.
+            d.settledTransactions=new List<string>();
+            d.hasBurn=false;d.burnId=null;d.burnOwnerId=null;d.burnActualRealmId=null;
+            d.burnReference=0;d.burnDebtRatio=0;d.burnChargesUsed=0;d.burnRemaining=0;
+            d.burnStatus=0;d.burnEndReason=-1;
             foreach(Guid id in s.SettledTransactions)d.settledTransactions.Add(id.ToString("N"));
             var b=s.Burning;if(b!=null) {
                 d.hasBurn=true;d.burnId=b.Id.ToString("N");d.burnOwnerId=b.OwnerId.ToString("N");d.burnActualRealmId=b.ActualRealmId;

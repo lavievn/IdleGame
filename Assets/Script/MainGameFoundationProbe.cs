@@ -391,7 +391,7 @@ public sealed partial class MainGameFoundationProbe : MonoBehaviour
     {
         phase=1;Require(!CultivationIntegrationGate.ProductionEnabled,"Unapproved cultivation must remain disabled");var data=gm.HeroData;
         Require(data.currentLevel==1 && data.currentExp==0,"New Hero baseline");string legacyId=data.realmId;int legacyEntry=data.realmEntryLevel;
-        while(data.currentLevel<45)data.AddExp(data.expToNextLevel-data.currentExp);
+        while(data.currentLevel<45)Require(data.AddExp(data.expToNextLevel-data.currentExp),"EXP fixture cannot force Level: award banked or rejected");
         combat.RefreshRegisteredHeroStats(hero,false);
         Require(data.currentLevel==45 && data.currentExp==0 && data.statPoints==44 && data.realmId==legacyId && data.realmEntryLevel==legacyEntry,"EXP pipeline changed or inferred permanent realm");
         foreach(var size in new[]{new Vector2Int(600,338),new Vector2Int(800,450),new Vector2Int(1150,647),new Vector2Int(1360,680)})
@@ -419,7 +419,7 @@ public sealed partial class MainGameFoundationProbe : MonoBehaviour
         phase=1;var data=gm.HeroData;AssertLegacyLevelRealm(data,1,1);int growth=data.meleeGrowthBonus;
         foreach(int target in new[]{1,9,10,19,20,29,30,45})
         {
-            while(data.currentLevel<target)data.AddExp(data.expToNextLevel-data.currentExp);
+            while(data.currentLevel<target)Require(data.AddExp(data.expToNextLevel-data.currentExp),"EXP fixture cannot force Level: award banked or rejected");
             combat.RefreshRegisteredHeroStats(hero,false);AssertLegacyLevelRealm(data,1,target);
             Require(data.currentExp==0 && data.statPoints==target-1,"EXP/points duplicate or reset");
             Require(target==1?data.meleeGrowthBonus==growth:data.meleeGrowthBonus>=50*(target-1) && data.meleeGrowthBonus<=100*(target-1),"Growth changed outside existing per-level rolls");
@@ -540,7 +540,7 @@ public sealed partial class MainGameFoundationProbe : MonoBehaviour
         yield return Capture("v04-loot-resize");visual.Advance(1f,null);Require(visual.Count==0,"V04 receipt did not retire");
         Pass("V04 actual Game View resize during drop and UI flight; dynamic right-edge trajectory matches screen, receipt retires, inventory unchanged. Explicit Advance while paused, not natural-duration/native playback.");Status(2,"PASS");
 
-        phase=3;while(data.statPoints<2)data.AddExp(data.expToNextLevel);
+        phase=3;while(data.statPoints<2)Require(data.AddExp(data.expToNextLevel),"EXP fixture cannot force points: award banked, capped or rejected");
         Require(gm.TryManualSave(SaveSlot.ManualSave1),"V04 owned Save");
         yield return OpenInventory();Select(item.instanceId);Press("InventoryForge");yield return null;
         var beforeLoad=data;int oldAdded=data.addedDamage;
@@ -566,7 +566,7 @@ public sealed partial class MainGameFoundationProbe : MonoBehaviour
         Require(EquipmentRuntime.AddInstance(data,item) && EquipmentInventory.Add(data,EquipmentRefinement.MaterialId,11),"UI fixture gear/stock");
         item=EquipmentRuntime.Find(data,item.instanceId); // AddInstance stores a canonical copy.
         data.entityName="Nguyễn Bách Luyện Thiên Đồ Trường Danh";
-        while(data.statPoints<8)data.AddExp(data.expToNextLevel);
+        while(data.statPoints<8)Require(data.AddExp(data.expToNextLevel),"EXP fixture cannot force points: award banked, capped or rejected");
         combat.RefreshRegisteredHeroStats(hero,false);
         foreach(var size in new[]{new Vector2Int(600,338),new Vector2Int(800,450),new Vector2Int(1150,647),new Vector2Int(1360,680)})
         {

@@ -105,6 +105,7 @@ public partial class SaveManager : MonoBehaviour
     public bool SaveGame(EntityDataSO entityData, SaveSlot slot)
     {
         if (entityData == null || HasInterruptedDevelopmentTrial()) return false;
+        if (!ExperienceProgress.TryRead(entityData.experienceJson, out _)) return false;
         string trialReason;if(!ValidateTrial(entityData,out trialReason)||(!string.IsNullOrEmpty(entityData.tribulationJson)&&TribulationSaveTransaction.Read(entityData.tribulationJson).outcome=="Active")){Debug.LogWarning("[SaveManager] Trial save refused: "+trialReason);return false;}
         if(!ValidateCultivationComponent(entityData.cultivationJson)){Debug.LogWarning("[SaveManager] Refusing cultivation save: "+LastCultivationFailure);return false;}
         string reason;
@@ -144,6 +145,7 @@ public partial class SaveManager : MonoBehaviour
             {
                 if (!jsonData.TrimStart().StartsWith("{") || !jsonData.Contains("\"currentLevel\"")) return false;
                 string reason;
+                if (!ExperienceProgress.TryReadHeroJson(jsonData, out var experienceComponent)) return false;
                 if (!CombatSkillProgress.TryRead(jsonData, out var combatSkills))
                 {
                     Debug.LogWarning("[SaveManager] Unsupported combat skill snapshot in " + slot);
@@ -225,6 +227,8 @@ public partial class SaveManager : MonoBehaviour
                 entityData.rootWeights = new System.Collections.Generic.List<float>();
                 entityData.hybridSecondaryRace = TuTienCore.RaceType.YeuThu;
                 JsonUtility.FromJsonOverwrite(jsonData, entityData);
+                entityData.experienceJson=experienceComponent; // Legacy absence never inherits a template reserve.
+                entityData.experienceBinding=null;
                 entityData.tribulationJson=trialComponent;
                 entityData.combatSkills = combatSkills;
                 if (!TuTienCore.StoryOrigin.IsValid(entityData))
@@ -443,6 +447,7 @@ public partial class SaveManager : MonoBehaviour
         RealmVersionProbe realm;bool legacyRealm;
         if (!CombatSkillProgress.TryRead(data, out _) || !WorldClimateState.TryRead(data, out _) ||
             !TuTienCore.StoryOrigin.IsValidSnapshotJson(data)) return false;
+        if (!ExperienceProgress.TryReadHeroJson(data, out _)) return false;
         if (!TryValidateEquipmentJson(data, out reason) || !TryValidateRealmJson(data,out realm,out legacyRealm,out reason))
         {
             Debug.LogWarning("[SaveManager] Refusing write to " + slotName + ": " + reason);
@@ -488,6 +493,7 @@ public partial class SaveManager : MonoBehaviour
                     Debug.LogWarning("[SaveManager] Preserving incomplete or incompatible origin slot.");
                     return false;
                 }
+                if (!ExperienceProgress.TryReadHeroJson(existingJson, out _)) return false;
                 if (!CombatSkillProgress.TryRead(existingJson, out _)) return false;
                 if (!WorldClimateState.TryRead(existingJson, out _))
                 {
