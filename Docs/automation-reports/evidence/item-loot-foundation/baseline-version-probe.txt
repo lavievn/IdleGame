@@ -1,0 +1,3 @@
+BASELINE CONFIRMED history=False accepted=True forged=True material=10 saveVersionAllowed=False
+BASELINE CONFIRMED history=True accepted=True forged=True material=10 saveVersionAllowed=False
+BASELINE whitespace ID IsValid=True
