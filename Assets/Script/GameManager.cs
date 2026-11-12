@@ -1282,11 +1282,11 @@ public partial class GameManager : MonoBehaviour
             CommitOriginChange(null);
     }
 
-    internal bool TryTalkToWoodcutter()
+    internal bool TryTalkToWoodcutter(int line)
     {
         if (!IsGameplayHUDVisible || HasTribulationLiability || !HanVuNarrative.AtWoodcutter(runtimeHeroData))
             return false;
-        if (HanVuNarrative.TalkToWoodcutter(runtimeHeroData)) CommitOriginChange(null);
+        if (HanVuNarrative.TalkToWoodcutter(runtimeHeroData, line)) CommitOriginChange(null);
         return true;
     }
 
