@@ -43,7 +43,8 @@ namespace IdleGame.Tests.Presentation.PlayMode
                 Layout=Activator.CreateInstance(R("HudW3Layout"));
                 View=Activator.CreateInstance(R("HudW3View"),All,null,new object[]{UI,Root},null);
                 Primary=Data("Chính",8);
-                C(G(Combat,"CurrentHeroCombatState"),"BeginLife",Primary,200);
+                S(G(Combat,"CurrentHeroCombatState"),"Controller",Actor());
+                C(G(Combat,"CurrentHeroCombatState"),"BeginLife",Primary,200,false);
             }
             internal T Own<T>(T o) where T:UnityEngine.Object {owned.Add(o);return o;}
             Component Manager(string n)
@@ -56,14 +57,25 @@ namespace IdleGame.Tests.Presentation.PlayMode
             }
             internal object Companion(string name,int hp)
             {
-                var actor=Manager("HeroController");
+                var actor=Actor();
                 var state=Activator.CreateInstance(R("HeroCombatState"));S(state,"Controller",actor);
-                var data=Data(name,3);C(state,"BeginLife",data,100);S(state,"CurrentHP",hp);
+                var data=Data(name,3);C(state,"BeginLife",data,100,false);S(state,"CurrentHP",hp);
                 ((IDictionary)G(Combat,"heroStates")).Add(actor,state);
                 var record=Activator.CreateInstance(R("GameManager").GetNestedType("TestCompanion",All));
                 S(record,"Controller",actor);S(record,"Data",data);
                 ((IList)G(Game,"testCompanions")).Add(record);
                 return state;
+            }
+            Component Actor()
+            {
+                var actor=Manager("HeroController");
+                // Synchronous view test: Awake runs with no body, then supply
+                // a synthetic deployed body. No Spawn/VFX/Update or manager Start.
+                actor.gameObject.SetActive(true);
+                var body=Own(new GameObject("HUD actor body",typeof(RectTransform)));
+                body.transform.SetParent(actor.transform,false);
+                S(actor,"heroRect",(RectTransform)body.transform);S(actor,"deployed",true);
+                return actor;
             }
             internal void Render()=>C(View,"Render",Game,Combat,null);
             internal RectTransform Card(int i)=>(RectTransform)((RectTransform)G(View,"Root")).Find("Hero Card "+i);
@@ -77,17 +89,26 @@ namespace IdleGame.Tests.Presentation.PlayMode
             using(var f=new Fixture())
             {
                 C(f.View,"Layout",width,height,f.Layout);f.Render();
-                float previous=0;
+                Assert.That(f.Card(0).gameObject.activeSelf,Is.True);
+                Assert.That(f.Card(1).gameObject.activeSelf,Is.False);
+                Assert.That(f.Card(2).gameObject.activeSelf,Is.False);
+                f.Companion("Thứ hai",100);f.Render();
+                Assert.That(f.Card(1).gameObject.activeSelf,Is.True);
+                Assert.That(f.Card(2).gameObject.activeSelf,Is.False);
+                f.Companion("Thứ ba",100);f.Render();
+                float previous=width;
                 for(int i=0;i<3;i++)
                 {
                     var card=f.Card(i);float left=card.anchoredPosition.x,right=left+card.sizeDelta.x;
-                    Assert.That(left,Is.GreaterThanOrEqualTo(previous));Assert.That(right,Is.LessThanOrEqualTo(width-7));
-                    Assert.That(-card.anchoredPosition.y+card.sizeDelta.y,Is.LessThan(100));previous=right+3;
+                    Assert.That(card.gameObject.activeSelf,Is.True);
+                    Assert.That(left,Is.GreaterThanOrEqualTo(0));Assert.That(right,Is.LessThanOrEqualTo(previous));
+                    Assert.That(card.sizeDelta.y,Is.EqualTo(i==0?110f:76f));
+                    Assert.That(-card.anchoredPosition.y+card.sizeDelta.y,Is.LessThan(height));previous=left-3;
                     var portrait=card.Find("Avatar Frame/Portrait").GetComponent(R("UnityEngine.UI.Image"));
                     Assert.That(G(portrait,"preserveAspect"),Is.True);
-                    Assert.That(f.Text(card,"Mana Disabled/Mana Value"),Is.EqualTo("Mana —"));
+                    if(i>0)Assert.That(f.Text(card,"Mana Track/Mana Value"),Is.EqualTo("Mana —"));
                     Canvas.ForceUpdateCanvases();
-                    foreach(string path in new[]{"HP Track/HP Value","Mana Disabled/Mana Value"})
+                    foreach(string path in new[]{"HP Track/HP Value","Mana Track/Mana Value"})
                     {
                         var label=card.Find(path).GetComponent(R("TMPro.TextMeshProUGUI"));C(label,"ForceMeshUpdate",false,false);
                         var info=G(label,"textInfo");var characters=(Array)G(info,"characterInfo");int visible=0;
@@ -95,8 +116,8 @@ namespace IdleGame.Tests.Presentation.PlayMode
                         Assert.That(visible,Is.GreaterThan(0),"the HP/Mana line must actually render: "+path);
                     }
                 }
-                Assert.That(f.Text(f.Card(1),"Header/Hero Name"),Is.EqualTo("Chưa có Hero"));
-                Assert.That(((IDictionary)G(f.Combat,"heroStates")).Count,Is.Zero,"view cannot recruit/register anyone");
+                Assert.That(f.Text(f.Card(1),"Header/Hero Name"),Is.EqualTo("Thứ hai"));
+                Assert.That(((IDictionary)G(f.Combat,"heroStates")).Count,Is.EqualTo(2),"only fixture-deployed companions are registered");
             }
         }
         [Test]
@@ -104,18 +125,49 @@ namespace IdleGame.Tests.Presentation.PlayMode
         {
             using(var f=new Fixture())
             {
+                C(f.View,"Layout",600f,338f,f.Layout);
                 var a=f.Companion("Đồng đội tên rất dài kiểm tra tràn chữ",37);var b=f.Companion("B2 thứ hai",80);
                 f.Render();Assert.That(f.Text(f.Card(0),"HP Track/HP Value"),Is.EqualTo("HP 200/200"));
                 Assert.That(f.Text(f.Card(1),"HP Track/HP Value"),Is.EqualTo("HP 37/100"));
                 Assert.That(f.Text(f.Card(2),"HP Track/HP Value"),Is.EqualTo("HP 80/100"));
                 S(a,"CurrentHP",0);S(b,"CurrentHP",61);f.Render();
-                Assert.That(f.Text(f.Card(1),"Level"),Does.Contain("Đã gục"));
+                Assert.That(f.Card(1).gameObject.activeSelf,Is.False);
+                Assert.That(f.Card(2).anchoredPosition.x,Is.EqualTo(f.Card(0).anchoredPosition.x-f.Card(2).sizeDelta.x-4).Within(.01));
                 Assert.That(f.Text(f.Card(2),"HP Track/HP Value"),Is.EqualTo("HP 61/100"));
+                S(a,"CurrentHP",100);f.Render();
+                Assert.That(f.Card(1).gameObject.activeSelf,Is.True);
+                Assert.That(f.Card(2).anchoredPosition.x,Is.LessThan(f.Card(1).anchoredPosition.x));
                 ((IList)G(f.Game,"testCompanions")).Clear();
-                C(G(f.Combat,"CurrentHeroCombatState"),"BeginLife",f.Data("Sau Load",12),300);f.Render();
+                C(G(f.Combat,"CurrentHeroCombatState"),"BeginLife",f.Data("Sau Load",12),300,false);f.Render();
                 Assert.That(f.Text(f.Card(0),"Header/Hero Name"),Is.EqualTo("Sau Load"));
                 Assert.That(f.Text(f.Card(0),"HP Track/HP Value"),Is.EqualTo("HP 300/300"));
-                Assert.That(f.Text(f.Card(1),"Level"),Is.EqualTo("Ô trống"));
+                Assert.That(f.Card(1).gameObject.activeSelf,Is.False);
+                Assert.That(f.Card(2).gameObject.activeSelf,Is.False);
+                S(G(f.Combat,"CurrentHeroCombatState"),"CurrentHP",0);f.Render();
+                Assert.That(f.Card(0).gameObject.activeSelf,Is.False);
+                Assert.That(G(f.View,"VisibleCardHeight"),Is.EqualTo(0f),"no empty HUD height after the final actor leaves");
+                C(G(f.Combat,"CurrentHeroCombatState"),"BeginLife",f.Primary,200,false);f.Render();
+                Assert.That(f.Card(0).gameObject.activeSelf,Is.True);
+                Assert.That(G(f.View,"VisibleCardHeight"),Is.EqualTo(110f));
+            }
+        }
+        [Test]
+        public void StoryDialogueSurvivesTemporaryMenusButClosesAtGameplayBoundary()
+        {
+            using(var f=new Fixture())
+            {
+                R("TuTienCore.StoryOrigin").GetMethod("InitializeNewHero",All).Invoke(null,new object[]{f.Primary});
+                S(f.Primary,"worldMapId","TV-20");S(f.Game,"runtimeHeroData",f.Primary);S(f.Game,"hasDeployed",true);
+                S(f.UI,"w3",f.View);S(f.UI,"hudGame",f.Game);S(f.UI,"gameResolved",true);
+                C(f.UI,"InstallOriginPresentation");
+                C(f.UI,"BeginOriginConversation",f.Primary,Enum.Parse(R("TuTienCore.HanVuConversation"),"Opening"));
+                ((RectTransform)G(f.View,"Root")).gameObject.SetActive(false);
+                C(f.UI,"TickOriginPresentation");
+                Assert.That(G(f.UI,"dialogue"),Is.Not.Null,"a temporary menu can resume the same line");
+                S(f.Game,"enteringGameplay",true);C(f.UI,"TickOriginPresentation");
+                Assert.That(G(f.UI,"dialogue"),Is.Null,"entry/Retry cannot resume stale dialogue");
+                Assert.That(G(G(f.Primary,"originStory"),"heardOpeningTrip"),Is.False);
+                Assert.That(G(G(f.Primary,"originStory"),"herbalParticipation").ToString(),Is.EqualTo("Offered"));
             }
         }
         [Test]
@@ -128,9 +180,9 @@ namespace IdleGame.Tests.Presentation.PlayMode
                 f.Render();var root=(RectTransform)G(f.View,"Root");
                 object[] args={"TV-20",null};R("TuTienCore.WorldMapCatalog").GetMethod("TryGet").Invoke(null,args);
                 var expected=((string)G(args[1],"Name")).Replace(' ','\n');
-                Assert.That(f.Text(root,"Map Information/Vertical Map Name"),Is.EqualTo(expected));
-                Assert.That(f.Text(root,"Map Information/Current Wave"),Is.EqualTo("Wave 4/5"));
-                Assert.That(f.Text(root,"Map Information/Current Wave"),Does.Not.Contain("Địa hình"));
+                Assert.That(f.Text(root,"WorldMapButton/Vertical Map Name"),Is.EqualTo(expected));
+                Assert.That(f.Text(root,"WorldMapButton/Current Wave"),Is.EqualTo("Wave 4/5"));
+                Assert.That(f.Text(root,"WorldMapButton/Current Wave"),Does.Not.Contain("Địa hình"));
             }
         }
         [Test]
