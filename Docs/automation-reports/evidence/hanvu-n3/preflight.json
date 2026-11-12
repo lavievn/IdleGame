@@ -1,0 +1,53 @@
+{
+  "branch": "feature/cloud-hanvu-n3-domain",
+  "base": "cc271451faccd4c2ba7d9ef679a93c7627bc5f5c",
+  "runtime_head": "3c06f8bea1470f35e2d135c5a28a6dc004ba217e",
+  "windows_integration": false,
+  "prs": [
+    {
+      "number": 13,
+      "head": "feature/story-origin-thanhkhe-foundation",
+      "head_sha": "5915829aa2510a739bde64addf0a41b705c1b8eb",
+      "base": "development_0.1.7",
+      "base_sha": "fafc02d613a2e6a15c72a8dd48b935d2faa54f0e",
+      "state": "open",
+      "draft": true
+    },
+    {
+      "number": 17,
+      "head": "feature/cloud-hanvu-story-polish",
+      "head_sha": "cc271451faccd4c2ba7d9ef679a93c7627bc5f5c",
+      "base": "feature/story-origin-thanhkhe-foundation",
+      "base_sha": "5915829aa2510a739bde64addf0a41b705c1b8eb",
+      "state": "open",
+      "draft": true
+    },
+    {
+      "number": 21,
+      "head": "docs/2026-11-12-canonical-direction",
+      "head_sha": "0ab8c88033ea9c4d97a7be4ed03705acad69f675",
+      "base": "development_0.1.7",
+      "base_sha": "fafc02d613a2e6a15c72a8dd48b935d2faa54f0e",
+      "state": "open",
+      "draft": true
+    },
+    {
+      "number": 22,
+      "head": "docs/cloud-narrative-integration-audit",
+      "head_sha": "d8e08eb397446d4fdd6da9ed59d25df02025b1cb",
+      "base": "docs/2026-11-12-canonical-direction",
+      "base_sha": "0ab8c88033ea9c4d97a7be4ed03705acad69f675",
+      "state": "open",
+      "draft": true
+    },
+    {
+      "number": 23,
+      "head": "docs/local-integration-baseline-handoff",
+      "head_sha": "382f389558ad956d2dc991df9ea91acdd16762fc",
+      "base": "docs/cloud-narrative-integration-audit",
+      "base_sha": "d8e08eb397446d4fdd6da9ed59d25df02025b1cb",
+      "state": "open",
+      "draft": true
+    }
+  ]
+}

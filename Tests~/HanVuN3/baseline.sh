@@ -11,7 +11,8 @@ esac
 # Read-only extraction. Original runtime is exactly #17; retained is the first
 # guard checkpoint before the two retained-delegate regressions were added.
 git archive "$ref" Assets/Script Assets/DataScript Tests~ \
-  Assets/Resources/WorldMapCatalog.txt Assets/Resources/WorldMapPolygonSeeds.txt | tar -x -C "$snapshot"
+  Assets/Resources/WorldMapCatalog.txt Assets/Resources/WorldMapPolygonSeeds.txt \
+  Assets/Resources/WorldMapPolygons.json | tar -x -C "$snapshot"
 if [[ "${1:-original}" == retained ]]; then
   cp Tests~/HanVuN3/{Boundary,Regression}.cs "$snapshot/Tests~/HanVuN3/"
 fi

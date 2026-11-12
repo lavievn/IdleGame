@@ -1,6 +1,6 @@
-Tests~/HanVuN3/Boundary.cs(47,19): warning CS0649: Field 'UIManager.worldMapButton' is never assigned to, and will always have its default value null
 Tests~/UnityStub.cs(514,56): warning CS0067: The event 'VideoPlayer.errorReceived' is never used
-FAIL indexed map positions import all 133 seeds without fabricated source artwork: Could not find file "/tmp/tmp.DmbdfS6RQZ/Assets/Resources/WorldMapPolygons.json"
+Tests~/HanVuN3/Boundary.cs(47,19): warning CS0649: Field 'UIManager.worldMapButton' is never assigned to, and will always have its default value null
+PASS indexed map positions import all 133 seeds without fabricated source artwork
 PASS world catalog has 133 unique maps, seven animals and five approved starts
 PASS new world Hero remains in current map, loops wave 1 after fifth clear
 PASS boss endgame is gated and world progress JSON is backward-compatible
@@ -30,5 +30,5 @@ PASS N3 UI idle frames and unavailable host never confirm a pending choice
 PASS N3 context rejects default wrong owner story replacement and trial liability
 FAIL REGRESSION retained old choice delegate cannot consume a replacement Hero fresh conversation: old delegate consumed a new conversation intent
 FAIL REGRESSION retained old choice delegate is retired even after close and reopen in the same life: closed intent was reusable against a new view
-RESULT 27 PASS, 3 FAIL (UnityStub/domain + real origin UI/host fragment; no Save I/O)
+RESULT 28 PASS, 2 FAIL (UnityStub/domain + real origin UI/host fragment; no Save I/O)
 NOT TESTED: native lifecycle/Retry/Travel/Load, SaveManager transactions, Unity renderer/input, Windows Player.
