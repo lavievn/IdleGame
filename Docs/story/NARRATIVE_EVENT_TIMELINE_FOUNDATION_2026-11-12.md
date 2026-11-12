@@ -6,6 +6,14 @@
 Không có quyền triển khai schema, gameplay, tuổi thọ, bế quan hoặc content mới.
 Các tên contract dưới đây là ký hiệu thiết kế, không phải API/field đã có.
 
+**Cập nhật phạm vi12/11:** Chủ dự án đã duyệt slice hẹp tại
+[đặc tả Hàn Vụ](HAN_VU_VERTICAL_SLICE_SPEC_2026-11-12.md), với yêu cầu không thêm
+Save field. Cho N3/N4 của slice, M0/M1 và guardian condition phải tái sử dụng stage/
+flags hiện có; không đưa ledger/version/serialized state đề xuất ở phần tổng
+quát bên dưới vào slice. Event System tổng quát và migration vẫn chưa được giao
+triển khai. [Bàn giao baseline Windows](../automation-reports/LOCAL_INTEGRATION_BASELINE_2026-11-12.md)
+ghi phần còn thiếu và các gate chưa hoàn tất.
+
 ## 1. Tái sử dụng trước khi mở rộng
 
 Đã truy vết head #17 `cc271451faccd4c2ba7d9ef679a93c7627bc5f5c` (kế thừa #13).
