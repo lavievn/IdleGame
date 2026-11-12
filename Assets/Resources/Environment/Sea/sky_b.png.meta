@@ -1,0 +1,3341 @@
+fileFormatVersion: 2
+guid: 1f9cc1f802017ea49ace5cc667cf1a95
+TextureImporter:
+  internalIDToNameTable:
+  - first:
+      213: 1880511648977998158
+    second: sky_b_0
+  - first:
+      213: -916870089420621197
+    second: sky_b_1
+  - first:
+      213: -3277116652173717563
+    second: sky_b_2
+  - first:
+      213: -4431761127443610892
+    second: sky_b_3
+  - first:
+      213: -6730134636354003395
+    second: sky_b_4
+  - first:
+      213: 7399909209968976395
+    second: sky_b_5
+  - first:
+      213: -4076177317904843665
+    second: sky_b_6
+  - first:
+      213: 6436039649993894686
+    second: sky_b_7
+  - first:
+      213: -5655356746606572065
+    second: sky_b_8
+  - first:
+      213: 7608647578831720060
+    second: sky_b_9
+  - first:
+      213: 2273836551605487044
+    second: sky_b_10
+  - first:
+      213: -4455140247819099625
+    second: sky_b_11
+  - first:
+      213: 958837127204671176
+    second: sky_b_12
+  - first:
+      213: 3736229822189897523
+    second: sky_b_13
+  - first:
+      213: -5552394621171168075
+    second: sky_b_14
+  - first:
+      213: 8069888702984092280
+    second: sky_b_15
+  - first:
+      213: 45190481044740893
+    second: sky_b_16
+  - first:
+      213: -7467088299249169728
+    second: sky_b_17
+  - first:
+      213: 4176647631856420779
+    second: sky_b_18
+  - first:
+      213: -427415877770106408
+    second: sky_b_19
+  - first:
+      213: -5239417838344622397
+    second: sky_b_20
+  - first:
+      213: -9002803996048788618
+    second: sky_b_21
+  - first:
+      213: -1815014534254210332
+    second: sky_b_22
+  - first:
+      213: -9201917876367897159
+    second: sky_b_23
+  - first:
+      213: 6458704568183676293
+    second: sky_b_24
+  - first:
+      213: 9066035263290469779
+    second: sky_b_25
+  - first:
+      213: 7253928852777556016
+    second: sky_b_26
+  - first:
+      213: -1126507393403553663
+    second: sky_b_27
+  - first:
+      213: 975519141689187603
+    second: sky_b_28
+  - first:
+      213: 6918450812461700221
+    second: sky_b_29
+  - first:
+      213: -1706638965175152455
+    second: sky_b_30
+  - first:
+      213: 3674952201132122380
+    second: sky_b_31
+  - first:
+      213: 5409630491322409397
+    second: sky_b_32
+  - first:
+      213: -5384349414246860454
+    second: sky_b_33
+  - first:
+      213: 8301021046045280612
+    second: sky_b_34
+  - first:
+      213: 3552630459627360915
+    second: sky_b_35
+  - first:
+      213: -2787552468864522014
+    second: sky_b_36
+  - first:
+      213: -4785138531661095491
+    second: sky_b_37
+  - first:
+      213: -1054661315440251620
+    second: sky_b_38
+  - first:
+      213: -1332098588073210912
+    second: sky_b_39
+  - first:
+      213: -2348455941409400003
+    second: sky_b_40
+  - first:
+      213: 2376722223852463127
+    second: sky_b_41
+  - first:
+      213: -4175006893865146578
+    second: sky_b_42
+  - first:
+      213: -8983708639433009347
+    second: sky_b_43
+  - first:
+      213: 2423139560710969876
+    second: sky_b_44
+  - first:
+      213: 4041828768909347733
+    second: sky_b_45
+  - first:
+      213: -8507748691303219105
+    second: sky_b_46
+  - first:
+      213: 6020329886648190746
+    second: sky_b_47
+  - first:
+      213: -6561864489269703844
+    second: sky_b_48
+  - first:
+      213: 4619233787174217517
+    second: sky_b_49
+  - first:
+      213: 8852820350475485566
+    second: sky_b_50
+  - first:
+      213: 8054602833740624737
+    second: sky_b_51
+  - first:
+      213: 6294106700343825936
+    second: sky_b_52
+  - first:
+      213: -8342798211130507110
+    second: sky_b_53
+  - first:
+      213: 4489236560850651545
+    second: sky_b_54
+  - first:
+      213: -2208646435811159584
+    second: sky_b_55
+  - first:
+      213: 7964749411574944271
+    second: sky_b_56
+  - first:
+      213: 827177838827474419
+    second: sky_b_57
+  - first:
+      213: -2449281629393939757
+    second: sky_b_58
+  - first:
+      213: 4325069389173560840
+    second: sky_b_59
+  - first:
+      213: 2841651347056373752
+    second: sky_b_60
+  - first:
+      213: -310678960858284261
+    second: sky_b_61
+  - first:
+      213: 7049337455023684068
+    second: sky_b_62
+  - first:
+      213: 4920261792117947713
+    second: sky_b_63
+  - first:
+      213: 5446185487947039446
+    second: sky_b_64
+  - first:
+      213: -7619961443404930720
+    second: sky_b_65
+  - first:
+      213: -599458549516062633
+    second: sky_b_66
+  - first:
+      213: -8382598307549579984
+    second: sky_b_67
+  - first:
+      213: -5384472842223581880
+    second: sky_b_68
+  - first:
+      213: 5181912745941275017
+    second: sky_b_69
+  - first:
+      213: 658312016982564929
+    second: sky_b_70
+  - first:
+      213: 2598840103187113171
+    second: sky_b_71
+  - first:
+      213: 7839936336833701939
+    second: sky_b_72
+  - first:
+      213: 4022955646757743658
+    second: sky_b_73
+  - first:
+      213: 4992746489469707807
+    second: sky_b_74
+  - first:
+      213: -1315175101982551555
+    second: sky_b_75
+  - first:
+      213: 6319979931522534986
+    second: sky_b_76
+  - first:
+      213: -8985798267683085329
+    second: sky_b_77
+  - first:
+      213: -2533843436347509326
+    second: sky_b_78
+  - first:
+      213: -671694136498063776
+    second: sky_b_79
+  - first:
+      213: 6935595406315188815
+    second: sky_b_80
+  - first:
+      213: -2953215979954945245
+    second: sky_b_81
+  - first:
+      213: -1278463457118319665
+    second: sky_b_82
+  - first:
+      213: -6562696435701677810
+    second: sky_b_83
+  - first:
+      213: -6874643533344235708
+    second: sky_b_84
+  - first:
+      213: 1919228394652410070
+    second: sky_b_85
+  - first:
+      213: -8442464504849873235
+    second: sky_b_86
+  - first:
+      213: 8767385835958578441
+    second: sky_b_87
+  - first:
+      213: -6581899103865056537
+    second: sky_b_88
+  - first:
+      213: -5385245093660473423
+    second: sky_b_89
+  - first:
+      213: -409911191165787774
+    second: sky_b_90
+  - first:
+      213: -5984909186844312009
+    second: sky_b_91
+  - first:
+      213: -2285303196544646413
+    second: sky_b_92
+  - first:
+      213: -764565149742179871
+    second: sky_b_93
+  - first:
+      213: -8375232701025925956
+    second: sky_b_94
+  - first:
+      213: -7952429197637717833
+    second: sky_b_95
+  - first:
+      213: 1192701417424947807
+    second: sky_b_96
+  - first:
+      213: 2501972194409098318
+    second: sky_b_97
+  - first:
+      213: -7918476606163769252
+    second: sky_b_98
+  - first:
+      213: 4478623225868646579
+    second: sky_b_99
+  - first:
+      213: -8692266704531501774
+    second: sky_b_100
+  - first:
+      213: -993921068291115665
+    second: sky_b_101
+  - first:
+      213: 9217364368941298648
+    second: sky_b_102
+  - first:
+      213: 7759099258734604786
+    second: sky_b_103
+  - first:
+      213: 7130924285736083983
+    second: sky_b_104
+  - first:
+      213: -4251615286224589667
+    second: sky_b_105
+  - first:
+      213: -6831528943047447699
+    second: sky_b_106
+  - first:
+      213: 8370895208455150421
+    second: sky_b_107
+  - first:
+      213: -1094707622443253127
+    second: sky_b_108
+  - first:
+      213: 342278663742668883
+    second: sky_b_109
+  - first:
+      213: 5683240625556432986
+    second: sky_b_110
+  - first:
+      213: 2086847332458541004
+    second: sky_b_111
+  - first:
+      213: 1029402426434942377
+    second: sky_b_112
+  - first:
+      213: -2884185346200947661
+    second: sky_b_113
+  - first:
+      213: 1921140137953613752
+    second: sky_b_114
+  - first:
+      213: 962123865042483275
+    second: sky_b_115
+  - first:
+      213: 3267228444833864494
+    second: sky_b_116
+  - first:
+      213: 3412759629904388331
+    second: sky_b_117
+  - first:
+      213: -2157982408663611931
+    second: sky_b_118
+  - first:
+      213: 3628864216413763447
+    second: sky_b_119
+  - first:
+      213: 9191651175089503331
+    second: sky_b_120
+  - first:
+      213: 4346473222319716173
+    second: sky_b_121
+  - first:
+      213: 7869354008954755502
+    second: sky_b_122
+  externalObjects: {}
+  serializedVersion: 13
+  mipmaps:
+    mipMapMode: 0
+    enableMipMap: 0
+    sRGBTexture: 1
+    linearTexture: 0
+    fadeOut: 0
+    borderMipMap: 0
+    mipMapsPreserveCoverage: 0
+    alphaTestReferenceValue: 0.5
+    mipMapFadeDistanceStart: 1
+    mipMapFadeDistanceEnd: 3
+  bumpmap:
+    convertToNormalMap: 0
+    externalNormalMap: 0
+    heightScale: 0.25
+    normalMapFilter: 0
+    flipGreenChannel: 0
+  isReadable: 0
+  streamingMipmaps: 0
+  streamingMipmapsPriority: 0
+  vTOnly: 0
+  ignoreMipmapLimit: 0
+  grayScaleToAlpha: 0
+  generateCubemap: 6
+  cubemapConvolution: 0
+  seamlessCubemap: 0
+  textureFormat: 1
+  maxTextureSize: 2048
+  textureSettings:
+    serializedVersion: 2
+    filterMode: 1
+    aniso: 1
+    mipBias: 0
+    wrapU: 1
+    wrapV: 1
+    wrapW: 1
+  nPOTScale: 0
+  lightmap: 0
+  compressionQuality: 50
+  spriteMode: 2
+  spriteExtrude: 1
+  spriteMeshType: 1
+  alignment: 0
+  spritePivot: {x: 0.5, y: 0.5}
+  spritePixelsToUnits: 100
+  spriteBorder: {x: 0, y: 0, z: 0, w: 0}
+  spriteGenerateFallbackPhysicsShape: 1
+  alphaUsage: 1
+  alphaIsTransparency: 1
+  spriteTessellationDetail: -1
+  textureType: 8
+  textureShape: 1
+  singleChannelComponent: 0
+  flipbookRows: 1
+  flipbookColumns: 1
+  maxTextureSizeSet: 0
+  compressionQualitySet: 0
+  textureFormatSet: 0
+  ignorePngGamma: 0
+  applyGammaDecoding: 0
+  swizzle: 50462976
+  cookieLightType: 0
+  platformSettings:
+  - serializedVersion: 4
+    buildTarget: DefaultTexturePlatform
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: Standalone
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: Android
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: WindowsStoreApps
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  spriteSheet:
+    serializedVersion: 2
+    sprites:
+    - serializedVersion: 2
+      name: sky_b_0
+      rect:
+        serializedVersion: 2
+        x: 0
+        y: 0
+        width: 2172
+        height: 724
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: e415151a16be81a10800000000000000
+      internalID: 1880511648977998158
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: sky_b_1
+      rect:
+        serializedVersion: 2
+        x: 16
+        y: 112
+        width: 70
+        height: 51
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 37a37eee28f9643f0800000000000000
+      internalID: -916870089420621197
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: sky_b_2
+      rect:
+        serializedVersion: 2
+        x: 86
+        y: 95
+        width: 38
+        height: 44
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 5cf0bab84c75582d0800000000000000
+      internalID: -3277116652173717563
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: sky_b_3
+      rect:
+        serializedVersion: 2
+        x: 263
+        y: 127
+        width: 26
+        height: 20
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 4f2c65d2cb83f72c0800000000000000
+      internalID: -4431761127443610892
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: sky_b_4
+      rect:
+        serializedVersion: 2
+        x: 328
+        y: 124
+        width: 9
+        height: 13
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: d3e119db432c992a0800000000000000
+      internalID: -6730134636354003395
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: sky_b_5
+      rect:
+        serializedVersion: 2
+        x: 529
+        y: 136
+        width: 9
+        height: 9
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: b02a7565832c1b660800000000000000
+      internalID: 7399909209968976395
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: sky_b_6
+      rect:
+        serializedVersion: 2
+        x: 618
+        y: 136
+        width: 11
+        height: 9
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: f6cf6cc63528e67c0800000000000000
+      internalID: -4076177317904843665
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: sky_b_7
+      rect:
+        serializedVersion: 2
+        x: 684
+        y: 134
+        width: 15
+        height: 13
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: e1b273a46f7615950800000000000000
+      internalID: 6436039649993894686
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: sky_b_8
+      rect:
+        serializedVersion: 2
+        x: 700
+        y: 130
+        width: 7
+        height: 12
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: fdd086890032481b0800000000000000
+      internalID: -5655356746606572065
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: sky_b_9
+      rect:
+        serializedVersion: 2
+        x: 714
+        y: 132
+        width: 11
+        height: 15
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: c7e866d19a8579960800000000000000
+      internalID: 7608647578831720060
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: sky_b_10
+      rect:
+        serializedVersion: 2
+        x: 762
+        y: 136
+        width: 9
+        height: 11
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 4c58ebfdb4a4e8f10800000000000000
+      internalID: 2273836551605487044
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: sky_b_11
+      rect:
+        serializedVersion: 2
+        x: 833
+        y: 134
+        width: 19
+        height: 25
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 71262388c892c22c0800000000000000
+      internalID: -4455140247819099625
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: sky_b_12
+      rect:
+        serializedVersion: 2
+        x: 883
+        y: 91
+        width: 43
+        height: 52
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 8ce8d7c79497e4d00800000000000000
+      internalID: 958837127204671176
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: sky_b_13
+      rect:
+        serializedVersion: 2
+        x: 901
+        y: 136
+        width: 27
+        height: 29
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 33789d65a31c9d330800000000000000
+      internalID: 3736229822189897523
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: sky_b_14
+      rect:
+        serializedVersion: 2
+        x: 927
+        y: 128
+        width: 43
+        height: 47
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 5bc8d48828ee1f2b0800000000000000
+      internalID: -5552394621171168075
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: sky_b_15
+      rect:
+        serializedVersion: 2
+        x: 1090
+        y: 106
+        width: 27
+        height: 33
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 87afd4ee4010eff60800000000000000
+      internalID: 8069888702984092280
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: sky_b_16
+      rect:
+        serializedVersion: 2
+        x: 1112
+        y: 65
+        width: 37
+        height: 90
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: d1b96e9c08c80a000800000000000000
+      internalID: 45190481044740893
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: sky_b_17
+      rect:
+        serializedVersion: 2
+        x: 1169
+        y: 124
+        width: 19
+        height: 17
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 0ca07c011c29f5890800000000000000
+      internalID: -7467088299249169728
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: sky_b_18
+      rect:
+        serializedVersion: 2
+        x: 1468
+        y: 118
+        width: 12
+        height: 22
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: ba747c074ee66f930800000000000000
+      internalID: 4176647631856420779
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: sky_b_19
+      rect:
+        serializedVersion: 2
+        x: 1510
+        y: 134
+        width: 11
+        height: 12
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 8d9a6221683811af0800000000000000
+      internalID: -427415877770106408
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: sky_b_20
+      rect:
+        serializedVersion: 2
+        x: 1727
+        y: 126
+        width: 23
+        height: 45
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 3ceaf935c39d947b0800000000000000
+      internalID: -5239417838344622397
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: sky_b_21
+      rect:
+        serializedVersion: 2
+        x: 1774
+        y: 127
+        width: 11
+        height: 11
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 6737b09e67d9f0380800000000000000
+      internalID: -9002803996048788618
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: sky_b_22
+      rect:
+        serializedVersion: 2
+        x: 1880
+        y: 134
+        width: 14
+        height: 13
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 4e25b9fb5e5cfc6e0800000000000000
+      internalID: -1815014534254210332
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: sky_b_23
+      rect:
+        serializedVersion: 2
+        x: 2146
+        y: 109
+        width: 26
+        height: 40
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 9bd46cef1783c4080800000000000000
+      internalID: -9201917876367897159
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: sky_b_24
+      rect:
+        serializedVersion: 2
+        x: 947
+        y: 79
+        width: 86
+        height: 52
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 58dd7c7c59de1a950800000000000000
+      internalID: 6458704568183676293
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: sky_b_25
+      rect:
+        serializedVersion: 2
+        x: 1086
+        y: 114
+        width: 9
+        height: 16
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 39de79db90701dd70800000000000000
+      internalID: 9066035263290469779
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: sky_b_26
+      rect:
+        serializedVersion: 2
+        x: 1165
+        y: 128
+        width: 6
+        height: 6
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 03853cfcbd12ba460800000000000000
+      internalID: 7253928852777556016
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: sky_b_27
+      rect:
+        serializedVersion: 2
+        x: 1474
+        y: 124
+        width: 7
+        height: 9
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 18874538e77dd50f0800000000000000
+      internalID: -1126507393403553663
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: sky_b_28
+      rect:
+        serializedVersion: 2
+        x: 1848
+        y: 47
+        width: 84
+        height: 83
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 31d5af7ad7db98d00800000000000000
+      internalID: 975519141689187603
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: sky_b_29
+      rect:
+        serializedVersion: 2
+        x: 2083
+        y: 119
+        width: 20
+        height: 15
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: d74dac0cb56430060800000000000000
+      internalID: 6918450812461700221
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: sky_b_30
+      rect:
+        serializedVersion: 2
+        x: 157
+        y: 90
+        width: 19
+        height: 25
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 9b015e047ecc058e0800000000000000
+      internalID: -1706638965175152455
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: sky_b_31
+      rect:
+        serializedVersion: 2
+        x: 175
+        y: 95
+        width: 9
+        height: 20
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: c0125036e8d000330800000000000000
+      internalID: 3674952201132122380
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: sky_b_32
+      rect:
+        serializedVersion: 2
+        x: 189
+        y: 108
+        width: 21
+        height: 17
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 5b1e469354ed21b40800000000000000
+      internalID: 5409630491322409397
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: sky_b_33
+      rect:
+        serializedVersion: 2
+        x: 207
+        y: 112
+        width: 9
+        height: 9
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: a59bb393cb2f645b0800000000000000
+      internalID: -5384349414246860454
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: sky_b_34
+      rect:
+        serializedVersion: 2
+        x: 312
+        y: 114
+        width: 9
+        height: 10
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 469029229a6233370800000000000000
+      internalID: 8301021046045280612
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: sky_b_35
+      rect:
+        serializedVersion: 2
+        x: 335
+        y: 110
+        width: 16
+        height: 16
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 3925254949a7d4130800000000000000
+      internalID: 3552630459627360915
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: sky_b_36
+      rect:
+        serializedVersion: 2
+        x: 386
+        y: 99
+        width: 15
+        height: 18
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 2e821947ccf9059d0800000000000000
+      internalID: -2787552468864522014
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: sky_b_37
+      rect:
+        serializedVersion: 2
+        x: 1064
+        y: 106
+        width: 7
+        height: 8
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: dbd5e43bbd5c79db0800000000000000
+      internalID: -4785138531661095491
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: sky_b_38
+      rect:
+        serializedVersion: 2
+        x: 1148
+        y: 77
+        width: 44
+        height: 38
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: c1d66d61f171d51f0800000000000000
+      internalID: -1054661315440251620
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: sky_b_39
+      rect:
+        serializedVersion: 2
+        x: 2057
+        y: 95
+        width: 18
+        height: 26
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 0ebc814546f638de0800000000000000
+      internalID: -1332098588073210912
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: sky_b_40
+      rect:
+        serializedVersion: 2
+        x: 119
+        y: 89
+        width: 19
+        height: 19
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: d3b13a193cb986fd0800000000000000
+      internalID: -2348455941409400003
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: sky_b_41
+      rect:
+        serializedVersion: 2
+        x: 189
+        y: 65
+        width: 27
+        height: 41
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 714a08a2540dbf020800000000000000
+      internalID: 2376722223852463127
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: sky_b_42
+      rect:
+        serializedVersion: 2
+        x: 216
+        y: 96
+        width: 8
+        height: 12
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: e276c54a9556f06c0800000000000000
+      internalID: -4175006893865146578
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: sky_b_43
+      rect:
+        serializedVersion: 2
+        x: 247
+        y: 95
+        width: 12
+        height: 15
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: d37dcf41794735380800000000000000
+      internalID: -8983708639433009347
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: sky_b_44
+      rect:
+        serializedVersion: 2
+        x: 658
+        y: 73
+        width: 41
+        height: 33
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 41a9f559798b0a120800000000000000
+      internalID: 2423139560710969876
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: sky_b_45
+      rect:
+        serializedVersion: 2
+        x: 700
+        y: 85
+        width: 7
+        height: 13
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 59bcbcdc9d5771830800000000000000
+      internalID: 4041828768909347733
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: sky_b_46
+      rect:
+        serializedVersion: 2
+        x: 738
+        y: 82
+        width: 15
+        height: 25
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: f50c39824a76ee980800000000000000
+      internalID: -8507748691303219105
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: sky_b_47
+      rect:
+        serializedVersion: 2
+        x: 823
+        y: 95
+        width: 12
+        height: 12
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: a17455482228c8350800000000000000
+      internalID: 6020329886648190746
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: sky_b_48
+      rect:
+        serializedVersion: 2
+        x: 1046
+        y: 73
+        width: 23
+        height: 27
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: c5b44d463039fe4a0800000000000000
+      internalID: -6561864489269703844
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: sky_b_49
+      rect:
+        serializedVersion: 2
+        x: 1064
+        y: 93
+        width: 15
+        height: 15
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: d27600bd7a0da1040800000000000000
+      internalID: 4619233787174217517
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: sky_b_50
+      rect:
+        serializedVersion: 2
+        x: 1237
+        y: 59
+        width: 31
+        height: 44
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: e71c07a54398bda70800000000000000
+      internalID: 8852820350475485566
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: sky_b_51
+      rect:
+        serializedVersion: 2
+        x: 1818
+        y: 95
+        width: 17
+        height: 18
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 163f6f72a92b7cf60800000000000000
+      internalID: 8054602833740624737
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: sky_b_52
+      rect:
+        serializedVersion: 2
+        x: 1931
+        y: 87
+        width: 9
+        height: 11
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 016566442b8295750800000000000000
+      internalID: 6294106700343825936
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: sky_b_53
+      rect:
+        serializedVersion: 2
+        x: 1995
+        y: 95
+        width: 15
+        height: 12
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: a904dc0aa3d683c80800000000000000
+      internalID: -8342798211130507110
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: sky_b_54
+      rect:
+        serializedVersion: 2
+        x: 2009
+        y: 92
+        width: 13
+        height: 15
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 999033afdd8fc4e30800000000000000
+      internalID: 4489236560850651545
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: sky_b_55
+      rect:
+        serializedVersion: 2
+        x: 2033
+        y: 95
+        width: 11
+        height: 14
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 0e11b0fb4cf4951e0800000000000000
+      internalID: -2208646435811159584
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: sky_b_56
+      rect:
+        serializedVersion: 2
+        x: 2073
+        y: 96
+        width: 6
+        height: 9
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: f021de90469788e60800000000000000
+      internalID: 7964749411574944271
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: sky_b_57
+      rect:
+        serializedVersion: 2
+        x: 255
+        y: 57
+        width: 34
+        height: 30
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 3fd0361acd9ba7b00800000000000000
+      internalID: 827177838827474419
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: sky_b_58
+      rect:
+        serializedVersion: 2
+        x: 633
+        y: 79
+        width: 6
+        height: 9
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 3d2951db557620ed0800000000000000
+      internalID: -2449281629393939757
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: sky_b_59
+      rect:
+        serializedVersion: 2
+        x: 638
+        y: 84
+        width: 7
+        height: 7
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 8061b9ab1bbb50c30800000000000000
+      internalID: 4325069389173560840
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: sky_b_60
+      rect:
+        serializedVersion: 2
+        x: 748
+        y: 54
+        width: 45
+        height: 31
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 8ff2ecc28d29f6720800000000000000
+      internalID: 2841651347056373752
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: sky_b_61
+      rect:
+        serializedVersion: 2
+        x: 1003
+        y: 79
+        width: 12
+        height: 12
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: b1fbad2912f30bbf0800000000000000
+      internalID: -310678960858284261
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: sky_b_62
+      rect:
+        serializedVersion: 2
+        x: 1046
+        y: 79
+        width: 7
+        height: 8
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 4e9fa8cf01744d160800000000000000
+      internalID: 7049337455023684068
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: sky_b_63
+      rect:
+        serializedVersion: 2
+        x: 1102
+        y: 77
+        width: 12
+        height: 14
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 14dfd110808484440800000000000000
+      internalID: 4920261792117947713
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: sky_b_64
+      rect:
+        serializedVersion: 2
+        x: 1536
+        y: 59
+        width: 24
+        height: 34
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 6d288fd98dcb49b40800000000000000
+      internalID: 5446185487947039446
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: sky_b_65
+      rect:
+        serializedVersion: 2
+        x: 706
+        y: 65
+        width: 15
+        height: 12
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 0612da38075704690800000000000000
+      internalID: -7619961443404930720
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: sky_b_66
+      rect:
+        serializedVersion: 2
+        x: 800
+        y: 75
+        width: 6
+        height: 8
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 750368210ab4ea7f0800000000000000
+      internalID: -599458549516062633
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: sky_b_67
+      rect:
+        serializedVersion: 2
+        x: 1003
+        y: 65
+        width: 6
+        height: 10
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 03577bf80470bab80800000000000000
+      internalID: -8382598307549579984
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: sky_b_68
+      rect:
+        serializedVersion: 2
+        x: 1020
+        y: 61
+        width: 13
+        height: 21
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 84586886a728645b0800000000000000
+      internalID: -5384472842223581880
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: sky_b_69
+      rect:
+        serializedVersion: 2
+        x: 1036
+        y: 71
+        width: 11
+        height: 12
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 98116eeff2ad9e740800000000000000
+      internalID: 5181912745941275017
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: sky_b_70
+      rect:
+        serializedVersion: 2
+        x: 1166
+        y: 65
+        width: 10
+        height: 10
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 140ed93aa4bc22900800000000000000
+      internalID: 658312016982564929
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: sky_b_71
+      rect:
+        serializedVersion: 2
+        x: 1347
+        y: 67
+        width: 8
+        height: 8
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 3d4e18afd4fe01420800000000000000
+      internalID: 2598840103187113171
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: sky_b_72
+      rect:
+        serializedVersion: 2
+        x: 1351
+        y: 62
+        width: 16
+        height: 13
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 33866a28f8c0dcc60800000000000000
+      internalID: 7839936336833701939
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: sky_b_73
+      rect:
+        serializedVersion: 2
+        x: 1384
+        y: 61
+        width: 9
+        height: 14
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: a2ca520a8d864d730800000000000000
+      internalID: 4022955646757743658
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: sky_b_74
+      rect:
+        serializedVersion: 2
+        x: 185
+        y: 67
+        width: 7
+        height: 7
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: f16ab6eba7cc94540800000000000000
+      internalID: 4992746489469707807
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: sky_b_75
+      rect:
+        serializedVersion: 2
+        x: 790
+        y: 67
+        width: 7
+        height: 7
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: df154ec763f8fbde0800000000000000
+      internalID: -1315175101982551555
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: sky_b_76
+      rect:
+        serializedVersion: 2
+        x: 794
+        y: 65
+        width: 10
+        height: 7
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: a4e8ff5534415b750800000000000000
+      internalID: 6319979931522534986
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: sky_b_77
+      rect:
+        serializedVersion: 2
+        x: 810
+        y: 63
+        width: 8
+        height: 9
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: fe3ed6795180c4380800000000000000
+      internalID: -8985798267683085329
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: sky_b_78
+      rect:
+        serializedVersion: 2
+        x: 1311
+        y: 63
+        width: 9
+        height: 10
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 2b53d0cc1daf5dcd0800000000000000
+      internalID: -2533843436347509326
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: sky_b_79
+      rect:
+        serializedVersion: 2
+        x: 1382
+        y: 47
+        width: 23
+        height: 22
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 066f15cddb9ada6f0800000000000000
+      internalID: -671694136498063776
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: sky_b_80
+      rect:
+        serializedVersion: 2
+        x: 1772
+        y: 49
+        width: 23
+        height: 20
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: f427f33964f204060800000000000000
+      internalID: 6935595406315188815
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: sky_b_81
+      rect:
+        serializedVersion: 2
+        x: 233
+        y: 51
+        width: 11
+        height: 15
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 32347c986b11407d0800000000000000
+      internalID: -2953215979954945245
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: sky_b_82
+      rect:
+        serializedVersion: 2
+        x: 273
+        y: 49
+        width: 10
+        height: 9
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: fcb0524624cf14ee0800000000000000
+      internalID: -1278463457118319665
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: sky_b_83
+      rect:
+        serializedVersion: 2
+        x: 764
+        y: 45
+        width: 7
+        height: 13
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: e018745cc5e9ce4a0800000000000000
+      internalID: -6562696435701677810
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: sky_b_84
+      rect:
+        serializedVersion: 2
+        x: 770
+        y: 34
+        width: 17
+        height: 24
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 44f949d312c5890a0800000000000000
+      internalID: -6874643533344235708
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: sky_b_85
+      rect:
+        serializedVersion: 2
+        x: 845
+        y: 45
+        width: 19
+        height: 17
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 6d0a9127e0872aa10800000000000000
+      internalID: 1919228394652410070
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: sky_b_86
+      rect:
+        serializedVersion: 2
+        x: 861
+        y: 39
+        width: 7
+        height: 16
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: da6449f434756da80800000000000000
+      internalID: -8442464504849873235
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: sky_b_87
+      rect:
+        serializedVersion: 2
+        x: 911
+        y: 51
+        width: 7
+        height: 7
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 90d2a1957f20ca970800000000000000
+      internalID: 8767385835958578441
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: sky_b_88
+      rect:
+        serializedVersion: 2
+        x: 923
+        y: 45
+        width: 11
+        height: 13
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 7e259ae23a568a4a0800000000000000
+      internalID: -6581899103865056537
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: sky_b_89
+      rect:
+        serializedVersion: 2
+        x: 959
+        y: 49
+        width: 15
+        height: 13
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 1b7c3fb9e14c345b0800000000000000
+      internalID: -5385245093660473423
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: sky_b_90
+      rect:
+        serializedVersion: 2
+        x: 973
+        y: 49
+        width: 12
+        height: 15
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 2812b1581f3bf4af0800000000000000
+      internalID: -409911191165787774
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: sky_b_91
+      rect:
+        serializedVersion: 2
+        x: 1014
+        y: 47
+        width: 15
+        height: 19
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 73e3c21ddc451fca0800000000000000
+      internalID: -5984909186844312009
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: sky_b_92
+      rect:
+        serializedVersion: 2
+        x: 1034
+        y: 15
+        width: 69
+        height: 41
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 3f244edc9d8f840e0800000000000000
+      internalID: -2285303196544646413
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: sky_b_93
+      rect:
+        serializedVersion: 2
+        x: 1142
+        y: 47
+        width: 9
+        height: 9
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 1e959f11c08b365f0800000000000000
+      internalID: -764565149742179871
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: sky_b_94
+      rect:
+        serializedVersion: 2
+        x: 1158
+        y: 47
+        width: 8
+        height: 7
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: cb44d187b3235cb80800000000000000
+      internalID: -8375232701025925956
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: sky_b_95
+      rect:
+        serializedVersion: 2
+        x: 1259
+        y: 47
+        width: 13
+        height: 19
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 7b0fb5d47cb43a190800000000000000
+      internalID: -7952429197637717833
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: sky_b_96
+      rect:
+        serializedVersion: 2
+        x: 1277
+        y: 39
+        width: 11
+        height: 12
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: f5a08b4be935d8010800000000000000
+      internalID: 1192701417424947807
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: sky_b_97
+      rect:
+        serializedVersion: 2
+        x: 1619
+        y: 49
+        width: 13
+        height: 11
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: e4ca8ad647ac8b220800000000000000
+      internalID: 2501972194409098318
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: sky_b_98
+      rect:
+        serializedVersion: 2
+        x: 1738
+        y: 43
+        width: 35
+        height: 23
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: c582e570b7beb1290800000000000000
+      internalID: -7918476606163769252
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: sky_b_99
+      rect:
+        serializedVersion: 2
+        x: 376
+        y: 0
+        width: 110
+        height: 50
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 3b8f6bc5814472e30800000000000000
+      internalID: 4478623225868646579
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: sky_b_100
+      rect:
+        serializedVersion: 2
+        x: 505
+        y: 16
+        width: 15
+        height: 23
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 23dc17f5c7dde5780800000000000000
+      internalID: -8692266704531501774
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: sky_b_101
+      rect:
+        serializedVersion: 2
+        x: 571
+        y: 21
+        width: 17
+        height: 15
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: f653bbded02e432f0800000000000000
+      internalID: -993921068291115665
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: sky_b_102
+      rect:
+        serializedVersion: 2
+        x: 782
+        y: 15
+        width: 24
+        height: 22
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 8d3b610de08aaef70800000000000000
+      internalID: 9217364368941298648
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: sky_b_103
+      rect:
+        serializedVersion: 2
+        x: 816
+        y: 9
+        width: 34
+        height: 31
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 2f17fd59aabddab60800000000000000
+      internalID: 7759099258734604786
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: sky_b_104
+      rect:
+        serializedVersion: 2
+        x: 1022
+        y: 33
+        width: 7
+        height: 8
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: f02618b4bd126f260800000000000000
+      internalID: 7130924285736083983
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: sky_b_105
+      rect:
+        serializedVersion: 2
+        x: 1090
+        y: 25
+        width: 25
+        height: 21
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: d9c66f65c6a3ff4c0800000000000000
+      internalID: -4251615286224589667
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: sky_b_106
+      rect:
+        serializedVersion: 2
+        x: 1139
+        y: 29
+        width: 6
+        height: 7
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: d6b6bdc0f988131a0800000000000000
+      internalID: -6831528943047447699
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: sky_b_107
+      rect:
+        serializedVersion: 2
+        x: 1140
+        y: 15
+        width: 38
+        height: 33
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 55b1df757d46b2470800000000000000
+      internalID: 8370895208455150421
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: sky_b_108
+      rect:
+        serializedVersion: 2
+        x: 1178
+        y: 25
+        width: 16
+        height: 18
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 9728b57a731dec0f0800000000000000
+      internalID: -1094707622443253127
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: sky_b_109
+      rect:
+        serializedVersion: 2
+        x: 1565
+        y: 15
+        width: 31
+        height: 25
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 350c39691a400c400800000000000000
+      internalID: 342278663742668883
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: sky_b_110
+      rect:
+        serializedVersion: 2
+        x: 1703
+        y: 15
+        width: 16
+        height: 19
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: a582c53ec3deede40800000000000000
+      internalID: 5683240625556432986
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: sky_b_111
+      rect:
+        serializedVersion: 2
+        x: 336
+        y: 15
+        width: 17
+        height: 14
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: ccfa9af9798f5fc10800000000000000
+      internalID: 2086847332458541004
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: sky_b_112
+      rect:
+        serializedVersion: 2
+        x: 351
+        y: 15
+        width: 12
+        height: 11
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 9a574968d0c294e00800000000000000
+      internalID: 1029402426434942377
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: sky_b_113
+      rect:
+        serializedVersion: 2
+        x: 555
+        y: 15
+        width: 13
+        height: 15
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 3343e4d65b059f7d0800000000000000
+      internalID: -2884185346200947661
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: sky_b_114
+      rect:
+        serializedVersion: 2
+        x: 567
+        y: 19
+        width: 8
+        height: 10
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 8b7587ed6c249aa10800000000000000
+      internalID: 1921140137953613752
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: sky_b_115
+      rect:
+        serializedVersion: 2
+        x: 925
+        y: 17
+        width: 7
+        height: 9
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: b4878c5ce862a5d00800000000000000
+      internalID: 962123865042483275
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: sky_b_116
+      rect:
+        serializedVersion: 2
+        x: 939
+        y: 12
+        width: 50
+        height: 20
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: e2bdf56c5f6875d20800000000000000
+      internalID: 3267228444833864494
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: sky_b_117
+      rect:
+        serializedVersion: 2
+        x: 1102
+        y: 17
+        width: 7
+        height: 9
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: be0ae344dce8c5f20800000000000000
+      internalID: 3412759629904388331
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: sky_b_118
+      rect:
+        serializedVersion: 2
+        x: 1231
+        y: 15
+        width: 7
+        height: 9
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 5e5401cce6e4d02e0800000000000000
+      internalID: -2157982408663611931
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: sky_b_119
+      rect:
+        serializedVersion: 2
+        x: 1261
+        y: 13
+        width: 9
+        height: 18
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 777f77d37c05c5230800000000000000
+      internalID: 3628864216413763447
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: sky_b_120
+      rect:
+        serializedVersion: 2
+        x: 1295
+        y: 15
+        width: 9
+        height: 11
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 36cf2865b0e4f8f70800000000000000
+      internalID: 9191651175089503331
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: sky_b_121
+      rect:
+        serializedVersion: 2
+        x: 1696
+        y: 18
+        width: 8
+        height: 9
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: d473d1afd56c15c30800000000000000
+      internalID: 4346473222319716173
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: sky_b_122
+      rect:
+        serializedVersion: 2
+        x: 1359
+        y: 8
+        width: 6
+        height: 8
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: ea95b8b07cf853d60800000000000000
+      internalID: 7869354008954755502
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    outline: []
+    customData: 
+    physicsShape: []
+    bones: []
+    spriteID: 
+    internalID: 0
+    vertices: []
+    indices: 
+    edges: []
+    weights: []
+    secondaryTextures: []
+    spriteCustomMetadata:
+      entries: []
+    nameFileIdTable:
+      sky_b_0: 1880511648977998158
+      sky_b_1: -916870089420621197
+      sky_b_10: 2273836551605487044
+      sky_b_100: -8692266704531501774
+      sky_b_101: -993921068291115665
+      sky_b_102: 9217364368941298648
+      sky_b_103: 7759099258734604786
+      sky_b_104: 7130924285736083983
+      sky_b_105: -4251615286224589667
+      sky_b_106: -6831528943047447699
+      sky_b_107: 8370895208455150421
+      sky_b_108: -1094707622443253127
+      sky_b_109: 342278663742668883
+      sky_b_11: -4455140247819099625
+      sky_b_110: 5683240625556432986
+      sky_b_111: 2086847332458541004
+      sky_b_112: 1029402426434942377
+      sky_b_113: -2884185346200947661
+      sky_b_114: 1921140137953613752
+      sky_b_115: 962123865042483275
+      sky_b_116: 3267228444833864494
+      sky_b_117: 3412759629904388331
+      sky_b_118: -2157982408663611931
+      sky_b_119: 3628864216413763447
+      sky_b_12: 958837127204671176
+      sky_b_120: 9191651175089503331
+      sky_b_121: 4346473222319716173
+      sky_b_122: 7869354008954755502
+      sky_b_13: 3736229822189897523
+      sky_b_14: -5552394621171168075
+      sky_b_15: 8069888702984092280
+      sky_b_16: 45190481044740893
+      sky_b_17: -7467088299249169728
+      sky_b_18: 4176647631856420779
+      sky_b_19: -427415877770106408
+      sky_b_2: -3277116652173717563
+      sky_b_20: -5239417838344622397
+      sky_b_21: -9002803996048788618
+      sky_b_22: -1815014534254210332
+      sky_b_23: -9201917876367897159
+      sky_b_24: 6458704568183676293
+      sky_b_25: 9066035263290469779
+      sky_b_26: 7253928852777556016
+      sky_b_27: -1126507393403553663
+      sky_b_28: 975519141689187603
+      sky_b_29: 6918450812461700221
+      sky_b_3: -4431761127443610892
+      sky_b_30: -1706638965175152455
+      sky_b_31: 3674952201132122380
+      sky_b_32: 5409630491322409397
+      sky_b_33: -5384349414246860454
+      sky_b_34: 8301021046045280612
+      sky_b_35: 3552630459627360915
+      sky_b_36: -2787552468864522014
+      sky_b_37: -4785138531661095491
+      sky_b_38: -1054661315440251620
+      sky_b_39: -1332098588073210912
+      sky_b_4: -6730134636354003395
+      sky_b_40: -2348455941409400003
+      sky_b_41: 2376722223852463127
+      sky_b_42: -4175006893865146578
+      sky_b_43: -8983708639433009347
+      sky_b_44: 2423139560710969876
+      sky_b_45: 4041828768909347733
+      sky_b_46: -8507748691303219105
+      sky_b_47: 6020329886648190746
+      sky_b_48: -6561864489269703844
+      sky_b_49: 4619233787174217517
+      sky_b_5: 7399909209968976395
+      sky_b_50: 8852820350475485566
+      sky_b_51: 8054602833740624737
+      sky_b_52: 6294106700343825936
+      sky_b_53: -8342798211130507110
+      sky_b_54: 4489236560850651545
+      sky_b_55: -2208646435811159584
+      sky_b_56: 7964749411574944271
+      sky_b_57: 827177838827474419
+      sky_b_58: -2449281629393939757
+      sky_b_59: 4325069389173560840
+      sky_b_6: -4076177317904843665
+      sky_b_60: 2841651347056373752
+      sky_b_61: -310678960858284261
+      sky_b_62: 7049337455023684068
+      sky_b_63: 4920261792117947713
+      sky_b_64: 5446185487947039446
+      sky_b_65: -7619961443404930720
+      sky_b_66: -599458549516062633
+      sky_b_67: -8382598307549579984
+      sky_b_68: -5384472842223581880
+      sky_b_69: 5181912745941275017
+      sky_b_7: 6436039649993894686
+      sky_b_70: 658312016982564929
+      sky_b_71: 2598840103187113171
+      sky_b_72: 7839936336833701939
+      sky_b_73: 4022955646757743658
+      sky_b_74: 4992746489469707807
+      sky_b_75: -1315175101982551555
+      sky_b_76: 6319979931522534986
+      sky_b_77: -8985798267683085329
+      sky_b_78: -2533843436347509326
+      sky_b_79: -671694136498063776
+      sky_b_8: -5655356746606572065
+      sky_b_80: 6935595406315188815
+      sky_b_81: -2953215979954945245
+      sky_b_82: -1278463457118319665
+      sky_b_83: -6562696435701677810
+      sky_b_84: -6874643533344235708
+      sky_b_85: 1919228394652410070
+      sky_b_86: -8442464504849873235
+      sky_b_87: 8767385835958578441
+      sky_b_88: -6581899103865056537
+      sky_b_89: -5385245093660473423
+      sky_b_9: 7608647578831720060
+      sky_b_90: -409911191165787774
+      sky_b_91: -5984909186844312009
+      sky_b_92: -2285303196544646413
+      sky_b_93: -764565149742179871
+      sky_b_94: -8375232701025925956
+      sky_b_95: -7952429197637717833
+      sky_b_96: 1192701417424947807
+      sky_b_97: 2501972194409098318
+      sky_b_98: -7918476606163769252
+      sky_b_99: 4478623225868646579
+  mipmapLimitGroupName: 
+  pSDRemoveMatte: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
