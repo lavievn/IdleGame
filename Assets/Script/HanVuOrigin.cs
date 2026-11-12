@@ -162,6 +162,8 @@ namespace TuTienCore
             if (!root.TryGetValue("originStory", out var token) || token == "null") return true;
             if (!CultivationSaveJson.TryObject(token, out var fields, out _) ||
                 !ReadInteger(fields, "version", out int version)) return false;
+            foreach (var name in fields.Keys)
+                if (typeof(OriginStoryState).GetField(name) == null) return false;
             if (version == 0)
                 return !fields.TryGetValue("originId", out var empty) || empty == "null" ||
                     CultivationSaveJson.TryString(empty, out var id) && string.IsNullOrEmpty(id);
@@ -200,7 +202,7 @@ namespace TuTienCore
             fields.TryGetValue(name, out var token) && (token == "true" || token == "false");
         private static bool ReadActor(Dictionary<string, string> fields, string name) =>
             fields.TryGetValue(name, out var token) && CultivationSaveJson.TryObject(token, out var actor, out _) &&
-            ReadText(actor, "id") && ReadText(actor, "name") && ReadInteger(actor, "gender", out _) && ReadInteger(actor, "race", out _);
+            actor.Count == 4 && ReadText(actor, "id") && ReadText(actor, "name") && ReadInteger(actor, "gender", out _) && ReadInteger(actor, "race", out _);
 
         private static bool ReadEncounters(string token)
         {
@@ -226,7 +228,7 @@ namespace TuTienCore
                     string item = token.Substring(start, i - start).Trim();
                     if (item.Length == 0) return start == 1 && c == ']';
                     if (!CultivationSaveJson.TryObject(item, out var record, out _) ||
-                        !ReadText(record, "id") || !ReadInteger(record, "choice", out _)) return false;
+                        record.Count != 2 || !ReadText(record, "id") || !ReadInteger(record, "choice", out _)) return false;
                     start = i + 1;
                 }
                 else if (c == '{' || c == '[') depth++;
