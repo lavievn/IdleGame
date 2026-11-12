@@ -22,7 +22,8 @@ public static class ExperienceProgress
     public static bool TryRead(string component, out ExperienceSnapshot snapshot)
     {
         snapshot = null;
-        if (string.IsNullOrEmpty(component)) { snapshot = new ExperienceSnapshot(); return true; }
+        if (component == null) return false;
+        if (component.Length == 0) { snapshot = new ExperienceSnapshot(); return true; }
         if (!CultivationSaveJson.TryObject(component, out var fields, out _) || fields.Count != 4 ||
             !fields.TryGetValue("version", out var version) || version != "1" ||
             !fields.TryGetValue("reserve", out var amount) || !CultivationSaveJson.TryString(amount, out var reserve) ||

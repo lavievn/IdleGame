@@ -12,6 +12,7 @@
     "overlap": [
       "Assets/DataScript/EntityDataSO.cs",
       "Assets/Script/CombatManager.cs",
+      "Assets/Script/MainGameFoundationProbe.cs",
       "Assets/Script/SaveManager.cs",
       "Tests~/run.sh"
     ]
@@ -22,6 +23,7 @@
     "sha": "c00dae628a7ea47ca18b9b16dfd13bd86fd9b216",
     "overlap": [
       "Assets/DataScript/EntityDataSO.cs",
+      "Assets/Script/MainGameFoundationProbe.cs",
       "Assets/Script/SaveManager.cs"
     ]
   },
@@ -32,6 +34,7 @@
     "overlap": [
       "Assets/DataScript/EntityDataSO.cs",
       "Assets/Script/CombatManager.cs",
+      "Assets/Script/MainGameFoundationProbe.cs",
       "Assets/Script/SaveManager.cs",
       "Tests~/run.sh"
     ]

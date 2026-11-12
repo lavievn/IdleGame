@@ -129,7 +129,7 @@ partial class MotionRegression
             var h=HeroAt(9);h.currentExp=17;h.experienceJson=component;Check(Bank(h)==0 && h.currentExp==17 && h.currentLevel==9,"no migration of EXP");
         });
         Run("EXP future malformed negative partial and typed payloads fail closed",()=>{
-            foreach(string component in new[]{"{\"version\":99}","{\"version\":1}",
+            foreach(string component in new[]{null,"{\"version\":99}","{\"version\":1}",
                 "{\"version\":1,\"reserve\":\"-1\",\"lastReleaseAttempt\":\"\",\"lastReleaseRealm\":\"\"}",
                 "{\"version\":1,\"reserve\":42,\"lastReleaseAttempt\":\"\",\"lastReleaseRealm\":\"\"}",
                 "{\"version\":1,\"reserve\":\"01\",\"lastReleaseAttempt\":\"\",\"lastReleaseRealm\":\"\"}",
