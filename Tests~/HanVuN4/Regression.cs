@@ -306,6 +306,7 @@ partial class MotionRegression
                 for(int frame=0;frame<5;frame++)Check(binding.Advance(f.Hero,frame,.1,false,f.Hero.worldMapId)==CultivationReason.None,"live Qi");
                 f.Hero.worldClimate = WorldClimateState.AtDawn(351);
                 f.Hero.worldClimate.day = 2;
+                f.Hero.worldClimate.dayFraction = 0.375;
                 f.Hero.experienceJson = ExperienceProgress.Capture(new ExperienceSnapshot { reserve = "1100" });
                 f.Hero.AddExp(250);EquipmentInventory.Add(f.Hero,EquipmentRefinement.MaterialId,3);f.Hero.mapVisits++;
                 var bag=f.Hero.inventory;var gear=f.Hero.equipmentItems;var skills=f.Hero.combatSkills;
