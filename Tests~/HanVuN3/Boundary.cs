@@ -21,6 +21,15 @@ public partial class GameManager : MonoBehaviour
     public bool IsGameplayHUDVisible = true;
     public bool HasTribulationLiability;
     public int CommitObservations;
+#if !HANVU_N4_TESTS
+    // Persistence boundary only: N3 continues testing real host/UI/domain code.
+    readonly N3SaveBoundary saveManager = new N3SaveBoundary();
+    void UpdateEventLog(string message) { }
+    sealed class N3SaveBoundary
+    {
+        public bool SaveGame(EntityDataSO candidate, SaveSlot slot) { candidate.isDirty=false; return true; }
+    }
+#endif
 
     internal void BindFixture(EntityDataSO data)
     {

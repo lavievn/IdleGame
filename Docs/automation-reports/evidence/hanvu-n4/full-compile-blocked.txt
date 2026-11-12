@@ -1,0 +1,33 @@
+Assets/Script/BattleEffects.cs(236,65): error CS0117: 'Mathf' does not contain a definition for 'Cos'
+Assets/Script/EnvironmentManager.cs(357,16): error CS0019: Operator '/' cannot be applied to operands of type 'Vector2' and 'float'
+Assets/Script/CombatManager.cs(962,30): error CS0117: 'Vector2' does not contain a definition for 'Scale'
+Assets/Script/UIManager.WeaponSkills.cs(116,15): error CS1061: 'TextMeshProUGUI' does not contain a definition for 'name' and no accessible extension method 'name' accepting a first argument of type 'TextMeshProUGUI' could be found (are you missing a using directive or an assembly reference?)
+Assets/Script/UIManager.WeaponSkills.cs(145,48): error CS0117: 'TextAlignmentOptions' does not contain a definition for 'Top'
+Assets/Script/UIManager.WeaponSkills.cs(146,17): error CS1061: 'TextMeshProUGUI' does not contain a definition for 'textWrappingMode' and no accessible extension method 'textWrappingMode' accepting a first argument of type 'TextMeshProUGUI' could be found (are you missing a using directive or an assembly reference?)
+Assets/Script/UIManager.WeaponSkills.cs(146,34): error CS0103: The name 'TextWrappingModes' does not exist in the current context
+Assets/Script/CombatManager.WeaponSkills.cs(229,45): error CS0117: 'Vector2' does not contain a definition for 'up'
+Assets/Script/UIManager.WeaponSkills.cs(183,49): error CS1501: No overload for method 'Min' takes 3 arguments
+Assets/Script/CombatManager.WeaponSkills.cs(248,53): error CS0117: 'Vector2' does not contain a definition for 'up'
+Tests~/Patch54fRegression.cs(45,32): error CS0117: 'CombatBalance' does not contain a definition for 'HeroHealthMultiplier'
+Tests~/Patch54fRegression.cs(46,32): error CS0117: 'CombatBalance' does not contain a definition for 'HeroHealthMultiplier'
+Assets/Script/EnvironmentManager.cs(10,46): warning CS0649: Field 'EnvironmentManager.groundDetails' is never assigned to, and will always have its default value null
+Assets/Script/TransparentWindow.cs(107,18): warning CS0169: The field 'TransparentWindow.nativeOpeningVolumeDrag' is never used
+Assets/Script/TransparentWindow.cs(29,24): warning CS0169: The field 'TransparentWindow.resizeWorkArea' is never used
+Assets/Script/TransparentWindow.cs(27,35): warning CS0169: The field 'TransparentWindow.queuedResizeHeight' is never used
+Assets/Script/MonsterController.cs(26,49): warning CS0649: Field 'MonsterController.combatAudio' is never assigned to, and will always have its default value null
+Assets/Script/MonsterSpawner.cs(8,40): warning CS0649: Field 'MonsterSpawner.monsterContainer' is never assigned to, and will always have its default value null
+Assets/Script/TransparentWindow.cs(31,19): warning CS0169: The field 'TransparentWindow.resizePosition' is never used
+Assets/Script/MonsterController.cs(38,45): warning CS0649: Field 'MonsterController.combatSkillMana' is never assigned to, and will always have its default value 0
+Tests~/UnityStub.cs(514,56): warning CS0067: The event 'VideoPlayer.errorReceived' is never used
+Assets/Script/TransparentWindow.cs(26,18): warning CS0169: The field 'TransparentWindow.resizing' is never used
+Assets/Script/TransparentWindow.cs(92,20): warning CS0649: Field 'TransparentWindow.hWnd' is never assigned to, and will always have its default value 
+Assets/Script/TransparentWindow.cs(27,17): warning CS0169: The field 'TransparentWindow.queuedResizeWidth' is never used
+Assets/Script/TransparentWindow.cs(30,18): warning CS0169: The field 'TransparentWindow.dragging' is never used
+Assets/Script/TransparentWindow.cs(28,18): warning CS0169: The field 'TransparentWindow.queuedResizeKeepBottom' is never used
+Assets/Script/HeroController.cs(93,49): warning CS0649: Field 'HeroController.combatAudio' is never assigned to, and will always have its default value null
+Assets/Script/TransparentWindow.cs(32,18): warning CS0169: The field 'TransparentWindow.hasResizePosition' is never used
+Assets/Script/TransparentWindow.cs(107,43): warning CS0169: The field 'TransparentWindow.nativeMapPointer' is never used
+Assets/Script/GameManager.cs(34,35): warning CS0649: Field 'GameManager.controlledLootTest' is never assigned to, and will always have its default value false
+Assets/Script/MonsterSpawner.cs(7,41): warning CS0649: Field 'MonsterSpawner.monsterPrefab' is never assigned to, and will always have its default value null
+Assets/Script/SaveManager.Tribulation.cs(11,16): warning CS0649: Field 'SaveManager.developmentProfileLock' is never assigned to, and will always have its default value null
+Assets/Script/TransparentWindow.cs(24,18): warning CS0169: The field 'TransparentWindow.previousButtonDown' is never used
