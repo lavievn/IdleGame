@@ -1,0 +1,19 @@
+Tests~/UnityStub.cs(514,56): warning CS0067: The event 'VideoPlayer.errorReceived' is never used
+SIM config=3 node=HT-18 qi=0.59999999999999998 fps=10 vien_man_active_seconds=0 foundation_at_3600=2159.9999999985193 error=0
+SIM config=3 node=XD-01 qi=0.80000000000000004 fps=10 vien_man_active_seconds=0 foundation_at_3600=2879.9999999985407 error=0
+SIM config=3 node=HT-14 qi=1 fps=10 vien_man_active_seconds=3600.0999999978212 foundation_at_3600=3599.9999999978213 error=5.5024429457262158E-11
+SIM config=3 node=HT-01 qi=1.3 fps=10 vien_man_active_seconds=3304.2999999980902 foundation_at_3600=3600 error=3.4169715945608914E-09
+SIM config=3 node=HT-02 qi=1.8 fps=10 vien_man_active_seconds=3304.2999999980902 foundation_at_3600=3600 error=1.3988028513267636E-09
+SIM config=3 node=HT-04 qi=2.5 fps=10 vien_man_active_seconds=3304.2999999980902 foundation_at_3600=3600 error=1.3988028513267636E-09
+SIM config=3 node=TL-13 qi=3.5 fps=10 vien_man_active_seconds=3304.2999999980902 foundation_at_3600=3600 error=1.3988028513267636E-09
+SIM config=3 node=TL-18 qi=5 fps=10 vien_man_active_seconds=3304.2999999980902 foundation_at_3600=3600 error=1.3988028513267636E-09
+SIM config=3 node=TV-20 qi=1 fps=10 vien_man_active_seconds=3600.0999999978403 foundation_at_3600=3599.9999999978404 error=7.4123818194493651E-11
+SIM config=3 node=TL-16 qi=1 fps=10 vien_man_active_seconds=3600.0999999978403 foundation_at_3600=3599.9999999978404 error=7.4123818194493651E-11
+SIM config=3 node=XD-11 qi=1 fps=10 vien_man_active_seconds=3600.0999999978403 foundation_at_3600=3599.9999999978404 error=7.4123818194493651E-11
+SIM config=3 node=TM-12 qi=1 fps=10 vien_man_active_seconds=3600.0999999978403 foundation_at_3600=3599.9999999978404 error=7.4123818194493651E-11
+SIM config=3 node=HT-17 qi=1 fps=10 vien_man_active_seconds=3600.0999999978403 foundation_at_3600=3599.9999999978404 error=7.4123818194493651E-11
+SIM config=3 node=TV-20 qi=1 fps=30 vien_man_active_seconds=3600.09999999714 foundation_at_3600=3599.99999999785 error=8.3673512563109398E-11
+SIM config=3 node=TL-18 qi=5 fps=30 vien_man_active_seconds=3304.2999999974372 foundation_at_3600=3600 error=1.3224052963778377E-09
+SIM config=1 node=TV-20 qi=1 fps=10 vien_man_active_seconds=3600.0999999978403 foundation_at_3600=3599.9999999978404 error=7.4123818194493651E-11
+SIM config=2 node=TV-20 qi=1 fps=10 vien_man_active_seconds=3600.0999999978403 foundation_at_3600=3599.9999999978404 error=7.4123818194493651E-11
+SIMULATION PASS 17 measurements; accelerated active-gameplay seconds, no wall-clock/offline or Weather time conversion.

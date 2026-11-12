@@ -1,0 +1,10 @@
+baseline-runtime-compile: 0 errors, 92 warnings; standalone Roslyn + Unity 6000.5.0f1 DLLs
+runtime-compile: 0 errors, 92 warnings; standalone Roslyn + Unity 6000.5.0f1 DLLs
+GUID/meta: 0 errors, 62 warnings
+Data APIs: 29 PASS, 0 FAIL; baseline 26 PASS, 2 FAIL
+Simulation: 17 measured rows; progression/accounting identical before and after DTO fix
+Simulation max Qi conservation error: 3.4169715945608914e-09
+Full Mono runner: BLOCKED by 12 pre-existing compiler errors
+Shell syntax and git diff --check: PASS
+Native Unity / Windows Player / SaveManager gameplay: NOT TESTED
+Missing product requirements remain GAP; suite PASS is not full product acceptance.
