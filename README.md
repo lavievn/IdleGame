@@ -1,3 +1,9 @@
+<!-- narrative-integration-audit-2026-11-12 -->
+> **Cập nhật kiểm toán sau PR #21 — 12/11/2026:** Chủ dự án xác nhận các nhánh tính năng đã được merge trên nhánh local; sẽ merge tài liệu tạm sau. Cloud chưa có SHA/build local nên chưa chứng nhận bản tổng hợp. Bảng PR ở phần5 bên dưới là snapshot nguồn đã công bố, không phủ nhận merge local.
+>
+> [Audit, trạng thái và kế hoạch](Docs/automation-reports/NARRATIVE_INTEGRATION_AUDIT_2026-11-12.md) · [Narrative Foundation](Docs/story/NARRATIVE_EVENT_TIMELINE_FOUNDATION_2026-11-12.md) · [Slice Hàn Vụ](Docs/story/HAN_VU_VERTICAL_SLICE_SPEC_2026-11-12.md). Hai đặc tả là **PROPOSED**, không phải implementation. Giữ nguyên lịch sử bên dưới; không cộng PASS từng nhánh thành chứng nhận build.
+<!-- /narrative-integration-audit-2026-11-12 -->
+
 # Định hướng và quy trình chuẩn — Bách Luyện Tiên Đồ (12/11/2026)
 
 > **Trạng thái: DESIGN BASELINE, không phải giấy phép tự triển khai.** Tài liệu này ghi nhận quyết định của chủ dự án đến 12/11/2026. Khi xung đột với mô tả cũ trong README/roadmap, **quyết định chốt mới hơn thắng về mặt thiết kế**; **mã nguồn, cấu hình, bản lưu và nhánh đang chạy không tự động thay đổi**. Mọi triển khai cần task có phạm vi rõ. Prototype / development build, **chưa phải Alpha**.
