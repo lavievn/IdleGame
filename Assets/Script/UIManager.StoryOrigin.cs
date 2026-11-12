@@ -60,7 +60,7 @@ public partial class UIManager
         originPrev = StoryButton("HanVuPrev", "Trước", 6f, 50f, () => MoveOriginLine(-1));
         originNext = StoryButton("HanVuNext", "Tiếp", 60f, 50f, () => MoveOriginLine(1));
         originAccept = StoryButton("HanVuAccept", "Nhận lời", 60f, 85f, () => ChooseOriginOffer(true));
-        originDecline = StoryButton("HanVuDecline", "Để sau", 149f, 76f, () => ChooseOriginOffer(false));
+        originDecline = StoryButton("HanVuDecline", "Từ chối", 149f, 76f, () => ChooseOriginOffer(false));
         originReplay = StoryButton("HanVuReplay", "Xem lại mở đầu", 115f, 110f, () =>
         {
             var data = GameForUI()?.HeroData;
@@ -110,7 +110,8 @@ public partial class UIManager
     private void OpenWoodcutter()
     {
         var game = GameForUI();
-        if (game?.TryTalkToWoodcutter() == true)
+        if (game != null && game.IsGameplayHUDVisible && !game.HasTribulationLiability &&
+            HanVuNarrative.AtWoodcutter(game.HeroData))
             BeginOriginConversation(game.HeroData, HanVuConversation.Woodcutter);
     }
 
@@ -191,6 +192,11 @@ public partial class UIManager
         originPromptButton.gameObject.SetActive(visible);
         if (!visible)
         {
+            // Entry, death and Retry may reuse the same Hero and map. A stale
+            // conversation must not survive that boundary and commit unseen lines.
+            // Temporary menus only hide the view; they can resume the conversation.
+            if (hudGame == null || !hudGame.IsGameplayHUDVisible || hudGame.HasTribulationLiability)
+                CloseOriginPresentation();
             originPanel.gameObject.SetActive(false);
             originWoodcutter.gameObject.SetActive(false);
             HighlightOriginMap(false);
@@ -238,8 +244,10 @@ public partial class UIManager
             originLabel.text = line.Speaker + "\n" + line.Text;
             if (!data.originStory.heardOpeningTrip && HanVuNarrative.TellsOfTrip(conversation, dialogueIndex))
                 hudGame.RecordOriginTrip();
+            if (!data.originStory.heardWoodcutter && HanVuNarrative.TellsOfWoodcutter(conversation, dialogueIndex))
+                hudGame.TryTalkToWoodcutter(dialogueIndex);
             originAcceptLabel.text = canPrepare ? "Sắc thuốc" : "Nhận lời";
-            originDeclineLabel.text = "Để sau";
+            originDeclineLabel.text = "Từ chối";
         }
         else if (openEncounter != null)
         {
