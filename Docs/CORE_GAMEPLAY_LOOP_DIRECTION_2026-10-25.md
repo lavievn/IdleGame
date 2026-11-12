@@ -1,3 +1,7 @@
+<!-- narrative-integration-audit-2026-11-12 -->
+> **Ưu tiên thiết kế 12/11/2026:** [Narrative Design Baseline](NARRATIVE_DESIGN_BASELINE_2026-11-12.md) và đầu [README](../README.md) thay mô tả cũ “Level luôn tăng ở bình cảnh” bằng EXP bank có đường đột phá hợp lệ, đồng thời tách timeline truyện khỏi đồng hồ môi trường/tu luyện. Các mốc30 Level, hai pha dự kiến và trạng thái “chưa triển khai” bên dưới là lịch sử theo thời điểm; xem [audit theo commit](automation-reports/NARRATIVE_INTEGRATION_AUDIT_2026-11-12.md) trước khi suy trạng thái hiện tại. Giữ nguyên nội dung lịch sử, không tự sửa runtime từ chỉ dẫn này.
+<!-- /narrative-integration-audit-2026-11-12 -->
+
 # Định hướng core gameplay & vòng lặp chơi — Bách Luyện Tiên Đồ
 
 > **Trạng thái: BẢN LÀM VIỆC / CÓ THỂ SỬA ĐỔI — ghi nhận ngày 25/10/2026.** Đây là hướng phát triển và bộ tiêu chí thảo luận, **không phải đặc tả triển khai**. Các mục ghi `Đề xuất` chưa được phê duyệt thành tính năng. Không tự thay đổi gameplay, save, camera, UI hoặc cân bằng chỉ vì tài liệu này.
