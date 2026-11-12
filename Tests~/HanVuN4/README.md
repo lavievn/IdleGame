@@ -3,6 +3,10 @@
 Run `bash Tests~/HanVuN4/run.sh` with Python3, a C#7.2+ compiler, Mono and
 System.Web.Extensions. CSC/MONO may point to existing wrappers.
 
+`bash Tests~/HanVuN4/baseline.sh` reproduces the pinned test-only checkpoint
+on unchanged N3 production code; expected exit1 with 15 PASS/8 FAIL. It uses
+a temporary git archive, never switches/merges a branch or opens player Saves.
+
 The current production origin host methods, SaveManager.SaveGame, load validators,
 WriteToFile and CultivationMigrationTransaction.ReplaceExpected execute. The
 runner extracts host methods verbatim and adds I/O aliases to temporary copies
@@ -17,8 +21,9 @@ Load candidate decision runs; its final scene publication and cultivation setup
 are modeled boundaries. Do not label these results native Save/Load PASS.
 
 Before production changes: **15 PASS/8 FAIL**, including the 11 existing story/world
-groups and 12 N4 groups. After fixes and added coverage: **34 PASS/0 FAIL**
-(11 existing groups + 23 N4 groups). Assertions in stream hooks only collect observations;
+groups and 12 N4 groups. After fixes and added coverage: **35 PASS/0 FAIL**
+(11 existing groups + 24 N4 groups). A later unknown-origin-field regression
+first produced **34 PASS/1 FAIL**, then passed with the strict boundary guard. Assertions in stream hooks only collect observations;
 they are checked after Save returns, so the writer's catch cannot swallow a
 failed test assertion. The N3 suite is run separately without changing its
 assertions or turning its commit sink into a native Save claim. Its test boundary acknowledges the candidate write,
