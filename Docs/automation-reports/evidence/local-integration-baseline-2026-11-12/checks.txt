@@ -1,0 +1,28 @@
+PASS entire historical README preserved byte for byte
+PASS unchanged AGENTS.md
+PASS unchanged Docs/automation-reports/evidence/narrative-integration-2026-11-12/AGENTS_PREPARED_UNION.txt
+PASS baseline sections A-F unchanged; approved slice update is scoped to section G
+PASS no runtime/config/assets/tests/tools/skills/Save schema changes
+PASS documentation-only file scope
+PASS Docs/NARRATIVE_DESIGN_BASELINE_2026-11-12.md: link story/HAN_VU_VERTICAL_SLICE_SPEC_2026-11-12.md
+PASS Docs/automation-reports/LOCAL_INTEGRATION_BASELINE_2026-11-12.md: link evidence/local-integration-baseline-2026-11-12/cloud-preflight.json
+PASS Docs/automation-reports/LOCAL_INTEGRATION_BASELINE_2026-11-12.md: link evidence/local-integration-baseline-2026-11-12/checks.txt
+PASS Docs/automation-reports/LOCAL_INTEGRATION_BASELINE_2026-11-12.md: link NARRATIVE_INTEGRATION_AUDIT_2026-11-12.md
+PASS Docs/automation-reports/NARRATIVE_INTEGRATION_AUDIT_2026-11-12.md: link LOCAL_INTEGRATION_BASELINE_2026-11-12.md
+PASS Docs/story/HAN_VU_VERTICAL_SLICE_SPEC_2026-11-12.md: link ../automation-reports/LOCAL_INTEGRATION_BASELINE_2026-11-12.md
+PASS Docs/story/NARRATIVE_EVENT_TIMELINE_FOUNDATION_2026-11-12.md: link HAN_VU_VERTICAL_SLICE_SPEC_2026-11-12.md
+PASS Docs/story/NARRATIVE_EVENT_TIMELINE_FOUNDATION_2026-11-12.md: link ../automation-reports/LOCAL_INTEGRATION_BASELINE_2026-11-12.md
+PASS README.md: link Docs/automation-reports/NARRATIVE_INTEGRATION_AUDIT_2026-11-12.md
+PASS README.md: link Docs/story/NARRATIVE_EVENT_TIMELINE_FOUNDATION_2026-11-12.md
+PASS README.md: link Docs/story/HAN_VU_VERTICAL_SLICE_SPEC_2026-11-12.md
+PASS README.md: link Docs/automation-reports/LOCAL_INTEGRATION_BASELINE_2026-11-12.md
+PASS PR12/13/16/17/18/19/20/21/22 heads match fetched refs
+PASS preserved clean worktree /workspace/IdleGame
+PASS preserved clean worktree /workspace/IdleGame-narrative-audit
+PASS approved N2 scope recorded; no new persisted state required for slice
+PASS report does not claim completed Windows integration or local sync
+PASS git diff --check
+New relative links checked: 12
+BLOCKED: N0 Windows integration HEAD/worktree/manifest/build; N1 sync into local integration branch.
+NOT TESTED: new domain/UnityStub, Unity Edit/Play, native Save/Load/Retry/Travel, Windows build/gameplay/asset/audio/teardown.
+APPROVED_SCOPE: N2 only, by user task; no Narrative Event System or migration implemented.

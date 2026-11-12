@@ -49,7 +49,12 @@ Kết thúc có ba chiều: protagonist, quan hệ, thế giới. Lựa chọn c
 Muốn thử lại không nên phải AFK lại 150 giờ nguyên vẹn. Cần giải pháp tăng tốc hợp lý hoặc nhánh lưu riêng, nhưng **chưa chốt chọn Hồi Tưởng hay Luân Hồi**, chưa chốt điều kiện khai mở.
 
 ## G. Vertical slice cần kiểm chứng trước khi mở rộng
-Đề xuất, **chờ duyệt tác vụ**: một khu vực, một biến cố, 2 lựa chọn chính, 1 NPC thay đổi và 1 biểu hiện môi trường thay đổi. Tiêu chí:
+Phạm vi thử nghiệm kỹ thuật Hàn Vụ đã được chủ dự án duyệt trong task Local
+Integration Baseline ngày12/11: một biến cố hiện có, nhận/từ chối thuốc, close
+trung lập, có thể đổi ý, M0→M1 logic sau sắc thuốc, không tăng tuổi/năm hoặc thêm
+NPC/thoại/reward/ending/Save field. Xem [đặc tả slice](story/HAN_VU_VERTICAL_SLICE_SPEC_2026-11-12.md).
+Đây chưa phải giao triển khai Event System/migration hoặc nghiệm thu build tổng hợp.
+Tiêu chí:
 - hai quyết định dẫn đến hệ quả quan sát được;
 - idle vẫn chạy khi quyết định truyện chờ;
 - ngày/đêm không làm già NPC;

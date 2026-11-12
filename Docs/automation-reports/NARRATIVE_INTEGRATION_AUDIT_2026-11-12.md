@@ -219,6 +219,12 @@ trong N3–N6. Chỉ quay lại sau task/công thức/nội dung được duyệ
 
 ## 10. Quyết định cần duyệt, không tự chốt bằng code
 
+**Cập nhật sau audit:** Chủ dự án đã duyệt phạm vi slice và M0/M1 logic (mục1–2
+dưới đây) trong task Local Integration Baseline. Không hỏi duyệt lại. Phạm vi
+không thêm Save field; N0/N1 và native build còn chờ máy Windows. Xem
+[bàn giao hiện tại](LOCAL_INTEGRATION_BASELINE_2026-11-12.md). Danh sách bên dưới
+được giữ làm lịch sử của audit #22, không hủy phê duyệt mới này.
+
 1. Chấp thuận slice tham chiếu Hàn Vụ hiện có; xác nhận đây là thử kiến trúc,
    không phải chốt toàn bộ khởi đầu/lore/kết cục game.
 2. Chấp thuận mốc sau sắc thuốc là mốc logic cho thử nghiệm; chưa gán số năm,

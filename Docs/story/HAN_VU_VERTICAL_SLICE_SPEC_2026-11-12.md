@@ -1,7 +1,9 @@
 # Hàn Vụ — Vertical slice tham chiếu, 12/11/2026
 
-**PROPOSED / chỉ đặc tả và tiêu chí nghiệm thu.** Không bổ sung gameplay, lời
-thoại, NPC, kết cục hoặc Save field trong task này. Thiết kế nền tại
+**APPROVED_SCOPE — chủ dự án duyệt ngày12/11/2026 trong task Local Integration
+Baseline.** Đây là phê duyệt phạm vi thử nghiệm, chưa phải implementation hoặc
+nghiệm thu. Không bổ sung gameplay, lời thoại, NPC, kết cục hoặc Save field trong
+task tài liệu này. Thiết kế nền tại
 [baseline](../NARRATIVE_DESIGN_BASELINE_2026-11-12.md), contract tại
 [Narrative Foundation](NARRATIVE_EVENT_TIMELINE_FOUNDATION_2026-11-12.md).
 
@@ -102,8 +104,13 @@ Một chu kỳ Save/Load chính là tối thiểu của slice, không thay fault
 
 ## 6. Handoff và các gate
 
-Task hiện tại kết thúc ở đặc tả. Trước triển khai cần duyệt N2–N4 trong audit:
-phạm vi slice này, mốc logic không có số năm và contract persistence nếu cần.
+N2 đã được chủ dự án duyệt: giữ Hàn Vụ, nhận/từ chối thuốc, close trung lập,
+từ chối có thể đổi ý, M0→M1 logic sau sắc thuốc, projection guardian/Cô Hồn Lâm;
+không NPC/thoại/reward/ending/Save field mới. Không cần xin duyệt lại các điểm này.
+N0 và đồng bộ tài liệu trên integration local chưa được xác minh từ Cloud;
+xem [bàn giao Windows](../automation-reports/LOCAL_INTEGRATION_BASELINE_2026-11-12.md).
+N3/N4 cần tác vụ triển khai tiếp theo. Với slice này, ưu tiên stage/flags đã lưu,
+không thêm serialized milestone/receipt/NPC condition hoặc migration mới.
 Mọi locale/lore mới, NPC outcome khác, phạt nhánhB, reward, tuổi thọ hoặc bế quan
 đều cần quyết định riêng; không tự thêm để làm hai lựa chọn “kịch tính hơn”.
 

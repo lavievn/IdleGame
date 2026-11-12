@@ -1,0 +1,136 @@
+{
+  "date_user_timezone": "2026-11-12 Asia/Ho_Chi_Minh",
+  "host_os": "Linux",
+  "windows_executor_available": false,
+  "windows_integration_head": null,
+  "windows_branch": null,
+  "windows_asset_manifest": null,
+  "new_windows_artifact": null,
+  "native_tests": "NOT TESTED",
+  "N0": "BLOCKED",
+  "N1_integration_local": "BLOCKED",
+  "N2_scope": "APPROVED_BY_USER_TASK",
+  "documentation_branch": "docs/local-integration-baseline-handoff",
+  "documentation_base": "d8e08eb397446d4fdd6da9ed59d25df02025b1cb",
+  "origin_fetch_refspec": "+refs/heads/main:refs/remotes/origin/main",
+  "comparison_note": "Fetched all refs explicitly. Upstream shorthand is not relied on because the stored fetch refspec maps only main. No Git config changed.",
+  "preserved_cloud_worktrees": [
+    {
+      "path": "/workspace/IdleGame",
+      "head": "7601c372d82f034e4e7165cb000cc400fabbde84",
+      "branch": "feature/cloud-exp-bottleneck-mastery",
+      "status": "",
+      "explicit_comparison_ref": "origin/feature/cloud-exp-bottleneck-mastery",
+      "ahead_behind": "0\t0"
+    },
+    {
+      "path": "/workspace/IdleGame-narrative-audit",
+      "head": "d8e08eb397446d4fdd6da9ed59d25df02025b1cb",
+      "branch": "docs/cloud-narrative-integration-audit",
+      "status": "",
+      "explicit_comparison_ref": "origin/docs/cloud-narrative-integration-audit",
+      "ahead_behind": "0\t0"
+    }
+  ],
+  "remote_pr_heads": [
+    {
+      "number": 22,
+      "state": "open",
+      "draft": true,
+      "base": "docs/2026-11-12-canonical-direction",
+      "base_sha": "0ab8c88033ea9c4d97a7be4ed03705acad69f675",
+      "head": "docs/cloud-narrative-integration-audit",
+      "head_sha": "d8e08eb397446d4fdd6da9ed59d25df02025b1cb",
+      "url": "https://github.com/lavievn/IdleGame/pull/22",
+      "matches_fetched_ref": true
+    },
+    {
+      "number": 21,
+      "state": "open",
+      "draft": true,
+      "base": "development_0.1.7",
+      "base_sha": "fafc02d613a2e6a15c72a8dd48b935d2faa54f0e",
+      "head": "docs/2026-11-12-canonical-direction",
+      "head_sha": "0ab8c88033ea9c4d97a7be4ed03705acad69f675",
+      "url": "https://github.com/lavievn/IdleGame/pull/21",
+      "matches_fetched_ref": true
+    },
+    {
+      "number": 20,
+      "state": "open",
+      "draft": true,
+      "base": "feature/cloud-dual-progression-audit",
+      "base_sha": "2b88eb59c0c0d2c5c1620a0ffd2fd9191bdbcefd",
+      "head": "feature/cloud-exp-bottleneck-mastery",
+      "head_sha": "7601c372d82f034e4e7165cb000cc400fabbde84",
+      "url": "https://github.com/lavievn/IdleGame/pull/20",
+      "matches_fetched_ref": true
+    },
+    {
+      "number": 19,
+      "state": "open",
+      "draft": true,
+      "base": "development_0.1.7",
+      "base_sha": "fafc02d613a2e6a15c72a8dd48b935d2faa54f0e",
+      "head": "feature/cloud-dual-progression-audit",
+      "head_sha": "2b88eb59c0c0d2c5c1620a0ffd2fd9191bdbcefd",
+      "url": "https://github.com/lavievn/IdleGame/pull/19",
+      "matches_fetched_ref": true
+    },
+    {
+      "number": 18,
+      "state": "open",
+      "draft": true,
+      "base": "development_0.1.7",
+      "base_sha": "fafc02d613a2e6a15c72a8dd48b935d2faa54f0e",
+      "head": "feature/cloud-item-loot-foundation",
+      "head_sha": "9349f5fb1e6d32c3062520d12f422be18e7159cd",
+      "url": "https://github.com/lavievn/IdleGame/pull/18",
+      "matches_fetched_ref": true
+    },
+    {
+      "number": 17,
+      "state": "open",
+      "draft": true,
+      "base": "feature/story-origin-thanhkhe-foundation",
+      "base_sha": "5915829aa2510a739bde64addf0a41b705c1b8eb",
+      "head": "feature/cloud-hanvu-story-polish",
+      "head_sha": "cc271451faccd4c2ba7d9ef679a93c7627bc5f5c",
+      "url": "https://github.com/lavievn/IdleGame/pull/17",
+      "matches_fetched_ref": true
+    },
+    {
+      "number": 16,
+      "state": "open",
+      "draft": true,
+      "base": "development_0.1.7",
+      "base_sha": "fafc02d613a2e6a15c72a8dd48b935d2faa54f0e",
+      "head": "feature/dynamic-sky-weather-cycle",
+      "head_sha": "c00dae628a7ea47ca18b9b16dfd13bd86fd9b216",
+      "url": "https://github.com/lavievn/IdleGame/pull/16",
+      "matches_fetched_ref": true
+    },
+    {
+      "number": 13,
+      "state": "open",
+      "draft": true,
+      "base": "development_0.1.7",
+      "base_sha": "fafc02d613a2e6a15c72a8dd48b935d2faa54f0e",
+      "head": "feature/story-origin-thanhkhe-foundation",
+      "head_sha": "5915829aa2510a739bde64addf0a41b705c1b8eb",
+      "url": "https://github.com/lavievn/IdleGame/pull/13",
+      "matches_fetched_ref": true
+    },
+    {
+      "number": 12,
+      "state": "open",
+      "draft": true,
+      "base": "development_0.1.7",
+      "base_sha": "fafc02d613a2e6a15c72a8dd48b935d2faa54f0e",
+      "head": "development_0.1.8-cloud",
+      "head_sha": "5d41014eccd4e88d561c8fdb85fb7934ae248170",
+      "url": "https://github.com/lavievn/IdleGame/pull/12",
+      "matches_fetched_ref": true
+    }
+  ]
+}
