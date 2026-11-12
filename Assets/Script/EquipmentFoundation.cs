@@ -301,6 +301,43 @@ public static class EquipmentFoundation
         new EquipmentTemplate("base:necklace","Dây chuyền",EquipmentSlot.Necklace,CombatStatId.MagicResistance),
         new EquipmentTemplate("base:ring","Nhẫn",EquipmentSlot.RingLeft,CombatStatId.Attack)
     };
+    private static readonly IReadOnlyList<EquipmentTemplate> templateView = Array.AsReadOnly(templates);
+
+    // One canonical catalog, available to validators/tools without exposing the
+    // backing array. Template fields are immutable; this adds no saved fields.
+    public static IReadOnlyList<EquipmentTemplate> Templates => templateView;
+
+    public static bool TryValidateCatalog(out string reason) => ValidateCatalog(Templates,out reason);
+
+    internal static bool ValidateCatalog(IEnumerable<EquipmentTemplate> catalog,out string reason)
+    {
+        if(catalog==null) {reason="Missing equipment catalog.";return false;}
+        var ids=new HashSet<string>(StringComparer.Ordinal);
+        foreach(var item in catalog)
+        {
+            if(item==null || string.IsNullOrWhiteSpace(item.id) || item.id!=item.id.Trim() ||
+                string.IsNullOrWhiteSpace(item.name) || !ids.Add(item.id))
+            {reason="Each template needs a unique nonblank stable ID and display name.";return false;}
+            if(!Enum.IsDefined(typeof(EquipmentSlot),item.slot) ||
+                !Enum.IsDefined(typeof(CombatStatId),item.mainStat) ||
+                !Enum.IsDefined(typeof(WeaponFamily),item.weaponFamily) ||
+                (item.slot!=EquipmentSlot.Weapon && item.weaponFamily!=WeaponFamily.Unarmed) ||
+                float.IsNaN(item.sampleMainStat) || float.IsInfinity(item.sampleMainStat))
+            {reason="Invalid template metadata: "+item.id;return false;}
+            if(!string.IsNullOrEmpty(item.grantedSkillId))
+            {
+                var skill=WeaponSkillRegistry.Find(item.grantedSkillId);
+                bool compatible=false;
+                if(skill!=null)foreach(var family in skill.Families)
+                    if(family==item.weaponFamily)compatible=true;
+                if(!compatible)
+                {reason="Missing or incompatible template skill: "+item.id;return false;}
+            }
+        }
+        if(ids.Count==0) {reason="Empty equipment catalog.";return false;}
+        reason=null;return true;
+    }
+
     public static EquipmentTemplate FindTemplate(string id)
     {
         if(string.IsNullOrEmpty(id)) return null;
@@ -379,7 +416,8 @@ public static class EquipmentFoundation
     // Pure-data validation; never silently fabricate random stats on load.
     public static bool IsValid(EquipmentInstance item)
     {
-        if (item == null || string.IsNullOrEmpty(item.instanceId)) return false;
+        if (item == null || string.IsNullOrWhiteSpace(item.instanceId) ||
+            !SupportsItemVersions(item)) return false;
         var template=FindTemplate(item.templateId);
         if (template == null || item.level < 1 || item.level > MaximumItemLevel ||
             (int)item.rarity < (int)EquipmentRarity.Common ||
