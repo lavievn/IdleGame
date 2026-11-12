@@ -15,6 +15,7 @@ public partial class UIManager
     private bool originJournalOpen, originMapHighlighted, originManualNotice;
     private bool originControlsVisible;
     private OriginEncounter openEncounter;
+    private OriginInteractionContext originContext;
     private HanVuConversation conversation;
     private HanVuLine[] dialogue;
     private int originPage, dialogueIndex;
@@ -117,6 +118,8 @@ public partial class UIManager
 
     private void BeginOriginConversation(EntityDataSO data, HanVuConversation kind)
     {
+        var game = GameForUI();
+        originContext = game != null ? game.CaptureOriginInteraction(data) : default;
         originJournalOpen = false;
         openEncounter = null;
         conversation = kind;
@@ -126,7 +129,9 @@ public partial class UIManager
 
     private void OpenOriginEncounter()
     {
-        openEncounter = GameForUI()?.OpenOriginEncounter();
+        var game = GameForUI();
+        openEncounter = game?.OpenOriginEncounter();
+        originContext = game != null ? game.CaptureOriginInteraction(game.HeroData) : default;
     }
 
     private void MoveOriginLine(int direction)
@@ -142,7 +147,11 @@ public partial class UIManager
     private void ChooseOriginOffer(bool accept)
     {
         var game = GameForUI();
-        if (game == null) return;
+        if (game == null || !game.IsCurrentOriginInteraction(originContext))
+        {
+            CloseOriginPresentation();
+            return;
+        }
         if (conversation == HanVuConversation.BeforeMedicine && LastLine && accept)
         {
             if (game.TryOriginInteraction())
@@ -157,6 +166,7 @@ public partial class UIManager
         conversation = HanVuConversation.None;
         dialogue = null;
         openEncounter = null;
+        originContext = default;
         originManualNotice = true;
     }
 
@@ -175,6 +185,7 @@ public partial class UIManager
         dialogue = null;
         openEncounter = null;
         originNotice = null;
+        originContext = default;
     }
 
     private void TickOriginPresentation()
@@ -208,6 +219,8 @@ public partial class UIManager
             originMap = data.worldMapId;
             CloseOriginPresentation();
         }
+        if ((dialogue != null || openEncounter != null) && !hudGame.IsCurrentOriginInteraction(originContext))
+            CloseOriginPresentation();
         if (openingHero == data)
         {
             openingHero = null;

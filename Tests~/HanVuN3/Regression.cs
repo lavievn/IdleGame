@@ -85,6 +85,25 @@ partial class MotionRegression
                 Check(h.currentLevel>1 && N3Facts(h)==before && !M1FromExistingFacts(h),"EXP/time remain separate");
             }
         });
+        Run("N3 actual cultivation binding refines Qi without choosing or advancing the medicine quest",()=>{
+            var d=new CultivationPlaytestDefinition {
+                schemaVersion=1,version=1,id="playtest:hanvu-n3-qi",title="Owned data fixture",
+                startingRealm="realm:luyen-khi",maximumFrameSeconds=.1,stepSeconds=.1,fallbackDensity=1,
+                absorptionRate=1,absorptionEfficiency=1,refinementRate=1,refinementEfficiency=1,maximumEnergy=100,
+                realms=new[]{new CultivationPlaytestRealm{id="realm:luyen-khi",name="Luyện Khí",tier=0,thresholds=new double[]{0,300,600,1000},successor=""}},
+                qiSources=new[]{new CultivationQiSource{nodeId=StoryOrigin.HanVu.Village,density=1}}
+            };
+            Check(CultivationPlaytestProfile.TryCreate(d,id=>{WorldMapNode n;return WorldMapCatalog.TryGet(id,out n);},out var p,out var why),"fixture profile: "+why);
+            foreach(var participation in new[]{HerbalParticipation.Offered,HerbalParticipation.Declined,HerbalParticipation.Accepted})
+            {
+                var h=N3Hero(participation:participation);string before=N3Facts(h);
+                using(var b=new CultivationGameplayBinding(h,p,CultivationGameplayState.New(p)))
+                {
+                    for(int frame=0;frame<100;frame++)Check(b.Advance(h,frame,.1,false,h.worldMapId)==CultivationReason.None,"actual active Qi tick");
+                    Check(b.Current.Foundation.Amount>0 && h.cultivationJson.Length>0 && N3Facts(h)==before && !M1FromExistingFacts(h),"Qi publishes only its own component");
+                }
+            }
+        });
     }
 
     sealed class N3View
@@ -175,6 +194,16 @@ partial class MotionRegression
             Check(h.originStory.herbalParticipation==HerbalParticipation.Offered && !M1FromExistingFacts(h),"no timeout choice");
             f.Game.IsGameplayHUDVisible=false;f.UI.PressFixture("HanVuAccept");
             Check(h.originStory.herbalParticipation==HerbalParticipation.Offered,"hidden host cannot choose");
+        });
+        Run("N3 context rejects default wrong owner story replacement and trial liability",()=>{
+            var h=N3Hero();var f=new N3View(h);
+            Check(!f.Game.IsCurrentOriginInteraction(default) &&
+                !f.Game.IsCurrentOriginInteraction(f.Game.CaptureOriginInteraction(N3Hero())),"uncaptured/wrong owner");
+            var captured=f.Game.CaptureOriginInteraction(h);Check(f.Game.IsCurrentOriginInteraction(captured),"live owner context");
+            f.Game.HasTribulationLiability=true;Check(!f.Game.IsCurrentOriginInteraction(captured),"trial guard");f.Game.HasTribulationLiability=false;
+            h.originStory=N3Hero().originStory;
+            Check(!f.Game.IsCurrentOriginInteraction(captured),"same Hero with replaced story cannot accept an old intent");
+            Check(f.Game.IsCurrentOriginInteraction(f.Game.CaptureOriginInteraction(h)),"fresh context remains usable");
         });
     }
 }
