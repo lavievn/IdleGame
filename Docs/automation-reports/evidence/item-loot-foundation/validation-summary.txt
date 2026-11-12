@@ -1,0 +1,7 @@
+baseline-runtime-compile: 0 errors, 92 warnings (standalone Roslyn + Unity 6000.5.0f1 DLLs)
+runtime-compile: 0 errors, 92 warnings (standalone Roslyn + Unity 6000.5.0f1 DLLs)
+GUID/meta: 0 errors, 62 warnings
+Data-only tests: 19 PASS, 0 FAIL (Mono/UnityStub)
+Full Mono runner: BLOCKED by 12 pre-existing compilation errors
+Shell syntax and git diff --check: PASS
+Unity Editor / Play Mode / Windows Player / SaveManager gameplay: NOT TESTED

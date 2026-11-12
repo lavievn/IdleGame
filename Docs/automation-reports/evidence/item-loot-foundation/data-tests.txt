@@ -1,0 +1,21 @@
+Tests~/UnityStub.cs(514,56): warning CS0067: The event 'VideoPlayer.errorReceived' is never used
+PASS all current catalog templates create unique valid instances in permitted slots
+PASS catalog metadata is immutable and rejects duplicate IDs bad enums and incompatible skills
+PASS material and gear cover all four independent outcomes with one terminal receipt
+PASS seeded stream independence survives changed quantities and disabled peer
+PASS invalid templates fail only their stream; material overflow never partially grants
+PASS changing map or invalidating encounter rejects stale receipts without changing owned items
+PASS loot to inventory equip Forge and in-memory serialization preserves IDs stats stock and history
+PASS all weapon families keep physical magical stats separate and leave permanent HP untouched
+PASS legacy fields migrate once; missing templates stay opaque without bonuses
+PASS instance ownership is deep copied and duplicate IDs are refused
+PASS REGRESSION future Forge schema or checkpoint cannot enter inventory or mutate through Forge
+PASS blank instance IDs are rejected without regenerating legacy stable IDs
+PASS REGRESSION Forge refuses unsupported item metadata before consuming material
+PASS invalid item fields reject safely while unknown stack IDs remain portable
+PASS duplicate factory instance fails only gear stream and never manufactures replacement IDs
+PASS skill ownership follows compatible template and rarity with safe legacy fallback
+PASS future component and nested item versions reject both reward streams before draws
+PASS all eight slots support equip swap and unequip without multiplying owned instances
+PASS legacy charms and instance Artifacts share one slot without loss or permanent HP change
+RESULT 19 PASS, 0 FAIL (Mono/UnityStub; no SaveManager or save I/O)
