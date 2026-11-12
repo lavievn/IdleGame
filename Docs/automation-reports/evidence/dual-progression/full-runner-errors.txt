@@ -1,0 +1,12 @@
+Assets/Script/EnvironmentManager.cs(357,16): error CS0019: Operator '/' cannot be applied to operands of type 'Vector2' and 'float'
+Assets/Script/BattleEffects.cs(236,65): error CS0117: 'Mathf' does not contain a definition for 'Cos'
+Assets/Script/CombatManager.cs(947,30): error CS0117: 'Vector2' does not contain a definition for 'Scale'
+Assets/Script/UIManager.WeaponSkills.cs(116,15): error CS1061: 'TextMeshProUGUI' does not contain a definition for 'name' and no accessible extension method 'name' accepting a first argument of type 'TextMeshProUGUI' could be found (are you missing a using directive or an assembly reference?)
+Assets/Script/UIManager.WeaponSkills.cs(145,48): error CS0117: 'TextAlignmentOptions' does not contain a definition for 'Top'
+Assets/Script/UIManager.WeaponSkills.cs(146,17): error CS1061: 'TextMeshProUGUI' does not contain a definition for 'textWrappingMode' and no accessible extension method 'textWrappingMode' accepting a first argument of type 'TextMeshProUGUI' could be found (are you missing a using directive or an assembly reference?)
+Assets/Script/UIManager.WeaponSkills.cs(146,34): error CS0103: The name 'TextWrappingModes' does not exist in the current context
+Assets/Script/UIManager.WeaponSkills.cs(183,49): error CS1501: No overload for method 'Min' takes 3 arguments
+Assets/Script/CombatManager.WeaponSkills.cs(229,45): error CS0117: 'Vector2' does not contain a definition for 'up'
+Assets/Script/CombatManager.WeaponSkills.cs(248,53): error CS0117: 'Vector2' does not contain a definition for 'up'
+Tests~/Patch54fRegression.cs(45,32): error CS0117: 'CombatBalance' does not contain a definition for 'HeroHealthMultiplier'
+Tests~/Patch54fRegression.cs(46,32): error CS0117: 'CombatBalance' does not contain a definition for 'HeroHealthMultiplier'
