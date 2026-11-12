@@ -110,5 +110,20 @@ partial class MotionRegression
             target.settledTransactions=null;
             Check(CultivationComponentCodec.Capture(s,CultivationFixtureConfiguration,target).settledTransactions.Count==1,"reused caller DTO may have a null list");
         });
+        Run("ten percent debt per use can exhaust foundation after passive top-ups without demoting actual realm",()=>{
+            var s=CultivationFixture(1000,charges:4,rules:CultivationFixtureRules(absorb:0,refine:0,bloodRate:1));
+            var id=ActivateFixtureBlood(s);long step=0;
+            for(int use=2;use<=12;use++)
+            {
+                if(s.Current.Blood.Charges==0)Check(s.Tick(s.OwnerId,s.Epoch,step++,1,false,0)==CultivationReason.None,"fixture passive replenishment inside one active burn");
+                Check(s.ExtendBlood(s.OwnerId,s.Epoch,Guid.NewGuid(),id)==CultivationReason.None,"top-up extends the same transaction");
+            }
+            Check(s.Current.Burning.TotalDebt==1200 && s.Current.Burning.ChargesUsed==12 &&
+                s.RealmTierFor(RealmUsePurpose.CombatAbility,true)==3,"linear ten-percent debt and one combat tier");
+            s.EndBlood(s.OwnerId,s.Epoch,id,BurningEndReason.Expired);
+            Check(s.SettleBlood(s.OwnerId,s.Epoch,id)==CultivationReason.None && s.Current.Foundation.Amount==0 &&
+                s.Current.Injury.Severity==200 && s.Current.Foundation.ActualRealmId=="fixture:kim-dan" &&
+                s.Realms.Evaluate("fixture:kim-dan",0).MinorStage==RealmMinorStage.SoKy,"shortfall becomes injury, not major-realm demotion");
+        });
     }
 }
