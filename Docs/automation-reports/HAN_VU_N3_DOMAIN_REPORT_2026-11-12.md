@@ -192,3 +192,12 @@ HanVuOriginSmoke/SaveLoad hiện có. Không thêm field/receipt/schema mới ch
 nếu cần thay contract persisted, phải có task riêng thay vì làm lén trong N3.
 Không triển khai N4 ở đây. Stop condition N3 đạt ở regression và context fixes
 có reproductions; không tiếp tục các phần persistence hoặc narrative tổng quát.
+
+## Draft PR và bàn giao
+
+[Draft PR #24](https://github.com/lavievn/IdleGame/pull/24) target
+`feature/cloud-hanvu-story-polish` (#17), không lặp lại diff #13/#17.
+Commit `6d2058591f209774424955ad6b63447de83a2d6e` chốt report/evidence;
+commit liên kết bàn giao sau đó chỉ sửa tài liệu này. HEAD cuối và kết quả
+local/remote equality được cập nhật trong PR. Giữ Draft chờ nghiệm thu native;
+không merge PR nào trong task.
