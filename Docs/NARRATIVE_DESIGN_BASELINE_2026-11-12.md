@@ -1,5 +1,9 @@
 # Narrative Design Baseline — 12/11/2026
 
+<!-- daily-freeze-rc2 -->
+> Trạng thái kỹ thuật 12/11 được cập nhật ở Daily Freeze RC2. Phạm vi thiết kế được duyệt bên dưới giữ theo tài liệu gốc. [Báo cáo Daily Freeze](automation-reports/DAILY_FREEZE_2026-11-12_FINAL_REPORT.md).
+
+
 **Dự án:** Bách Luyện Tiên Đồ / IdleGame  
 **Trạng thái:** Quyết định thiết kế được chốt + mục đề xuất phân tách rõ; chưa là lệnh triển khai.  
 **Nguồn chuẩn:** đầu [README tổng](../README.md), [AGENTS](../AGENTS.md); khi có khác biệt, xác minh task hiện tại và mã trên nhánh được giao.

@@ -1,5 +1,9 @@
 # Hàn Vụ N3 — Domain & interaction hardening, 12/11/2026
 
+<!-- daily-freeze-rc2 -->
+> Lượt Daily Freeze xác nhận lại N3 30/30 và bổ sung smoke Hàn Vụ native. Các ca stale callback chi tiết vẫn là bằng chứng domain. [Báo cáo Daily Freeze](DAILY_FREEZE_2026-11-12_FINAL_REPORT.md).
+
+
 ## Nền, HEAD và phạm vi
 
 - Branch/worktree riêng: `feature/cloud-hanvu-n3-domain`, `/workspace/IdleGame-hanvu-n3`.

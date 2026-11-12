@@ -1,5 +1,9 @@
 # Item Catalog & Loot Foundation — Cloud, 12/11/2026
 
+<!-- daily-freeze-rc2 -->
+> Lượt Daily Freeze xác nhận 19 nhóm domain và chạy Windows Development017 trên artifact tích hợp. [Báo cáo Daily Freeze](DAILY_FREEZE_2026-11-12_FINAL_REPORT.md).
+
+
 ## Nhánh nền và checkpoint
 
 Nhánh: `feature/cloud-item-loot-foundation`, tách trực tiếp từ

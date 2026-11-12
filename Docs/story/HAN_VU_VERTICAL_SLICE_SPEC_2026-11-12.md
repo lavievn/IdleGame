@@ -1,5 +1,9 @@
 # Hàn Vụ — Vertical slice tham chiếu, 12/11/2026
 
+<!-- daily-freeze-rc2 -->
+> RC2 đã kiểm thử native slice Hàn Vụ hiện có qua smoke Unity và Windows. Các hạng mục trong đặc tả tương lai giữ nguyên trạng thái. [Báo cáo Daily Freeze](../automation-reports/DAILY_FREEZE_2026-11-12_FINAL_REPORT.md).
+
+
 **APPROVED_SCOPE — chủ dự án duyệt ngày12/11/2026 trong task Local Integration
 Baseline.** Đây là phê duyệt phạm vi thử nghiệm, chưa phải implementation hoặc
 nghiệm thu. Không bổ sung gameplay, lời thoại, NPC, kết cục hoặc Save field trong

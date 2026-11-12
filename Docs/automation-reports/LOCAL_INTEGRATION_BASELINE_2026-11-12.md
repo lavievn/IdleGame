@@ -1,5 +1,9 @@
 # Local Integration Baseline & Documentation Sync — 12/11/2026
 
+<!-- daily-freeze-rc2 -->
+> Blocker thiếu checkout/build Windows trong lượt Cloud được giải ở lượt Daily Freeze local. Xem trạng thái RC2. [Báo cáo Daily Freeze](DAILY_FREEZE_2026-11-12_FINAL_REPORT.md).
+
+
 **BLOCKED — bàn giao từ Linux Cloud, chưa phải chứng nhận baseline Windows.**
 N0 chưa hoàn tất; N1 mới chuẩn bị tài liệu, chưa áp vào integration local; N2
 đã được chủ dự án duyệt trong task này. Không tuyên bố đạt stop condition N0–N2

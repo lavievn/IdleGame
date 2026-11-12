@@ -1,5 +1,9 @@
 # Dual Progression — Cloud audit, 12/11/2026
 
+<!-- daily-freeze-rc2 -->
+> Lượt Daily Freeze xác nhận codec và tích hợp thêm EXP reserve. Xem riêng bằng chứng domain và Windows. [Báo cáo Daily Freeze](DAILY_FREEZE_2026-11-12_FINAL_REPORT.md).
+
+
 ## Nền và phạm vi
 
 Nhánh `feature/cloud-dual-progression-audit`, base

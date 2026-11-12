@@ -1,5 +1,9 @@
 # EXP Bottleneck & Mastery Foundation — Cloud, 12/11/2026
 
+<!-- daily-freeze-rc2 -->
+> Lượt Daily Freeze xác nhận EXP bank và bảo toàn qua Load trên Windows. Release thành công và hợp đồng Mastery vẫn dựa trên kiểm thử domain. [Báo cáo Daily Freeze](DAILY_FREEZE_2026-11-12_FINAL_REPORT.md).
+
+
 ## Nền và quyết định đã chốt
 
 Nhánh `feature/cloud-exp-bottleneck-mastery` dựa trên PR #19,

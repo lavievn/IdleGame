@@ -1,4 +1,8 @@
 <!-- narrative-integration-audit-2026-11-12 -->
+
+<!-- daily-freeze-rc2 -->
+> Bằng chứng local mới nhất của bản tích hợp 12/11 nằm trong báo cáo Daily Freeze. Phân biệt kết quả domain, Unity, Windows và nghiệm thu thủ công còn thiếu. [Báo cáo Daily Freeze](Docs/automation-reports/DAILY_FREEZE_2026-11-12_FINAL_REPORT.md).
+
 > **Bổ sung kiểm toán 12/11/2026:** Đọc [audit tích hợp](Docs/automation-reports/NARRATIVE_INTEGRATION_AUDIT_2026-11-12.md) khi xác minh build tổng hợp hoặc chuẩn bị narrative. Chủ dự án xác nhận đã merge các nhánh ở local, nhưng Cloud chưa có SHA/artifact đó. Phân biệt `VERIFIED / IMPLEMENTED_UNTESTED / PARTIAL / GAP / PROPOSED / BLOCKED` theo đúng branch và cấp bằng chứng. [Foundation](Docs/story/NARRATIVE_EVENT_TIMELINE_FOUNDATION_2026-11-12.md) và [slice Hàn Vụ](Docs/story/HAN_VU_VERTICAL_SLICE_SPEC_2026-11-12.md) chỉ là đặc tả, không cho phép tự triển khai hoặc đổi Save schema. Khi ghép tài liệu vào local đã có PR #12, giữ cả mục Karpathy hiện hữu và quy tắc ưu tiên12/11 bên dưới; không thay nguyên file để làm mất thông tin local.
 <!-- /narrative-integration-audit-2026-11-12 -->
 

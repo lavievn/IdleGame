@@ -1,5 +1,9 @@
 # Integration Audit & Narrative Foundation — 12/11/2026
 
+<!-- daily-freeze-rc2 -->
+> Lượt local RC2 sau audit có Unity và Windows evidence. Các kết luận Cloud trong báo cáo này là ảnh chụp tại thời điểm audit. [Báo cáo Daily Freeze](DAILY_FREEZE_2026-11-12_FINAL_REPORT.md).
+
+
 ## 1. Kết luận, nguồn và phạm vi
 
 **Chủ dự án xác nhận các nhánh tính năng đã được merge trên nhánh local; sẽ merge

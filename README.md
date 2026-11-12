@@ -1,4 +1,8 @@
 <!-- narrative-integration-audit-2026-11-12 -->
+
+<!-- daily-freeze-rc2 -->
+> **RC 12/11/2026.** Bản tổng hợp Unity/Windows đã có kết quả thử thật. Trạng thái RC PARTIAL và các lỗi còn lại ở báo cáo freeze. [Báo cáo Daily Freeze](Docs/automation-reports/DAILY_FREEZE_2026-11-12_FINAL_REPORT.md).
+
 > **Cập nhật kiểm toán sau PR #21 — 12/11/2026:** Chủ dự án xác nhận các nhánh tính năng đã được merge trên nhánh local; sẽ merge tài liệu tạm sau. Cloud chưa có SHA/build local nên chưa chứng nhận bản tổng hợp. Bảng PR ở phần5 bên dưới là snapshot nguồn đã công bố, không phủ nhận merge local.
 >
 > [Audit, trạng thái và kế hoạch](Docs/automation-reports/NARRATIVE_INTEGRATION_AUDIT_2026-11-12.md) · [Narrative Foundation](Docs/story/NARRATIVE_EVENT_TIMELINE_FOUNDATION_2026-11-12.md) · [Slice Hàn Vụ](Docs/story/HAN_VU_VERTICAL_SLICE_SPEC_2026-11-12.md). Foundation tổng quát vẫn **PROPOSED**; phạm vi slice Hàn Vụ đã được chủ dự án duyệt, chưa triển khai/nghiệm thu. [Bàn giao baseline Windows](Docs/automation-reports/LOCAL_INTEGRATION_BASELINE_2026-11-12.md) ghi rõ N0/N1 còn BLOCKED trong Cloud. Giữ nguyên lịch sử bên dưới; không cộng PASS từng nhánh thành chứng nhận build.

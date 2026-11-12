@@ -1,5 +1,9 @@
 # Hàn Vụ N4 — Persistence hardening, 12/11/2026
 
+<!-- daily-freeze-rc2 -->
+> Lượt Daily Freeze xác nhận lại N4 35/35, kiểm tra thêm EXP và khí hậu, và chạy SaveLoad Play Mode trên filesystem thật. Các fault injection N4 vẫn ở bộ nhớ. [Báo cáo Daily Freeze](DAILY_FREEZE_2026-11-12_FINAL_REPORT.md).
+
+
 ## Kết quả và nền đã xác minh
 
 Đã sửa lỗi công bố trạng thái truyện trước khi Save thành công và các guard còn
