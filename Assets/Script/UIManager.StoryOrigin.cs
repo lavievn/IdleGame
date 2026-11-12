@@ -60,8 +60,8 @@ public partial class UIManager
         originDismiss = StoryButton("HanVuDismiss", "Đóng", 229f, 65f, CloseOriginPresentation);
         originPrev = StoryButton("HanVuPrev", "Trước", 6f, 50f, () => MoveOriginLine(-1));
         originNext = StoryButton("HanVuNext", "Tiếp", 60f, 50f, () => MoveOriginLine(1));
-        originAccept = StoryButton("HanVuAccept", "Nhận lời", 60f, 85f, () => ChooseOriginOffer(true));
-        originDecline = StoryButton("HanVuDecline", "Từ chối", 149f, 76f, () => ChooseOriginOffer(false));
+        originAccept = StoryButton("HanVuAccept", "Nhận lời", 60f, 85f, () => ChooseOriginOffer(true, null));
+        originDecline = StoryButton("HanVuDecline", "Từ chối", 149f, 76f, () => ChooseOriginOffer(false, null));
         originReplay = StoryButton("HanVuReplay", "Xem lại mở đầu", 115f, 110f, () =>
         {
             var data = GameForUI()?.HeroData;
@@ -120,6 +120,7 @@ public partial class UIManager
     {
         var game = GameForUI();
         originContext = game != null ? game.CaptureOriginInteraction(data) : default;
+        BindOriginChoices();
         originJournalOpen = false;
         openEncounter = null;
         conversation = kind;
@@ -132,6 +133,15 @@ public partial class UIManager
         var game = GameForUI();
         openEncounter = game?.OpenOriginEncounter();
         originContext = game != null ? game.CaptureOriginInteraction(game.HeroData) : default;
+        BindOriginChoices();
+    }
+
+    private void BindOriginChoices()
+    {
+        // Capture this intent, not the mutable context of a later conversation.
+        var context = originContext;
+        BindClick(originAccept, () => ChooseOriginOffer(true, context));
+        BindClick(originDecline, () => ChooseOriginOffer(false, context));
     }
 
     private void MoveOriginLine(int direction)
@@ -144,10 +154,11 @@ public partial class UIManager
 
     private bool LastLine => dialogue != null && dialogueIndex == dialogue.Length - 1;
 
-    private void ChooseOriginOffer(bool accept)
+    private void ChooseOriginOffer(bool accept, OriginInteractionContext context)
     {
+        if (!ReferenceEquals(context, originContext)) return;
         var game = GameForUI();
-        if (game == null || !game.IsCurrentOriginInteraction(originContext))
+        if (game == null || !game.IsCurrentOriginInteraction(context))
         {
             CloseOriginPresentation();
             return;

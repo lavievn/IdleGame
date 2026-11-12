@@ -63,12 +63,14 @@ public partial class UIManager : MonoBehaviour
         MakeLabel(go.transform,text,position,size);fixtureActions.Add(name,action);
         return (RectTransform)go.transform;
     }
+    void BindClick(RectTransform rect,UnityAction action) { fixtureActions[rect.gameObject.name]=action; }
     internal void InitializeFixture(GameManager game)
     {
         hudGame=game;w3=new HudW3View{Root=(RectTransform)new GameObject("fixture root",typeof(RectTransform)).transform};
         Instance=this;InstallOriginPresentation();TickOriginPresentation();
     }
     internal void PressFixture(string name) { fixtureActions[name](); }
+    internal UnityAction ActionFixture(string name) => fixtureActions[name];
     internal void TickFixture() { TickOriginPresentation(); }
 }
 

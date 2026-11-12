@@ -205,5 +205,19 @@ partial class MotionRegression
             Check(!f.Game.IsCurrentOriginInteraction(captured),"same Hero with replaced story cannot accept an old intent");
             Check(f.Game.IsCurrentOriginInteraction(f.Game.CaptureOriginInteraction(h)),"fresh context remains usable");
         });
+        Run("REGRESSION retained old choice delegate cannot consume a replacement Hero fresh conversation",()=>{
+            var h=N3Hero();var f=new N3View(h);f.UI.PressFixture("HanVuTalk");f.LastLine(5);
+            var old=f.UI.ActionFixture("HanVuAccept");var loaded=N3Hero();f.Game.BindFixture(loaded);f.UI.TickFixture();
+            f.UI.PressFixture("HanVuTalk");f.LastLine(5);old();
+            Check(loaded.originStory.herbalParticipation==HerbalParticipation.Offered && f.Game.CommitObservations==0,"old delegate consumed a new conversation intent");
+            f.UI.PressFixture("HanVuAccept");Check(loaded.originStory.herbalParticipation==HerbalParticipation.Accepted,"fresh intent still works");
+        });
+        Run("REGRESSION retained old choice delegate is retired even after close and reopen in the same life",()=>{
+            var h=N3Hero();var f=new N3View(h);f.UI.PressFixture("HanVuTalk");f.LastLine(5);
+            var old=f.UI.ActionFixture("HanVuAccept");f.UI.PressFixture("HanVuDismiss");
+            f.UI.PressFixture("HanVuTalk");f.LastLine(5);old();
+            Check(h.originStory.herbalParticipation==HerbalParticipation.Offered && f.Game.CommitObservations==0,"closed intent was reusable against a new view");
+            f.UI.PressFixture("HanVuAccept");Check(h.originStory.herbalParticipation==HerbalParticipation.Accepted,"fresh view still works");
+        });
     }
 }

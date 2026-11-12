@@ -3,7 +3,7 @@ namespace TuTienCore
     // Transient intent context only. Not a Save field, receipt or story clock.
     // Displayed dialogue belongs to the Hero/story/map/actor spawn that opened
     // it, even if the view missed a hidden frame during entry or Retry.
-    internal readonly struct OriginInteractionContext
+    internal sealed class OriginInteractionContext
     {
         readonly EntityDataSO hero;
         readonly OriginStoryState story;

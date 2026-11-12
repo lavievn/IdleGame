@@ -22,3 +22,17 @@ commit, not a successful save. Do not claim native Save/Load PASS.
 Before the context guard,26 groups produce20 PASS/6 FAIL; all six stale-context
 regressions fail on the actual #17 interaction logic. The original standalone
 data runner `Tests~/run-hanvu-story.sh` remains unchanged and passes11 groups.
+
+Final runner:30 PASS/0 FAIL, including19 new groups. A second reproduction
+retains an old choice delegate after a fresh conversation opens: the first
+guard alone gives28 PASS/2 FAIL. Callbacks must capture the individual intent,
+not read the mutable context of a future view. Binding uses the existing
+BindClick path; presentation doubles model event binding but do not test native
+input or renderer behavior.
+
+Reproduce with `bash Tests~/HanVuN3/baseline.sh original` or `retained` (both
+expected exit1). They extract pinned source into scratch, without switching
+branches or merging. The retained probe uses the current boundary/regression
+against runtime checkpoint1df0d46. The Qi case executes the real cultivation
+binding with an explicit test profile, not a replacement Qi formula. Weather
+runtime #16 is absent from this base and is not integration-tested here.

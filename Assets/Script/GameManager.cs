@@ -1283,7 +1283,7 @@ public partial class GameManager : MonoBehaviour
     }
 
     internal bool IsCurrentOriginInteraction(OriginInteractionContext context) =>
-        IsGameplayHUDVisible && !HasTribulationLiability && heroController!=null &&
+        context!=null && IsGameplayHUDVisible && !HasTribulationLiability && heroController!=null &&
         context.Matches(runtimeHeroData,heroController,heroController.SpawnVersion);
 
     internal void RecordOriginTrip()
