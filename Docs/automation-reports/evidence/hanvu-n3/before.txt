@@ -1,0 +1,30 @@
+Tests~/UnityStub.cs(514,56): warning CS0067: The event 'VideoPlayer.errorReceived' is never used
+Tests~/HanVuN3/Boundary.cs(47,19): warning CS0649: Field 'UIManager.worldMapButton' is never assigned to, and will always have its default value null
+PASS indexed map positions import all 133 seeds without fabricated source artwork
+PASS world catalog has 133 unique maps, seven animals and five approved starts
+PASS new world Hero remains in current map, loops wave 1 after fifth clear
+PASS boss endgame is gated and world progress JSON is backward-compatible
+PASS Hàn Vụ identity reuses name pools and preserves Human root diversity
+PASS Hàn Vụ separates optional progress, world travel and encounter decisions
+PASS Hàn Vụ dialogue uses all saved gender combinations without changing identity
+PASS Hàn Vụ woodcutter records only the displayed answer, once and at the forest
+PASS Hàn Vụ ignored encounters remain pending across travel and do not imply refusal
+PASS Hàn Vụ clues, quest counts and hidden prompts are independent
+PASS Hàn Vụ v1 and v2 migration preserves cast and decisions and is idempotent
+PASS N3 Return can resolve only at village; repeat interaction does not consume herbs twice
+PASS N3 M1 and guardian condition remain derivable at all later stages without a new field
+PASS N3 forest action requires the right map participation and SearchForest stage
+PASS N3 decline is idempotent and reversible; travel and reads never choose a branch
+PASS N3 EXP and idle time do not confirm a choice or create M1
+PASS N3 actual dialogue controls: close is neutral and replay does not take the quest
+PASS N3 real UI records only displayed opening and woodcutter testimony
+FAIL REGRESSION old opening callback after Hero replacement cannot accept for the new Hero before UI tick: stale choice changed replacement Hero
+FAIL REGRESSION old opening callback after same-Hero respawn cannot accept before UI tick: stale choice survived respawn
+FAIL REGRESSION old opening callback after travel round trip cannot accept in reused village context: map equality alone admitted stale choice
+FAIL REGRESSION stale medicine callback cannot trigger the new Hero forest action: old medicine intent became forest interaction
+FAIL REGRESSION stale encounter callback cannot choose the new Hero pending encounter: stale encounter changed replacement Hero
+FAIL REGRESSION missed hidden frame after respawn cannot display and credit stale testimony: stale answer credited in new actor life
+PASS N3 current medicine action resolves once and fresh forest action still works
+PASS N3 UI idle frames and unavailable host never confirm a pending choice
+RESULT 20 PASS, 6 FAIL (UnityStub/domain + real origin UI/host fragment; no Save I/O)
+NOT TESTED: native lifecycle/Retry/Travel/Load, SaveManager transactions, Unity renderer/input, Windows Player.

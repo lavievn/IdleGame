@@ -1,0 +1,21 @@
+PASS only three origin interaction production files, focused tests and report/evidence
+PASS no metadata/GUID changes
+PASS Assets/Script/UIManager.StoryOrigin.cs: all string literals unchanged
+PASS origin layout function unchanged
+PASS Assets/Script/HanVuNarrative.cs: all string literals unchanged
+PASS Assets/Script/GameManager.cs: all string literals unchanged
+PASS origin schema/version/migration, offers, Save transaction and Combat files unchanged
+PASS after.log: RESULT 30 PASS, 0 FAIL
+PASS existing-after.log: PASS 11 data-only groups
+PASS original-reproduced.log: RESULT 20 PASS, 6 FAIL
+PASS retained-reproduced.log: RESULT 28 PASS, 2 FAIL
+PASS base-compile.log: standalone0 errors/93 warnings with Unity6000.5.0f1 DLLs
+PASS compile.log: standalone0 errors/93 warnings with Unity6000.5.0f1 DLLs
+PASS GUID checker0 errors/62 existing warnings
+PASS full runner compile-only BLOCKED by12 pre-existing stub/test API errors; executable not run
+PASS shell syntax
+PASS git diff --check
+PASS preserved clean worktree /workspace/IdleGame
+PASS preserved clean worktree /workspace/IdleGame-narrative-audit
+PASS preserved clean worktree /workspace/IdleGame-local-baseline
+NOT TESTED: native GameManager/actor lifecycle, Unity Edit/Play/renderer/input, SaveManager/I/O/crash transactions, Windows Player, weather integration.
