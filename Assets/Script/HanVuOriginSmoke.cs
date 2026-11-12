@@ -376,9 +376,11 @@ internal static class HanVuOriginSmoke
             "Closing before the woodcutter answers does not fabricate testimony");
         yield return Restore(game, ui, identity);
         Check(!game.HeroData.originStory.heardWoodcutter, "Load preserves an unanswered conversation");
+        ui.SetPaused(false);
         Click(ui, "HanVuWoodcutter");
         yield return ReadDialogue(ui, game.HeroData, HanVuConversation.Woodcutter);
-        Check(Time.timeScale > 0f && game.HeroData.originStory.heardWoodcutter, "Woodcutter is optional and nonblocking");
+        Check(game.HeroData.originStory.heardWoodcutter, "Displayed answer records testimony");
+        Check(Time.timeScale > 0f, "Woodcutter is optional and nonblocking");
         yield return capture("narrative-woodcutter");
         Click(ui, "HanVuDismiss");
         ui.SetPaused(true);

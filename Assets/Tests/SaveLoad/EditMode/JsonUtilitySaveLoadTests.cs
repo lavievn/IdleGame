@@ -242,12 +242,14 @@ namespace IdleGame.Tests.SaveLoad
         public void FutureForgeVersion_NormalizeMustPreserveUnsupportedProgressAndHistory()
         {
             var source = Deserialize();
+            Assert.That((bool)RuntimeData.Static("EquipmentFoundation", "IsValid", Sword(source)), Is.True,
+                "The fixture is valid before adding an unsupported Forge version.");
             int future = RuntimeData.Constant("EquipmentRefinement", "SchemaVersion") + 1;
             RuntimeData.Set(Sword(source), "forgeSchemaVersion", future);
             var loaded = Deserialize(JsonUtility.ToJson(source));
             object sword = Sword(loaded);
-            Assert.That((bool)RuntimeData.Static("EquipmentFoundation", "IsValid", sword), Is.True,
-                "The fixture must reach forge normalization, not fail unrelated item validation.");
+            Assert.That((bool)RuntimeData.Static("EquipmentFoundation", "IsValid", sword), Is.False,
+                "Unsupported Forge metadata blocks runtime use.");
             string swordBefore = JsonUtility.ToJson(sword);
             NormalizeEquipment(loaded);
 
