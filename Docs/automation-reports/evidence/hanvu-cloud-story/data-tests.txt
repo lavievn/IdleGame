@@ -1,0 +1,13 @@
+Tests~/UnityStub.cs(514,56): warning CS0067: The event 'VideoPlayer.errorReceived' is never used
+PASS indexed map positions import all 133 seeds without fabricated source artwork
+PASS world catalog has 133 unique maps, seven animals and five approved starts
+PASS new world Hero remains in current map, loops wave 1 after fifth clear
+PASS boss endgame is gated and world progress JSON is backward-compatible
+PASS Hàn Vụ identity reuses name pools and preserves Human root diversity
+PASS Hàn Vụ separates optional progress, world travel and encounter decisions
+PASS Hàn Vụ dialogue uses all saved gender combinations without changing identity
+PASS Hàn Vụ woodcutter records only the displayed answer, once and at the forest
+PASS Hàn Vụ ignored encounters remain pending across travel and do not imply refusal
+PASS Hàn Vụ clues, quest counts and hidden prompts are independent
+PASS Hàn Vụ v1 and v2 migration preserves cast and decisions and is idempotent
+PASS 11 data-only groups (UnityStub; no save I/O)

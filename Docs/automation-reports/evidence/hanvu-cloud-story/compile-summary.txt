@@ -1,0 +1,5 @@
+base-runtime-compile: 0 errors, 93 warnings
+runtime-compile: 0 errors, 93 warnings
+hud-test-compile: 0 errors, 2 warnings
+GUID/meta: 0 errors, 62 warnings
+Unity Editor / Play Mode / Windows Player: NOT TESTED
