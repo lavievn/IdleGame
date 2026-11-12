@@ -29,7 +29,8 @@ partial class MotionRegression
         Run("EXP normal awards preserve existing Level points and seeded growth",()=>{
             var h=HeroAt(1);UnityEngine.Random.InitState(325);int expected=UnityEngine.Random.Range(50,101);
             UnityEngine.Random.InitState(325);Check(h.AddExp(100) && h.currentLevel==2 && h.currentExp==0 &&
-                h.statPoints==1 && h.meleeGrowthBonus==expected && h.meleeGrowthThroughLevel==2 && Bank(h)==0,"existing authority");
+                h.statPoints==1 && h.meleeGrowthBonus==expected && h.meleeGrowthThroughLevel==2 &&
+                h.baseHealth==416 && h.baseDamage==11 && h.expToNextLevel==CombatBalance.RequiredExp(2) && Bank(h)==0,"existing authority");
         });
         Run("REGRESSION actual eligible bottleneck banks new EXP without moving existing EXP or Qi",()=>{
             var h=BankHero(out var s,out var b);h.currentExp=37;var before=s.Current;
@@ -90,13 +91,16 @@ partial class MotionRegression
             Check(Release(h,stale,Guid.NewGuid())==CultivationReason.StaleAttempt && h.currentLevel==level && h.statPoints==points && h.meleeGrowthBonus==growth && Bank(h)==0,"stale source rejected without reroll");b.Dispose();
         });
         Run("EXP wrong revision early success and invalid component leave both authorities unchanged",()=>{
-            foreach(int variant in new[]{0,1,2})
+            foreach(int variant in new[]{0,1,2,3,4})
             {
                 var h=BankHero(out var s,out var b,variant==1?3599:3600);h.experienceJson=ExperienceProgress.Capture(new ExperienceSnapshot{reserve="500"});
                 if(variant==2)h.experienceJson="{\"version\":99}";
+                if(variant==3)h.statPoints=int.MaxValue;
+                if(variant==4)h.meleeGrowthBonus=int.MaxValue;
+                int points=h.statPoints,growth=h.meleeGrowthBonus;
                 string json=h.experienceJson,cult=h.cultivationJson;var before=s.Current;
                 Check(Release(h,s,Guid.NewGuid(),variant==0?9:0)!=CultivationReason.None && s.Current==before &&
-                    h.experienceJson==json && h.cultivationJson==cult && h.currentLevel==1 && h.statPoints==0,"atomic rejection "+variant);b.Dispose();
+                    h.experienceJson==json && h.cultivationJson==cult && h.currentLevel==1 && h.statPoints==points && h.meleeGrowthBonus==growth,"atomic rejection "+variant);b.Dispose();
             }
         });
         Run("REGRESSION Level 999 conserves overflow and arbitrarily large banks exactly",()=>{
@@ -130,6 +134,10 @@ partial class MotionRegression
                 "{\"version\":1,\"reserve\":42,\"lastReleaseAttempt\":\"\",\"lastReleaseRealm\":\"\"}",
                 "{\"version\":1,\"reserve\":\"01\",\"lastReleaseAttempt\":\"\",\"lastReleaseRealm\":\"\"}",
                 "{\"version\":1,\"reserve\":\"1e4\",\"lastReleaseAttempt\":\"\",\"lastReleaseRealm\":\"\"}",
+                "{\"version\":1,\"reserve\":\"\",\"lastReleaseAttempt\":\"\",\"lastReleaseRealm\":\"\"}",
+                "{\"version\":1,\"reserve\":null,\"lastReleaseAttempt\":\"\",\"lastReleaseRealm\":\"\"}",
+                "{\"version\":1,\"reserve\":\"0\",\"lastReleaseAttempt\":\"\",\"lastReleaseRealm\":\"\",\"future\":1}",
+                "{\"version\":1,\"version\":1,\"reserve\":\"0\",\"lastReleaseAttempt\":\"\",\"lastReleaseRealm\":\"\"}",
                 "{\"version\":1,\"reserve\":\"0\",\"lastReleaseAttempt\":\"bad\",\"lastReleaseRealm\":\"x\"}"})
             {
                 var h=HeroAt(1);h.experienceJson=component;Check(!ExperienceProgress.TryRead(component,out _),"component refused");

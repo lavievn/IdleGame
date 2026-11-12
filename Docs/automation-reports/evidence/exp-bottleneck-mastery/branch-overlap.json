@@ -1,0 +1,45 @@
+[
+  {
+    "pr": 12,
+    "branch": "development_0.1.8-cloud",
+    "sha": "5d41014eccd4e88d561c8fdb85fb7934ae248170",
+    "overlap": []
+  },
+  {
+    "pr": 13,
+    "branch": "feature/story-origin-thanhkhe-foundation",
+    "sha": "5915829aa2510a739bde64addf0a41b705c1b8eb",
+    "overlap": [
+      "Assets/DataScript/EntityDataSO.cs",
+      "Assets/Script/CombatManager.cs",
+      "Assets/Script/SaveManager.cs",
+      "Tests~/run.sh"
+    ]
+  },
+  {
+    "pr": 16,
+    "branch": "feature/dynamic-sky-weather-cycle",
+    "sha": "c00dae628a7ea47ca18b9b16dfd13bd86fd9b216",
+    "overlap": [
+      "Assets/DataScript/EntityDataSO.cs",
+      "Assets/Script/SaveManager.cs"
+    ]
+  },
+  {
+    "pr": 17,
+    "branch": "feature/cloud-hanvu-story-polish",
+    "sha": "cc271451faccd4c2ba7d9ef679a93c7627bc5f5c",
+    "overlap": [
+      "Assets/DataScript/EntityDataSO.cs",
+      "Assets/Script/CombatManager.cs",
+      "Assets/Script/SaveManager.cs",
+      "Tests~/run.sh"
+    ]
+  },
+  {
+    "pr": 18,
+    "branch": "feature/cloud-item-loot-foundation",
+    "sha": "9349f5fb1e6d32c3062520d12f422be18e7159cd",
+    "overlap": []
+  }
+]
