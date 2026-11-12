@@ -95,16 +95,50 @@ namespace TuTienCore
             };
         }
 
+        // Detached story snapshots only; no normalization, migration or reroll.
+        // Publishing into the existing root preserves N3 dialogue-context identity.
+        internal static OriginStoryState CopyState(OriginStoryState source, OriginStoryState target = null)
+        {
+            if (source == null || ReferenceEquals(source, target)) return source;
+            target = target ?? new OriginStoryState();
+            target.version = source.version;
+            target.originId = source.originId;
+            target.guardian = CopyActor(source.guardian);
+            target.companion = CopyActor(source.companion);
+            target.introduced = source.introduced;
+            target.heardCompanion = source.heardCompanion;
+            target.heardOpeningTrip = source.heardOpeningTrip;
+            target.heardWoodcutter = source.heardWoodcutter;
+            target.sawTrailKnot = source.sawTrailKnot;
+            target.sawTrailNote = source.sawTrailNote;
+            target.stage = source.stage;
+            target.herbWaves = source.herbWaves;
+            target.searchWaves = source.searchWaves;
+            target.herbalParticipation = source.herbalParticipation;
+            target.declinedHerbalOffer = source.declinedHerbalOffer;
+            target.hideStoryPrompts = source.hideStoryPrompts;
+            target.encounters = source.encounters == null ? null : source.encounters.ConvertAll(record =>
+                record == null ? null : new OriginEncounterRecord { id = record.id, choice = record.choice });
+            return target;
+        }
+
+        private static OriginActor CopyActor(OriginActor source) => source == null ? null : new OriginActor
+        { id = source.id, name = source.name, gender = source.gender, race = source.race };
+
         public static bool IsValid(EntityDataSO hero)
         {
-            var state = hero.originStory;
+            return IsValidState(hero.originStory, hero.race, hero.gender);
+        }
+
+        private static bool IsValidState(OriginStoryState state, RaceType race, GenderType gender)
+        {
             if (state == null) return true;
             if (string.IsNullOrEmpty(state.originId)) return state.version == 0;
-            var origin = Definition(hero);
-            if (origin == null || (state.version < 1 || state.version > SaveVersion) || hero.race != RaceType.NhanToc ||
-                (hero.gender != GenderType.Nam && hero.gender != GenderType.Nu) ||
+            var origin = state.originId == HanVu.Id ? HanVu : null;
+            if (origin == null || (state.version < 1 || state.version > SaveVersion) || race != RaceType.NhanToc ||
+                (gender != GenderType.Nam && gender != GenderType.Nu) ||
                 !IsActor(state.guardian, origin.GuardianId) || !IsActor(state.companion, origin.CompanionId) ||
-                state.companion.gender != Opposite(hero.gender) || state.stage < OriginStage.Gather ||
+                state.companion.gender != Opposite(gender) || state.stage < OriginStage.Gather ||
                 state.stage > OriginStage.Complete || state.herbWaves < 0 || state.herbWaves > OriginDefinition.Waves ||
                 state.searchWaves < 0 || state.searchWaves > OriginDefinition.Waves)
                 return false;
@@ -118,6 +152,87 @@ namespace TuTienCore
             return (state.herbWaves == OriginDefinition.Waves) == (state.stage >= OriginStage.Return) &&
                 (state.searchWaves == OriginDefinition.Waves) == (state.stage == OriginStage.Complete) &&
                 (state.stage >= OriginStage.SearchElite || state.searchWaves == 0);
+        }
+
+        // Presence and scalar types must be checked before JsonUtility supplies
+        // default values. Required fields follow the existing v1/v2/v3 contract.
+        internal static bool IsValidSnapshotJson(string json)
+        {
+            if (!CultivationSaveJson.TryObject(json, out var root, out _)) return false;
+            if (!root.TryGetValue("originStory", out var token) || token == "null") return true;
+            if (!CultivationSaveJson.TryObject(token, out var fields, out _) ||
+                !ReadInteger(fields, "version", out int version)) return false;
+            if (version == 0)
+                return !fields.TryGetValue("originId", out var empty) || empty == "null" ||
+                    CultivationSaveJson.TryString(empty, out var id) && string.IsNullOrEmpty(id);
+            if (version < 1 || version > SaveVersion || !ReadText(fields, "originId") ||
+                !ReadActor(fields, "guardian") || !ReadActor(fields, "companion")) return false;
+            foreach (var name in new[] { "stage", "herbWaves", "searchWaves" })
+                if (!ReadInteger(fields, name, out _)) return false;
+            foreach (var name in new[] { "introduced", "heardCompanion" })
+                if (!ReadBoolean(fields, name)) return false;
+            if (version >= 2)
+            {
+                if (!ReadInteger(fields, "herbalParticipation", out _) ||
+                    !ReadBoolean(fields, "declinedHerbalOffer") || !ReadBoolean(fields, "hideStoryPrompts") ||
+                    !fields.TryGetValue("encounters", out var records) || !ReadEncounters(records)) return false;
+            }
+            if (version >= 3)
+                foreach (var name in new[] { "heardOpeningTrip", "heardWoodcutter", "sawTrailKnot", "sawTrailNote" })
+                    if (!ReadBoolean(fields, name)) return false;
+            if (!ReadInteger(root, "race", out int race) || !ReadInteger(root, "gender", out int gender)) return false;
+            try
+            {
+                return IsValidState(JsonUtility.FromJson<OriginStoryState>(token), (RaceType)race, (GenderType)gender);
+            }
+            catch (ArgumentException) { return false; }
+        }
+
+        private static bool ReadInteger(Dictionary<string, string> fields, string name, out int value)
+        {
+            value = 0;
+            return fields.TryGetValue(name, out var token) && int.TryParse(token,
+                System.Globalization.NumberStyles.AllowLeadingSign, System.Globalization.CultureInfo.InvariantCulture, out value);
+        }
+        private static bool ReadText(Dictionary<string, string> fields, string name) =>
+            fields.TryGetValue(name, out var token) && CultivationSaveJson.TryString(token, out _);
+        private static bool ReadBoolean(Dictionary<string, string> fields, string name) =>
+            fields.TryGetValue(name, out var token) && (token == "true" || token == "false");
+        private static bool ReadActor(Dictionary<string, string> fields, string name) =>
+            fields.TryGetValue(name, out var token) && CultivationSaveJson.TryObject(token, out var actor, out _) &&
+            ReadText(actor, "id") && ReadText(actor, "name") && ReadInteger(actor, "gender", out _) && ReadInteger(actor, "race", out _);
+
+        private static bool ReadEncounters(string token)
+        {
+            if (token == "null") return true;
+            if (token.Length < 2 || token[0] != '[' || token[token.Length - 1] != ']') return false;
+            // The structural reader has already validated syntax/duplicates at
+            // every depth. Split only top-level array elements, respecting strings.
+            int start = 1, depth = 0;
+            bool quoted = false, escaped = false;
+            for (int i = 1; i < token.Length; i++)
+            {
+                char c = token[i];
+                if (quoted)
+                {
+                    if (escaped) escaped = false;
+                    else if (c == '\\') escaped = true;
+                    else if (c == '"') quoted = false;
+                    continue;
+                }
+                if (c == '"') { quoted = true; continue; }
+                if (depth == 0 && (c == ',' || i == token.Length - 1))
+                {
+                    string item = token.Substring(start, i - start).Trim();
+                    if (item.Length == 0) return start == 1 && c == ']';
+                    if (!CultivationSaveJson.TryObject(item, out var record, out _) ||
+                        !ReadText(record, "id") || !ReadInteger(record, "choice", out _)) return false;
+                    start = i + 1;
+                }
+                else if (c == '{' || c == '[') depth++;
+                else if (c == '}' || c == ']') depth--;
+            }
+            return true;
         }
 
         private static bool IsActor(OriginActor actor, string id) =>

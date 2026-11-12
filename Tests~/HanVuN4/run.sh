@@ -4,7 +4,7 @@ cd "$(dirname "$0")/../.."
 build_dir="$(mktemp -d)"
 trap 'rm -rf "$build_dir"' EXIT
 python3 Tests~/HanVuN4/prepare.py "$build_dir"
-"${CSC:-mcs}" -langversion:7.2 -define:UNITY_EDITOR -r:System.Web.Extensions.dll -out:"$build_dir/N4.exe" \
+"${CSC:-mcs}" -langversion:7.2 -define:UNITY_EDITOR,HANVU_N4_TESTS -r:System.Web.Extensions.dll -out:"$build_dir/N4.exe" \
   "$build_dir"/*.cs Tests~/HanVuN4/{MemoryIO,EngineJson,Boundary,Runner,Regression}.cs \
   Tests~/{NestedEquipmentSaveStub,StoryOriginRegression,WorldMapRegression}.cs \
   Tests~/HanVuN3/Regression.cs \

@@ -23,5 +23,6 @@ public partial class GameManager
     {BindFixture(h);PublishedLoads++;prepared?.Dispose();return true;}
     void RequestCultivationMigration(SaveSlot slot,bool deploy,bool fromTitle)
     {throw new InvalidOperationException("Migration I/O is outside this fixture");}
+    internal bool CommitFixture(Func<EntityDataSO,bool> change)=>TryCommitOriginChange(change);
     internal bool LoadFixture(SaveSlot slot)=>TryLoadSlot(slot,true);
 }
