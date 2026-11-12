@@ -1,5 +1,8 @@
 # Hướng dẫn Codex — Bách Luyện Tiên Đồ
 
+> **QUY TẮC ƯU TIÊN 12/11/2026 — BẮT BUỘC:** Đọc phần đầu `README.md` (“Định hướng và quy trình chuẩn — 12/11/2026”) **trước** phần hướng dẫn tháng 10 bên dưới. Thiết kế idle + cốt truyện nhánh hội tụ; người chơi khởi đầu mục tiêu nhỏ và đổi lý tưởng; thời gian truyện theo mốc (B); thọ nguyên nhân vật chính chỉ kết thúc tại mốc truyện hợp lệ (B). Đọc tiếp `Docs/NARRATIVE_DESIGN_BASELINE_2026-11-12.md`. Tên Thanh Khê/Lâm Thanh, 5 hồi, bế quan chi tiết, Luân Hồi/Hồi Tưởng là đề xuất, không được tự biến thành nội dung đã chốt hoặc code. EXP bank tại bình cảnh có successor thay mô tả “Level luôn tăng” cũ. Không mặc định `main` chứa gameplay mới; nhiều PR khác branch chưa tích hợp. Xác minh head/base/PR và chỉ làm task được giao; không tự merge, đổi Save schema, balance, lore hay unlock production gates.
+
+
 ## Đọc trước khi thay đổi
 
 Đọc [.agents/skills/idle-game-project-rules/SKILL.md](.agents/skills/idle-game-project-rules/SKILL.md)
