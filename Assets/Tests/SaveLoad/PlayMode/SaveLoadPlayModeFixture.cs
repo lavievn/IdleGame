@@ -474,6 +474,15 @@ namespace IdleGame.Tests.SaveLoad.PlayMode
             hero.hideFlags = HideFlags.HideAndDontSave;
             entities.Add(hero);
             JsonUtility.FromJsonOverwrite(json, hero);
+            var profile = Manager.GetType().GetProperty("CultivationProfile").GetValue(Manager);
+            if (profile != null && string.IsNullOrEmpty((string)PlayModeRuntime.Get(hero, "cultivationJson")))
+            {
+                // The owned fixture uses the same production configuration as Awake.
+                var codec = PlayModeRuntime.Type("TuTienCore.CultivationGameplayState");
+                var session = codec.GetMethod("New").Invoke(null, new[] { profile });
+                string component = (string)codec.GetMethod("Capture").Invoke(null, new[] { session, profile });
+                PlayModeRuntime.Set(hero, "cultivationJson", component);
+            }
             return hero;
         }
 
