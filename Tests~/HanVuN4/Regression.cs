@@ -18,7 +18,9 @@ partial class MotionRegression
             Hero=N3Hero(stage,participation:HerbalParticipation.Accepted);
             Game=new GameObject("N4 origin host").AddComponent<GameManager>();
             Saves=new GameObject("N4 memory saver").AddComponent<SaveManager>();
-            Saves.ConfigureSaveDirectoryBeforeAwake("/virtual/owned-hanvu-n4/"+Guid.NewGuid().ToString("N"));
+            var volume = System.IO.Path.GetPathRoot(Environment.CurrentDirectory);
+            Saves.ConfigureSaveDirectoryBeforeAwake(System.IO.Path.Combine(volume,
+                "virtual", "owned-hanvu-n4", Guid.NewGuid().ToString("N")));
             Path=System.IO.Path.Combine(Saves.SaveDirectory,"AutoSave.json");
             Game.BindPersistenceFixture(Hero,Saves);
             Check(Saves.SaveGame(Hero,SaveSlot.AutoSave),"seed complete snapshot");
@@ -263,13 +265,15 @@ partial class MotionRegression
             {fields["originStory"]=legacy;Check(StoryOrigin.IsValidSnapshotJson(Json(fields)),"legacy "+legacy);}
         });
         Run("N4 unrelated invalid future and partial components still block publication and preserve every slot",()=>{
-            foreach(var component in new[]{"equipment","realm","cultivation","skills","trial"})
+            foreach(var component in new[]{"equipment","realm","cultivation","skills","trial","climate","experience"})
             {
                 var f=new N4Fixture();string before=N3Facts(f.Hero),disk=f.Saved;
                 Check(CultivationSaveJson.TryObject(disk,out var fields,out _),"root");
                 switch(component){case "equipment":fields["equipmentVersion"]="99";break;case "realm":fields.Remove("realmId");break;
                     case "cultivation":fields["cultivationJson"]="\"{\\\"version\\\":99}\"";break;
                     case "skills":fields["combatSkills"]="{\"version\":99}";break;
+                    case "climate":fields["worldClimate"]="{\"version\":99,\"seed\":44,\"day\":2,\"dayFraction\":0.4}";break;
+                    case "experience":fields["experienceJson"]="null";break;
                     default:fields["tribulationJson"]="\"{\\\"version\\\":99}\"";break;}
                 string invalid=Json(fields);MemoryFiles.WriteAllBytes(f.Path,Encoding.UTF8.GetBytes(invalid));
                 Check(!f.Game.LoadFixture(SaveSlot.AutoSave) && f.Game.HeroData==f.Hero && N3Facts(f.Hero)==before,"Load "+component);
@@ -300,6 +304,9 @@ partial class MotionRegression
                 f.Saves.FailNextOwnedWrite=SaveManager.OwnedWriteFault.BeforeReplace;
                 Check(!f.Game.TryOriginInteraction(),"failed narrative commit");
                 for(int frame=0;frame<5;frame++)Check(binding.Advance(f.Hero,frame,.1,false,f.Hero.worldMapId)==CultivationReason.None,"live Qi");
+                f.Hero.worldClimate = WorldClimateState.AtDawn(351);
+                f.Hero.worldClimate.day = 2;
+                f.Hero.experienceJson = ExperienceProgress.Capture(new ExperienceSnapshot { reserve = "1100" });
                 f.Hero.AddExp(250);EquipmentInventory.Add(f.Hero,EquipmentRefinement.MaterialId,3);f.Hero.mapVisits++;
                 var bag=f.Hero.inventory;var gear=f.Hero.equipmentItems;var skills=f.Hero.combatSkills;
                 string other=RootWithoutStory(f.Hero),qi=f.Hero.cultivationJson;
@@ -309,6 +316,10 @@ partial class MotionRegression
                 Check(binding.Advance(f.Hero,6,.1,false,f.Hero.worldMapId)==CultivationReason.None,"original Qi binding still owns canonical Hero");
                 Check(f.Game.LoadFixture(SaveSlot.AutoSave),"load real component validators");
                 var loaded=f.Game.HeroData;
+                Check(loaded.worldClimate.seed == 351 && loaded.worldClimate.day == 2 &&
+                    loaded.experienceJson == f.Hero.experienceJson &&
+                    ExperienceProgress.TryRead(loaded.experienceJson,out var reserve) &&
+                    ExperienceProgress.Amount(reserve) == 1100, "loaded climate and EXP reserve");
                 Check(loaded.cultivationJson==qi && loaded.currentExp==JsonUtility.FromJson<EntityDataSO>(f.Saved).currentExp &&
                     loaded.gold==12345 && loaded.combatSkills.mana==37 && loaded.combatSkills.health==42 &&
                     loaded.equipmentItems[0].instanceId==sword.instanceId && loaded.equipmentItems[0].refineLevel==sword.refineLevel,"selected loaded component authorities");

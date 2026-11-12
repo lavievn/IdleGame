@@ -137,6 +137,20 @@ internal static class IntegratedPlaytestSmoke
         UnityEngine.Object.Destroy(candidate);
         Check(game.LoadAndContinue(SaveSlot.ManualSave2), "Load Gate-ready checkpoint");
         yield return Ready(game, ui);
+        int level = game.HeroData.currentLevel;
+        int currentExp = game.HeroData.currentExp;
+        Check(ExperienceProgress.TryRead(game.HeroData.experienceJson, out var before), "Read reserve before award");
+        game.HeroData.AddExp(250);
+        Check(ExperienceProgress.TryRead(game.HeroData.experienceJson, out var bank) &&
+            ExperienceProgress.Amount(bank) == ExperienceProgress.Amount(before) + 250 &&
+            game.HeroData.currentLevel == level && game.HeroData.currentExp == currentExp,
+            "Runtime Hero banks EXP at the DEV Gate bottleneck");
+        string banked = game.HeroData.experienceJson;
+        Check(game.TryManualSave(SaveSlot.ManualSave2) && game.LoadAndContinue(SaveSlot.ManualSave2),
+            "Save and Load the banked EXP together with story and climate");
+        yield return Ready(game, ui);
+        Check(game.HeroData.experienceJson == banked && StoryOrigin.Definition(game.HeroData) == StoryOrigin.HanVu &&
+            game.HeroData.worldClimate.version == 1, "Load preserves EXP, origin and climate");
         var thunder = Read<HeavenlyGateThunderAudio>(combat, "trialThunder");
         int played = thunder.Played;
         long strike = combat.TrialStrikeCount;
@@ -155,6 +169,8 @@ internal static class IntegratedPlaytestSmoke
         yield return Wait(() => !game.HasTribulationLiability, 20, "Return from Gate");
         yield return Ready(game, ui);
         Check(thunder.Pending == 0, "Gate exit drops queued thunder");
+        Check(game.HeroData.experienceJson == banked, "Failed trial keeps the reserve");
+        pass("Gate-ready Hero banks EXP, keeps it across Save/Load and a failed trial, and preserves origin and climate.");
         Check(game.LoadAndContinue(SaveSlot.ManualSave1), "Load ordinary map after Gate exit");
         yield return Ready(game, ui);
         Check(combat.ApplyDamageToRegisteredHero(hero, 1000000, "Owned map Retry"), "Defeat to exercise Retry");
