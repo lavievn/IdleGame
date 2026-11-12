@@ -94,6 +94,7 @@ namespace TuTienCore
     public sealed class CultivationGameplayBinding : IDisposable
     {
         readonly EntityDataSO hero;readonly CultivationSession session;
+        readonly HeavenlyGateConfiguration experienceGate;
         public readonly CultivationPlaytestProfile Profile;
         public bool IsDisposed {get;private set;}public CultivationSnapshot Current {get{return session.Current;}}
         public CultivationCapacity Capacity {get{return session.Capacity;}}public CultivationStepFlow LastStepFlow {get{return session.LastStepFlow;}}
@@ -102,8 +103,9 @@ namespace TuTienCore
         double remainder,elapsed;string pendingNode,pendingConfigurationId;int pendingConfigurationVersion;long lastFrame=-1;string published;
         public double PendingSeconds {get{return remainder;}}public double ActiveSeconds {get{return elapsed;}}
         public double ProcessedSeconds {get{return elapsed-remainder;}}
-        public CultivationGameplayBinding(EntityDataSO hero,CultivationPlaytestProfile profile,CultivationSession session)
+        public CultivationGameplayBinding(EntityDataSO hero,CultivationPlaytestProfile profile,CultivationSession session,HeavenlyGateConfiguration experienceGate=null)
         {if(hero==null || profile==null || session==null)throw new ArgumentException();this.hero=hero;Profile=profile;this.session=session;
+            this.experienceGate=experienceGate?.Copy();hero.experienceBinding=this;
             if(profile.SaveVersion>=2 && session.GameplayClock!=null){remainder=session.GameplayClock.Remainder;elapsed=session.GameplayClock.Elapsed;pendingNode=session.GameplayClock.NodeId;pendingConfigurationId=session.GameplayClock.ConfigurationId;pendingConfigurationVersion=session.GameplayClock.ConfigurationVersion;}
             if(pendingConfigurationId==null){pendingConfigurationId=profile.Id;pendingConfigurationVersion=profile.Version;}
             Density=profile.Density(pendingNode??hero.worldMapId);Publish();}
@@ -141,6 +143,9 @@ namespace TuTienCore
             if(result!=CultivationReason.None)return result;
             TickCount++;remainder=0;Publish();return CultivationReason.None;
         }
-        public void Dispose(){IsDisposed=true;remainder=0;}
+        internal bool ShouldBankExperience(EntityDataSO canonical) => !IsDisposed && canonical==hero &&
+            hero.experienceBinding==this && ExperienceProgress.HasBreakthroughPath(Profile,experienceGate,Current.Foundation.ActualRealmId) &&
+            Profile.Catalog.Evaluate(Current.Foundation.ActualRealmId,Current.Foundation.Amount).AtBottleneck;
+        public void Dispose(){IsDisposed=true;remainder=0;if(hero.experienceBinding==this)hero.experienceBinding=null;}
     }
 }

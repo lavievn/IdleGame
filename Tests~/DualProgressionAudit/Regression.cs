@@ -22,12 +22,12 @@ partial class MotionRegression
                 new CultivationSnapshot(new CultivationFoundation(p.StartingRealm,3600),new UnrefinedQiReserve(20),
                     new SpiritualEnergy(0),new BloodEssenceState(0,0),new FoundationInjuryState(0)));
             var before=s.Current;h.AddExp(h.expToNextLevel);
-            Check(h.currentLevel==2 && s.Current==before,"current AddExp keeps leveling; it does not implement an EXP bank");
+            Check(h.currentLevel==2 && s.Current==before,"terminal production cap keeps Level progressing under the approved policy");
             int level=h.currentLevel,exp=h.currentExp;
             Check(s.Tick(s.OwnerId,s.Epoch,0,.1,false,p.Density("TV-20"))==CultivationReason.None &&
                 s.Current.Foundation.Amount==3600 && s.Current.Reserve.Amount>20 && h.currentLevel==level && h.currentExp==exp,
                 "only Qi reserve grows at cap");
-            Console.WriteLine("GAP EXP is not reserved/released: current AddExp continues Level at realm bottleneck; no EXP reserve exists.");
+            Console.WriteLine("POLICY terminal production cap has no successor/trial: Level continues; Qi remains independent.");
         });
         Run("World Qi table preserves all map rates and source seed without consuming combat RNG",()=>{
             var p=AuditProfile();var w=auditWorld;
