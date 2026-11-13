@@ -11,5 +11,5 @@ trap 'rm -rf "$build_dir"' EXIT
   Assets/Script/{WorldQiDistribution,CultivationModel,CultivationEngine,CultivationCapacity,CultivationBreakthrough,CultivationPersistence,CultivationGameplayState,CultivationPlaytestProfile,CultivationSaveJson,CultivationProductionConfiguration,CultivationProductionConfiguration.Versions,CultivationConfigurationUpgrade,CultivationIntegrationGate,CultivationPerformance,CultivationBalanceSimulation,BloodEssenceTransactions,FoundationRecovery}.cs \
   Assets/Script/{ExperienceProgress,HeavenlyGateModel,HeavenlyGatePenalty,HeavenlyTribulation}.cs \
   Assets/Script/{WorldClimate,HanVuOrigin,HanVuNarrative,HanVuEncounters}.cs \
-  Assets/DataScript/EntityDataSO.cs
+  Assets/Script/MasteryFoundation.cs Assets/DataScript/EntityDataSO.cs
 "${MONO:-mono}" "$build_dir/DualProgressionAudit.exe" "$@"

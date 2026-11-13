@@ -12,5 +12,5 @@ python3 Tests~/HanVuN4/prepare.py "$build_dir"
   Assets/Script/{WorldQiDistribution,CultivationModel,CultivationEngine,CultivationCapacity,CultivationBreakthrough,CultivationPersistence,CultivationGameplayState,CultivationPlaytestProfile,CultivationProductionConfiguration,CultivationProductionConfiguration.Versions,CultivationPerformance,BloodEssenceTransactions,FoundationRecovery}.cs \
   Assets/Script/{HeavenlyGateModel,HeavenlyGatePenalty,HeavenlyTribulation}.cs \
   Assets/Script/{WorldClimate,ExperienceProgress}.cs \
-  Assets/DataScript/EntityDataSO.cs
+  Assets/Script/MasteryFoundation.cs Assets/DataScript/EntityDataSO.cs
 "${MONO:-mono}" "$build_dir/N4.exe"
