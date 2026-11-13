@@ -4,892 +4,714 @@
   "assets": [
     {
       "clip": "Coast_02",
-      "resource": "Coast_02",
       "gain": 0.5
     },
     {
       "clip": "Coast_03",
-      "resource": "Coast_03",
       "gain": 0.5
     },
     {
       "clip": "Coast_05",
-      "resource": "Coast_05",
       "gain": 0.5
     },
     {
       "clip": "Coast_06",
-      "resource": "Coast_06",
       "gain": 0.5
     },
     {
       "clip": "Coast_07",
-      "resource": "Coast_07",
       "gain": 0.5
     },
     {
       "clip": "Coast_12",
-      "resource": "Coast_12",
       "gain": 0.5
     },
     {
       "clip": "Coast_15",
-      "resource": "Coast_15",
       "gain": 0.5
     },
     {
       "clip": "Coast_beach",
-      "resource": "Coast_16",
       "gain": 0.5
     },
     {
       "clip": "Coast_beach2",
-      "resource": "Coast_18",
       "gain": 0.5
     },
     {
       "clip": "Coast_big_wave",
-      "resource": "Coast_base",
       "gain": 0.5
     },
     {
       "clip": "Coast_heavy_rain",
-      "resource": "Coast_08",
       "gain": 0.5
     },
     {
       "clip": "Coast_heavy_wave",
-      "resource": "Coast_10",
       "gain": 0.5
     },
     {
       "clip": "Coast_heavy_wave2",
-      "resource": "Coast_11",
       "gain": 0.5
     },
     {
       "clip": "Coast_light_wave",
-      "resource": "Coast_19",
       "gain": 0.5
     },
     {
       "clip": "Coast_medium_rain",
-      "resource": "Coast_20",
       "gain": 0.5
     },
     {
       "clip": "Coast_wave_far",
-      "resource": "Coast_13",
       "gain": 0.5
     },
     {
       "clip": "Coast_wave_storm",
-      "resource": "Coast_17",
       "gain": 0.5
     },
     {
       "clip": "Coast_wind",
-      "resource": "Coast_09",
       "gain": 0.5
     },
     {
       "clip": "Coast_wind2",
-      "resource": "Coast_14",
       "gain": 0.5
     },
     {
       "clip": "Lodges_02",
-      "resource": "Lodges_02",
       "gain": 0.5
     },
     {
       "clip": "Lodges_03",
-      "resource": "Lodges_03",
       "gain": 0.5
     },
     {
       "clip": "Lodges_04",
-      "resource": "Lodges_04",
       "gain": 0.5
     },
     {
       "clip": "Lodges_05",
-      "resource": "Lodges_05",
       "gain": 0.5
     },
     {
       "clip": "Lodges_06",
-      "resource": "Lodges_06",
       "gain": 0.5
     },
     {
       "clip": "Lodges_07",
-      "resource": "Lodges_07",
       "gain": 0.5
     },
     {
       "clip": "Lodges_08",
-      "resource": "Lodges_08",
       "gain": 0.5
     },
     {
       "clip": "Lodges_09",
-      "resource": "Lodges_09",
       "gain": 0.5
     },
     {
       "clip": "Lodges_10",
-      "resource": "Lodges_10",
       "gain": 0.5
     },
     {
       "clip": "Lodges_11",
-      "resource": "Lodges_11",
       "gain": 0.5
     },
     {
       "clip": "Lodges_12",
-      "resource": "Lodges_12",
       "gain": 0.5
     },
     {
       "clip": "Lodges_13",
-      "resource": "Lodges_13",
       "gain": 0.5
     },
     {
       "clip": "Lodges_14",
-      "resource": "Lodges_14",
       "gain": 0.5
     },
     {
       "clip": "Lodges_15",
-      "resource": "Lodges_15",
       "gain": 0.5
     },
     {
       "clip": "Lodges_16",
-      "resource": "Lodges_16",
       "gain": 0.5
     },
     {
       "clip": "Lodges_17",
-      "resource": "Lodges_17",
       "gain": 0.5
     },
     {
       "clip": "Lodges_18",
-      "resource": "Lodges_18",
       "gain": 0.5
     },
     {
       "clip": "Meadow_03",
-      "resource": "Meadow_03",
       "gain": 0.5
     },
     {
       "clip": "Meadow_04",
-      "resource": "Meadow_04",
       "gain": 0.5
     },
     {
       "clip": "Meadow_05",
-      "resource": "Meadow_05",
       "gain": 0.5
     },
     {
       "clip": "Meadow_06",
-      "resource": "Meadow_06",
       "gain": 0.5
     },
     {
       "clip": "Meadow_07",
-      "resource": "Meadow_07",
       "gain": 0.5
     },
     {
       "clip": "Meadow_08",
-      "resource": "Meadow_08",
       "gain": 0.5
     },
     {
       "clip": "Meadow_09",
-      "resource": "Meadow_09",
       "gain": 0.5
     },
     {
       "clip": "Meadow_11",
-      "resource": "Meadow_11",
       "gain": 0.5
     },
     {
       "clip": "Meadow_12",
-      "resource": "Meadow_12",
       "gain": 0.5
     },
     {
       "clip": "Meadow_14",
-      "resource": "Meadow_14",
       "gain": 0.5
     },
     {
       "clip": "Meadow_15",
-      "resource": "Meadow_15",
       "gain": 0.5
     },
     {
       "clip": "Meadow_16",
-      "resource": "Meadow_16",
       "gain": 0.5
     },
     {
       "clip": "Meadow_17",
-      "resource": "Meadow_17",
       "gain": 0.5
     },
     {
       "clip": "Meadow_18",
-      "resource": "Meadow_18",
       "gain": 0.5
     },
     {
       "clip": "Meadow_cricket",
-      "resource": "Meadow_13",
       "gain": 0.5
     },
     {
       "clip": "Meadow_light_rain",
-      "resource": "Meadow_02",
       "gain": 0.5
     },
     {
       "clip": "Meadow_rain",
-      "resource": "Meadow_10",
       "gain": 0.5
     },
     {
       "clip": "Morning_02",
-      "resource": "Morning_02",
       "gain": 0.5
     },
     {
       "clip": "Morning_03",
-      "resource": "Morning_03",
       "gain": 0.5
     },
     {
       "clip": "Morning_04",
-      "resource": "Morning_04",
       "gain": 0.5
     },
     {
       "clip": "Morning_05",
-      "resource": "Morning_05",
       "gain": 0.5
     },
     {
       "clip": "Morning_06",
-      "resource": "Morning_06",
       "gain": 0.5
     },
     {
       "clip": "Morning_07",
-      "resource": "Morning_07",
       "gain": 0.5
     },
     {
       "clip": "Morning_08",
-      "resource": "Morning_08",
       "gain": 0.5
     },
     {
       "clip": "Morning_09",
-      "resource": "Morning_09",
       "gain": 0.5
     },
     {
       "clip": "Morning_10",
-      "resource": "Morning_10",
       "gain": 0.5
     },
     {
       "clip": "Morning_11",
-      "resource": "Morning_11",
       "gain": 0.5
     },
     {
       "clip": "Morning_12",
-      "resource": "Morning_12",
       "gain": 0.5
     },
     {
       "clip": "Morning_13",
-      "resource": "Morning_13",
       "gain": 0.5
     },
     {
       "clip": "Morning_14",
-      "resource": "Morning_14",
       "gain": 0.5
     },
     {
       "clip": "Morning_15",
-      "resource": "Morning_15",
       "gain": 0.5
     },
     {
       "clip": "Morning_16",
-      "resource": "Morning_16",
       "gain": 0.5
     },
     {
       "clip": "Morning_17",
-      "resource": "Morning_17",
       "gain": 0.5
     },
     {
       "clip": "Morning_18",
-      "resource": "Morning_18",
       "gain": 0.5
     },
     {
       "clip": "Morning_19",
-      "resource": "Morning_19",
       "gain": 0.5
     },
     {
       "clip": "Morning_20",
-      "resource": "Morning_20",
       "gain": 0.5
     },
     {
       "clip": "Night_02",
-      "resource": "Night_02",
       "gain": 0.5
     },
     {
       "clip": "Night_03",
-      "resource": "Night_03",
       "gain": 0.5
     },
     {
       "clip": "Night_04",
-      "resource": "Night_04",
       "gain": 0.5
     },
     {
       "clip": "Night_05",
-      "resource": "Night_05",
       "gain": 0.5
     },
     {
       "clip": "Night_06",
-      "resource": "Night_06",
       "gain": 0.5
     },
     {
       "clip": "Night_07",
-      "resource": "Night_07",
       "gain": 0.5
     },
     {
       "clip": "Night_08",
-      "resource": "Night_08",
       "gain": 0.5
     },
     {
       "clip": "Night_09",
-      "resource": "Night_09",
       "gain": 0.5
     },
     {
       "clip": "Night_10",
-      "resource": "Night_10",
       "gain": 0.5
     },
     {
       "clip": "Night_11",
-      "resource": "Night_11",
       "gain": 0.5
     },
     {
       "clip": "Night_12",
-      "resource": "Night_12",
       "gain": 0.5
     },
     {
       "clip": "Night_13",
-      "resource": "Night_13",
       "gain": 0.5
     },
     {
       "clip": "Night_14",
-      "resource": "Night_14",
       "gain": 0.5
     },
     {
       "clip": "Night_15",
-      "resource": "Night_15",
       "gain": 0.5
     },
     {
       "clip": "Night_16",
-      "resource": "Night_16",
       "gain": 0.5
     },
     {
       "clip": "Pebble_02",
-      "resource": "Pebble_02",
       "gain": 0.5
     },
     {
       "clip": "Pebble_03",
-      "resource": "Pebble_03",
       "gain": 0.5
     },
     {
       "clip": "Pebble_04",
-      "resource": "Pebble_04",
       "gain": 0.5
     },
     {
       "clip": "Pebble_05",
-      "resource": "Pebble_05",
       "gain": 0.5
     },
     {
       "clip": "Pebble_06",
-      "resource": "Pebble_06",
       "gain": 0.5
     },
     {
       "clip": "Pebble_07",
-      "resource": "Pebble_07",
       "gain": 0.5
     },
     {
       "clip": "Pebble_08",
-      "resource": "Pebble_08",
       "gain": 0.5
     },
     {
       "clip": "Pebble_09",
-      "resource": "Pebble_09",
       "gain": 0.5
     },
     {
       "clip": "Pebble_10",
-      "resource": "Pebble_10",
       "gain": 0.5
     },
     {
       "clip": "Pebble_11",
-      "resource": "Pebble_11",
       "gain": 0.5
     },
     {
       "clip": "Pebble_12",
-      "resource": "Pebble_12",
       "gain": 0.5
     },
     {
       "clip": "Pebble_13",
-      "resource": "Pebble_13",
       "gain": 0.5
     },
     {
       "clip": "Pebble_14",
-      "resource": "Pebble_14",
       "gain": 0.5
     },
     {
       "clip": "Pebble_15",
-      "resource": "Pebble_15",
       "gain": 0.5
     },
     {
       "clip": "Pebble_16",
-      "resource": "Pebble_16",
       "gain": 0.5
     },
     {
       "clip": "Pebble_17",
-      "resource": "Pebble_17",
       "gain": 0.5
     },
     {
       "clip": "Pebble_18",
-      "resource": "Pebble_18",
       "gain": 0.5
     },
     {
       "clip": "Pebble_19",
-      "resource": "Pebble_19",
       "gain": 0.5
     },
     {
       "clip": "Pebble_20",
-      "resource": "Pebble_20",
       "gain": 0.5
     },
     {
       "clip": "Primeval_02",
-      "resource": "Primeval_02",
       "gain": 0.5
     },
     {
       "clip": "Primeval_03",
-      "resource": "Primeval_03",
       "gain": 0.5
     },
     {
       "clip": "Primeval_04",
-      "resource": "Primeval_04",
       "gain": 0.5
     },
     {
       "clip": "Primeval_05",
-      "resource": "Primeval_05",
       "gain": 0.5
     },
     {
       "clip": "Primeval_06",
-      "resource": "Primeval_06",
       "gain": 0.5
     },
     {
       "clip": "Primeval_07",
-      "resource": "Primeval_07",
       "gain": 0.5
     },
     {
       "clip": "Primeval_08",
-      "resource": "Primeval_08",
       "gain": 0.5
     },
     {
       "clip": "Primeval_09",
-      "resource": "Primeval_09",
       "gain": 0.5
     },
     {
       "clip": "Primeval_10",
-      "resource": "Primeval_10",
       "gain": 0.5
     },
     {
       "clip": "Primeval_11",
-      "resource": "Primeval_11",
       "gain": 0.5
     },
     {
       "clip": "Primeval_12",
-      "resource": "Primeval_12",
       "gain": 0.5
     },
     {
       "clip": "Primeval_13",
-      "resource": "Primeval_13",
       "gain": 0.5
     },
     {
       "clip": "Primeval_14",
-      "resource": "Primeval_14",
       "gain": 0.5
     },
     {
       "clip": "Primeval_15",
-      "resource": "Primeval_15",
       "gain": 0.5
     },
     {
       "clip": "Primeval_16",
-      "resource": "Primeval_16",
       "gain": 0.5
     },
     {
       "clip": "Primeval_17",
-      "resource": "Primeval_17",
       "gain": 0.5
     },
     {
       "clip": "Primeval_18",
-      "resource": "Primeval_18",
       "gain": 0.5
     },
     {
       "clip": "Primeval_19",
-      "resource": "Primeval_19",
       "gain": 0.5
     },
     {
       "clip": "Primeval_20",
-      "resource": "Primeval_20",
       "gain": 0.5
     },
     {
       "clip": "Rain_02",
-      "resource": "Rain_02",
       "gain": 0.5
     },
     {
       "clip": "Rain_03",
-      "resource": "Rain_03",
       "gain": 0.5
     },
     {
       "clip": "Rain_04",
-      "resource": "Rain_04",
       "gain": 0.5
     },
     {
       "clip": "Rain_05",
-      "resource": "Rain_05",
       "gain": 0.5
     },
     {
       "clip": "Rain_06",
-      "resource": "Rain_06",
       "gain": 0.5
     },
     {
       "clip": "Rain_07",
-      "resource": "Rain_07",
       "gain": 0.5
     },
     {
       "clip": "Rain_08",
-      "resource": "Rain_08",
       "gain": 0.5
     },
     {
       "clip": "Rain_09",
-      "resource": "Rain_09",
       "gain": 0.5
     },
     {
       "clip": "Rain_10",
-      "resource": "Rain_10",
       "gain": 0.5
     },
     {
       "clip": "Rain_11",
-      "resource": "Rain_11",
       "gain": 0.5
     },
     {
       "clip": "Rain_12",
-      "resource": "Rain_12",
       "gain": 0.5
     },
     {
       "clip": "Rain_13",
-      "resource": "Rain_13",
       "gain": 0.5
     },
     {
       "clip": "Rain_14",
-      "resource": "Rain_14",
       "gain": 0.5
     },
     {
       "clip": "Rain_15",
-      "resource": "Rain_15",
       "gain": 0.5
     },
     {
       "clip": "Rain_16",
-      "resource": "Rain_16",
       "gain": 0.5
     },
     {
       "clip": "Thunder_02",
-      "resource": "Thunder_02",
       "gain": 0.5
     },
     {
       "clip": "Thunder_03",
-      "resource": "Thunder_03",
       "gain": 0.5
     },
     {
       "clip": "Thunder_04",
-      "resource": "Thunder_04",
       "gain": 0.5
     },
     {
       "clip": "Thunder_05",
-      "resource": "Thunder_05",
       "gain": 0.5
     },
     {
       "clip": "Thunder_06",
-      "resource": "Thunder_06",
       "gain": 0.5
     },
     {
       "clip": "Thunder_07",
-      "resource": "Thunder_07",
       "gain": 0.5
     },
     {
       "clip": "Thunder_08",
-      "resource": "Thunder_08",
       "gain": 0.5
     },
     {
       "clip": "Thunder_09",
-      "resource": "Thunder_09",
       "gain": 0.5
     },
     {
       "clip": "Thunder_10",
-      "resource": "Thunder_10",
       "gain": 0.5
     },
     {
       "clip": "Thunder_11",
-      "resource": "Thunder_11",
       "gain": 0.5
     },
     {
       "clip": "Thunder_12",
-      "resource": "Thunder_12",
       "gain": 0.5
     },
     {
       "clip": "Thunder_13",
-      "resource": "Thunder_13",
       "gain": 0.5
     },
     {
       "clip": "Thunder_14",
-      "resource": "Thunder_14",
       "gain": 0.5
     },
     {
       "clip": "Thunder_15",
-      "resource": "Thunder_15",
       "gain": 0.5
     },
     {
       "clip": "Thunder_16",
-      "resource": "Thunder_16",
       "gain": 0.5
     },
     {
       "clip": "Thunder_17",
-      "resource": "Thunder_17",
       "gain": 0.5
     },
     {
       "clip": "Thunder_18",
-      "resource": "Thunder_18",
       "gain": 0.5
     },
     {
       "clip": "Thunder_19",
-      "resource": "Thunder_19",
       "gain": 0.5
     },
     {
       "clip": "Thunder_20",
-      "resource": "Thunder_20",
       "gain": 0.5
     },
     {
       "clip": "WindRain_02",
-      "resource": "WindRain_02",
       "gain": 0.5
     },
     {
       "clip": "WindRain_03",
-      "resource": "WindRain_03",
       "gain": 0.5
     },
     {
       "clip": "WindRain_04",
-      "resource": "WindRain_04",
       "gain": 0.5
     },
     {
       "clip": "WindRain_05",
-      "resource": "WindRain_05",
       "gain": 0.5
     },
     {
       "clip": "WindRain_06",
-      "resource": "WindRain_06",
       "gain": 0.5
     },
     {
       "clip": "WindRain_07",
-      "resource": "WindRain_07",
       "gain": 0.5
     },
     {
       "clip": "WindRain_08",
-      "resource": "WindRain_08",
       "gain": 0.5
     },
     {
       "clip": "WindRain_09",
-      "resource": "WindRain_09",
       "gain": 0.5
     },
     {
       "clip": "WindRain_10",
-      "resource": "WindRain_10",
       "gain": 0.5
     },
     {
       "clip": "WindRain_11",
-      "resource": "WindRain_11",
       "gain": 0.5
     },
     {
       "clip": "WindRain_12",
-      "resource": "WindRain_12",
       "gain": 0.5
     },
     {
       "clip": "WindRain_13",
-      "resource": "WindRain_13",
       "gain": 0.5
     },
     {
       "clip": "WindRain_14",
-      "resource": "WindRain_14",
       "gain": 0.5
     },
     {
       "clip": "WindRain_15",
-      "resource": "WindRain_15",
       "gain": 0.5
     },
     {
       "clip": "WindRain_16",
-      "resource": "WindRain_16",
       "gain": 0.5
     },
     {
       "clip": "WindRain_17",
-      "resource": "WindRain_17",
       "gain": 0.5
     },
     {
       "clip": "WindRain_18",
-      "resource": "WindRain_18",
       "gain": 0.5
     },
     {
       "clip": "WindRain_19",
-      "resource": "WindRain_19",
       "gain": 0.5
     },
     {
       "clip": "WindRain_20",
-      "resource": "WindRain_20",
       "gain": 0.5
     }
   ]

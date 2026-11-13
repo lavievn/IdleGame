@@ -82,8 +82,7 @@ internal static class IntegratedPlaytestSmoke
 
         Preview(game, 12f, WorldWeather.HeavyRain);
         Check(game.TryTravelToWorldMap(StoryOrigin.HanVu.Forest), "Travel from Hàn Vụ to forest via real handler");
-        yield return Wait(() => weatherAudio.CurrentMapProfile == "Forest" &&
-            family.ActiveLoops(AudioLayer.MeadowWeather) == 0 && family.ActiveLoops(AudioLayer.Morning) == 3 &&
+        yield return Wait(() => family.ActiveLoops(AudioLayer.MeadowWeather) == 0 && family.ActiveLoops(AudioLayer.Morning) == 3 &&
             family.ActiveLoops(AudioLayer.Primeval) == 0 && family.ActiveLoops(AudioLayer.Rain) == 1, 10,
             "Heavy rain forest plays Morning and global Rain while Primeval rests");
         Check(MapBgmController.Instance.GetComponents<AudioSource>().Any(x => x.isPlaying &&
@@ -185,6 +184,9 @@ internal static class IntegratedPlaytestSmoke
         var imported = Resources.LoadAll<AudioClip>("IntegratedAmbience");
         Check(imported.Length == 191 && imported.Where(x => x.name != "GateThunder")
             .All(x => x.loadType == AudioClipLoadType.Streaming), "All 190 environment OGG remain streaming");
+        Check(imported.Any(x => x.name == "Coast_heavy_rain") && imported.Any(x => x.name == "Meadow_light_rain") &&
+            imported.All(x => x.name != "Coast_08" && x.name != "Meadow_02"),
+            "Unity imports the new archive names and no legacy aliases");
         var gate = Resources.Load<AudioClip>("IntegratedAmbience/GateThunder");
         Check(gate != null && gate.loadType == AudioClipLoadType.DecompressOnLoad && gate.length > 3 && gate.length < 7,
             "The separate Gate one-shot retains its import settings");

@@ -6,7 +6,7 @@ using UnityEngine;
 internal sealed class EnvironmentAudioPlayer
 {
     [Serializable] private sealed class Manifest { public bool complete; public Asset[] assets; public string[] lodgesMapIds; }
-    [Serializable] private sealed class Asset { public string clip; public string resource; public float gain; }
+    [Serializable] private sealed class Asset { public string clip; public float gain; }
 
     private sealed class Voice
     {
@@ -18,7 +18,6 @@ internal sealed class EnvironmentAudioPlayer
 
     private readonly Dictionary<string, AudioClip> clips = new Dictionary<string, AudioClip>(StringComparer.Ordinal);
     private readonly Dictionary<string, float> gains = new Dictionary<string, float>(StringComparer.Ordinal);
-    private readonly HashSet<AudioClip> seen = new HashSet<AudioClip>();
     private readonly HashSet<string> lodges;
     private readonly List<Voice> voices = new List<Voice>();
     private readonly EnvironmentAudioSchedule schedule;
@@ -33,8 +32,8 @@ internal sealed class EnvironmentAudioPlayer
         {
             if (asset == null || string.IsNullOrEmpty(asset.clip) || clips.ContainsKey(asset.clip) ||
                 !EnvironmentAudioRules.TryParse(asset.clip, out _, out _)) continue;
-            var clip = Resources.Load<AudioClip>("IntegratedAmbience/" + asset.resource);
-            if (clip == null || !seen.Add(clip)) continue;
+            var clip = Resources.Load<AudioClip>("IntegratedAmbience/" + asset.clip);
+            if (clip == null || !string.Equals(clip.name, asset.clip, StringComparison.Ordinal)) continue;
             clips.Add(asset.clip, clip);
             gains.Add(asset.clip, Mathf.Clamp01(asset.gain));
         }
@@ -55,25 +54,26 @@ internal sealed class EnvironmentAudioPlayer
         return player.clips.Count == manifest.assets.Length ? player : null;
     }
 
-    internal static AudioMap Map(TerrainType terrain, string profile, bool assignedLodges)
+    internal static AudioMap Map(TerrainType terrain, string map, bool village, bool assignedLodges)
     {
         if (assignedLodges) return AudioMap.Lodges;
-        if (profile == "Village" || profile == "Plains" || profile == "Steppe") return AudioMap.Meadow;
-        if (profile == "Snow") return AudioMap.Unassigned;
+        if (village || map == "TL-25") return AudioMap.Meadow;
+        if (map == "TL-01" || map == "TL-03" || map == "TL-04") return AudioMap.Unassigned;
         switch (terrain)
         {
             case TerrainType.Bien: return AudioMap.Coast;
             case TerrainType.RungRam: case TerrainType.DoiNui: case TerrainType.CaoNguyen: return AudioMap.ForestMountain;
+            case TerrainType.DongBang: return AudioMap.Meadow;
             default: return AudioMap.Unassigned;
         }
     }
 
     internal void Update(GameObject host, bool active, bool running, TerrainType terrain, string map, int mapNumber,
-        string profile, WorldClimateFrame frame, float environment, float weatherGain, float delta, float fadeSeconds,
+        bool village, WorldClimateFrame frame, float environment, float weatherGain, float delta, float fadeSeconds,
         int coastWeatherLimit, float thunderInterval)
     {
         if (!active) { Stop(); return; }
-        var category = Map(terrain, profile, lodges.Contains(map ?? ""));
+        var category = Map(terrain, map, village, lodges.Contains(map ?? ""));
         if (previousMap != map || previousMapNumber != mapNumber)
         {
             foreach (Voice voice in voices) if (voice.Event) Clear(voice);
@@ -204,7 +204,7 @@ internal sealed class EnvironmentAudioPlayer
             {
                 var frame = new WorldClimateFrame(phase, weather, 12f, 0f, 0f, 0f, Color.white, Color.white);
                 player.Update(host, true, true, map == "coast" ? TerrainType.Bien : TerrainType.HoNuoc, map, visit,
-                    null, frame, 1f, 1f, dt, 2f, settings.coastWeatherLoopLimit, settings.thunderInterval);
+                    false, frame, 1f, 1f, dt, 2f, settings.coastWeatherLoopLimit, settings.thunderInterval);
             }
             bool Has(string clip) => player.voices.Exists(v => v.Entry?.Name == clip && v.Source.loop);
             bool WetGlobal() => player.voices.Exists(v => v.Entry?.Family == AudioFamily.Rain && v.Source.loop);

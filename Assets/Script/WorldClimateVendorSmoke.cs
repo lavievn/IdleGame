@@ -138,11 +138,7 @@ internal static class WorldClimateVendorSmoke
         Set(game, "worldClimateHdrSky", true);
         Set(game, "previewWorldClimate", false);
         pass("Dry stops and clears Rain Maker completely. The HDR toggle restores the legacy PNGs.");
-        // This legacy fixture verifies the optional individual SFX fields.
-        var audioSettings = Read<WorldWeatherAudioSettings>(game, "worldWeatherAudioSettings");
-        audioSettings.useMapLayers = false;
         yield return WeatherPhase2Smoke.Run(game, ui, combat, space, adapter, resize, capture, pass);
-        audioSettings.useMapLayers = true;
         if (soak)
             yield return Soak(game, adapter, resize, capture, pass);
     }

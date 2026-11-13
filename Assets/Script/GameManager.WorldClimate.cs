@@ -44,7 +44,7 @@ public partial class GameManager
         {
             weatherStorm.Reset();
             if (!IsEnteringGameplay || HasTribulationLiability)
-                weatherAudio.Update(gameObject, worldWeatherAudioSettings, default, default, default, null, false, false, 0f);
+                weatherAudio.Stop();
             if (environmentManager != null) environmentManager.ClearWorldClimate();
             return;
         }
@@ -85,9 +85,8 @@ public partial class GameManager
             data.mapNumber, worldDaySeconds, running, !indoor);
         environmentManager.ApplyWorldClimate(frame, worldClimateLighting,
             worldClimateHdrSky && !indoor, worldClimateRain2D && !indoor, worldClimateAssets, visual);
-        float splash = worldClimateAssets != null ? worldClimateAssets.ConsumeRainImpact() : 0f;
-        weatherAudio.Update(gameObject, worldWeatherAudioSettings, visual, frame, data.mapTerrain, data.worldMapId,
-            IsGameplayHUDVisible || IsEnteringGameplay, !indoor, splash, TuTienCore.StoryOrigin.IsSafe(data),
+        weatherAudio.Update(gameObject, worldWeatherAudioSettings, frame, data.mapTerrain, data.worldMapId,
+            IsGameplayHUDVisible || IsEnteringGameplay, TuTienCore.StoryOrigin.IsSafe(data),
             data.mapNumber, running && !skipFrame);
     }
 }
