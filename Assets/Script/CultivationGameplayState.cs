@@ -69,7 +69,7 @@ namespace TuTienCore
                         {reason="Invalid cultivation clock checkpoint.";return false;}
                     string sourceId=dto.configurationId;int sourceVersion=dto.configurationVersion;
                     if(v==3){var provenance=(CultivationGameplayComponentV3)dto;sourceId=provenance.clockConfigurationId;sourceVersion=provenance.clockConfigurationVersion;CultivationPlaytestProfile source;if(!CultivationProductionConfiguration.TryClockSource(sourceId,sourceVersion,profile,out source) || source.StepSeconds!=profile.StepSeconds){reason="Unsupported pending clock source configuration.";return false;}}
-                    if(c.clockRemainder>0 && profile.IsProduction){CultivationPlaytestProfile pending;if(!CultivationProductionConfiguration.TryClockSource(sourceId,sourceVersion,profile,out pending) || !pending.HasNode(c.clockNodeId)){reason="UnknownPendingQiNode";return false;}}
+                    if(c.clockRemainder>0 && (profile.IsProduction || profile.HasQiZones)){CultivationPlaytestProfile pending;if(!CultivationProductionConfiguration.TryClockSource(sourceId,sourceVersion,profile,out pending) || !pending.HasNode(c.clockNodeId)){reason="UnknownPendingQiNode";return false;}}
                     clock=new CultivationClockState(c.clockRemainder,c.clockElapsed,c.clockNodeId,sourceId,sourceVersion);
                     dto.version=1; // Domain v1 payload is unchanged; clock schema validated separately above.
                 }
@@ -118,7 +118,7 @@ namespace TuTienCore
             if(paused){lastFrame=frame;return CultivationReason.Paused;}
             if(!CultivationNumber.NonNegative(dt) || dt>Profile.MaximumFrameSeconds)return CultivationReason.InvalidDelta;
             if(elapsed+dt>1e12)return CultivationReason.InvalidDelta;
-            if(Profile.IsProduction && !string.IsNullOrEmpty(nodeId) && !Profile.HasNode(nodeId))return CultivationReason.InvalidValue;
+            if((Profile.IsProduction && !string.IsNullOrEmpty(nodeId) || Profile.HasQiZones) && !Profile.HasNode(nodeId))return CultivationReason.InvalidValue;
             if(Profile.SaveVersion>=2 && (pendingNode!=nodeId || pendingConfigurationId!=Profile.Id || pendingConfigurationVersion!=Profile.Version)) {
                 var settle=SettlePending();if(settle!=CultivationReason.None)return settle;
             }

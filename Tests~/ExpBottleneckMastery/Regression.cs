@@ -26,6 +26,51 @@ partial class MotionRegression
 
     static partial void ExpMasteryTests()
     {
+        Run("DEV environmental Qi zones are deterministic and a standard Hàn Vụ start reaches cap in 60 active minutes",()=>{
+            var p=ZonedDevelopmentProfile();
+            const string start="TV-20";
+            string thin=p.QiSourceAt(start,.1),rich=p.QiSourceAt(start,.9);
+            Check(p.QiSourceAt(start,.5)==start && thin!=rich &&
+                p.QiSourceAt(start,.249)==thin && p.QiSourceAt(start,.25)==start &&
+                p.QiSourceAt(start,.75)==rich && p.QiSourceAt(start,.74)==start &&
+                Math.Abs(p.EnvironmentalQiPerSecond(thin)-.7)<1e-9 &&
+                p.EnvironmentalQiPerSecond(start)==1 && Math.Abs(p.EnvironmentalQiPerSecond(rich)-1.35)<1e-9,
+                "configured density and edges");
+            var h=HeroAt(1);
+            using(var b=new CultivationGameplayBinding(h,p,CultivationGameplayState.New(p)))
+            {
+                for(int i=1;i<=36001;i++)
+                {
+                    Check(b.Advance(h,i,.1,false,start)==CultivationReason.None,"active frame");
+                    if(i==9001 || i==21001)
+                        Check(Math.Abs(b.Current.Foundation.Amount-i*.1)<1e-7,"minor realm boundaries");
+                    if(i==35999)Check(!p.Catalog.Evaluate(p.StartingRealm,b.Current.Foundation.Amount).AtBottleneck,"below cap before an hour");
+                }
+                Check(Math.Abs(b.ActiveSeconds-3600)<.11 &&
+                    p.Catalog.Evaluate(p.StartingRealm,b.Current.Foundation.Amount).AtBottleneck &&
+                    h.currentLevel==1 && h.currentExp==0 && Bank(h)==0,"cap within one step, no combat EXP");
+                Console.WriteLine("  Hàn Vụ DEV: "+b.ActiveSeconds.ToString("F1")+" active s, foundation "+b.Current.Foundation.Amount+", 1 Qi/s standard");
+            }
+        });
+        Run("DEV Qi settles old band after Save/Load and Travel and pauses without granting",()=>{
+            var p=ZonedDevelopmentProfile();
+            var h=HeroAt(1);
+            string thin=p.QiSourceAt("TV-20",.1),rich=p.QiSourceAt("TV-16",.9);
+            using(var b=new CultivationGameplayBinding(h,p,CultivationGameplayState.New(p)))
+            {
+                Check(b.Advance(h,1,.04,false,thin)==CultivationReason.None && b.PendingSeconds==.04,"pending");
+                Check(b.Advance(h,2,.1,true,rich)==CultivationReason.Paused && b.ActiveSeconds==.04,"pause");
+                Check(b.Advance(h,3,.1,false,"TV-20#qi-invalid")==CultivationReason.InvalidValue,"invalid source");
+            }
+            Check(CultivationGameplayState.TryRestore(h.cultivationJson,p,out var saved,out var why),why);
+            using(var b=new CultivationGameplayBinding(h,p,saved))
+            {
+                Check(b.Advance(h,1,.1,false,rich)==CultivationReason.None,"new map");
+                double total=b.Current.Foundation.Amount+b.Current.Reserve.Amount;
+                double expected=.04*.7+.1*Math.Min(b.Capacity.Absorption,p.EnvironmentalQiPerSecond(rich));
+                Check(Math.Abs(total-expected)<1e-9 && Math.Abs(b.ActiveSeconds-.14)<1e-9,"no pending lost or repriced");
+            }
+        });
         Run("EXP normal awards preserve existing Level points and seeded growth",()=>{
             var h=HeroAt(1);UnityEngine.Random.InitState(325);int expected=UnityEngine.Random.Range(50,101);
             UnityEngine.Random.InitState(325);Check(h.AddExp(100) && h.currentLevel==2 && h.currentExp==0 &&
@@ -261,4 +306,9 @@ partial class MotionRegression
             Check(r.TryAccept(h,Evidence(r,1,WeaponFamily.Bow),true),"new family execution only");
         });
     }
+
+    static CultivationPlaytestProfile ZonedDevelopmentProfile() => DevelopmentCultivation015.CreateProfile(
+        "domain-fixture", ReadAuditData<DevelopmentCultivation015.Balance>("DevelopmentCultivation015"),
+        ReadAuditData<CultivationProductionDefinition>("CultivationProductionV3").cultivation,
+        ReadAuditData<CultivationCapacityDefinition>("CultivationCapacityV1"),AuditProfile());
 }

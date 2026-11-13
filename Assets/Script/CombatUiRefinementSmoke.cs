@@ -115,7 +115,7 @@ internal static class CombatUiRefinementSmoke
         candidate.combatSkills.health=-1;
         candidate.combatStatModifiers.Add(new CombatStatModifier {sourceId="owned:refinement:gate",stat=CombatStatId.Attack,flat=100});
         var profile=saves.CultivationProfile;
-        using (var binding=new CultivationGameplayBinding(candidate,profile,HeavenlyGateV13Fixtures.Session(profile,180,7))) { }
+        using (var binding=new CultivationGameplayBinding(candidate,profile,HeavenlyGateV13Fixtures.NearBottleneck(profile))) { }
         Check(saves.SaveGame(candidate,SaveSlot.ManualSave2),"Owned gate fixture Save");
         UnityEngine.Object.Destroy(candidate);
         Check(game.LoadAndContinue(SaveSlot.ManualSave2),"Load gate candidate");

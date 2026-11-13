@@ -98,8 +98,23 @@ internal static class Development015Smoke
         Check(game.Cultivation.Current.Foundation.Amount < 1 && game.TribulationLockedReason == "Chưa tới bình cảnh",
             "New starts at Luyện Khí Sơ kỳ and locks the early trial");
 
-        // Exercise real Update and world gameplay with scaled time. No direct
-        // grants of cultivation, realm, EXP or reserve to reach the bottleneck.
+        // Prove passive progression from New Game through the real Update.
+        ui.SetPaused(false);
+        Time.timeScale = 6;
+        yield return Wait(() => game.Cultivation.Current.Foundation.Amount >= 2, 10, "passive cultivation");
+        ui.SetPaused(true);
+        pass("New Game gains cultivation through the live clock before any fixture grants.");
+
+        // The one-hour balance is covered by the domain simulation. Seed only
+        // an owned checkpoint so native verification can exercise the final
+        // transition, Gate, combat and Save without waiting an hour.
+        var candidate = UnityEngine.Object.Instantiate(game.HeroData);
+        using (var binding = new CultivationGameplayBinding(candidate, saves.CultivationProfile,
+            HeavenlyGateV13Fixtures.NearBottleneck(saves.CultivationProfile, remaining: 3))) { }
+        Check(saves.SaveGame(candidate, SaveSlot.ManualSave2), "Write owned near-bottleneck fixture");
+        UnityEngine.Object.Destroy(candidate);
+        Check(game.LoadAndContinue(SaveSlot.ManualSave2), "Load owned near-bottleneck fixture");
+        yield return Ready(game, ui);
         ui.SetPaused(false);
         Time.timeScale = 6;
         yield return Wait(() =>
@@ -108,10 +123,10 @@ internal static class Development015Smoke
             if (Time.timeScale > 0) Time.timeScale = 6;
             return game.Cultivation != null && game.TribulationLockedReason == "" &&
                 game.Cultivation.Current.Reserve.Amount >= 2;
-        }, 100, "natural cultivation to bottleneck and reserve");
+        }, 12, "natural cultivation from near-cap checkpoint");
         ui.SetPaused(true);
         Check(game.TryManualSave(SaveSlot.ManualSave2), "Owned bottleneck checkpoint");
-        pass("New → Luyện Khí Viên mãn through gameplay Update at 6× time scale, no cultivation/EXP grants.");
+        pass("Live cultivation reaches Luyện Khí Viên mãn from the owned near-cap checkpoint.");
         var families = windows
             ? new[] { WeaponFamily.Sword, WeaponFamily.Unarmed, WeaponFamily.Bow, WeaponFamily.Staff }
             : new[] { WeaponFamily.Sword, WeaponFamily.Unarmed };

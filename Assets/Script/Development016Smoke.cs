@@ -272,7 +272,7 @@ internal static class Development016Smoke
             stat = CombatStatId.Attack, flat = 100 });
         var profile = saves.CultivationProfile;
         using (var binding = new CultivationGameplayBinding(candidate, profile,
-            HeavenlyGateV13Fixtures.Session(profile, 180, 7))) { }
+            HeavenlyGateV13Fixtures.NearBottleneck(profile))) { }
         Check(saves.SaveGame(candidate, SaveSlot.ManualSave2), "Owned gate source snapshot");
         UnityEngine.Object.Destroy(candidate);
         Check(game.LoadAndContinue(SaveSlot.ManualSave2), "Load gate source");

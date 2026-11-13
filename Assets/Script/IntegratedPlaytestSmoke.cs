@@ -195,7 +195,7 @@ internal static class IntegratedPlaytestSmoke
         var candidate = UnityEngine.Object.Instantiate(game.HeroData);
         candidate.combatSkills.health = -1;
         var profile = saves.CultivationProfile;
-        using (var binding = new CultivationGameplayBinding(candidate, profile, HeavenlyGateV13Fixtures.Session(profile, 180, 7))) { }
+        using (var binding = new CultivationGameplayBinding(candidate, profile, HeavenlyGateV13Fixtures.NearBottleneck(profile))) { }
         Check(saves.SaveGame(candidate, SaveSlot.ManualSave2), "Owned Gate checkpoint");
         UnityEngine.Object.Destroy(candidate);
         Check(game.LoadAndContinue(SaveSlot.ManualSave2), "Load Gate-ready checkpoint");

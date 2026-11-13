@@ -16,6 +16,11 @@ namespace TuTienCore
   }
   static CultivationRealmCapacityDefinition Entry(string id,double a,double r)=>new CultivationRealmCapacityDefinition{realmId=id,baseAbsorption=a,baseRefinement=r,absorptionStageFactors=new[]{1d,1.125,1.25,1.375},refinementStageFactors=new[]{1d,1.08,1.16,1.24}};
   public static CultivationSession Session(CultivationPlaytestProfile p,double foundation=3600,double reserve=1234,double injury=0)=>new CultivationSession(Guid.NewGuid(),Guid.NewGuid(),p.Catalog,p.Rules,new CultivationSnapshot(new CultivationFoundation(p.StartingRealm,foundation),new UnrefinedQiReserve(reserve),new SpiritualEnergy(17),new BloodEssenceState(0,0),new FoundationInjuryState(injury)));
+  public static CultivationSession NearBottleneck(CultivationPlaytestProfile profile,double reserve=7,double remaining=0)
+  {
+   if(!profile.Catalog.TryGet(profile.StartingRealm,out var realm))throw new InvalidOperationException("Missing fixture starting realm.");
+   return Session(profile,Math.Max(0,realm.Thresholds[3]-remaining),reserve);
+  }
   public static CultivationReason ApplyFailureFixture(CultivationSession s,Guid id,HeavenlyGatePenaltyPolicy policy)=>s.ApplyGatePenalty(s.OwnerId,s.Epoch,id,s.RealmRevision,s.Current.Foundation.ActualRealmId,policy);
   public static List<string> Run()
   {
