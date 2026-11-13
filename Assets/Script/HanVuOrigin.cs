@@ -392,19 +392,23 @@ namespace TuTienCore
             ? (hero.originStory.stage == OriginStage.Return ? "Mang thuốc về" : "Trò chuyện")
             : "Xem dấu vết";
 
-        public static bool HintMap(EntityDataSO hero)
+        public static bool HintMap(EntityDataSO hero) => GuidedDestination(hero) != null;
+
+        public static string GuidedDestination(EntityDataSO hero)
         {
             if (Definition(hero) == null || hero.originStory.hideStoryPrompts ||
-                hero.originStory.herbalParticipation != HerbalParticipation.Accepted) return false;
+                hero.originStory.herbalParticipation != HerbalParticipation.Accepted) return null;
             var origin = Definition(hero);
+            string destination;
             switch (hero.originStory.stage)
             {
-                case OriginStage.Gather: return hero.worldMapId != origin.Forest;
-                case OriginStage.Return: return !IsSafe(hero);
-                case OriginStage.SearchForest: return hero.worldMapId != origin.Forest;
-                case OriginStage.SearchElite: return hero.worldMapId != origin.EliteMap;
-                default: return false;
+                case OriginStage.Gather:
+                case OriginStage.SearchForest: destination = origin.Forest; break;
+                case OriginStage.Return: destination = origin.Village; break;
+                case OriginStage.SearchElite: destination = origin.EliteMap; break;
+                default: return null;
             }
+            return hero.worldMapId != destination ? destination : null;
         }
 
         public static string Hint(EntityDataSO hero)

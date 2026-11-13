@@ -135,6 +135,9 @@ public partial class UIManager
         logToggle=SmallButton(w3.Root,"CompactLogToggle","Chiến báo",Vector2.zero,Vector2.zero,Vector2.zero,Vector2.one,ToggleCompactLog);
         logToggleLabel=logToggle.GetComponentInChildren<TextMeshProUGUI>(true);
         InstallOriginPresentation();
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        InstallClimateTestButtons();
+#endif
 
         toolsPage=MakePage("SystemTools","CÔNG CỤ & HIỂN THỊ",(RectTransform)systemMenu.transform);
         MakeMenuButton(mainPage,"Tools","Công cụ & hiển thị",7,()=>ShowPage(toolsPage));
@@ -212,6 +215,55 @@ public partial class UIManager
             if(info!=null) {HudW3View.Place(info,log.sizeDelta.x-48,4,44,22);LayoutHudButton(info,11);}
         }
     }
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+    private RectTransform climateTestPanel;
+    private TextMeshProUGUI climateTestHourLabel, climateTestWeatherLabel;
+    private int displayedClimateHour = -1, displayedClimateWeather = -1;
+    private static readonly string[] ClimateTestHourLabels =
+        { "Giờ: Tự động", "Giờ: Bình minh", "Giờ: Ban ngày", "Giờ: Hoàng hôn", "Giờ: Ban đêm" };
+    private static readonly string[] ClimateTestWeatherLabels =
+        { "Trời: Tự động", "Trời: Quang", "Trời: Nhiều mây", "Trời: Sương", "Trời: Mưa nhẹ", "Trời: Mưa lớn" };
+
+    private void InstallClimateTestButtons()
+    {
+        climateTestPanel = (RectTransform)new GameObject("ClimateTestControls", typeof(RectTransform)).transform;
+        climateTestPanel.SetParent(w3.Root, false);
+        PlaceUI(climateTestPanel, Vector2.zero, Vector2.zero, new Vector2(8f, 38f), new Vector2(120f, 54f));
+        var hour = SmallButton(climateTestPanel, "ClimateTestHour", ClimateTestHourLabels[0],
+            Vector2.zero, Vector2.zero, new Vector2(0f, 28f), new Vector2(120f, 26f),
+            () => { hudGame?.CycleClimateTestHour(); TickClimateTestButtons(); });
+        var weather = SmallButton(climateTestPanel, "ClimateTestWeather", ClimateTestWeatherLabels[0],
+            Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(120f, 26f),
+            () => { hudGame?.CycleClimateTestWeather(); TickClimateTestButtons(); });
+        LayoutHudButton(hour, 12f);
+        LayoutHudButton(weather, 12f);
+        climateTestHourLabel = hour.GetComponentInChildren<TextMeshProUGUI>(true);
+        climateTestWeatherLabel = weather.GetComponentInChildren<TextMeshProUGUI>(true);
+        climateTestPanel.gameObject.SetActive(false);
+    }
+
+    private void TickClimateTestButtons()
+    {
+        if (climateTestPanel == null) return;
+        bool visible = hudGame != null && hudGame.IsGameplayHUDVisible && !hudGame.HasTribulationLiability;
+        if (climateTestPanel.gameObject.activeSelf != visible)
+            climateTestPanel.gameObject.SetActive(visible);
+        if (!visible) return;
+        int hour = hudGame.ClimateTestHour;
+        int weather = hudGame.ClimateTestWeather;
+        if (displayedClimateHour != hour)
+        {
+            displayedClimateHour = hour;
+            climateTestHourLabel.text = ClimateTestHourLabels[hour];
+        }
+        if (displayedClimateWeather != weather)
+        {
+            displayedClimateWeather = weather;
+            climateTestWeatherLabel.text = ClimateTestWeatherLabels[weather];
+        }
+    }
+#endif
+
     private static void LayoutHudButton(RectTransform r,float font)
     {
         var t=r.GetComponentInChildren<TextMeshProUGUI>(true);if(t==null)return;
@@ -245,6 +297,9 @@ public partial class UIManager
         RefreshWorldMapAvailability();
         RefreshB2PauseFeedback();
         RefreshHudTheme();
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        TickClimateTestButtons();
+#endif
         if (w3 != null)
         {
             float previousHeight = w3.VisibleCardHeight;

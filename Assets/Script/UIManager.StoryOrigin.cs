@@ -9,7 +9,7 @@ public partial class UIManager
     private RectTransform originPanel, originTalk, originWoodcutter, originEncounterButton, originJournal;
     private RectTransform originDismiss, originPrev, originNext, originPromptButton, originAccept, originDecline, originReplay;
     private TextMeshProUGUI originLabel, originMapCaption, originTalkLabel;
-    private TextMeshProUGUI originPromptLabel, originAcceptLabel, originDeclineLabel;
+    private TextMeshProUGUI originPromptLabel, originAcceptLabel, originDeclineLabel, originNextLabel, originDismissLabel;
     private EntityDataSO originHero, originNoticeHero, openingHero;
     private string originMap;
     private bool originJournalOpen, originMapHighlighted, originManualNotice;
@@ -60,6 +60,8 @@ public partial class UIManager
         originDismiss = StoryButton("HanVuDismiss", "Đóng", 229f, 65f, CloseOriginPresentation);
         originPrev = StoryButton("HanVuPrev", "Trước", 6f, 50f, () => MoveOriginLine(-1));
         originNext = StoryButton("HanVuNext", "Tiếp", 60f, 50f, () => MoveOriginLine(1));
+        originNextLabel = originNext.GetComponentInChildren<TextMeshProUGUI>(true);
+        originDismissLabel = originDismiss.GetComponentInChildren<TextMeshProUGUI>(true);
         originAccept = StoryButton("HanVuAccept", "Nhận lời", 60f, 85f, () => ChooseOriginOffer(true, null));
         originDecline = StoryButton("HanVuDecline", "Từ chối", 149f, 76f, () => ChooseOriginOffer(false, null));
         originReplay = StoryButton("HanVuReplay", "Xem lại mở đầu", 115f, 110f, () =>
@@ -149,10 +151,21 @@ public partial class UIManager
         if (originJournalOpen)
             originPage += direction;
         else if (dialogue != null)
+        {
+            if (direction > 0 && LastLine)
+            {
+                if (!OriginLineRequiresChoice(GameForUI()?.HeroData)) CloseOriginPresentation();
+                return;
+            }
             dialogueIndex = Mathf.Clamp(dialogueIndex + direction, 0, dialogue.Length - 1);
+        }
     }
 
     private bool LastLine => dialogue != null && dialogueIndex == dialogue.Length - 1;
+
+    private bool OriginLineRequiresChoice(EntityDataSO data) => LastLine &&
+        ((conversation == HanVuConversation.Opening && StoryOrigin.CanOfferHerbs(data)) ||
+            conversation == HanVuConversation.BeforeMedicine);
 
     private void ChooseOriginOffer(bool accept, OriginInteractionContext context)
     {
@@ -241,7 +254,17 @@ public partial class UIManager
         var encounter = HanVuEncounters.Available(data);
         if (openEncounter != null && openEncounter != encounter) openEncounter = null;
         bool idle = !originJournalOpen && dialogue == null && openEncounter == null;
+        bool mapOpen = worldMapUI != null && worldMapUI.IsOpen;
+        if (mapOpen)
+        {
+            originPanel.gameObject.SetActive(false);
+            originWoodcutter.gameObject.SetActive(false);
+            HighlightOriginMap(false);
+            return;
+        }
         bool talk = idle && StoryOrigin.CanInteract(data);
+        string destination = idle ? StoryOrigin.GuidedDestination(data) : null;
+        bool guideMap = destination != null && WorldMapCatalog.TravelBlockReason(data, destination) == null;
         bool canOfferHerbs = conversation == HanVuConversation.Opening && LastLine && StoryOrigin.CanOfferHerbs(data);
         bool canPrepare = conversation == HanVuConversation.BeforeMedicine && LastLine;
         originTalk.gameObject.SetActive(talk);
@@ -253,7 +276,8 @@ public partial class UIManager
         originDecline.gameObject.SetActive(openEncounter != null ||
             (canOfferHerbs && data.originStory.herbalParticipation != HerbalParticipation.Declined));
         originPrev.gameObject.SetActive(originJournalOpen ? originPage > 0 : dialogue != null && dialogueIndex > 0);
-        originNext.gameObject.SetActive(dialogue != null && !LastLine);
+        originNext.gameObject.SetActive(dialogue != null && !OriginLineRequiresChoice(data));
+        originNextLabel.text = dialogue != null && LastLine ? "Xong" : "Tiếp";
         originReplay.gameObject.SetActive(originJournalOpen && StoryOrigin.IsSafe(data));
         if (originJournalOpen)
         {
@@ -265,7 +289,7 @@ public partial class UIManager
         else if (dialogue != null)
         {
             var line = dialogue[dialogueIndex];
-            originLabel.text = line.Speaker + "\n" + line.Text;
+            originLabel.text = line.Speaker + " · " + (dialogueIndex + 1) + "/" + dialogue.Length + "\n" + line.Text;
             if (!data.originStory.heardOpeningTrip && HanVuNarrative.TellsOfTrip(conversation, dialogueIndex))
                 hudGame.RecordOriginTrip();
             if (!data.originStory.heardWoodcutter && HanVuNarrative.TellsOfWoodcutter(conversation, dialogueIndex))
@@ -283,14 +307,20 @@ public partial class UIManager
         {
             bool notice = originNotice != null && originNoticeHero == data && originNoticeMap == data.worldMapId &&
                 Time.realtimeSinceStartup < originNoticeUntil && (!data.originStory.hideStoryPrompts || originManualNotice);
-            originLabel.text = notice ? originNotice : StoryOrigin.Hint(data);
+            originLabel.text = guideMap ? "Nhấn vào tên bản đồ để mở bản đồ thế giới." :
+                notice ? originNotice : StoryOrigin.Hint(data);
+            if (!guideMap && !notice && destination != null && WorldMapCatalog.TryGet(data.worldMapId, out var current) &&
+                !StoryOrigin.IsSafe(data) && !WorldMapCatalog.IsCleared(data, current.Id))
+                originLabel.text = "Hoàn thành 5 đợt quái ở đây để mở đường đi tiếp.";
         }
         bool hasText = originLabel.text.Length > 0;
         originDismiss.gameObject.SetActive(hasText && (!idle || originNotice != null));
+        originDismissLabel.text =
+            conversation == HanVuConversation.Opening && !LastLine ? "Để sau" : "Đóng";
         originPanel.sizeDelta = new Vector2(300f, hasText ? 88f : 30f);
         originPanel.GetComponent<Image>().enabled = hasText;
         originPanel.gameObject.SetActive(hasText || talk || (idle && encounter != null));
-        HighlightOriginMap(idle && StoryOrigin.HintMap(data));
+        HighlightOriginMap(guideMap);
     }
 
     private void HighlightOriginMap(bool active)

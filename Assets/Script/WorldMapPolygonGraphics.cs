@@ -58,10 +58,12 @@ public sealed class WorldMapOutlineGraphic : MaskableGraphic
 {
     private EntityDataSO hero;
     private string selectedId = "";
-    public void Refresh(EntityDataSO currentHero, string chosenId)
+    private string guidedId;
+    public void Refresh(EntityDataSO currentHero, string chosenId, string destination = null)
     {
         hero = currentHero;
         selectedId = chosenId ?? "";
+        guidedId = destination;
         SetVerticesDirty();
     }
 
@@ -78,19 +80,20 @@ public sealed class WorldMapOutlineGraphic : MaskableGraphic
                 WorldMapCatalog.TravelBlockReason(hero,shape.mapId) == null;
             bool selected = shape.mapId == selectedId &&
                 (adjacent || hero.worldMapVisited != null && hero.worldMapVisited.Contains(shape.mapId));
+            bool guided = adjacent && shape.mapId == guidedId;
             if (!selected && !adjacent) continue;
             // Pale border exposes possible destinations, not the covered image.
-            Color stroke = selected ? new Color(1f, .85f, .23f, .98f) :
+            Color stroke = selected || guided ? new Color(1f, .85f, .23f, .98f) :
                 new Color(.38f, .87f, 1f, .67f);
             for (int i = 0; i < shape.vertices.Count; i++)
             {
                 Vector2 a = shape.vertices[i], b = shape.vertices[(i + 1) % shape.vertices.Count];
-                if (selected)
+                if (selected || guided)
                 {
                     AddLine(vh, a, b, 9f, new Color(1f,.66f,.15f,.20f));
                     AddLine(vh, a, b, 5f, new Color(1f,.79f,.19f,.44f));
                 }
-                AddLine(vh, a, b, selected ? 2.5f : 1.25f, stroke);
+                AddLine(vh, a, b, selected || guided ? 2.5f : 1.25f, stroke);
             }
         }
     }

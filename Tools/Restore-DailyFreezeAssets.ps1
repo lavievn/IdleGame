@@ -8,6 +8,11 @@ $ErrorActionPreference = 'Stop'
 $project = (Resolve-Path -LiteralPath $ProjectRoot).ProviderPath
 $manifestPath = Join-Path $PSScriptRoot '../Docs/automation-reports/evidence/daily-freeze-2026-11-12/local-asset-sha256.json'
 $manifest = @(Get-Content -Raw -LiteralPath $manifestPath | ConvertFrom-Json)
+# This checkout ships its own environment pack. The RC2 restore manifest
+# still applies when reproducing the freeze in its original checkout.
+if (Test-Path -LiteralPath (Join-Path $project 'Assets/Resources/EnvironmentAudioManifest.json') -PathType Leaf) {
+    $manifest = @($manifest | Where-Object { $_.path -notmatch '^Assets/Resources/IntegratedAmbience(?:/|\.meta$)' })
+}
 $prefix = '^Assets/(?:Free HDR Skyboxes Pack(?:/|\.meta$)|RainMaker(?:/|\.meta$)|Resources/(?:WorldClimateVendor|WorldMapMusic|IntegratedAmbience)(?:/|\.meta$))'
 if (-not (Test-Path -LiteralPath (Join-Path $project 'ProjectSettings/ProjectVersion.txt') -PathType Leaf)) {
     throw 'ProjectRoot must be the root of the Unity checkout.'

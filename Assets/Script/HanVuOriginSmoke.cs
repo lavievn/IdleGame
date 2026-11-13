@@ -43,6 +43,14 @@ internal static class HanVuOriginSmoke
         Check(game.HeroData.worldMapId == destination, "Correct manual destination");
     }
 
+    private static void PointerClick(UIManager ui, RectTransform control)
+    {
+        Check(control.gameObject.activeInHierarchy, "Visible control " + control.name);
+        var screen = RectTransformUtility.WorldToScreenPoint(null, control.TransformPoint(control.rect.center));
+        Check(ui.HitControl(screen)?.GetRect() == control, "HUD pointer reaches " + control.name);
+        ui.HandlePointerClick(screen, screen);
+    }
+
     private static WorldMapPanelUI SelectPolygon(UIManager ui, string id)
     {
         var map = (WorldMapPanelUI)typeof(UIManager).GetField("worldMapUI", Members).GetValue(ui);
@@ -54,7 +62,8 @@ internal static class HanVuOriginSmoke
         var local = new Vector2(art.rect.xMin + art.rect.width * position.x,
             art.rect.yMin + art.rect.height * position.y);
         var screen = RectTransformUtility.WorldToScreenPoint(null, art.TransformPoint(local));
-        Check(map.HandleMapClick(screen), "Map accepts the polygon hit");
+        Check(map.HitMapSurface(screen), "Map accepts the polygon hit");
+        ui.HandlePointerClick(screen, screen);
         return map;
     }
 
@@ -165,7 +174,8 @@ internal static class HanVuOriginSmoke
     {
         var label = Field<TMPro.TextMeshProUGUI>(ui, "originLabel");
         label.ForceMeshUpdate();
-        Check(label.text == line.Speaker + "\n" + line.Text && !label.isTextOverflowing,
+        Check(label.text.StartsWith(line.Speaker + " · ", StringComparison.Ordinal) &&
+            label.text.EndsWith("\n" + line.Text, StringComparison.Ordinal) && !label.isTextOverflowing,
             "Expected visible dialogue line: " + line.Speaker + " " + line.Text +
             " | overflow=" + label.isTextOverflowing + " actual=" + label.text);
     }
@@ -303,6 +313,10 @@ internal static class HanVuOriginSmoke
     {
         QualitySettings.vSyncCount = 0;
         Application.targetFrameRate = 60;
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        EnvironmentAudioPlayer.VerifyTransitions();
+        pass("AudioSource Coast Rain/Storm crossfade, Clear, Travel and repeated reset reuse.");
+#endif
         UnityEngine.Random.InitState(17312);
         VerifyGeneratedCast();
         UnityEngine.Random.InitState(17312);
@@ -446,12 +460,53 @@ internal static class HanVuOriginSmoke
         Click(ui, "HanVuAccept");
         Check(game.HeroData.originStory.herbalParticipation == HerbalParticipation.Accepted &&
             game.HeroData.originStory.herbWaves == 0, "Explicit acceptance grants no retroactive herbs");
+        yield return Restore(game, ui, identity);
+        var mapButton = Field<RectTransform>(ui, "worldMapButton");
+        var label = Field<TMPro.TextMeshProUGUI>(ui, "originLabel");
+        foreach (var preset in new[] { new Vector2Int(600, 338), new Vector2Int(800, 450), new Vector2Int(1150, 647) })
+        {
+            yield return resize(preset.x, preset.y);
+            Check(Field<bool>(ui, "originMapHighlighted") &&
+                label.text == "Nhấn vào tên bản đồ để mở bản đồ thế giới.", "Load restores the map hint");
+            PointerClick(ui, mapButton);
+            yield return null;
+            Check(map.IsOpen && !label.gameObject.activeInHierarchy &&
+                Field<string>(Field<WorldMapOutlineGraphic>(map, "outlines"), "guidedId") == Origin.Forest,
+                "Map replaces the HUD guide and marks the quest forest");
+            Check(summary.text == "Chọn khu vực được đánh dấu để tiếp tục hành trình.", "Map explains selection");
+            SelectPolygon(ui, TravelerMap);
+            Check(Field<string>(map, "selectedMapId") == TravelerMap && game.HeroData.worldMapId == Origin.Village &&
+                Field<RectTransform>(map, "travel").gameObject.activeInHierarchy &&
+                summary.text.Contains("Chọn khu vực được đánh dấu"), "Wrong eligible map keeps its Travel and quest guide");
+            SelectPolygon(ui, Origin.Forest);
+            Canvas.ForceUpdateCanvases();
+            summary.ForceMeshUpdate();
+            Check(Field<string>(map, "selectedMapId") == Origin.Forest && game.HeroData.worldMapId == Origin.Village &&
+                summary.text.Contains("Nhấn Tới ô đã chọn") && !summary.isTextOverflowing, "Selecting the forest prompts explicit Travel");
+            yield return capture("opening-guide-map-" + preset.x);
+            Click(ui, "WorldMapClose");
+            yield return null;
+        }
+        PointerClick(ui, Field<RectTransform>(ui, "originJournal"));
         yield return null;
-        Click(ui, "HanVuJournal");
+        Check(label.text.StartsWith("Nhật ký", StringComparison.Ordinal), "Journal is reachable after the map closes");
+        PointerClick(ui, Field<RectTransform>(ui, "originJournal"));
         yield return null;
+        PointerClick(ui, Field<RectTransform>(ui, "originPromptButton"));
+        yield return null;
+        Check(!Field<bool>(ui, "originMapHighlighted") && string.IsNullOrEmpty(label.text),
+            "Hide prompts clears the guide");
+        PointerClick(ui, Field<RectTransform>(ui, "originPromptButton"));
+        yield return null;
+        PointerClick(ui, mapButton);
+        yield return null;
+        SelectPolygon(ui, Origin.Forest);
+        PointerClick(ui, Field<RectTransform>(map, "travel"));
+        yield return Ready(game, ui);
+        Check(game.HeroData.worldMapId == Origin.Forest && !map.IsOpen && !Field<bool>(ui, "originMapHighlighted") &&
+            label.text.StartsWith("Lá bạc 0/5", StringComparison.Ordinal), "Manual Travel advances to the local combat objective");
+        pass("Opening route resumes after Load, receives HUD pointer hits, distinguishes alternate maps, and shows the combat objective after explicit Travel.");
         Click(ui, "HanVuPrompts");
-        Click(ui, "HanVuJournal");
-        yield return Go(game, ui, Origin.Forest);
         for (int i = 0; i < 2; i++) yield return ClearWave(game, ui, combat, hero, space, false);
         yield return Go(game, ui, TravelerMap);
         yield return ClearWave(game, ui, combat, hero, space, false);

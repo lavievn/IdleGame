@@ -303,7 +303,7 @@ public sealed class WorldMapPanelUI
         }
         bool compatible = WorldMapPolygons.MatchesArtwork(artwork.sprite);
         reveal.SetSource(compatible ? artwork.sprite : null, compatible ? hero : null);
-        outlines.Refresh(compatible ? hero : null, selectedMapId);
+        outlines.Refresh(compatible ? hero : null, selectedMapId, StoryOrigin.GuidedDestination(hero));
     }
 
     public void Refresh()
@@ -322,6 +322,21 @@ public sealed class WorldMapPanelUI
         travel.gameObject.SetActive(selectedAccessible);
         summary.text = selectedAccessible ? StoryOrigin.MapName(hero, selected) + " · " + selected.TerrainLabel +
             " · Cấp gợi ý " + selected.SuggestedLevel : selectedMapId == current.Id ? "" : blocked ?? "";
+        string destination = StoryOrigin.GuidedDestination(hero);
+        if (destination != null && WorldMapCatalog.TryGet(destination, out var goal))
+        {
+            string goalBlock = WorldMapCatalog.TravelBlockReason(hero, destination);
+            if (goalBlock == null)
+            {
+                if (selectedMapId == destination)
+                    summary.text = "Đích nhiệm vụ · " + StoryOrigin.MapName(hero, goal) + "\nNhấn Tới ô đã chọn để lên đường.";
+                else if (selectedMapId == current.Id || selectedAccessible || string.IsNullOrEmpty(summary.text))
+                    summary.text = (selectedAccessible ? StoryOrigin.MapName(hero, selected) + "\n" : "") +
+                        "Chọn khu vực được đánh dấu để tiếp tục hành trình.";
+            }
+            else if (selectedMapId == current.Id || string.IsNullOrEmpty(summary.text))
+                summary.text = "Đích nhiệm vụ · " + StoryOrigin.MapName(hero, goal) + "\n" + goalBlock;
+        }
         if (!WorldMapPolygons.MatchesArtwork(artwork.sprite))
         {
             travel.gameObject.SetActive(false);

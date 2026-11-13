@@ -15,6 +15,11 @@ public partial class GameManager
     [SerializeField] private bool previewWorldClimate;
     [SerializeField, Range(0f, 23.999f)] private float previewWorldHour = 12f;
     [SerializeField] private WorldWeather previewWorldWeather;
+    private static readonly float[] ClimateTestHours = { 6.5f, 12f, 18.5f, 22f };
+    internal int ClimateTestHour { get; private set; }
+    internal int ClimateTestWeather { get; private set; }
+    internal void CycleClimateTestHour() => ClimateTestHour = (ClimateTestHour + 1) % (ClimateTestHours.Length + 1);
+    internal void CycleClimateTestWeather() => ClimateTestWeather = (ClimateTestWeather + 1) % ((int)WorldWeather.HeavyRain + 2);
 #endif
 
     [Header("Rain, wind and storm visuals")]
@@ -40,11 +45,18 @@ public partial class GameManager
     {
         bool skipFrame = skipClimateFrame;
         skipClimateFrame = false;
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        if (preGameUI != null && preGameUI.activeInHierarchy)
+        {
+            ClimateTestHour = 0;
+            ClimateTestWeather = 0;
+        }
+#endif
         if (runtimeHeroData == null || !hasDeployed || HasTribulationLiability)
         {
             weatherStorm.Reset();
             if (!IsEnteringGameplay || HasTribulationLiability)
-                weatherAudio.Update(gameObject, worldWeatherAudioSettings, default, default, default, null, false, false, 0f);
+                weatherAudio.Stop();
             if (environmentManager != null) environmentManager.ClearWorldClimate();
             return;
         }
@@ -71,6 +83,10 @@ public partial class GameManager
             if ((uint)previewWorldWeather <= (uint)WorldWeather.HeavyRain)
                 weatherOverride = previewWorldWeather;
         }
+        if (ClimateTestHour > 0)
+            state.dayFraction = ClimateTestHours[ClimateTestHour - 1] / 24.0;
+        if (ClimateTestWeather > 0)
+            weatherOverride = (WorldWeather)(ClimateTestWeather - 1);
 #endif
         bool indoor = !string.IsNullOrEmpty(data.worldMapId) &&
             Array.IndexOf(worldClimateIndoorMapIds, data.worldMapId) >= 0;
@@ -85,8 +101,8 @@ public partial class GameManager
             data.mapNumber, worldDaySeconds, running, !indoor);
         environmentManager.ApplyWorldClimate(frame, worldClimateLighting,
             worldClimateHdrSky && !indoor, worldClimateRain2D && !indoor, worldClimateAssets, visual);
-        float splash = worldClimateAssets != null ? worldClimateAssets.ConsumeRainImpact() : 0f;
-        weatherAudio.Update(gameObject, worldWeatherAudioSettings, visual, frame, data.mapTerrain, data.worldMapId,
-            IsGameplayHUDVisible || IsEnteringGameplay, !indoor, splash, TuTienCore.StoryOrigin.IsSafe(data));
+        weatherAudio.Update(gameObject, worldWeatherAudioSettings, frame, data.mapTerrain, data.worldMapId,
+            IsGameplayHUDVisible || IsEnteringGameplay, TuTienCore.StoryOrigin.IsSafe(data),
+            data.mapNumber, running && !skipFrame);
     }
 }

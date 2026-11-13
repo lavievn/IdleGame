@@ -18,11 +18,8 @@ internal static class WeatherPhase2Smoke
     {
         yield return resize(800, 450);
         var settings = Read<WorldWeatherPresentationSettings>(game, "worldWeatherPresentation");
-        var audio = Read<WorldWeatherAudioSettings>(game, "worldWeatherAudioSettings");
         var audioRuntime = Read<WorldWeatherAudio>(game, "weatherAudio");
         var data = game.HeroData;
-        int initialSources = game.GetComponents<AudioSource>().Length;
-        var audioOptions = audio.fadeSeconds;
         Set(game, "previewWorldClimate", true);
         Set(game, "previewWorldHour", 12f);
         Set(game, "previewWorldWeather", WorldWeather.LightRain);
@@ -99,51 +96,27 @@ internal static class WeatherPhase2Smoke
         yield return Wait(() => Read<Vector2>(adapter, "lastFlash").x > 0f, 3f, "A rendered heavy-rain sky flash");
         yield return capture("phase2-lightning");
         yield return new WaitForSecondsRealtime(4.4f);
-        Check(audioRuntime.ThunderPlayed == 0 && game.GetComponents<AudioSource>().Length == initialSources,
-            "All null placeholders create no AudioSource and play no thunder");
-        pass("Seeded lightning triggers in heavy rain. Indoor/reload suppression and reduced flash checked. All null clips remain silent.");
-
-        var lightLoop = AudioClip.Create("Owned light loop", 44100, 1, 44100, false);
-        var heavyLoop = AudioClip.Create("Owned heavy loop", 44100, 1, 44100, false);
-        var thunder = AudioClip.Create("Owned thunder", 44100, 1, 44100, false);
-        audio.lightRainLoop = lightLoop;
-        audio.heavyRainLoop = heavyLoop;
-        audio.distantThunder = audio.closeThunder = thunder;
-        audio.fadeSeconds = .35f;
-        Set(game, "previewWorldWeather", WorldWeather.LightRain);
-        yield return Wait(() => Volume(game, lightLoop) > .08f, 2f, "Light rain audio fade-in");
-        Set(game, "previewWorldWeather", WorldWeather.HeavyRain);
-        yield return Wait(() => Volume(game, heavyLoop) > .02f && Volume(game, lightLoop) > 0f,
-            2f, "Light-to-heavy overlap");
-        yield return Wait(() => Volume(game, lightLoop) == 0f && Volume(game, heavyLoop) > .1f, 2f, "Heavy fade completes");
-        int thunderBefore = audioRuntime.ThunderPlayed;
-        JumpBeforeStrike(data, settings);
-        yield return Wait(() => adapter.Weather.Flash > 0f, 3f, "A second scheduled sky flash");
-        Check(audioRuntime.ThunderPlayed == thunderBefore, "Thunder has not played at lightning instant");
-        yield return Wait(() => audioRuntime.ThunderPlayed == thunderBefore + 1, 5f, "One delayed thunder playback");
-        int poolCount = game.GetComponents<AudioSource>().Length;
-        Check(poolCount == initialSources + 3, "Rain crossfade reuses two channels plus one thunder source");
-
+        var family = Read<EnvironmentAudioPlayer>(audioRuntime, "familyPlayer");
+        Check(family != null && family.ActiveLoops(AudioLayer.Rain) == 1 &&
+            family.ActiveLoops(AudioLayer.WindRain) == 1 && family.ActiveLoops(AudioLayer.Pebble) == 2,
+            "The verified pack supplies the weather audio sources");
+        pass("Seeded lightning triggers in heavy rain. Indoor/reload suppression and reduced flash checked.");
         Set(game, "previewWorldClimate", false);
         double transition = MoveBeforeDrySlot(data);
         yield return new WaitForSecondsRealtime(.7f);
         Check(Seconds(data) > transition && adapter.ActiveParticles > 0, "Heavy-to-clear retains rain during the existing blend");
         yield return Wait(() => adapter.ActiveParticles == 0 && impacts.VisibleImpacts == 0 &&
             !adapter.RainGraphic.isActiveAndEnabled, 10f, "Natural heavy-to-clear blend drains all rain effects");
-        Check(Volume(game, heavyLoop) == 0f, "Weather loop fades out with precipitation");
-        pass("One delayed thunder playback using a silent fixture clip. Loop crossfade reuses its sources, then fades out as the real 8-second HeavyRain-to-Clear blend stops rain.");
+        yield return Wait(() => family.ActiveLoops(AudioLayer.Rain) == 0 && family.ActiveLoops(AudioLayer.Pebble) == 0 &&
+            family.ActiveLoops(AudioLayer.WindRain) == 0, 4f, "Weather layers fade out with precipitation");
+        pass("Weather audio from the verified pack fades out when the natural transition drains rain.");
 
-        yield return MapAudioAndLifecycle(game, ui, combat, adapter, impacts, data, poolCount, pass);
-        audio.lightRainLoop = audio.heavyRainLoop = audio.distantThunder = audio.closeThunder = null;
-        audio.fadeSeconds = audioOptions;
-        UnityEngine.Object.Destroy(lightLoop);
-        UnityEngine.Object.Destroy(heavyLoop);
-        UnityEngine.Object.Destroy(thunder);
+        yield return MapAudioAndLifecycle(game, ui, combat, adapter, impacts, data, pass);
         ui.SetPaused(false);
     }
 
     private static IEnumerator MapAudioAndLifecycle(GameManager game, UIManager ui, CombatManager combat,
-        WorldClimateVendorAdapter adapter, RainImpactCanvasGraphic impacts, EntityDataSO data, int poolCount, Action<string> pass)
+        WorldClimateVendorAdapter adapter, RainImpactCanvasGraphic impacts, EntityDataSO data, Action<string> pass)
     {
         var playlist = Resources.LoadAll<AudioClip>("WorldMapMusic");
         if (playlist.Length > 0)
@@ -190,11 +163,11 @@ internal static class WeatherPhase2Smoke
         Clear(game, combat);
         Check(game.HeroData.worldClimate.seed == checkpoint.seed && game.HeroData.worldClimate.day == checkpoint.day &&
             Math.Abs(game.HeroData.worldClimate.dayFraction - checkpoint.dayFraction) < .004 &&
-            adapter.Weather.Flash == 0f && game.GetComponents<AudioSource>().Length == poolCount,
-            "Retry keeps clock and does not duplicate sources or replay a strike");
+            adapter.Weather.Flash == 0f,
+            "Retry keeps clock and does not replay a strike");
         pass(playlist.Length > 0
-            ? "Travel clears splashes, picks a different streaming BGM, and fades the old track. Save/Load/Retry preserve climate and source counts."
-            : "Travel clears splashes. Save/Load/Retry preserve climate and source counts; local playlist was absent.");
+            ? "Travel clears splashes, picks a different streaming BGM, and fades the old track. Save/Load/Retry preserve climate."
+            : "Travel clears splashes. Save/Load/Retry preserve climate; local playlist was absent.");
     }
 
     private static void SettleWind(EntityDataSO data)
@@ -274,8 +247,6 @@ internal static class WeatherPhase2Smoke
         Check(max - min > .05f, "Seeded gust changes the rain direction with time");
     }
 
-    private static float Volume(GameManager game, AudioClip clip) =>
-        game.GetComponents<AudioSource>().Where(source => source.clip == clip && source.isPlaying).Sum(source => source.volume);
 
     private static double Seconds(EntityDataSO data) => (data.worldClimate.day + data.worldClimate.dayFraction) * 780;
 

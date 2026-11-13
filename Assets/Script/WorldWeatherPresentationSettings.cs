@@ -43,7 +43,7 @@ public sealed class WorldWeatherAudioSettings
     [Range(0f, 1f)] public float environmentVolume = 1f;
     [Range(0f, 1f)] public float weatherVolume = .5f;
     [Range(.1f, 8f)] public float fadeSeconds = 2f;
+    [Min(0)] public int coastWeatherLoopLimit = 2;
+    [Min(1f)] public float thunderInterval = 35f;
     public string[] villageMapIds = Array.Empty<string>();
-    public AudioClip villageAmbience, forestAmbience, mountainWind, waterStream, birdsInsects, nightAmbience;
-    public AudioClip lightRainLoop, heavyRainLoop, windLoop, strongWindGust, rainSplash, distantThunder, closeThunder;
 }

@@ -1,0 +1,718 @@
+{
+  "complete": true,
+  "lodgesMapIds": [],
+  "assets": [
+    {
+      "clip": "Coast_02",
+      "gain": 0.5
+    },
+    {
+      "clip": "Coast_03",
+      "gain": 0.5
+    },
+    {
+      "clip": "Coast_05",
+      "gain": 0.5
+    },
+    {
+      "clip": "Coast_06",
+      "gain": 0.5
+    },
+    {
+      "clip": "Coast_07",
+      "gain": 0.5
+    },
+    {
+      "clip": "Coast_12",
+      "gain": 0.5
+    },
+    {
+      "clip": "Coast_15",
+      "gain": 0.5
+    },
+    {
+      "clip": "Coast_beach",
+      "gain": 0.5
+    },
+    {
+      "clip": "Coast_beach2",
+      "gain": 0.5
+    },
+    {
+      "clip": "Coast_big_wave",
+      "gain": 0.5
+    },
+    {
+      "clip": "Coast_heavy_rain",
+      "gain": 0.5
+    },
+    {
+      "clip": "Coast_heavy_wave",
+      "gain": 0.5
+    },
+    {
+      "clip": "Coast_heavy_wave2",
+      "gain": 0.5
+    },
+    {
+      "clip": "Coast_light_wave",
+      "gain": 0.5
+    },
+    {
+      "clip": "Coast_medium_rain",
+      "gain": 0.5
+    },
+    {
+      "clip": "Coast_wave_far",
+      "gain": 0.5
+    },
+    {
+      "clip": "Coast_wave_storm",
+      "gain": 0.5
+    },
+    {
+      "clip": "Coast_wind",
+      "gain": 0.5
+    },
+    {
+      "clip": "Coast_wind2",
+      "gain": 0.5
+    },
+    {
+      "clip": "Lodges_02",
+      "gain": 0.5
+    },
+    {
+      "clip": "Lodges_03",
+      "gain": 0.5
+    },
+    {
+      "clip": "Lodges_04",
+      "gain": 0.5
+    },
+    {
+      "clip": "Lodges_05",
+      "gain": 0.5
+    },
+    {
+      "clip": "Lodges_06",
+      "gain": 0.5
+    },
+    {
+      "clip": "Lodges_07",
+      "gain": 0.5
+    },
+    {
+      "clip": "Lodges_08",
+      "gain": 0.5
+    },
+    {
+      "clip": "Lodges_09",
+      "gain": 0.5
+    },
+    {
+      "clip": "Lodges_10",
+      "gain": 0.5
+    },
+    {
+      "clip": "Lodges_11",
+      "gain": 0.5
+    },
+    {
+      "clip": "Lodges_12",
+      "gain": 0.5
+    },
+    {
+      "clip": "Lodges_13",
+      "gain": 0.5
+    },
+    {
+      "clip": "Lodges_14",
+      "gain": 0.5
+    },
+    {
+      "clip": "Lodges_15",
+      "gain": 0.5
+    },
+    {
+      "clip": "Lodges_16",
+      "gain": 0.5
+    },
+    {
+      "clip": "Lodges_17",
+      "gain": 0.5
+    },
+    {
+      "clip": "Lodges_18",
+      "gain": 0.5
+    },
+    {
+      "clip": "Meadow_03",
+      "gain": 0.3
+    },
+    {
+      "clip": "Meadow_04",
+      "gain": 0.3
+    },
+    {
+      "clip": "Meadow_05",
+      "gain": 0.3
+    },
+    {
+      "clip": "Meadow_06",
+      "gain": 0.3
+    },
+    {
+      "clip": "Meadow_07",
+      "gain": 0.3
+    },
+    {
+      "clip": "Meadow_08",
+      "gain": 0.3
+    },
+    {
+      "clip": "Meadow_09",
+      "gain": 0.3
+    },
+    {
+      "clip": "Meadow_11",
+      "gain": 0.3
+    },
+    {
+      "clip": "Meadow_12",
+      "gain": 0.3
+    },
+    {
+      "clip": "Meadow_14",
+      "gain": 0.3
+    },
+    {
+      "clip": "Meadow_15",
+      "gain": 0.3
+    },
+    {
+      "clip": "Meadow_16",
+      "gain": 0.3
+    },
+    {
+      "clip": "Meadow_17",
+      "gain": 0.3
+    },
+    {
+      "clip": "Meadow_18",
+      "gain": 0.3
+    },
+    {
+      "clip": "Meadow_cricket",
+      "gain": 0.3
+    },
+    {
+      "clip": "Meadow_light_rain",
+      "gain": 0.3
+    },
+    {
+      "clip": "Meadow_rain",
+      "gain": 0.3
+    },
+    {
+      "clip": "Morning_02",
+      "gain": 0.5
+    },
+    {
+      "clip": "Morning_03",
+      "gain": 0.5
+    },
+    {
+      "clip": "Morning_04",
+      "gain": 0.5
+    },
+    {
+      "clip": "Morning_05",
+      "gain": 0.5
+    },
+    {
+      "clip": "Morning_06",
+      "gain": 0.5
+    },
+    {
+      "clip": "Morning_07",
+      "gain": 0.5
+    },
+    {
+      "clip": "Morning_08",
+      "gain": 0.5
+    },
+    {
+      "clip": "Morning_09",
+      "gain": 0.5
+    },
+    {
+      "clip": "Morning_10",
+      "gain": 0.5
+    },
+    {
+      "clip": "Morning_11",
+      "gain": 0.5
+    },
+    {
+      "clip": "Morning_12",
+      "gain": 0.5
+    },
+    {
+      "clip": "Morning_13",
+      "gain": 0.5
+    },
+    {
+      "clip": "Morning_14",
+      "gain": 0.5
+    },
+    {
+      "clip": "Morning_15",
+      "gain": 0.5
+    },
+    {
+      "clip": "Morning_16",
+      "gain": 0.5
+    },
+    {
+      "clip": "Morning_17",
+      "gain": 0.5
+    },
+    {
+      "clip": "Morning_18",
+      "gain": 0.5
+    },
+    {
+      "clip": "Morning_19",
+      "gain": 0.5
+    },
+    {
+      "clip": "Morning_20",
+      "gain": 0.5
+    },
+    {
+      "clip": "Night_02",
+      "gain": 0.5
+    },
+    {
+      "clip": "Night_03",
+      "gain": 0.5
+    },
+    {
+      "clip": "Night_04",
+      "gain": 0.5
+    },
+    {
+      "clip": "Night_05",
+      "gain": 0.5
+    },
+    {
+      "clip": "Night_06",
+      "gain": 0.5
+    },
+    {
+      "clip": "Night_07",
+      "gain": 0.5
+    },
+    {
+      "clip": "Night_08",
+      "gain": 0.5
+    },
+    {
+      "clip": "Night_09",
+      "gain": 0.5
+    },
+    {
+      "clip": "Night_10",
+      "gain": 0.5
+    },
+    {
+      "clip": "Night_11",
+      "gain": 0.5
+    },
+    {
+      "clip": "Night_12",
+      "gain": 0.5
+    },
+    {
+      "clip": "Night_13",
+      "gain": 0.5
+    },
+    {
+      "clip": "Night_14",
+      "gain": 0.5
+    },
+    {
+      "clip": "Night_15",
+      "gain": 0.5
+    },
+    {
+      "clip": "Night_16",
+      "gain": 0.5
+    },
+    {
+      "clip": "Pebble_02",
+      "gain": 0.5
+    },
+    {
+      "clip": "Pebble_03",
+      "gain": 0.5
+    },
+    {
+      "clip": "Pebble_04",
+      "gain": 0.5
+    },
+    {
+      "clip": "Pebble_05",
+      "gain": 0.5
+    },
+    {
+      "clip": "Pebble_06",
+      "gain": 0.5
+    },
+    {
+      "clip": "Pebble_07",
+      "gain": 0.5
+    },
+    {
+      "clip": "Pebble_08",
+      "gain": 0.5
+    },
+    {
+      "clip": "Pebble_09",
+      "gain": 0.5
+    },
+    {
+      "clip": "Pebble_10",
+      "gain": 0.5
+    },
+    {
+      "clip": "Pebble_11",
+      "gain": 0.5
+    },
+    {
+      "clip": "Pebble_12",
+      "gain": 0.5
+    },
+    {
+      "clip": "Pebble_13",
+      "gain": 0.5
+    },
+    {
+      "clip": "Pebble_14",
+      "gain": 0.5
+    },
+    {
+      "clip": "Pebble_15",
+      "gain": 0.5
+    },
+    {
+      "clip": "Pebble_16",
+      "gain": 0.5
+    },
+    {
+      "clip": "Pebble_17",
+      "gain": 0.5
+    },
+    {
+      "clip": "Pebble_18",
+      "gain": 0.5
+    },
+    {
+      "clip": "Pebble_19",
+      "gain": 0.5
+    },
+    {
+      "clip": "Pebble_20",
+      "gain": 0.5
+    },
+    {
+      "clip": "Primeval_02",
+      "gain": 0.5
+    },
+    {
+      "clip": "Primeval_03",
+      "gain": 0.5
+    },
+    {
+      "clip": "Primeval_04",
+      "gain": 0.5
+    },
+    {
+      "clip": "Primeval_05",
+      "gain": 0.5
+    },
+    {
+      "clip": "Primeval_06",
+      "gain": 0.5
+    },
+    {
+      "clip": "Primeval_07",
+      "gain": 0.5
+    },
+    {
+      "clip": "Primeval_08",
+      "gain": 0.5
+    },
+    {
+      "clip": "Primeval_09",
+      "gain": 0.5
+    },
+    {
+      "clip": "Primeval_10",
+      "gain": 0.5
+    },
+    {
+      "clip": "Primeval_11",
+      "gain": 0.5
+    },
+    {
+      "clip": "Primeval_12",
+      "gain": 0.5
+    },
+    {
+      "clip": "Primeval_13",
+      "gain": 0.5
+    },
+    {
+      "clip": "Primeval_14",
+      "gain": 0.5
+    },
+    {
+      "clip": "Primeval_15",
+      "gain": 0.5
+    },
+    {
+      "clip": "Primeval_16",
+      "gain": 0.5
+    },
+    {
+      "clip": "Primeval_17",
+      "gain": 0.5
+    },
+    {
+      "clip": "Primeval_18",
+      "gain": 0.5
+    },
+    {
+      "clip": "Primeval_19",
+      "gain": 0.5
+    },
+    {
+      "clip": "Primeval_20",
+      "gain": 0.5
+    },
+    {
+      "clip": "Rain_02",
+      "gain": 0.5
+    },
+    {
+      "clip": "Rain_03",
+      "gain": 0.5
+    },
+    {
+      "clip": "Rain_04",
+      "gain": 0.5
+    },
+    {
+      "clip": "Rain_05",
+      "gain": 0.5
+    },
+    {
+      "clip": "Rain_06",
+      "gain": 0.5
+    },
+    {
+      "clip": "Rain_07",
+      "gain": 0.5
+    },
+    {
+      "clip": "Rain_08",
+      "gain": 0.5
+    },
+    {
+      "clip": "Rain_09",
+      "gain": 0.5
+    },
+    {
+      "clip": "Rain_10",
+      "gain": 0.5
+    },
+    {
+      "clip": "Rain_11",
+      "gain": 0.5
+    },
+    {
+      "clip": "Rain_12",
+      "gain": 0.5
+    },
+    {
+      "clip": "Rain_13",
+      "gain": 0.5
+    },
+    {
+      "clip": "Rain_14",
+      "gain": 0.5
+    },
+    {
+      "clip": "Rain_15",
+      "gain": 0.5
+    },
+    {
+      "clip": "Rain_16",
+      "gain": 0.5
+    },
+    {
+      "clip": "Thunder_02",
+      "gain": 0.5
+    },
+    {
+      "clip": "Thunder_03",
+      "gain": 0.5
+    },
+    {
+      "clip": "Thunder_04",
+      "gain": 0.5
+    },
+    {
+      "clip": "Thunder_05",
+      "gain": 0.5
+    },
+    {
+      "clip": "Thunder_06",
+      "gain": 0.5
+    },
+    {
+      "clip": "Thunder_07",
+      "gain": 0.5
+    },
+    {
+      "clip": "Thunder_08",
+      "gain": 0.5
+    },
+    {
+      "clip": "Thunder_09",
+      "gain": 0.5
+    },
+    {
+      "clip": "Thunder_10",
+      "gain": 0.5
+    },
+    {
+      "clip": "Thunder_11",
+      "gain": 0.5
+    },
+    {
+      "clip": "Thunder_12",
+      "gain": 0.5
+    },
+    {
+      "clip": "Thunder_13",
+      "gain": 0.5
+    },
+    {
+      "clip": "Thunder_14",
+      "gain": 0.5
+    },
+    {
+      "clip": "Thunder_15",
+      "gain": 0.5
+    },
+    {
+      "clip": "Thunder_16",
+      "gain": 0.5
+    },
+    {
+      "clip": "Thunder_17",
+      "gain": 0.5
+    },
+    {
+      "clip": "Thunder_18",
+      "gain": 0.5
+    },
+    {
+      "clip": "Thunder_19",
+      "gain": 0.5
+    },
+    {
+      "clip": "Thunder_20",
+      "gain": 0.5
+    },
+    {
+      "clip": "WindRain_02",
+      "gain": 0.5
+    },
+    {
+      "clip": "WindRain_03",
+      "gain": 0.5
+    },
+    {
+      "clip": "WindRain_04",
+      "gain": 0.5
+    },
+    {
+      "clip": "WindRain_05",
+      "gain": 0.5
+    },
+    {
+      "clip": "WindRain_06",
+      "gain": 0.5
+    },
+    {
+      "clip": "WindRain_07",
+      "gain": 0.5
+    },
+    {
+      "clip": "WindRain_08",
+      "gain": 0.5
+    },
+    {
+      "clip": "WindRain_09",
+      "gain": 0.5
+    },
+    {
+      "clip": "WindRain_10",
+      "gain": 0.5
+    },
+    {
+      "clip": "WindRain_11",
+      "gain": 0.5
+    },
+    {
+      "clip": "WindRain_12",
+      "gain": 0.5
+    },
+    {
+      "clip": "WindRain_13",
+      "gain": 0.5
+    },
+    {
+      "clip": "WindRain_14",
+      "gain": 0.5
+    },
+    {
+      "clip": "WindRain_15",
+      "gain": 0.5
+    },
+    {
+      "clip": "WindRain_16",
+      "gain": 0.5
+    },
+    {
+      "clip": "WindRain_17",
+      "gain": 0.5
+    },
+    {
+      "clip": "WindRain_18",
+      "gain": 0.5
+    },
+    {
+      "clip": "WindRain_19",
+      "gain": 0.5
+    },
+    {
+      "clip": "WindRain_20",
+      "gain": 0.5
+    }
+  ]
+}
