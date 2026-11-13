@@ -5,16 +5,16 @@ namespace TuTienCore
 {
     public sealed partial class CultivationSession
     {
-        public const double BloodChargeDurationSeconds=30;
         public CultivationReason ActivateBlood(Guid owner,Guid epoch,Guid attempt,double currentHp,double maximumHp,out double hpAfter)
         {
             hpAfter=currentHp;var reason=Command(owner,epoch,attempt);if(reason!=CultivationReason.None)return reason;
             if(Current.Burning!=null)return CultivationReason.InvalidSession;
             if(Current.SettledTransactions.Contains(attempt))return CultivationReason.AlreadySettled;
             if(!CultivationNumber.NonNegative(currentHp) || !CultivationNumber.NonNegative(maximumHp) || maximumHp<=0 || currentHp<=0 || currentHp>maximumHp || currentHp/maximumHp>=.3)return CultivationReason.HpCondition;
-            if(Current.Blood.Charges<1)return CultivationReason.NoCharge;
             if(Realms.Evaluate(Current.Foundation.ActualRealmId,Current.Foundation.Amount).BloodCapacity==0)return CultivationReason.Locked;
-            var burn=new BurningTransaction(attempt,OwnerId,Current.Foundation.Amount,Rules.DebtRatio,1,BloodChargeDurationSeconds,BurningStatus.Active,Current.Foundation.ActualRealmId);
+            if(Rules.BloodChargeDurationSeconds<=0)return CultivationReason.MissingPolicy;
+            if(Current.Blood.Charges<1)return CultivationReason.NoCharge;
+            var burn=new BurningTransaction(attempt,OwnerId,Current.Foundation.Amount,Rules.DebtRatio,1,Rules.BloodChargeDurationSeconds,BurningStatus.Active,Current.Foundation.ActualRealmId);
             if(!Commit(Copy(blood:new BloodEssenceState(Current.Blood.Charges-1,Current.Blood.AccumulationProgress),burning:burn,replaceBurning:true)))return CultivationReason.Overflow;
             commands.Add(attempt);hpAfter=maximumHp;return CultivationReason.None;
         }
@@ -22,8 +22,9 @@ namespace TuTienCore
         {
             var reason=Command(owner,epoch,command);if(reason!=CultivationReason.None)return reason;
             var b=Current.Burning;if(b==null || b.Id!=burningSession || b.Status!=BurningStatus.Active)return CultivationReason.InvalidSession;
+            if(Rules.BloodChargeDurationSeconds<=0)return CultivationReason.MissingPolicy;
             if(Current.Blood.Charges<1)return CultivationReason.NoCharge;if(b.ChargesUsed==int.MaxValue)return CultivationReason.Overflow;
-            var next=b.Change(b.ChargesUsed+1,b.RemainingSeconds+BloodChargeDurationSeconds,BurningStatus.Active,null);
+            var next=b.Change(b.ChargesUsed+1,b.RemainingSeconds+Rules.BloodChargeDurationSeconds,BurningStatus.Active,null);
             if(!Commit(Copy(blood:new BloodEssenceState(Current.Blood.Charges-1,Current.Blood.AccumulationProgress),burning:next,replaceBurning:true)))return CultivationReason.Overflow;
             commands.Add(command);return CultivationReason.None; // no HP output: extension never heals again
         }
