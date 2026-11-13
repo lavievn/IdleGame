@@ -83,6 +83,7 @@ internal sealed class EnvironmentAudioPlayer
         var weather = frame.Weather == WorldWeather.HeavyRain ? AudioWeather.Storm :
             frame.Weather == WorldWeather.LightRain ? AudioWeather.Rain : AudioWeather.Dry;
         schedule.Update(category, weather, frame.Phase == WorldDayPhase.Night, elapsed, coastWeatherLimit, thunderInterval);
+        var coastCrossfade = CoastCrossfadeVoice(coastWeatherLimit);
         foreach (Voice voice in voices)
         {
             voice.Desired = voice.Event ? voice.Source.isPlaying &&
@@ -90,7 +91,8 @@ internal sealed class EnvironmentAudioPlayer
                 voice.Entry != null && schedule.Desired.Contains(voice.Entry);
             if (voice.Entry == null) continue;
             voice.Target = voice.Desired ? 1f : 0f;
-            voice.Weight = Mathf.MoveTowards(voice.Weight, voice.Target, delta / Mathf.Max(.1f, fadeSeconds));
+            float speed = voice == coastCrossfade ? .5f : 1f;
+            voice.Weight = Mathf.MoveTowards(voice.Weight, voice.Target, speed * delta / Mathf.Max(.1f, fadeSeconds));
             voice.Source.volume = voice.Weight * Gain(voice.Entry, environment, weatherGain);
             if (!voice.Desired && (voice.Weight <= 0f || voice.Event)) Clear(voice);
         }
@@ -99,6 +101,22 @@ internal sealed class EnvironmentAudioPlayer
         if (running)
             foreach (var entry in schedule.Events)
                 if (!voices.Exists(voice => voice.Entry == entry) && CanStart(entry, coastWeatherLimit)) Play(host, entry, true);
+    }
+
+    private Voice CoastCrossfadeVoice(int limit)
+    {
+        if (limit < 2 || !schedule.Desired.Exists(entry => entry.Layer == AudioLayer.CoastWeather)) return null;
+        int occupied = 0;
+        Voice outgoing = null;
+        foreach (Voice voice in voices)
+        {
+            if (voice.Entry?.Layer != AudioLayer.CoastWeather) continue;
+            occupied++;
+            if (schedule.Desired.Contains(voice.Entry)) return null;
+            if (outgoing == null || voice.Weight > outgoing.Weight) outgoing = voice;
+        }
+        // Keep one outgoing loop audible until another voice frees a slot for the incoming variant.
+        return occupied >= limit ? outgoing : null;
     }
 
     private bool CanStart(EnvironmentAudioSchedule.Entry entry, int coastWeatherLimit)
@@ -111,9 +129,8 @@ internal sealed class EnvironmentAudioPlayer
             if (voice.Entry.Layer == entry.Layer) totalLayer++;
             if (entry.Family == AudioFamily.Meadow && (entry.Layer == AudioLayer.MeadowWeather) !=
                 (voice.Entry.Layer == AudioLayer.MeadowWeather)) return false;
-            // A bounded overlap provides crossfade for rotating loops and Coast Rain/Storm.
-            bool transition = !voice.Desired && (entry.Layer == AudioLayer.Meadow || entry.Layer == AudioLayer.Morning ||
-                (entry.Layer == AudioLayer.CoastWeather && entry.Variant != voice.Entry.Variant));
+            // A bounded overlap provides crossfade for rotating loops.
+            bool transition = !voice.Desired && (entry.Layer == AudioLayer.Meadow || entry.Layer == AudioLayer.Morning);
             if (transition && entry.Layer == voice.Entry.Layer) continue;
             family++;
             if (voice.Entry.Layer == entry.Layer) layer++;
@@ -189,6 +206,7 @@ internal sealed class EnvironmentAudioPlayer
             bool Has(string clip) => player.voices.Exists(v => v.Entry?.Name == clip && v.Source.loop);
             bool WetGlobal() => player.voices.Exists(v => v.Entry?.Family == AudioFamily.Rain && v.Source.loop);
             bool RainLoops() => Has("Coast_heavy_rain") && Has("Coast_medium_rain");
+            int CoastWetCount() => player.voices.FindAll(v => v.Entry?.Layer == AudioLayer.CoastWeather).Count;
             void Check(bool condition, string message)
             {
                 if (!condition) throw new InvalidOperationException(message);
@@ -197,13 +215,15 @@ internal sealed class EnvironmentAudioPlayer
             Step(WorldWeather.LightRain);
             Check(RainLoops() && WetGlobal(), "Both Coast Rain loops and global Rain start independently");
             Step(WorldWeather.HeavyRain, dt: .25f);
-            Check(RainLoops() && Has("Coast_wave_storm"), "Coast Rain to Storm overlap");
+            Check(RainLoops() && CoastWetCount() == 2, "Rain first frees a slot for Storm");
+            for (int i = 0; i < 8 && !Has("Coast_wave_storm"); i++) Step(WorldWeather.HeavyRain, dt: .25f);
+            Check(Has("Coast_wave_storm") && CoastWetCount() == 2, "Rain crossfades with Storm within the physical limit");
             Step(WorldWeather.HeavyRain, dt: 2f);
             Check(!Has("Coast_heavy_rain") && !Has("Coast_medium_rain") && Has("Coast_wave_storm"),
                 "Coast Rain retires after fade");
             Step(WorldWeather.HeavyRain);
             Step(WorldWeather.LightRain, dt: .25f);
-            Check(RainLoops() && Has("Coast_wave_storm"), "Coast Storm to Rain overlap");
+            Check(!RainLoops() && Has("Coast_wave_storm") && CoastWetCount() == 2, "Storm crossfades with Rain within the physical limit");
             Step(WorldWeather.Clear, dt: 2f);
             Check(player.voices.TrueForAll(voice => voice.Entry == null || voice.Entry.Layer == AudioLayer.Coast),
                 "Clear retires all wet voices");
