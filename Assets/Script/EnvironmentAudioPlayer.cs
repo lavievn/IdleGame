@@ -26,7 +26,7 @@ internal sealed class EnvironmentAudioPlayer
     private int previousMapNumber;
     private float elapsed;
 
-    private EnvironmentAudioPlayer(Manifest manifest)
+    private EnvironmentAudioPlayer(Manifest manifest, System.Random random)
     {
         lodges = new HashSet<string>(manifest.lodgesMapIds ?? Array.Empty<string>(), StringComparer.Ordinal);
         foreach (Asset asset in manifest.assets)
@@ -38,10 +38,12 @@ internal sealed class EnvironmentAudioPlayer
             clips.Add(asset.clip, clip);
             gains.Add(asset.clip, Mathf.Clamp01(asset.gain));
         }
-        schedule = new EnvironmentAudioSchedule(clips.Keys, new System.Random());
+        schedule = new EnvironmentAudioSchedule(clips.Keys, random);
     }
 
-    internal static EnvironmentAudioPlayer Load()
+    internal static EnvironmentAudioPlayer Load() => Load(new System.Random());
+
+    private static EnvironmentAudioPlayer Load(System.Random random)
     {
         var asset = Resources.Load<TextAsset>("EnvironmentAudioManifest");
         if (asset == null) return null;
@@ -49,7 +51,7 @@ internal sealed class EnvironmentAudioPlayer
         try { manifest = JsonUtility.FromJson<Manifest>(asset.text); }
         catch (ArgumentException) { return null; }
         if (manifest == null || !manifest.complete || manifest.assets == null || manifest.assets.Length == 0) return null;
-        var player = new EnvironmentAudioPlayer(manifest);
+        var player = new EnvironmentAudioPlayer(manifest, random);
         return player.clips.Count == manifest.assets.Length ? player : null;
     }
 
@@ -192,14 +194,15 @@ internal sealed class EnvironmentAudioPlayer
         var host = new GameObject("EnvironmentAudioSmoke");
         try
         {
-            var verified = Load();
+            var verified = Load(new System.Random(205));
             if (verified == null || verified.clips.Count == 0)
                 throw new InvalidOperationException("Verified audio manifest failed to resolve");
             var player = verified;
             var settings = new WorldWeatherAudioSettings();
-            void Step(WorldWeather weather, string map = "coast", int visit = 1, float dt = 1f)
+            void Step(WorldWeather weather, string map = "coast", int visit = 1, float dt = 1f,
+                WorldDayPhase phase = WorldDayPhase.Day)
             {
-                var frame = new WorldClimateFrame(WorldDayPhase.Day, weather, 12f, 0f, 0f, 0f, Color.white, Color.white);
+                var frame = new WorldClimateFrame(phase, weather, 12f, 0f, 0f, 0f, Color.white, Color.white);
                 player.Update(host, true, true, map == "coast" ? TerrainType.Bien : TerrainType.HoNuoc, map, visit,
                     null, frame, 1f, 1f, dt, 2f, settings.coastWeatherLoopLimit, settings.thunderInterval);
             }
@@ -211,9 +214,16 @@ internal sealed class EnvironmentAudioPlayer
             {
                 if (!condition) throw new InvalidOperationException(message);
             }
-            Step(WorldWeather.LightRain);
-            Step(WorldWeather.LightRain);
+            Step(WorldWeather.Clear);
+            Check(player.ActiveLoops(AudioLayer.Coast) == 3, "Clear day has three real Coast sources");
+            Step(WorldWeather.Clear, phase: WorldDayPhase.Night);
+            Check(player.ActiveLoops(AudioLayer.Coast) == 3 && player.ActiveLoops(AudioLayer.Night) == 4,
+                "Clear night overlays four sources while retaining Coast");
+            Step(WorldWeather.LightRain, phase: WorldDayPhase.Night);
+            Step(WorldWeather.LightRain, dt: 2f, phase: WorldDayPhase.Night);
             Check(RainLoops() && WetGlobal(), "Both Coast Rain loops and global Rain start independently");
+            Check(player.ActiveLoops(AudioLayer.Night) == 0 && player.ActiveLoops(AudioLayer.Pebble) == 2 &&
+                player.ActiveLoops(AudioLayer.WindRain) == 1, "Rain retires Night and activates wet overlay sources");
             Step(WorldWeather.HeavyRain, dt: .25f);
             Check(RainLoops() && CoastWetCount() == 2, "Rain first frees a slot for Storm");
             for (int i = 0; i < 8 && !Has("Coast_wave_storm"); i++) Step(WorldWeather.HeavyRain, dt: .25f);
@@ -224,6 +234,9 @@ internal sealed class EnvironmentAudioPlayer
             Step(WorldWeather.HeavyRain);
             Step(WorldWeather.LightRain, dt: .25f);
             Check(!RainLoops() && Has("Coast_wave_storm") && CoastWetCount() == 2, "Storm crossfades with Rain within the physical limit");
+            Step(WorldWeather.LightRain, "lake", 2, .25f);
+            Check(WetGlobal() && player.ActiveLoops(AudioLayer.CoastWeather) > 0,
+                "Travel preserves the global loop while the previous map is fading");
             Step(WorldWeather.Clear, dt: 2f);
             Check(player.voices.TrueForAll(voice => voice.Entry == null || voice.Entry.Layer == AudioLayer.Coast),
                 "Clear retires all wet voices");
