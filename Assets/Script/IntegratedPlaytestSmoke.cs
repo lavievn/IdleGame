@@ -89,14 +89,18 @@ internal static class IntegratedPlaytestSmoke
 
         Click(ui, "ClimateTestWeather");
         Check(game.TryTravelToWorldMap(StoryOrigin.HanVu.Forest), "Travel from Hàn Vụ to forest via real handler");
-        yield return Wait(() => family.ActiveLoops(AudioLayer.MeadowWeather) == 0 && family.ActiveLoops(AudioLayer.Morning) == 3 &&
+        yield return Wait(() => family.ActiveLoops(AudioLayer.MeadowWeather) == 0 && family.ActiveLoops(AudioLayer.Morning) == 0 &&
             family.ActiveLoops(AudioLayer.Primeval) == 0 && family.ActiveLoops(AudioLayer.Rain) == 1, 10,
-            "Heavy rain forest plays Morning and global Rain while Primeval rests");
+            "Night storm forest keeps global Rain without Morning or Primeval");
         Check(MapBgmController.Instance.GetComponents<AudioSource>().Any(x => x.isPlaying &&
             Resources.LoadAll<AudioClip>("WorldMapMusic").Contains(x.clip)), "Regular BGM still plays from local playlist");
         yield return capture("integrated-forest-heavy-rain");
-        pass("Travel clears the village layers. Wet forest uses Morning and keeps global Rain separate from BGM.");
         yield return Ready(game, ui);
+        Click(ui, "ClimateTestHour");
+        Click(ui, "ClimateTestHour");
+        yield return Wait(() => family.ActiveLoops(AudioLayer.Morning) == 1 && family.ActiveLoops(AudioLayer.Rain) == 1,
+            6, "Dawn forest storm adds one Morning source");
+        pass("Cô Hồn Lâm heavy rain keeps global Rain at night and adds one Morning loop at dawn.");
         Clear(game, combat);
         ui.SetPaused(false);
         var modifier = new CombatStatModifier { sourceId = "owned:movement-probe", stat = CombatStatId.MovementSpeed, flat = 900f };

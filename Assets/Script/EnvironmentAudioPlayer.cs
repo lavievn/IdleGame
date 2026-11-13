@@ -84,12 +84,17 @@ internal sealed class EnvironmentAudioPlayer
         if (running) elapsed += delta;
         var weather = frame.Weather == WorldWeather.HeavyRain ? AudioWeather.Storm :
             frame.Weather == WorldWeather.LightRain ? AudioWeather.Rain : AudioWeather.Dry;
-        schedule.Update(category, weather, frame.Phase == WorldDayPhase.Night, elapsed, coastWeatherLimit, thunderInterval);
+        schedule.Update(category, weather, frame.Phase == WorldDayPhase.Night, frame.Hour, elapsed, coastWeatherLimit, thunderInterval);
         var coastCrossfade = CoastCrossfadeVoice(coastWeatherLimit);
         foreach (Voice voice in voices)
         {
+            if (voice.Entry?.Family == AudioFamily.Morning && !EnvironmentAudioRules.IsMorningHour(frame.Hour))
+            {
+                Clear(voice);
+                continue;
+            }
             voice.Desired = voice.Event ? voice.Source.isPlaying &&
-                EnvironmentAudioRules.Eligible(voice.Entry.Family, voice.Entry.Variant, category, weather, false) :
+                EnvironmentAudioRules.Eligible(voice.Entry.Family, voice.Entry.Variant, category, weather, false, false) :
                 voice.Entry != null && schedule.Desired.Contains(voice.Entry);
             if (voice.Entry == null) continue;
             voice.Target = voice.Desired ? 1f : 0f;
@@ -123,20 +128,16 @@ internal sealed class EnvironmentAudioPlayer
 
     private bool CanStart(EnvironmentAudioSchedule.Entry entry, int coastWeatherLimit)
     {
-        int family = 0, layer = 0, totalLayer = 0;
+        int family = 0, layer = 0;
         int limit = EnvironmentAudioRules.Limit(entry.Layer, coastWeatherLimit);
         foreach (Voice voice in voices)
         {
             if (voice.Entry == null || voice.Entry.Family != entry.Family) continue;
-            if (voice.Entry.Layer == entry.Layer) totalLayer++;
-            // A bounded overlap provides crossfade for rotating loops.
-            bool transition = !voice.Desired && entry.Layer == AudioLayer.Morning;
-            if (transition && entry.Layer == voice.Entry.Layer) continue;
             family++;
             if (voice.Entry.Layer == entry.Layer) layer++;
         }
         return family < EnvironmentAudioRules.FamilyLimit(entry.Family, coastWeatherLimit) &&
-            layer < limit && totalLayer < limit * 2;
+            layer < limit;
     }
 
     private float Gain(EnvironmentAudioSchedule.Entry entry, float environment, float weather) => gains[entry.Name] *
@@ -198,10 +199,11 @@ internal sealed class EnvironmentAudioPlayer
             var player = verified;
             var settings = new WorldWeatherAudioSettings();
             void Step(WorldWeather weather, string map = "coast", int visit = 1, float dt = 1f,
-                WorldDayPhase phase = WorldDayPhase.Day)
+                WorldDayPhase phase = WorldDayPhase.Day, float hour = 12f)
             {
-                var frame = new WorldClimateFrame(phase, weather, 12f, 0f, 0f, 0f, Color.white, Color.white);
-                player.Update(host, true, true, map == "coast" ? TerrainType.Bien : TerrainType.HoNuoc, map, visit,
+                var frame = new WorldClimateFrame(phase, weather, hour, 0f, 0f, 0f, Color.white, Color.white);
+                TerrainType terrain = map == "coast" ? TerrainType.Bien : map == "TV-16" ? TerrainType.RungRam : TerrainType.HoNuoc;
+                player.Update(host, true, true, terrain, map, visit,
                     false, frame, 1f, 1f, dt, 2f, settings.coastWeatherLoopLimit, settings.thunderInterval);
             }
             bool Has(string clip) => player.voices.Exists(v => v.Entry?.Name == clip && v.Source.loop);
@@ -269,6 +271,18 @@ internal sealed class EnvironmentAudioPlayer
             Meadow(WorldWeather.Clear, .25f);
             Check(player.ActiveLoops(AudioLayer.Meadow) == 0 && player.ActiveLoops(AudioLayer.MeadowWeather) == 1,
                 "Dry Meadow waits for the wet source to finish fading");
+
+            player.Stop();
+            Step(WorldWeather.HeavyRain, "TV-16", phase: WorldDayPhase.Dawn, hour: 5f);
+            Step(WorldWeather.HeavyRain, "TV-16", dt: 2f);
+            var firstMorning = player.voices.Find(v => v.Entry?.Family == AudioFamily.Morning)?.Entry;
+            Check(firstMorning != null && player.ActiveLoops(AudioLayer.Morning) == 1, "One Morning source at dawn through noon");
+            Step(WorldWeather.HeavyRain, "TV-16", dt: 118f);
+            Check(!Has(firstMorning.Name) && player.ActiveLoops(AudioLayer.Morning) == 1, "Morning rotation uses one source");
+            Step(WorldWeather.HeavyRain, "TV-16", dt: .25f, hour: 13f);
+            Check(player.ActiveLoops(AudioLayer.Morning) == 0 && WetGlobal(), "Morning stops at 13:00 while global Rain remains");
+            Step(WorldWeather.HeavyRain, "TV-16", phase: WorldDayPhase.Night, hour: 22f);
+            Check(player.ActiveLoops(AudioLayer.Morning) == 0 && WetGlobal(), "Night storm has no Morning source");
         }
         finally { UnityEngine.Object.Destroy(host); }
     }
