@@ -263,6 +263,8 @@ public partial class UIManager
             return;
         }
         bool talk = idle && StoryOrigin.CanInteract(data);
+        string destination = idle ? StoryOrigin.GuidedDestination(data) : null;
+        bool guideMap = destination != null && WorldMapCatalog.TravelBlockReason(data, destination) == null;
         bool canOfferHerbs = conversation == HanVuConversation.Opening && LastLine && StoryOrigin.CanOfferHerbs(data);
         bool canPrepare = conversation == HanVuConversation.BeforeMedicine && LastLine;
         originTalk.gameObject.SetActive(talk);
@@ -305,8 +307,11 @@ public partial class UIManager
         {
             bool notice = originNotice != null && originNoticeHero == data && originNoticeMap == data.worldMapId &&
                 Time.realtimeSinceStartup < originNoticeUntil && (!data.originStory.hideStoryPrompts || originManualNotice);
-            originLabel.text = StoryOrigin.HintMap(data) ? "Nhấn vào tên bản đồ để mở bản đồ thế giới." :
+            originLabel.text = guideMap ? "Nhấn vào tên bản đồ để mở bản đồ thế giới." :
                 notice ? originNotice : StoryOrigin.Hint(data);
+            if (!guideMap && !notice && destination != null && WorldMapCatalog.TryGet(data.worldMapId, out var current) &&
+                !StoryOrigin.IsSafe(data) && !WorldMapCatalog.IsCleared(data, current.Id))
+                originLabel.text = "Hoàn thành 5 đợt quái ở đây để mở đường đi tiếp.";
         }
         bool hasText = originLabel.text.Length > 0;
         originDismiss.gameObject.SetActive(hasText && (!idle || originNotice != null));
@@ -315,7 +320,7 @@ public partial class UIManager
         originPanel.sizeDelta = new Vector2(300f, hasText ? 88f : 30f);
         originPanel.GetComponent<Image>().enabled = hasText;
         originPanel.gameObject.SetActive(hasText || talk || (idle && encounter != null));
-        HighlightOriginMap(idle && StoryOrigin.HintMap(data));
+        HighlightOriginMap(guideMap);
     }
 
     private void HighlightOriginMap(bool active)

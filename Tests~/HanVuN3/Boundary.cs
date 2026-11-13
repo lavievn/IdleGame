@@ -48,12 +48,18 @@ public sealed class HudW3View
     public static void Place(RectTransform r,float x,float y,float w,float h) { }
 }
 
+public sealed class WorldMapPanelUI
+{
+    public bool IsOpen { get; set; }
+}
+
 public partial class UIManager : MonoBehaviour
 {
     public static UIManager Instance;
     HudW3View w3;
     GameManager hudGame;
     RectTransform worldMapButton;
+    WorldMapPanelUI worldMapUI;
     readonly Dictionary<string,UnityAction> fixtureActions=new Dictionary<string,UnityAction>();
     GameManager GameForUI() => hudGame;
     void LayoutReadableUI() { }
