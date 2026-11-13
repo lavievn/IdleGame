@@ -304,6 +304,10 @@ internal static class HanVuOriginSmoke
     {
         QualitySettings.vSyncCount = 0;
         Application.targetFrameRate = 60;
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        EnvironmentAudioPlayer.VerifyTransitions();
+        pass("AudioSource Coast Rain/Storm crossfade, Clear, Travel and repeated reset reuse.");
+#endif
         UnityEngine.Random.InitState(17312);
         VerifyGeneratedCast();
         UnityEngine.Random.InitState(17312);

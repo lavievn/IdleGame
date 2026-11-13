@@ -18,7 +18,7 @@ internal static class IntegratedPlaytestSmoke
     internal static IEnumerator Run(GameManager game, SaveManager saves, UIManager ui, CombatManager combat,
         HeroController hero, string evidence, Func<int,int,IEnumerator> resize, Func<string,IEnumerator> capture, Action<string> pass)
     {
-        Audit(evidence, pass);
+        Audit(pass);
         yield return resize(600, 338);
         var menu = game.GetComponent<StartMenuUI>();
         yield return Wait(() => Read<bool>(menu, "openingMenuReady") && Read<CanvasGroup>(menu, "rootFade").alpha > .95f, 30f, "Opening settings are visible after title reveal");
@@ -64,36 +64,32 @@ internal static class IntegratedPlaytestSmoke
         var mix = Read<WorldWeatherAudioSettings>(game, "worldWeatherAudioSettings");
         float bedTarget = .50f * mix.environmentVolume * AudioVolumeSettings.Get(GameAudioChannel.Environment);
         Check(bedTarget > 0f, "Environment master is audible for the integration fixture");
-        GameObject host = null;
-        yield return Wait(() => (host = game.transform.Find("Map ambience layers")?.gameObject) != null &&
-            GroupAtGain(host, "Meadow_", bedTarget), 5, "All Meadow clips play at half gain");
-        var villageBed = Find(host, "Meadow_base");
-        var oldVolume = villageBed.volume;
-        int oldTime = villageBed.timeSamples;
+        var family = Read<EnvironmentAudioPlayer>(weatherAudio, "familyPlayer");
+        Check(family != null, "Verified asset manifest owns environment audio");
+        yield return Wait(() => family.ActiveLoops(AudioLayer.Meadow, bedTarget) == 2 &&
+            family.ActiveLoops(AudioLayer.MeadowCricket, bedTarget) == 1, 6, "Village has two Meadow beds and one cricket");
         Preview(game, 22f, WorldWeather.LightRain);
-        yield return Wait(() => Find(host, "Rain_05") != null, 5, "Separate light rain layer");
-        Check(Find(host, "Meadow_base") == villageBed && Mathf.Abs(villageBed.volume - oldVolume) < .005f &&
-            villageBed.timeSamples >= oldTime && GroupAtGain(host, "Meadow_", bedTarget),
-            "The same 20 map clips retain their gain and playheads through night and rain");
+        yield return Wait(() => family.ActiveLoops(AudioLayer.Meadow) == 0 &&
+            family.ActiveLoops(AudioLayer.MeadowCricket) == 0 && family.ActiveLoops(AudioLayer.MeadowWeather) == 1 &&
+            family.ActiveLoops(AudioLayer.Rain) == 1 && family.ActiveLoops(AudioLayer.Night) == 0, 8,
+            "Wet Meadow is exclusive while global Rain remains independent");
         var vendor = Read<WorldClimateAssetAdapter>(game, "worldClimateAssets") as WorldClimateVendorAdapter;
         yield return Wait(() => vendor != null && vendor.ActiveParticles > 0, 5, "Real Rain Maker emitter");
         Check(Mathf.Approximately(Read<float>(vendor.RainGraphic, "dropSize"), .60f),
             "Actual rain uses the doubled 0.60 drop scale");
         yield return capture("integrated-night-rain");
-        pass($"All 20 Meadow clips play at 0.50 × the Environment bus ({bedTarget:F3}). Night/rain keep the group and playheads. Rain Maker and the weather loop still run.");
+        pass("Wet Meadow fades out its dry loops while Rain Maker and global Rain remain active.");
 
         Preview(game, 12f, WorldWeather.HeavyRain);
         Check(game.TryTravelToWorldMap(StoryOrigin.HanVu.Forest), "Travel from Hàn Vụ to forest via real handler");
         yield return Wait(() => weatherAudio.CurrentMapProfile == "Forest" &&
-            Find(host, "Primeval_02") != null && Find(host, "Meadow_base") != null, 10, "Travel crossfade overlap");
-        yield return Wait(() => !host.GetComponents<AudioSource>().Any(x => x.clip != null &&
-            x.clip.name.StartsWith("Meadow_", StringComparison.Ordinal)) && GroupAtGain(host, "Primeval_", bedTarget) &&
-            Find(host, "Rain_07") != null, 5, "All Primeval clips play at half gain after crossfade");
+            family.ActiveLoops(AudioLayer.MeadowWeather) == 0 && family.ActiveLoops(AudioLayer.Morning) == 3 &&
+            family.ActiveLoops(AudioLayer.Primeval) == 0 && family.ActiveLoops(AudioLayer.Rain) == 1, 10,
+            "Heavy rain forest plays Morning and global Rain while Primeval rests");
         Check(MapBgmController.Instance.GetComponents<AudioSource>().Any(x => x.isPlaying &&
             Resources.LoadAll<AudioClip>("WorldMapMusic").Contains(x.clip)), "Regular BGM still plays from local playlist");
         yield return capture("integrated-forest-heavy-rain");
-        pass("Travel crossfades all 20 Meadow clips to all 20 Primeval clips at equal gain. Heavy rain and BGM stay separate.");
-
+        pass("Travel clears the village layers. Wet forest uses Morning and keeps global Rain separate from BGM.");
         yield return Ready(game, ui);
         Clear(game, combat);
         ui.SetPaused(false);
@@ -182,46 +178,17 @@ internal static class IntegratedPlaytestSmoke
         pass("One delayed thunder played for the real Gate strike. Ending the next attempt clears pending audio through Load and Retry. Gate BGM stayed separate.");
     }
 
-    private static void Audit(string evidence, Action<string> pass)
+    private static void Audit(Action<string> pass)
     {
-        var catalog = WorldEnvironmentAudioCatalog.Load();
-        Check(catalog != null && WorldMapCatalog.All.Count > 100, "The real map catalog and ambience data are loaded");
+        Check(EnvironmentAudioPlayer.Load() != null && WorldMapCatalog.All.Count > 100,
+            "The real map catalog and verified audio manifest are loaded");
         var imported = Resources.LoadAll<AudioClip>("IntegratedAmbience");
-        Check(imported.Length == 191, "All 190 original OGG and the dedicated Gate excerpt are imported");
-        var rows = new List<string> { "map	terrain	profile	prefix	clips" };
-        foreach (var node in WorldMapCatalog.All)
-        {
-            var profile = catalog.Select(node.Terrain, node.Id, false);
-            var clips = catalog.PrefixClips(profile);
-            Check(profile != null && clips.Length == 20 && clips.All(x => x.loadType == AudioClipLoadType.Streaming),
-                "Map has its complete streaming prefix group: " + node.Id);
-            rows.Add($"{node.Id}	{node.TerrainLabel}	{profile.id}	{profile.prefix}	{string.Join(",", clips.Select(x => x.name))}");
-        }
-        var village = catalog.Select(TerrainType.DamLay, StoryOrigin.HanVu.Village, true);
-        var villageClips = catalog.PrefixClips(village);
-        Check(village.id == "Village" && villageClips.Length == 20, "Safe village uses all Meadow clips");
-        rows.Add(StoryOrigin.HanVu.Village + " (origin)	Village	Village	Meadow	" +
-            string.Join(",", villageClips.Select(x => x.name)));
-        Check(catalog.Weather.All(x => catalog.Clip(x.clip)?.loadType == AudioClipLoadType.Streaming),
-            "Existing weather loops still resolve");
+        Check(imported.Length == 191 && imported.All(x => x.loadType == AudioClipLoadType.Streaming),
+            "All original OGG and the dedicated Gate excerpt remain imported and streaming");
         var gate = Resources.Load<AudioClip>("IntegratedAmbience/GateThunder");
-        Check(gate != null && gate.length > 3 && gate.length < 7, "Derived one-shot is imported");
-        File.WriteAllLines(Path.Combine(evidence, "map-ambience.tsv"), rows);
-
-        pass($"{WorldMapCatalog.All.Count} maps and the Hàn Vụ overlay resolve a full 20-clip group each. All 190 OGG are packaged.");
+        Check(gate != null && gate.length > 3 && gate.length < 7, "Derived Gate one-shot is imported");
+        pass($"{WorldMapCatalog.All.Count} maps are available with a verified environment manifest and the existing Gate clip.");
     }
-
-    private static bool GroupAtGain(GameObject host, string prefix, float expected)
-    {
-        var sources = host.GetComponents<AudioSource>().Where(x => x.clip != null &&
-            x.clip.name.StartsWith(prefix, StringComparison.Ordinal)).ToArray();
-        return sources.Length == 20 && sources.Select(x => x.clip).Distinct().Count() == 20 &&
-            sources.All(x => x.isPlaying && !x.isVirtual && x.loop && Mathf.Abs(x.volume - expected) < .005f);
-    }
-
-    private static AudioSource Find(GameObject host, string clip) => host.GetComponents<AudioSource>()
-        .FirstOrDefault(x => x.isPlaying && x.clip != null && x.clip.name == clip && x.volume > 0f);
-
     private static void Preview(GameManager game, float hour, WorldWeather weather)
     {
         Set(game, "previewWorldClimate", true);

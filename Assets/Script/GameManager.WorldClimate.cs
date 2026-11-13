@@ -87,6 +87,7 @@ public partial class GameManager
             worldClimateHdrSky && !indoor, worldClimateRain2D && !indoor, worldClimateAssets, visual);
         float splash = worldClimateAssets != null ? worldClimateAssets.ConsumeRainImpact() : 0f;
         weatherAudio.Update(gameObject, worldWeatherAudioSettings, visual, frame, data.mapTerrain, data.worldMapId,
-            IsGameplayHUDVisible || IsEnteringGameplay, !indoor, splash, TuTienCore.StoryOrigin.IsSafe(data));
+            IsGameplayHUDVisible || IsEnteringGameplay, !indoor, splash, TuTienCore.StoryOrigin.IsSafe(data),
+            data.mapNumber, running && !skipFrame);
     }
 }
