@@ -23,8 +23,16 @@ internal sealed class HudW3View
     private bool lastExploring;
     private float right, margin, gap, cardHeight;
     internal float CardWidth { get; private set; }
-    internal float VisibleCardHeight => cards[0].Root.gameObject.activeSelf
-        ? Mathf.Max(cardHeight, PrimaryCardHeight) : cardHeight;
+    internal float VisibleCardHeight
+    {
+        get
+        {
+            if (cards[0].Root.gameObject.activeSelf) return Mathf.Max(cardHeight, PrimaryCardHeight);
+            for (int i = 1; i < cards.Length; i++)
+                if (cards[i].Root.gameObject.activeSelf) return cardHeight;
+            return 0f;
+        }
+    }
 
     private sealed class Card
     {

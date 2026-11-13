@@ -79,5 +79,137 @@ partial class MotionRegression
             hero.originStory = null;
             Check(StoryOrigin.IsValid(hero) && !StoryOrigin.IsWolfMap(hero), "Origin-less hero");
         });
+
+        Run("Hàn Vụ dialogue uses all saved gender combinations without changing identity", () =>
+        {
+            foreach (var gender in new[] { GenderType.Nam, GenderType.Nu })
+            foreach (var guardianGender in new[] { GenderType.Nam, GenderType.Nu })
+            {
+                var hero = ScriptableObject.CreateInstance<EntityDataSO>();
+                StoryOrigin.InitializeNewHero(hero);
+                hero.gender = gender;
+                hero.entityName = "Tên nhân vật đã lưu";
+                var state = hero.originStory;
+                state.guardian.gender = guardianGender;
+                state.guardian.name = "Tên người nuôi đã lưu";
+                state.companion.gender = StoryOrigin.Opposite(gender);
+                state.companion.name = "Tên bạn đã lưu";
+                string title = guardianGender == GenderType.Nam ? "Ông " : "Bà ";
+                var opening = HanVuNarrative.Lines(hero, HanVuConversation.Opening);
+                Check(opening.Length == 6 && opening[0].Speaker == title + state.guardian.name &&
+                    opening[1].Speaker == hero.entityName && opening[4].Text.Contains(state.companion.name),
+                    "Opening addresses the persisted cast");
+                var woodcutter = HanVuNarrative.Lines(hero, HanVuConversation.Woodcutter);
+                Check(woodcutter[0].Speaker == hero.entityName && woodcutter[0].Text.Contains(state.companion.name) &&
+                    woodcutter[1].Text.Contains(gender == GenderType.Nam ? "Cô ấy" : "Cậu ấy"),
+                    "Question precedes gendered testimony");
+                Check(!state.heardOpeningTrip && !state.heardWoodcutter &&
+                    state.herbalParticipation == HerbalParticipation.Offered && StoryOrigin.IsValid(hero),
+                    "Building dialogue neither records testimony nor accepts the quest");
+            }
+        });
+
+        Run("Hàn Vụ woodcutter records only the displayed answer, once and at the forest", () =>
+        {
+            var hero = ScriptableObject.CreateInstance<EntityDataSO>();
+            StoryOrigin.InitializeNewHero(hero);
+            hero.worldMapId = StoryOrigin.HanVu.Forest;
+            hero.isDirty = false;
+            Check(!HanVuNarrative.TalkToWoodcutter(hero, 0) && !hero.isDirty &&
+                !StoryOrigin.Journal(hero).Any(x => x.Contains("Người đốn củi")),
+                "Closing at the question invents no testimony");
+            Check(HanVuNarrative.TalkToWoodcutter(hero, 1) &&
+                !HanVuNarrative.TalkToWoodcutter(hero, 1) &&
+                StoryOrigin.Journal(hero).Count(x => x.StartsWith("Lời kể · Người đốn củi")) == 1,
+                "Answer creates one replay-safe journal fact");
+            hero.worldMapId = StoryOrigin.HanVu.Village;
+            Check(!HanVuNarrative.TalkToWoodcutter(hero, 1) && !HanVuNarrative.ObserveKnot(hero) &&
+                !HanVuNarrative.ObserveNote(hero), "Forest facts cannot be credited elsewhere");
+            Check(hero.originStory.herbalParticipation == HerbalParticipation.Offered &&
+                hero.originStory.herbWaves == 0, "Optional testimony does not start the quest");
+        });
+
+        Run("Hàn Vụ ignored encounters remain pending across travel and do not imply refusal", () =>
+        {
+            var hero = ScriptableObject.CreateInstance<EntityDataSO>();
+            StoryOrigin.InitializeNewHero(hero);
+            WorldMapCatalog.StartNew(hero, StoryOrigin.HanVu.Village);
+            var merchant = HanVuEncounters.Available(hero);
+            Check(HanVuEncounters.Observe(hero, merchant.Id), "Open the encounter");
+            Check(!HanVuEncounters.Choose(hero, merchant.Id, EncounterChoice.Pending) &&
+                hero.originStory.encounters[0].choice == EncounterChoice.Pending &&
+                !StoryOrigin.Journal(hero).Any(x => x.StartsWith("Lựa chọn")), "Close is neutral");
+            Check(WorldMapCatalog.TryTravel(hero, StoryOrigin.HanVu.Forest), "Leave before accepting herbs");
+            for (int i = 0; i < 5; i++)
+            {
+                hero.CompleteWave();
+                Check(!StoryOrigin.CreditWave(hero, false, out _), "Farm is not quest participation");
+            }
+            Check(WorldMapCatalog.TryTravel(hero, StoryOrigin.HanVu.Village) &&
+                HanVuEncounters.Available(hero).Id == merchant.Id &&
+                hero.originStory.encounters[0].choice == EncounterChoice.Pending, "Pending offer survives return");
+            Check(HanVuEncounters.Choose(hero, merchant.Id, EncounterChoice.Participated) &&
+                !HanVuEncounters.Choose(hero, merchant.Id, EncounterChoice.Participated) &&
+                hero.originStory.herbWaves == 0, "One explicit result with no quest credit");
+        });
+
+        Run("Hàn Vụ clues, quest counts and hidden prompts are independent", () =>
+        {
+            var hero = ScriptableObject.CreateInstance<EntityDataSO>();
+            StoryOrigin.InitializeNewHero(hero);
+            hero.worldMapId = StoryOrigin.HanVu.Village;
+            Check(StoryOrigin.ChooseHerbs(hero, true), "Opt in");
+            hero.originStory.hideStoryPrompts = true;
+            hero.worldMapId = "TV-24";
+            Check(!StoryOrigin.CreditWave(hero, false, out _) && !HanVuNarrative.ObserveNote(hero),
+                "Unrelated waves and maps create no story credit");
+            hero.worldMapId = StoryOrigin.HanVu.Forest;
+            Check(HanVuNarrative.ObserveKnot(hero) && !HanVuNarrative.ObserveKnot(hero) &&
+                HanVuNarrative.ObserveNote(hero) && !HanVuNarrative.ObserveNote(hero), "Observations are idempotent");
+            Check(StoryOrigin.ItemCount(hero, StoryOrigin.HanVu.TrailId) == 0 &&
+                hero.originStory.stage == OriginStage.Gather && !hero.originStory.heardWoodcutter,
+                "Seeing a clue does not start the search or fabricate testimony");
+            for (int i = 0; i < 5; i++) Check(StoryOrigin.CreditWave(hero, false, out _), "Hidden quest still progresses");
+            Check(StoryOrigin.Hint(hero) == "" && !StoryOrigin.HintMap(hero) &&
+                hero.originStory.stage == OriginStage.Return && StoryOrigin.IsValid(hero), "Hints are optional presentation");
+        });
+
+        Run("Hàn Vụ v1 and v2 migration preserves cast and decisions and is idempotent", () =>
+        {
+            foreach (int version in new[] { 1, 2 })
+            foreach (int herbs in new[] { 0, 2, 5 })
+            {
+                var hero = ScriptableObject.CreateInstance<EntityDataSO>();
+                StoryOrigin.InitializeNewHero(hero);
+                var state = hero.originStory;
+                state.version = version;
+                state.herbWaves = herbs;
+                state.stage = herbs == 5 ? OriginStage.Return : OriginStage.Gather;
+                state.herbalParticipation = herbs > 0 ? HerbalParticipation.Accepted : HerbalParticipation.Offered;
+                hero.worldMapId = StoryOrigin.HanVu.Forest;
+                var guardian = state.guardian;
+                var companion = state.companion;
+                if (version == 2)
+                {
+                    state.hideStoryPrompts = true;
+                    state.encounters = new List<OriginEncounterRecord>
+                    {
+                        new OriginEncounterRecord { id = "hanvu.merchant_rumor", choice = EncounterChoice.Declined }
+                    };
+                }
+                Check(StoryOrigin.IsValid(hero), "Legacy state valid before migration");
+                StoryOrigin.UpgradeSave(hero);
+                Check(state.version == StoryOrigin.SaveVersion && StoryOrigin.IsValid(hero) &&
+                    state.guardian == guardian && state.companion == companion && state.herbWaves == herbs &&
+                    hero.worldMapId == StoryOrigin.HanVu.Forest && !state.heardOpeningTrip && !state.heardWoodcutter,
+                    "Upgrade retains identities, map, counts and does not invent testimony");
+                Check(version != 2 || (state.hideStoryPrompts && state.encounters[0].choice == EncounterChoice.Declined),
+                    "V2 choices and prompt preference survive");
+                state.heardWoodcutter = true;
+                hero.isDirty = false;
+                StoryOrigin.UpgradeSave(hero);
+                Check(state.heardWoodcutter && !hero.isDirty, "Repeated upgrade preserves newly observed facts");
+            }
+        });
     }
 }

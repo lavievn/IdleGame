@@ -1,5 +1,26 @@
 # Kiểm thử vị trí B2 bằng Unity Play Mode
 
+## Hàn Vụ Cloud polish — 12/11/2026
+
+`HudW3Tests` dùng actor triển khai tổng hợp để kiểm tra đúng hợp đồng HUD hiện
+hành: chỉ hiện 1/2/3 Hero đang sống, xếp liền từ phải sang trái, ẩn slot gục/thu
+hồi, hồi sinh và rebind dữ liệu không giữ tên/HP cũ, chiều cao bằng 0 khi không
+còn actor. Các assertion placeholder `Chưa có Hero`, `Ô trống`, đường dẫn
+`Mana Disabled` và bố cục trái sang phải thuộc HUD cũ đã được thay theo đặc tả
+Hàn Vụ và mã runtime hiện tại. Fixture truyền đủ tham số `BeginLife` và vẫn
+không tạo SaveManager hoặc chạy save I/O.
+
+Thêm ca hội thoại giữ nguyên khi menu tạm che HUD, nhưng đóng ở ranh giới entry/
+Retry, không ghi lời kể hoặc tự nhận nhiệm vụ. `HanVuOriginSmoke` có thêm bước
+đóng trước câu trả lời của tiều phu rồi Load, sau đó nói chuyện lại. Smoke này
+**không chạy trên Cloud** vì có save I/O; chỉ chạy ở fixture cô lập đã có.
+
+Roslyn đã biên dịch runtime và file test HUD với DLL Unity 6000.5.0f1. Unity Play
+Mode, render chữ, chuột thật và Windows Player của thay đổi mới **NOT TESTED**.
+Kiểm thử thuần dữ liệu không cần Editor: `bash Tests~/run-hanvu-story.sh`, dùng
+compiler C# 7.2+ và Mono, có thể cấu hình `CSC`/`MONO`. Xem báo cáo
+`Docs/automation-reports/CLOUD_HAN_VU_STORY_POLISH_REPORT.md` để phân biệt kết quả.
+
 ## Hiệu ứng nhận đồ — 04/11/2026
 
 `LootDropPresentationTests` có 5 ca native mới: 3 tỷ lệ Canvas cho sprite/rơi/

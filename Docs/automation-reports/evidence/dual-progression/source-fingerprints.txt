@@ -1,0 +1,4 @@
+PASS CultivationProductionV1.json / production:cultivation-v09: WorldQiDistributionV1.json SHA256=7a7a110f50453ba6730d5aef3e69155caff0e936a5c77510c01cd0a7bcc4eb31
+PASS CultivationProductionV2.json / production:cultivation-v11-qi-v2: WorldQiDistributionV2.json SHA256=436ce1b997c56d0c8f93c0244b9595e56d602335bd198c5f09dcf31e7a8a93eb
+PASS CultivationProductionV3.json / production:cultivation-v11-capacity: WorldQiDistributionV2.json SHA256=436ce1b997c56d0c8f93c0244b9595e56d602335bd198c5f09dcf31e7a8a93eb
+PASS CultivationProductionV3.json / production:cultivation-v11-capacity: CultivationCapacityV1.json SHA256=5124e5baf9271dadcd282e3cb61153e4fcc17edc174ff893cdeda8710c2044b9

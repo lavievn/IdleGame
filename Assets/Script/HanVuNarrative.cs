@@ -1,5 +1,23 @@
 namespace TuTienCore
 {
+    // Transient intent context only. Not a Save field, receipt or story clock.
+    // Displayed dialogue belongs to the Hero/story/map/actor spawn that opened
+    // it, even if the view missed a hidden frame during entry or Retry.
+    internal sealed class OriginInteractionContext
+    {
+        readonly EntityDataSO hero;
+        readonly OriginStoryState story;
+        readonly string map;
+        readonly object actor;
+        readonly int spawn;
+        internal OriginInteractionContext(EntityDataSO hero,object actor,int spawn)
+        {this.hero=hero;story=hero?.originStory;map=hero?.worldMapId;this.actor=actor;this.spawn=spawn;}
+        internal bool Matches(EntityDataSO current,object currentActor,int currentSpawn) =>
+            hero!=null && story!=null && actor!=null && spawn>0 &&
+            ReferenceEquals(hero,current) && ReferenceEquals(story,current?.originStory) &&
+            ReferenceEquals(actor,currentActor) && spawn==currentSpawn && map==current.worldMapId;
+    }
+
     internal enum HanVuConversation { None, Opening, BeforeMedicine, AfterMedicine, Woodcutter }
 
     internal readonly struct HanVuLine
@@ -61,8 +79,8 @@ namespace TuTienCore
                 case HanVuConversation.Woodcutter:
                     return new[]
                     {
-                        new HanVuLine("Người đốn củi", "Có, tôi thấy " + friend + " xách giỏ lá qua đây."),
-                        new HanVuLine("Người đốn củi", Friend(story) + " thong thả hỏi lối rẽ phía bắc, chỗ rợp bóng thông."),
+                        new HanVuLine(hero.entityName, "Cháu chào bác. " + friend + " có qua đây không ạ?"),
+                        new HanVuLine("Người đốn củi", "Có. " + Friend(story) + " mang giỏ, thong thả hỏi lối rẽ phía bắc."),
                         new HanVuLine(hero.entityName, "Cảm ơn bác. Khi qua lối rẽ đó, cháu sẽ để ý.")
                     };
                 default:
@@ -73,6 +91,9 @@ namespace TuTienCore
         internal static bool TellsOfTrip(HanVuConversation conversation, int line) =>
             (conversation == HanVuConversation.Opening && line == 4) ||
             (conversation == HanVuConversation.BeforeMedicine && line == 1);
+
+        internal static bool TellsOfWoodcutter(HanVuConversation conversation, int line) =>
+            conversation == HanVuConversation.Woodcutter && line == 1;
 
         internal static bool RecordTrip(EntityDataSO hero)
         {
@@ -88,9 +109,10 @@ namespace TuTienCore
             return origin != null && origin.Forest == hero.worldMapId;
         }
 
-        internal static bool TalkToWoodcutter(EntityDataSO hero)
+        internal static bool TalkToWoodcutter(EntityDataSO hero, int line)
         {
-            if (!AtWoodcutter(hero) || hero.originStory.heardWoodcutter) return false;
+            if (!TellsOfWoodcutter(HanVuConversation.Woodcutter, line) ||
+                !AtWoodcutter(hero) || hero.originStory.heardWoodcutter) return false;
             hero.originStory.heardWoodcutter = true;
             hero.isDirty = true;
             return true;

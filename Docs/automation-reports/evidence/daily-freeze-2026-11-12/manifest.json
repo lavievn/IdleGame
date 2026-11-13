@@ -1,0 +1,302 @@
+{
+  "status": "RC PARTIAL",
+  "date": "2026-11-12",
+  "sourceBranch": "integration/hero-hanvu-weather-audio",
+  "sourceBranchHead": "3e4e1eff01da22d868514889e939bc726b5587bc",
+  "rollbackBuildSourceHead": "a747735b5ccc3003043d611422f8360ad449cb3c",
+  "previousAcceptedBuildSourceHead": "350049ed6c3680ebbae821aaaa8367c8a9c9d116",
+  "buildSourceHead": "82f5fc026ea22dee634a18798a3f5103d69eee91",
+  "testSourceHead": "22e95929245342d2745e25c0e81085be75b45d46",
+  "ref": "refs/heads/integration/daily-freeze-2026-11-12",
+  "tag": null,
+  "prs": [
+    {
+      "number": 12,
+      "head": "5d41014eccd4e88d561c8fdb85fb7934ae248170",
+      "integration": "Trong nền"
+    },
+    {
+      "number": 13,
+      "head": "5915829aa2510a739bde64addf0a41b705c1b8eb",
+      "integration": "Trong nền"
+    },
+    {
+      "number": 16,
+      "head": "c00dae628a7ea47ca18b9b16dfd13bd86fd9b216",
+      "integration": "Trong nền"
+    },
+    {
+      "number": 17,
+      "head": "cc271451faccd4c2ba7d9ef679a93c7627bc5f5c",
+      "integration": "Merge bbb0100"
+    },
+    {
+      "number": 18,
+      "head": "9349f5fb1e6d32c3062520d12f422be18e7159cd",
+      "integration": "Merge e4b9fa7"
+    },
+    {
+      "number": 19,
+      "head": "2b88eb59c0c0d2c5c1620a0ffd2fd9191bdbcefd",
+      "integration": "Qua #20"
+    },
+    {
+      "number": 20,
+      "head": "7601c372d82f034e4e7165cb000cc400fabbde84",
+      "integration": "Merge 2c97c30"
+    },
+    {
+      "number": 21,
+      "head": "0ab8c88033ea9c4d97a7be4ed03705acad69f675",
+      "integration": "Qua #23"
+    },
+    {
+      "number": 22,
+      "head": "d8e08eb397446d4fdd6da9ed59d25df02025b1cb",
+      "integration": "Qua #23"
+    },
+    {
+      "number": 23,
+      "head": "382f389558ad956d2dc991df9ea91acdd16762fc",
+      "integration": "Merge 03d3224"
+    },
+    {
+      "number": 24,
+      "head": "5063c3500b4cece64281d6ef3c1689484158c4ea",
+      "integration": "Merge 81a6cde"
+    },
+    {
+      "number": 25,
+      "head": "bb51121330ac1fc5aae9e55d17051e42ee3e8db5",
+      "integration": "Merge 63656ba"
+    }
+  ],
+  "buildReport": {
+    "unity": "6000.5.0f1",
+    "scene": "Assets/Scenes/MainGame.unity",
+    "output": "D:\\IdleGame\\Builds\\DailyFreeze_2026-11-12\\RC2\\build\\IdleGameV10.exe",
+    "result": "Succeeded",
+    "backend": "Mono2x",
+    "errors": 0,
+    "warnings": 58,
+    "bytes": 1061748157,
+    "seconds": 55.391311599999995,
+    "development": true,
+    "scriptDebugging": true
+  },
+  "importantArtifacts": [
+    {
+      "path": "build/build-result.json",
+      "bytes": 368,
+      "sha256": "4aa6356109cb12521faa8111db938f479e859a2a9c66edfa6be2d52ffc908f40"
+    },
+    {
+      "path": "build/IdleGameV10.exe",
+      "bytes": 667648,
+      "sha256": "e3c3a181dcb8bab365f7dae4788c8f8164dd1dfa8a5e51d5a717c04b1fc3f7e5"
+    },
+    {
+      "path": "build/IdleGameV10_Data/Managed/Assembly-CSharp.dll",
+      "bytes": 1121792,
+      "sha256": "5cd0d8f713b80ea834c4c3700b782d300c06e85fc41e70908c271d7a234211cc"
+    },
+    {
+      "path": "build/IdleGameV10_Data/resources.assets.resS",
+      "bytes": 480643968,
+      "sha256": "3b627c20ec91f3c23ef333d7f1e7591e83997865a610794e0749aeaf20a7a6d1"
+    },
+    {
+      "path": "build/IdleGameV10_Data/resources.resource",
+      "bytes": 258025184,
+      "sha256": "7ed9aeae7883ff83f8d797ff83ea094baec23bd1c42dc2f4bd186fbbd7ed8eec"
+    },
+    {
+      "path": "build/Play-Integrated-Isolated.cmd",
+      "bytes": 399,
+      "sha256": "ff2cb10b1b2cd0b21a68949b2fc46c62cfd44baa85e5810ab39005292e2c5559"
+    },
+    {
+      "path": "build/UnityPlayer.dll",
+      "bytes": 88393648,
+      "sha256": "46eaec25318cdc190e820e4b22cbbbc4d9a52c284e9e2d8e46b642a29ca383fd"
+    }
+  ],
+  "domain": [
+    {
+      "suite": "Hàn Vụ nền",
+      "passed": 11,
+      "log": "D:/IdleGame/Builds/DailyFreeze_2026-11-12/domain-Story-r2.log"
+    },
+    {
+      "suite": "N3",
+      "passed": 30,
+      "log": "D:/IdleGame/Builds/DailyFreeze_2026-11-12/domain-N3-r2.log"
+    },
+    {
+      "suite": "N4",
+      "passed": 35,
+      "log": "D:/IdleGame/Builds/DailyFreeze_2026-11-12/domain-N4-r4.log"
+    },
+    {
+      "suite": "Dual Progression",
+      "passed": 29,
+      "log": "D:/IdleGame/Builds/DailyFreeze_2026-11-12/domain-Dual-r2.log"
+    },
+    {
+      "suite": "EXP và Mastery",
+      "passed": 50,
+      "log": "D:/IdleGame/Builds/DailyFreeze_2026-11-12/domain-Exp-r2.log"
+    },
+    {
+      "suite": "Item/Loot/Forge",
+      "passed": 19,
+      "log": "D:/IdleGame/Builds/DailyFreeze_2026-11-12/domain-Items-r2.log"
+    }
+  ],
+  "windows": {
+    "Integrated": {
+      "exitCode": 0,
+      "checks": 9,
+      "renderer": "NVIDIA GeForce RTX 2080 (ID=0x1e87)",
+      "result": "D:/IdleGame/Builds/DailyFreeze_2026-11-12/RC2/profiles/idlegame-v10-9c5980462465447cb19f75c847c55543/evidence/player-result.json",
+      "log": "D:/IdleGame/Builds/DailyFreeze_2026-11-12/RC2/profiles/idlegame-v10-9c5980462465447cb19f75c847c55543/player.log",
+      "nativeInput": "NOT RUN"
+    },
+    "HanVuOrigin": {
+      "exitCode": 0,
+      "checks": 7,
+      "renderer": "Microsoft Basic Render Driver (ID=0x8c)",
+      "result": "D:/IdleGame/Builds/DailyFreeze_2026-11-12/RC2/profiles/idlegame-v10-7486072220294902a575c0342e90fa90/evidence/player-result.json",
+      "log": "D:/IdleGame/Builds/DailyFreeze_2026-11-12/RC2/profiles/idlegame-v10-7486072220294902a575c0342e90fa90/player.log",
+      "nativeInput": "NOT RUN"
+    },
+    "Development017": {
+      "exitCode": 0,
+      "checks": 5,
+      "renderer": "Microsoft Basic Render Driver (ID=0x8c)",
+      "result": "D:/IdleGame/Builds/DailyFreeze_2026-11-12/RC2/profiles/idlegame-v10-82f07f3c5a234cd69bebf927378d0609/evidence/player-result.json",
+      "log": "D:/IdleGame/Builds/DailyFreeze_2026-11-12/RC2/profiles/idlegame-v10-82f07f3c5a234cd69bebf927378d0609/player.log",
+      "nativeInput": "NOT RUN"
+    },
+    "WorldClimateVendor": {
+      "exitCode": 0,
+      "checks": 14,
+      "renderer": "NVIDIA GeForce RTX 2080 (ID=0x1e87)",
+      "result": "D:/IdleGame/Builds/DailyFreeze_2026-11-12/RC2/profiles/idlegame-v10-8fa4a6f89d574bfaae4ad7d377f453dd/evidence/player-result.json",
+      "log": "D:/IdleGame/Builds/DailyFreeze_2026-11-12/RC2/profiles/idlegame-v10-8fa4a6f89d574bfaae4ad7d377f453dd/player.log",
+      "nativeInput": "NOT RUN"
+    }
+  },
+  "teardown": {
+    "command": "CloseMainWindow (WM_CLOSE)",
+    "profile": "D:\\IdleGame\\Builds\\DailyFreeze_2026-11-12\\RC2\\profiles\\idlegame-v10-5a5ca854c99e4e9ca9349dd9b23191c5",
+    "log": "D:\\IdleGame\\Builds\\DailyFreeze_2026-11-12\\RC2\\profiles\\idlegame-v10-5a5ca854c99e4e9ca9349dd9b23191c5\\window-close.log",
+    "pid": 32124,
+    "closeSent": true,
+    "exited": true,
+    "exitCode": 0,
+    "renderer": [
+      "Renderer: NVIDIA GeForce RTX 2080 (ID=0x1e87)"
+    ],
+    "matchingApplicationErrors": []
+  },
+  "editMode": {
+    "results": "D:/IdleGame/Builds/DailyFreeze_2026-11-12/RC2/unity-EditMode.xml",
+    "exitCode": 2,
+    "passed": 50,
+    "failed": 1,
+    "failures": [
+      "IdleGame.Tests.SaveLoad.JsonUtilitySaveLoadTests.AfterDeserialization_DerivedStatsAreRebuiltFromAuthoritativeProgressAndEquipment"
+    ]
+  },
+  "playMode": {
+    "results": "D:/IdleGame/Builds/DailyFreeze_2026-11-12/RC2/unity-PlayMode-owned-save.xml",
+    "exitCode": 2,
+    "passed": 124,
+    "failed": 10,
+    "failures": [
+      "IdleGame.Tests.Presentation.PlayMode.B2SpawnPositionTests.NativeVfxFinish_InjectedLongWalkingStep_IsBoundedWithoutCatchUp(0,450.0f)",
+      "IdleGame.Tests.Presentation.PlayMode.B2SpawnPositionTests.NativeVfxFinish_InjectedLongWalkingStep_IsBoundedWithoutCatchUp(1,450.0f)",
+      "IdleGame.Tests.Presentation.PlayMode.B2SpawnPositionTests.NativeVfxFinish_InjectedLongWalkingStep_IsBoundedWithoutCatchUp(2,200.0f)",
+      "IdleGame.Tests.Presentation.PlayMode.HudW3Tests.EntryDismissesOldDetailSnapshotWithoutReleasingPause",
+      "IdleGame.Tests.Presentation.PlayMode.HudW3Tests.LootTargetTracksRectAndUsesRealWindowEdgeWhenHidden",
+      "IdleGame.Tests.Presentation.PlayMode.MonsterAwarenessTests.GroupQuestionIsYellowAndReadableThenTurnsRedAfterHalfSecond(600.0f)",
+      "IdleGame.Tests.Presentation.PlayMode.MonsterAwarenessTests.GroupQuestionIsYellowAndReadableThenTurnsRedAfterHalfSecond(800.0f)",
+      "IdleGame.Tests.Presentation.PlayMode.MonsterAwarenessTests.GroupQuestionIsYellowAndReadableThenTurnsRedAfterHalfSecond(1150.0f)",
+      "IdleGame.Tests.Presentation.PlayMode.MonsterAwarenessTests.SightRequiresCorrectFacingAndInclusive500UnitGroundDistance(False)",
+      "IdleGame.Tests.Presentation.PlayMode.MonsterAwarenessTests.SightRequiresCorrectFacingAndInclusive500UnitGroundDistance(True)"
+    ]
+  },
+  "assets": {
+    "rollback": [
+      {
+        "root": "D:\\IdleGame\\Builds\\IntegratedPlaytest",
+        "count": 375,
+        "changed": []
+      },
+      {
+        "root": "D:\\IdleGame\\Builds\\IntegratedPrefixMix",
+        "count": 375,
+        "changed": []
+      }
+    ],
+    "local": {
+      "files": 478,
+      "groups": {
+        "Free HDR Skyboxes Pack": 25,
+        "RainMaker": 42,
+        "Resources/WorldClimateVendor": 3,
+        "Resources/WorldMapMusic": 25,
+        "Resources/IntegratedAmbience": 383
+      },
+      "changed": []
+    }
+  },
+  "guidAudit": {
+    "checkedYaml": 24,
+    "references": 414,
+    "builtinReferences": [
+      {
+        "path": "Assets/UI Toolkit/PanelSettings.asset",
+        "guid": "0000000000000000e000000000000000"
+      },
+      {
+        "path": "Assets/Settings/Build Profiles/Windows.asset",
+        "guid": "0000000000000000e000000000000000"
+      }
+    ]
+  },
+  "localManifests": [
+    {
+      "path": "D:/IdleGame/Builds/DailyFreeze_2026-11-12/rollback-sha256.json",
+      "sha256": "4b5e25de7a86ce0346fe3b6d0f6cb2dbc68f65f2a9afa5246021a9fa8c436837"
+    },
+    {
+      "path": "D:/IdleGame/Builds/DailyFreeze_2026-11-12/local-asset-sha256.json",
+      "sha256": "cbb956d34d3f2c100468d36abb78c627741123d762dd415865d1c7c339f5c40f"
+    },
+    {
+      "path": "D:/IdleGame/Builds/DailyFreeze_2026-11-12/RC2/artifact-sha256.json",
+      "sha256": "ce770eaf0dfc94ac0eea2e069b90c54529dc5c2510cbc8c3d9287ba71ae6d5ee"
+    }
+  ],
+  "changedProduction": [
+    "Assets/DataScript/EntityDataSO.cs",
+    "Assets/Script/CombatManager.WeaponSkills.cs",
+    "Assets/Script/CombatManager.cs",
+    "Assets/Script/CultivationGameplayState.cs",
+    "Assets/Script/CultivationPersistence.cs",
+    "Assets/Script/EquipmentFoundation.cs",
+    "Assets/Script/ExperienceProgress.cs",
+    "Assets/Script/GameManager.Cultivation.cs",
+    "Assets/Script/GameManager.Tribulation.cs",
+    "Assets/Script/GameManager.cs",
+    "Assets/Script/HanVuNarrative.cs",
+    "Assets/Script/HanVuOrigin.cs",
+    "Assets/Script/HudW3View.cs",
+    "Assets/Script/MasteryFoundation.cs",
+    "Assets/Script/SaveManager.Tribulation.cs",
+    "Assets/Script/SaveManager.cs",
+    "Assets/Script/UIManager.StoryOrigin.cs"
+  ]
+}

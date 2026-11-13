@@ -130,7 +130,7 @@ public partial class SaveManager
     public string TrialSnapshotHash(SaveSlot slot){string path=Path.Combine(saveDirectory,slot+".json");return File.Exists(path)?CultivationMigrationTransaction.Hash(File.ReadAllBytes(path)):null;}
     public bool CommitTrialCandidate(EntityDataSO candidate,string expectedHash,out string reason)
     {
-        reason=null;if(TrialConfiguration==null||!customSaveDirectoryRequested||candidate==null||string.IsNullOrEmpty(candidate.tribulationJson)||candidate.combatSkills==null||!candidate.combatSkills.IsValid()||!ValidateTrial(candidate,out reason)||!ValidateCultivationComponent(candidate.cultivationJson)||!EquipmentFoundation.TryValidateSaveVersions(candidate,out reason))return false;
+        reason=null;if(TrialConfiguration==null||!customSaveDirectoryRequested||candidate==null||!ExperienceProgress.TryRead(candidate.experienceJson,out _)||string.IsNullOrEmpty(candidate.tribulationJson)||candidate.combatSkills==null||!candidate.combatSkills.IsValid()||!ValidateTrial(candidate,out reason)||!ValidateCultivationComponent(candidate.cultivationJson)||!EquipmentFoundation.TryValidateSaveVersions(candidate,out reason))return false;
         Action<string> fault=point=>{
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             if(developmentProfileLock==null&&FailNextTrialWrite==point){FailNextTrialWrite=null;throw new IOException("Owned trial fault "+point);}

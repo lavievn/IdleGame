@@ -1,0 +1,10 @@
+# Keep RC2 resource metadata byte-identical across Windows checkouts.
+/Assets/Resources/IntegratedAmbience.meta text eol=lf
+/Assets/Resources/IntegratedAmbience/*.meta text eol=lf
+/Assets/Resources/IntegratedAmbience/*.ogg binary
+/Assets/Resources/WorldMapMusic.meta text eol=lf
+/Assets/Resources/WorldMapMusic/*.meta text eol=lf
+/Assets/Resources/WorldMapMusic/*.wav binary
+/Assets/Resources/WorldClimateVendor.meta text eol=lf
+/Assets/Resources/WorldClimateVendor/*.meta text eol=lf
+/Assets/Resources/WorldClimateVendor/*.asset text eol=lf

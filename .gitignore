@@ -106,16 +106,8 @@ InitTestScene*.unity*
 /[Aa]ssets/[Ss]ceneDependencyCache*
 
 
-# Licensed weather assets stay on the local machine.
+# Import the original weather packages through Unity My Assets.
 /Assets/Free HDR Skyboxes Pack/
 /Assets/Free HDR Skyboxes Pack.meta
 /Assets/RainMaker/
 /Assets/RainMaker.meta
-/Assets/Resources/WorldClimateVendor/
-/Assets/Resources/WorldClimateVendor.meta
-/Assets/Resources/WorldMapMusic/
-/Assets/Resources/WorldMapMusic.meta
-
-# Licensed local integration audio
-/Assets/Resources/IntegratedAmbience/
-/Assets/Resources/IntegratedAmbience.meta

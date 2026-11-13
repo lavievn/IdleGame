@@ -1,3 +1,89 @@
+<!-- narrative-integration-audit-2026-11-12 -->
+
+<!-- daily-freeze-rc2 -->
+> **Build trên máy khác:** Pull nhánh freeze để nhận BGM và âm thanh môi trường. Import hai gói HDR/Rain Maker một lần trong Unity để có đầy đủ thời tiết. [Hướng dẫn RC2](Docs/automation-reports/DAILY_FREEZE_ASSET_HANDOFF.md).
+
+> **RC 12/11/2026.** Bản tổng hợp Unity/Windows đã có kết quả thử thật. Trạng thái RC PARTIAL và các lỗi còn lại ở báo cáo freeze. [Báo cáo Daily Freeze](Docs/automation-reports/DAILY_FREEZE_2026-11-12_FINAL_REPORT.md).
+
+> **Cập nhật kiểm toán sau PR #21 — 12/11/2026:** Chủ dự án xác nhận các nhánh tính năng đã được merge trên nhánh local; sẽ merge tài liệu tạm sau. Cloud chưa có SHA/build local nên chưa chứng nhận bản tổng hợp. Bảng PR ở phần5 bên dưới là snapshot nguồn đã công bố, không phủ nhận merge local.
+>
+> [Audit, trạng thái và kế hoạch](Docs/automation-reports/NARRATIVE_INTEGRATION_AUDIT_2026-11-12.md) · [Narrative Foundation](Docs/story/NARRATIVE_EVENT_TIMELINE_FOUNDATION_2026-11-12.md) · [Slice Hàn Vụ](Docs/story/HAN_VU_VERTICAL_SLICE_SPEC_2026-11-12.md). Foundation tổng quát vẫn **PROPOSED**; phạm vi slice Hàn Vụ đã được chủ dự án duyệt, chưa triển khai/nghiệm thu. [Bàn giao baseline Windows](Docs/automation-reports/LOCAL_INTEGRATION_BASELINE_2026-11-12.md) ghi rõ N0/N1 còn BLOCKED trong Cloud. Giữ nguyên lịch sử bên dưới; không cộng PASS từng nhánh thành chứng nhận build.
+<!-- /narrative-integration-audit-2026-11-12 -->
+
+# Định hướng và quy trình chuẩn — Bách Luyện Tiên Đồ (12/11/2026)
+
+> **Trạng thái: DESIGN BASELINE, không phải giấy phép tự triển khai.** Tài liệu này ghi nhận quyết định của chủ dự án đến 12/11/2026. Khi xung đột với mô tả cũ trong README/roadmap, **quyết định chốt mới hơn thắng về mặt thiết kế**; **mã nguồn, cấu hình, bản lưu và nhánh đang chạy không tự động thay đổi**. Mọi triển khai cần task có phạm vi rõ. Prototype / development build, **chưa phải Alpha**.
+
+## 1. Tuyên ngôn sản phẩm (ĐÃ CHỐT)
+- **Game nhập vai tu tiên 2D idle/auto-battle**; không chuyển sang nhập vai side-scrolling điều khiển trực tiếp. Người chơi chọn mục tiêu, build, hướng tu luyện, thời điểm hành động và quyết định nhân quả; nhân vật tự di chuyển/đánh/nhặt/tích lũy theo hệ thống.
+- **Thời gian chơi dài không phải KPI thiết kế tự thân.** Mỗi vòng idle cần phục vụ mục tiêu, chuẩn bị hoặc khám phá; không kéo dài game chủ yếu bằng tăng EXP/quái/độ khó tùy tiện.
+- **Cốt truyện có trục chính và các nhánh hội tụ**, nhiều kết cục có điều kiện, lựa chọn và hậu quả kéo dài. Người chơi khởi đầu với mục tiêu nhỏ, có thể thay đổi lý tưởng. Kết thúc không mong muốn cần tạo nuối tiếc có cơ sở để chơi lại; kết thúc phù hợp lý tưởng cần tạo cảm giác thành tựu. Không đơn giản hóa thành thanh thiện/ác hay chỉ một kết thúc “đúng”.
+- **Gameplay và truyện phải tác động qua lại**: công pháp, cảnh giới, trang bị, tri thức, NPC, thế lực và lựa chọn có thể thay đổi cách giải quyết vấn đề; không chỉ farm để mở một đoạn thoại.
+- **AFK an toàn đối với sự kiện lớn**: nhân vật tiếp tục tiến triển thường nhật nhưng **không tự chọn nhánh truyện, làm NPC quan trọng chết, hoặc tự kết thúc kiếp** chỉ vì người chơi vắng mặt.
+- **Thời gian truyện theo mốc sự kiện (ĐÃ CHỐT B)**: đồng hồ môi trường/ngày đêm/thời tiết độc lập với đồng hồ tích lũy tu luyện và timeline truyện. Treo máy không tự làm NPC già đi; các lần nhảy năm tháng do sự kiện có điều kiện và cảnh báo.
+- **Thọ nguyên nhân vật chính theo mốc cốt truyện (ĐÃ CHỐT B)**: có tuổi đời, thọ nguyên và nguy cơ thọ tận nhưng **chỉ kết thúc tại mốc truyện hợp lệ, được báo hiệu và có cơ hội chuẩn bị**; bại trận auto-battle không xóa nhân vật/vĩnh viễn kết thúc truyện.
+- **Bế quan là ý tưởng thiết kế cho hành động đổi thời gian truyện và tài nguyên đã chuẩn bị lấy kết quả**; không phải nút sinh tài nguyên vô hạn hoặc đồng hồ AFK thứ hai. Chi tiết số năm, công thức, tuổi thọ từng cảnh giới **CHƯA CHỐT**.
+
+## 2. Vòng chơi mục tiêu
+`Phát hiện vấn đề / cơ duyên → người chơi chọn mục tiêu → chuẩn bị (idle chiến đấu, EXP, Qi, đồ, công pháp) → đối mặt thử thách / lựa chọn → thế giới & NPC đổi trạng thái → mục tiêu mới`.
+Không bắt xác nhận sau mỗi wave, không tự travel, không tự chọn quyết định quan trọng. Gameplay hay đến từ chuẩn bị, chiến thuật build, khám phá, đánh đổi, quan hệ và hệ quả, không bắt buộc thao tác đánh nhau trực tiếp.
+
+## 3. Quyết định gameplay trước đó còn hiệu lực
+- **Không class cố định**; tự do vũ khí, công pháp, võ học; tương tác/ngũ hành theo dữ liệu đã chốt, không suy ra buff sai vũ khí. Một Hero chính là định hướng; các Hero cũ trong mã có thể là thử nghiệm/legacy.
+- **Dual Progression**: EXP/Level từ chiến đấu và Qi/tu vi từ linh khí là hai nguồn riêng. EXP mới tại **bình cảnh có đường đột phá hợp lệ** được giữ dự trữ, giải phóng một lần sau đột phá thành công; tiểu cảnh giới và logic cap cần phân biệt rõ. Khi **không có successor/đường đột phá**, không được tự khóa Level vĩnh viễn. Mastery vũ khí/kỹ năng được kỳ vọng vẫn tiến triển tại bình cảnh, nhưng chính sách award/rate/cap còn chờ.
+- **Thiên Kiếp** là cửa vượt đại cảnh giới, không đồng nhất Level với realm, không reset Level tổng. Tự động trữ Qi ở cap khác hoàn toàn EXP bank. Cho phép nhiều đột phá liên tiếp khi đủ điều kiện, nhưng không bypass gate production.
+- **Tinh Huyết** định hướng từ Kim Đan, tích lũy thụ động, dung lượng đầu 1 và +1 mỗi tiểu cảnh giới, chỉ dùng khi HP <30%, hồi HP đầy; tạm +1 đại cảnh giới hiệu dụng, stat không-phần-trăm ×2, nhiều lần sử dụng chỉ nối thời gian; hậu quả căn cơ 10% × số charge trong một đợt, thiếu căn cơ thành thương tổn và giữ đại cảnh giới thật. **Định hướng ≠ production hiện đã bật**.
+- **Heatmap Qi** mong muốn có vùng dày/thưa ngay trong một map; không coi bảng mật độ giữa 133 map là sampler nội map.
+- Mốc cân bằng giả thuyết: Luyện Khí sơ kỳ → viên mãn ở map khởi đầu ~60 phút **active gameplay, không hỗ trợ**, cần kiểm thực trên preset đúng; không áp thành thời gian chơi truyện bắt buộc.
+- Loot: dòng nguyên liệu và trang bị độc lập; tỷ lệ 60% nguyên liệu 1–2 và 8% trang bị Sword/Bow +4 là **prototype**, không balance retail. HP% từ vũ khí là tạm, nguồn HP% phòng thủ về sau. UI, camera ~35% từ mép phải, flash loot rồi delay 0.5s bay về Inventory là mục tiêu/nghiệm thu riêng, không mặc định đã giải quyết.
+- Ngày/đêm/thời tiết/âm thanh môi trường và bầu trời động (kể cả Home thay video) phục vụ thế giới sống; mức triển khai và chất lượng chưa được đồng nhất giữa các nhánh.
+
+## 4. Cấu trúc truyện — CHỐT NGUYÊN TẮC, CHƯA CHỐT LORE
+- Khung kể chuyện đề xuất 5 hồi: **Phàm Trần → Nhập Đạo → Vấn Tâm → Nghịch Thiên → Quy Túc**. Đây là cấu trúc *đề xuất*, không phải yêu cầu sản xuất ngay.
+- Một khởi đầu chung, lý tưởng phát triển theo hành trình; không ép nhãn Chính/ Ma từ đầu. Nhánh có thể hội tụ tại biến cố lớn, nhưng vẫn phải giữ trạng thái NPC, thế lực, địa điểm, quan hệ, bí mật, lời hứa.
+- Kết cục tổng kết ít nhất ba chiều: số phận nhân vật, người xung quanh, thế giới. Không mặc định trường sinh = happy ending hay thọ tận = bad ending.
+- NPC chủ chốt có bản sắc, mục tiêu riêng, chuyển giai đoạn theo timeline truyện và quyết định; không biến NPC thành máy phát thưởng. **Chưa chốt** tên nhân vật, Thanh Khê/Hàn Vụ liên hệ ra sao, vị trí bản đồ, lịch sử Thiên Đạo, tuổi thọ số học, NPC nào bắt buộc sống/chết.
+- Kịch bản Thanh Khê, Lâm Thanh, ví dụ cứu người/linh dược, 3 kết thúc chương, 3 năm/30 năm, Hồi Tưởng và Luân Hồi là **MINH HỌA / ĐỀ XUẤT, CHƯA PHÊ DUYỆT THÀNH NỘI DUNG CHÍNH THỨC**. **Hàn Vụ** là tuyến đang có trong PR #13/#17, không được xóa/đổi tên/hợp nhất vào Thanh Khê từ ví dụ thảo luận.
+- Tách bại trận thông thường, trọng thương/căn cơ và chết tại mốc truyện. Bế quan chỉ chuyển timeline khi có xác nhận; cảnh báo hậu quả có thể dự đoán, không tiết lộ mọi tình tiết. Luân Hồi/Hồi Tưởng/Di Sản là thiết kế tương lai, chưa code.
+
+## 5. Chứng cứ tiến độ và nơi mã đang ở (snapshot 12/11/2026)
+**Không có một nhánh nào được xác nhận đã tích hợp tất cả PR. Không dùng số PASS của từng PR cộng lại thành chứng nhận build.**
+| Phạm vi | Có bằng chứng | Chưa thể tuyên bố |
+| --- | --- | --- |
+| Nền combat, map, HUD, Inventory, Save | README tại `development_0.1.7`; lịch sử từ 0.0.50, W3, HUD, Unity/Mono tests | Toàn bộ UI/native input, camera 35%, Save/Load Player đã nghiệm thu |
+| Dual Progression | PR #19 audit: 29 PASS domain, 17 mô phỏng Qi; Production start ~3600.1s active; sửa codec snapshot | EXP bank, Mastery, Blood playable, position heatmap, trial retail, Unity Player được chứng minh bởi #19 |
+| EXP bank & Mastery contract | PR #20: 50 PASS domain; EXP bank/release có code trên nhánh PR, Mastery mới là DTO/receipt | Mastery award/rate/cap, Save/Load native/Windows; tự nhận #20 đã tích hợp |
+| Item/Loot/Forge | PR #18: 19 PASS domain; sửa validation version + ID | Inventory/Forge native và Windows đã pass |
+| Tuyến Hàn Vụ | PR #13 và PR #17 (phụ thuộc #13), kiểm tra thoại/cờ truyện/HUD, #17 11 PASS domain | End-to-end Unity/Windows và xem như truyện tổng đã chốt |
+| Animation Hero | PR #12, 103 PNG và bridge được báo cáo | Đã merge và hoàn chỉnh runtime trên bản build tích hợp |
+| Thời tiết, bầu trời, mưa | PR #16 thử nghiệm chu kỳ 13 phút/ngày, HDR sky, mưa 2D và kết quả smoke trong PR | Đồng nhất với thiết kế 3 đồng hồ truyện; Home động đã nghiệm thu |
+| Âm thanh môi trường / bản build hợp nhất | Có yêu cầu tích hợp đang chạy trong luồng làm việc khác | Đã hoàn tất merge/build/Player; phải lấy báo cáo mới nhất |
+| VFX loot / camera / HUD | PR #10/#11 và báo cáo riêng từng nhánh | Cấu hình cuối đã được xác nhận trên bản build mới nhất |
+
+**Cảnh báo tồn tại từ audit**: Mono suite tổng từng BLOCKED bởi 12 lỗi UnityStub/legacy; UnityStub domain PASS không phải Unity Editor/Player PASS. #19 phát hiện Blood production chưa mở, whitelist stat chưa đầy đủ, spatial Qi chưa sample theo vị trí và DEV preset khác ProductionV3. Kiểm tra lại khi tích hợp; không tự sửa cân bằng để ép PASS.
+
+## 6. Thứ tự công việc và hàng rào chống drift cho Codex
+1. **Trước task**: đọc `AGENTS.md`, skill liên quan, đầu README này, tài liệu thiết kế, PR/report hiện hành; xác minh repo/branch/HEAD/working tree, status PR và phụ thuộc. Liệt kê `VERIFIED / PARTIAL / GAP / PROPOSED / BLOCKED`.
+2. **Nhiệm vụ có phạm vi**: ghi mục tiêu, ngoài phạm vi, file dự kiến chạm, hành vi cần bảo toàn, acceptance criteria; **đọc tài liệu không có nghĩa được phép code tất cả đề xuất**. Không tự thêm lore, ending, choice, NPC tuổi tác, EXP curve, Qi rate, thọ nguyên, Save schema hoặc giải quyết xung đột thiết kế.
+3. **Không tự merge/rebase/cherry-pick/force push**, không sửa `main` hoặc các nhánh PR khác nếu chưa được yêu cầu. PR phụ thuộc phải xét đúng thứ tự, không gom diff giả hoặc đóng PR khi chưa nghiệm thu. Merge tích hợp đang chạy được xử lý bởi task tích hợp riêng.
+4. **Test đúng cấp**: domain/UnityStub → Unity Edit/Play → native input/Save/Load → Windows build/Player → walkthrough theo nhánh truyện. Nêu BLOCKED/NOT TESTED rõ. Không chỉnh assertion để làm xanh suite.
+5. **Save an toàn**: không đọc/ghi/xóa save cá nhân; kiểm thử bằng fixture riêng có quyền sở hữu; schema migration cần task phê duyệt riêng. Mốc thời gian/nhân quả phải chống double-apply và xử lý trạng thái không hợp lệ.
+6. **Báo cáo cuối**: branch, base/head SHA, file changed, kết quả test, evidence, known gaps, rủi ro, PR URL, đề xuất bước nhỏ tiếp theo; phân biệt implementation, test, nghiệm thu, merge.
+7. **Ưu tiên gần**: (a) hoàn tất và nghiệm thu bản build tích hợp animation–Hàn Vụ–môi trường/thời tiết–âm thanh, (b) audit các PR tu luyện/item chưa tích hợp, (c) chốt đặc tả *vertical slice* một chương có 1 biến cố, 2 quyết định, trạng thái NPC/map và Save/Load, (d) triển khai narrative timeline độc lập **chỉ sau khi duyệt task**. Tránh viết cả năm hồi trước khi kiểm chứng chương mẫu.
+
+## 7. Quy tắc giải quyết xung đột tài liệu
+1. Yêu cầu trực tiếp mới nhất của chủ dự án cho **task hiện tại**.
+2. Quyết định thiết kế **ĐÃ CHỐT** có ngày mới nhất (tài liệu này); nếu va chạm kỹ thuật thì ghi discrepancy, không tự áp vào mã.
+3. Trạng thái thực tế tại **branch/commit đang thao tác**, test/evidence chính xác; không suy diễn trạng thái nhánh khác.
+4. `AGENTS.md`, skill phù hợp và đặc tả đã chốt theo phạm vi.
+5. Roadmap, ví dụ, nháp, README lịch sử dùng làm bối cảnh, **không là lệnh code**.
+
+> **Không còn dùng quy tắc cũ “Level luôn tăng dù gặp bình cảnh” như thiết kế cuối cùng**: đã được thay bằng Dual Progression và EXP bank có điều kiện. **Không dùng tuyên bố “luôn làm W3 trên main” từ snapshot tháng 10** khi có nhánh development/PR mới. Bảo toàn mã hiện hành và xin task tích hợp riêng.
+
+---
+
+# Lịch sử và tài liệu kỹ thuật trước 12/11/2026 (lưu nguyên bản)
+
 # Bách Luyện Tiên Đồ
 
 Dự án game tu tiên 2D idle, phát triển bằng Unity. Nhân vật tự khám phá, chiến đấu và tiến triển trong một thế giới rộng lớn; trọng tâm là quan sát hành trình, không ép tương tác liên tục.

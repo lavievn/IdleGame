@@ -1,0 +1,22 @@
+N4 validation — 2026-11-12 UTC
+Runtime HEAD: bbef36941e62effd38258947505837a80a5d1d89
+Base #24: 5063c3500b4cece64281d6ef3c1689484158c4ea
+Pinned before fixture: 15 PASS / 8 FAIL (expected exit1; reproduced with baseline.sh)
+Unknown-field before strict guard: 34 PASS / 1 FAIL (expected exit1)
+After: 35 PASS / 0 FAIL; N3: 30 PASS / 0 FAIL
+Standalone command: Roslyn csc -noconfig @runtime.rsp; -nostdlib; Unity6000.5.0f1 reference DLLs; all runtime Assets C# sources.
+Standalone: 0 error CS / 93 warning CS; Runtime.dll created (not a Unity import/Player build).
+Full historical runner: compile-only, 12 pre-existing errors; executable never run.
+Metadata checker: 0 errors / 62 existing warnings.
+PASS bash -n Tests~/HanVuN3/run.sh Tests~/HanVuN4/run.sh Tests~/HanVuN4/baseline.sh
+PASS ast.parse Tests~/HanVuN4/prepare.py
+PASS git diff --exit-code 5063c35 e034457 -- Assets (before fixture has unchanged production code).
+PASS git merge-base --is-ancestor for #13 and #17 into #24.
+No native Save filesystem calls: virtual dictionary File/FileStream/Directory services only.
+NOT TESTED: Unity import/Play/JsonUtility/clone/native Save I/O/Retry/Travel/Load/Windows/crash/relaunch.
+BLOCKED: global durable command exactly-once; no persisted ledger/contract change authorized.
+Protected worktrees:
+/workspace/IdleGame 7601c372d82f034e4e7165cb000cc400fabbde84 CLEAN
+/workspace/IdleGame-hanvu-n3 5063c3500b4cece64281d6ef3c1689484158c4ea CLEAN
+/workspace/IdleGame-local-baseline 382f389558ad956d2dc991df9ea91acdd16762fc CLEAN
+/workspace/IdleGame-narrative-audit d8e08eb397446d4fdd6da9ed59d25df02025b1cb CLEAN

@@ -52,9 +52,19 @@ public partial class GameManager
         trial.Accept(trial.Owner,trial.Epoch,trial.AttemptId,trial.TargetId,current.LifeVersion,Guid.NewGuid(),trial.Step,heroHP,gateHP);
         if(trial.Outcome==HeavenlyGateOutcome.Fighting)return;
         UIManager.Instance?.SetPaused(true); // Keep the entry-time expected hash, never adopt a competing snapshot.
-        trialCandidate=Instantiate(runtimeHeroData);
-        PrepareTrialResult(trialCandidate, trialReceipt, trial.Outcome == HeavenlyGateOutcome.Success);
-        if(!PrepareCultivation(trialCandidate,out trialPrepared))throw new InvalidOperationException("Trial candidate binding rejected");RetryTribulationCommit();
+        var candidate=Instantiate(runtimeHeroData);
+        try
+        {
+            PrepareTrialResult(candidate, trialReceipt, trial.Outcome == HeavenlyGateOutcome.Success);
+            if(!PrepareCultivation(candidate,out trialPrepared))throw new InvalidOperationException("Trial candidate binding rejected");
+            trialCandidate=candidate;
+        }
+        catch(InvalidOperationException e)
+        {
+            trialPrepared?.Dispose();trialPrepared=null;Destroy(candidate);trialInterrupted=true;
+            LastTribulationNotice="Candidate bị từ chối · giữ checkpoint: "+e.Message;UpdateEventLog(LastTribulationNotice);return;
+        }
+        RetryTribulationCommit();
     }
     void PrepareTrialResult(EntityDataSO candidate, TribulationSaveReceipt active, bool success)
     {
@@ -67,8 +77,8 @@ public partial class GameManager
         result.outcome = success ? "Success" : "Failure";
         result.penalty = success ? 0 : saveManager.TrialPenalty.Loss(source.Realms, source.Current);
         var status = success
-            ? new RealmBreakthroughTransition(source).ApplySuccess(source.OwnerId, source.Epoch, attempt,
-                source.RealmRevision, result.sourceRealm, result.targetRealm, 0)
+            ? ExperienceProgress.ApplyBreakthroughSuccess(candidate, source, profile,
+                saveManager.TrialConfiguration, attempt, source.RealmRevision)
             : source.ApplyGatePenalty(source.OwnerId, source.Epoch, attempt, source.RealmRevision,
                 result.sourceRealm, saveManager.TrialPenalty);
         if (status != CultivationReason.None)

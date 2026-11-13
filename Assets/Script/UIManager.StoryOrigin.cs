@@ -15,6 +15,7 @@ public partial class UIManager
     private bool originJournalOpen, originMapHighlighted, originManualNotice;
     private bool originControlsVisible;
     private OriginEncounter openEncounter;
+    private OriginInteractionContext originContext;
     private HanVuConversation conversation;
     private HanVuLine[] dialogue;
     private int originPage, dialogueIndex;
@@ -59,8 +60,8 @@ public partial class UIManager
         originDismiss = StoryButton("HanVuDismiss", "Đóng", 229f, 65f, CloseOriginPresentation);
         originPrev = StoryButton("HanVuPrev", "Trước", 6f, 50f, () => MoveOriginLine(-1));
         originNext = StoryButton("HanVuNext", "Tiếp", 60f, 50f, () => MoveOriginLine(1));
-        originAccept = StoryButton("HanVuAccept", "Nhận lời", 60f, 85f, () => ChooseOriginOffer(true));
-        originDecline = StoryButton("HanVuDecline", "Để sau", 149f, 76f, () => ChooseOriginOffer(false));
+        originAccept = StoryButton("HanVuAccept", "Nhận lời", 60f, 85f, () => ChooseOriginOffer(true, null));
+        originDecline = StoryButton("HanVuDecline", "Từ chối", 149f, 76f, () => ChooseOriginOffer(false, null));
         originReplay = StoryButton("HanVuReplay", "Xem lại mở đầu", 115f, 110f, () =>
         {
             var data = GameForUI()?.HeroData;
@@ -110,12 +111,16 @@ public partial class UIManager
     private void OpenWoodcutter()
     {
         var game = GameForUI();
-        if (game?.TryTalkToWoodcutter() == true)
+        if (game != null && game.IsGameplayHUDVisible && !game.HasTribulationLiability &&
+            HanVuNarrative.AtWoodcutter(game.HeroData))
             BeginOriginConversation(game.HeroData, HanVuConversation.Woodcutter);
     }
 
     private void BeginOriginConversation(EntityDataSO data, HanVuConversation kind)
     {
+        var game = GameForUI();
+        originContext = game != null ? game.CaptureOriginInteraction(data) : default;
+        BindOriginChoices();
         originJournalOpen = false;
         openEncounter = null;
         conversation = kind;
@@ -125,7 +130,18 @@ public partial class UIManager
 
     private void OpenOriginEncounter()
     {
-        openEncounter = GameForUI()?.OpenOriginEncounter();
+        var game = GameForUI();
+        openEncounter = game?.OpenOriginEncounter();
+        originContext = game != null ? game.CaptureOriginInteraction(game.HeroData) : default;
+        BindOriginChoices();
+    }
+
+    private void BindOriginChoices()
+    {
+        // Capture this intent, not the mutable context of a later conversation.
+        var context = originContext;
+        BindClick(originAccept, () => ChooseOriginOffer(true, context));
+        BindClick(originDecline, () => ChooseOriginOffer(false, context));
     }
 
     private void MoveOriginLine(int direction)
@@ -138,10 +154,15 @@ public partial class UIManager
 
     private bool LastLine => dialogue != null && dialogueIndex == dialogue.Length - 1;
 
-    private void ChooseOriginOffer(bool accept)
+    private void ChooseOriginOffer(bool accept, OriginInteractionContext context)
     {
+        if (!ReferenceEquals(context, originContext)) return;
         var game = GameForUI();
-        if (game == null) return;
+        if (game == null || !game.IsCurrentOriginInteraction(context))
+        {
+            CloseOriginPresentation();
+            return;
+        }
         if (conversation == HanVuConversation.BeforeMedicine && LastLine && accept)
         {
             if (game.TryOriginInteraction())
@@ -156,6 +177,7 @@ public partial class UIManager
         conversation = HanVuConversation.None;
         dialogue = null;
         openEncounter = null;
+        originContext = default;
         originManualNotice = true;
     }
 
@@ -174,6 +196,7 @@ public partial class UIManager
         dialogue = null;
         openEncounter = null;
         originNotice = null;
+        originContext = default;
     }
 
     private void TickOriginPresentation()
@@ -191,6 +214,11 @@ public partial class UIManager
         originPromptButton.gameObject.SetActive(visible);
         if (!visible)
         {
+            // Entry, death and Retry may reuse the same Hero and map. A stale
+            // conversation must not survive that boundary and commit unseen lines.
+            // Temporary menus only hide the view; they can resume the conversation.
+            if (hudGame == null || !hudGame.IsGameplayHUDVisible || hudGame.HasTribulationLiability)
+                CloseOriginPresentation();
             originPanel.gameObject.SetActive(false);
             originWoodcutter.gameObject.SetActive(false);
             HighlightOriginMap(false);
@@ -202,6 +230,8 @@ public partial class UIManager
             originMap = data.worldMapId;
             CloseOriginPresentation();
         }
+        if ((dialogue != null || openEncounter != null) && !hudGame.IsCurrentOriginInteraction(originContext))
+            CloseOriginPresentation();
         if (openingHero == data)
         {
             openingHero = null;
@@ -238,8 +268,10 @@ public partial class UIManager
             originLabel.text = line.Speaker + "\n" + line.Text;
             if (!data.originStory.heardOpeningTrip && HanVuNarrative.TellsOfTrip(conversation, dialogueIndex))
                 hudGame.RecordOriginTrip();
+            if (!data.originStory.heardWoodcutter && HanVuNarrative.TellsOfWoodcutter(conversation, dialogueIndex))
+                hudGame.TryTalkToWoodcutter(dialogueIndex);
             originAcceptLabel.text = canPrepare ? "Sắc thuốc" : "Nhận lời";
-            originDeclineLabel.text = "Để sau";
+            originDeclineLabel.text = "Từ chối";
         }
         else if (openEncounter != null)
         {

@@ -138,6 +138,7 @@ namespace UnityEngine
         public Vector3(float x,float y,float z) { this.x=x;this.y=y;this.z=z; }
         public static Vector3 one { get { return new Vector3(1,1,1); } }
         public static Vector3 zero { get { return new Vector3(); } }
+        public static Vector3 Lerp(Vector3 a,Vector3 b,float t) { return a+(b-a)*Mathf.Clamp01(t); }
         public static Vector3 Scale(Vector3 a,Vector3 b) { return new Vector3(a.x*b.x,a.y*b.y,a.z*b.z); }
         public static Vector3 operator +(Vector3 a,Vector3 b) { return new Vector3(a.x+b.x,a.y+b.y,a.z+b.z); }
         public static Vector3 operator -(Vector3 a,Vector3 b) { return new Vector3(a.x-b.x,a.y-b.y,a.z-b.z); }
@@ -176,6 +177,10 @@ namespace UnityEngine
         public Color(float r,float g,float b,float a=1f) { this.r=r;this.g=g;this.b=b;this.a=a; }
         public static Color white { get { return new Color(1f,1f,1f,1f); } }
         public static Color black { get { return new Color(0f,0f,0f,1f); } }
+        public static Color Lerp(Color a,Color b,float t) {
+            return new Color(Mathf.Lerp(a.r,b.r,t),Mathf.Lerp(a.g,b.g,t),Mathf.Lerp(a.b,b.b,t),Mathf.Lerp(a.a,b.a,t));
+        }
+        public static Color operator *(Color a,Color b) { return new Color(a.r*b.r,a.g*b.g,a.b*b.b,a.a*b.a); }
         public static Color gray { get { return new Color(.5f,.5f,.5f,1f); } }
     }
     public class CanvasRenderer : Component { }

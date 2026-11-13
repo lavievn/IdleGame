@@ -27,8 +27,8 @@ public partial class GameManager
     void InitializeCultivation()
     {
         ResolveProductionCultivation();
-        DisposeCultivation();runtimeHeroData.cultivationJson="";runtimeHeroData.tribulationJson="";
-        if(cultivationProfile!=null)cultivation=new CultivationGameplayBinding(runtimeHeroData,cultivationProfile,CultivationGameplayState.New(cultivationProfile));
+        DisposeCultivation();runtimeHeroData.cultivationJson="";runtimeHeroData.tribulationJson="";runtimeHeroData.experienceJson="";
+        if(cultivationProfile!=null)cultivation=new CultivationGameplayBinding(runtimeHeroData,cultivationProfile,CultivationGameplayState.New(cultivationProfile),saveManager?.TrialConfiguration);
         AuthorizeCultivationAutoSnapshot();
     }
     bool PrepareCultivation(EntityDataSO candidate,out CultivationGameplayBinding binding)
@@ -37,7 +37,7 @@ public partial class GameManager
         CultivationPlaytestProfile resolved;
         if(!CultivationProductionConfiguration.TryResolve(candidate.cultivationJson,cultivationProfile,out resolved,out reason) || !CultivationGameplayState.TryRestore(candidate.cultivationJson,resolved,out state,out reason))
         {Debug.LogWarning("[Cultivation] Candidate rejected: "+reason);return false;}
-        if(state!=null)binding=new CultivationGameplayBinding(candidate,resolved,state);
+        if(state!=null)binding=new CultivationGameplayBinding(candidate,resolved,state,saveManager?.TrialConfiguration);
         return true;
     }
     void ReplaceCultivation(CultivationGameplayBinding prepared)

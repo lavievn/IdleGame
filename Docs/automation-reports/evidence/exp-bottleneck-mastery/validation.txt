@@ -1,0 +1,10 @@
+Standalone Roslyn runtime compilation with Unity 6000.5.0f1 DLLs
+0 errors / 92 warnings (base: 0 errors / 92 warnings)
+This is not Editor import or Player build.
+
+GUID checker: 0 errors / 64 warnings (base: 0 / 62).
+New warnings: [{"code": "missing-meta", "file": "Assets/Script/ExperienceProgress.cs", "line": null, "message": "no .meta yet; this is normal for a new file, Unity creates it on the next import", "fix": "nothing to do for a new file; if it was moved or renamed, move its old .meta next to it instead"}, {"code": "missing-meta", "file": "Assets/Script/MasteryFoundation.cs", "line": null, "message": "no .meta yet; this is normal for a new file, Unity creates it on the next import", "fix": "nothing to do for a new file; if it was moved or renamed, move its old .meta next to it instead"}]
+
+Shell syntax and git diff --check: PASS.
+Full Mono runner: BLOCKED, same 12 pre-existing UnityStub/test API errors; no save I/O ran.
+Native Unity/SaveManager/Windows gameplay: NOT TESTED.
