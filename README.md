@@ -1,7 +1,7 @@
 <!-- narrative-integration-audit-2026-11-12 -->
 
 <!-- daily-freeze-rc2 -->
-> **Build trên máy khác:** Xem [cách phục hồi asset HDR, mưa và âm thanh của RC2](Docs/automation-reports/DAILY_FREEZE_ASSET_HANDOFF.md).
+> **Build trên máy khác:** Pull nhánh freeze để nhận BGM và âm thanh môi trường. Import hai gói HDR/Rain Maker một lần trong Unity để có đầy đủ thời tiết. [Hướng dẫn RC2](Docs/automation-reports/DAILY_FREEZE_ASSET_HANDOFF.md).
 
 > **RC 12/11/2026.** Bản tổng hợp Unity/Windows đã có kết quả thử thật. Trạng thái RC PARTIAL và các lỗi còn lại ở báo cáo freeze. [Báo cáo Daily Freeze](Docs/automation-reports/DAILY_FREEZE_2026-11-12_FINAL_REPORT.md).
 
