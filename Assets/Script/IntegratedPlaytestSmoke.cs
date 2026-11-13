@@ -183,10 +183,11 @@ internal static class IntegratedPlaytestSmoke
         Check(EnvironmentAudioPlayer.Load() != null && WorldMapCatalog.All.Count > 100,
             "The real map catalog and verified audio manifest are loaded");
         var imported = Resources.LoadAll<AudioClip>("IntegratedAmbience");
-        Check(imported.Length == 191 && imported.All(x => x.loadType == AudioClipLoadType.Streaming),
-            "All original OGG and the dedicated Gate excerpt remain imported and streaming");
+        Check(imported.Length == 191 && imported.Where(x => x.name != "GateThunder")
+            .All(x => x.loadType == AudioClipLoadType.Streaming), "All 190 environment OGG remain streaming");
         var gate = Resources.Load<AudioClip>("IntegratedAmbience/GateThunder");
-        Check(gate != null && gate.length > 3 && gate.length < 7, "Derived Gate one-shot is imported");
+        Check(gate != null && gate.loadType == AudioClipLoadType.DecompressOnLoad && gate.length > 3 && gate.length < 7,
+            "The separate Gate one-shot retains its import settings");
         pass($"{WorldMapCatalog.All.Count} maps are available with a verified environment manifest and the existing Gate clip.");
     }
     private static void Preview(GameManager game, float hour, WorldWeather weather)
