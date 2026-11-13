@@ -305,6 +305,37 @@ partial class MotionRegression
             Check(!r.TryAccept(h,cast,true) && !r.TryAccept(h,basic,true),"swap cancels captured identity");
             Check(r.TryAccept(h,Evidence(r,1,WeaponFamily.Bow),true),"new family execution only");
         });
+        Run("Mastery records one unit per committed use and persists independent weapon and skill counts",()=>{
+            var h=BankHero(out var s,out var b);EquipForMastery(h,EquipmentFoundation.SkillSampleIds[0]);
+            var receipts=new MasteryExecutionReceipts(h,Guid.NewGuid(),1,1,0);
+            var sword=Evidence(receipts,1,WeaponFamily.Sword);
+            var thrust=Evidence(receipts,2,WeaponFamily.Sword,WeaponSkillRegistry.Thrust);
+            Check(!receipts.TryRecord(h,sword,false) && receipts.TryRecord(h,sword,true) &&
+                !receipts.TryRecord(h,sword,true) && receipts.TryRecord(h,thrust,true) && !receipts.TryRecord(h,thrust,true),
+                "cancel and replay");
+            EquipForMastery(h,EquipmentFoundation.SkillSampleIds[1]);
+            Check(receipts.TryRecord(h,Evidence(receipts,3,WeaponFamily.Bow,WeaponSkillRegistry.Volley),true),"second skill");
+            Check(receipts.TryRecord(h,Evidence(receipts,4,WeaponFamily.Bow),true),"second weapon");
+            Check(MasteryFoundation.TryReadHeroJson("{\"mastery\":"+auditJson.Serialize(h.mastery)+"}",out var loaded) &&
+                loaded.weapons.Count==2 && loaded.skills.Count==2 &&
+                MasteryFoundation.Units(loaded,MasteryExecutionKind.Skill,WeaponSkillRegistry.Thrust)==1 &&
+                MasteryFoundation.Units(loaded,MasteryExecutionKind.Skill,WeaponSkillRegistry.Volley)==1 &&
+                MasteryFoundation.Units(loaded,MasteryExecutionKind.BasicWeapon,MasteryFoundation.WeaponId(WeaponFamily.Sword))==1 &&
+                MasteryFoundation.Units(loaded,MasteryExecutionKind.BasicWeapon,MasteryFoundation.WeaponId(WeaponFamily.Bow))==1 &&
+                h.currentLevel==1 && Bank(h)==0 && s.Current.Foundation.Amount==3600,"independent durable counts");
+            b.Dispose();
+        });
+        Run("Mastery legacy absence is empty and invalid payloads never silently become empty",()=>{
+            Check(MasteryFoundation.TryReadHeroJson("{}",out var legacy) && legacy.weapons.Count==0 && legacy.skills.Count==0,"legacy");
+            foreach(string json in new[]{"{\"mastery\":null}","{\"mastery\":{\"version\":2,\"weapons\":[],\"skills\":[]}}",
+                "{\"mastery\":{\"version\":1,\"weapons\":[{\"id\":\"weapon-family:sword\"}],\"skills\":[]}}",
+                "{\"mastery\":{\"version\":1,\"weapons\":[{\"id\":\"weapon-family:sword\",\"units\":9223372036854775808}],\"skills\":[]}}"})
+                Check(!MasteryFoundation.TryReadHeroJson(json,out _),"refused invalid or unsupported");
+            var saturated=new MasterySnapshot();
+            saturated.weapons.Add(new MasteryRecord{id=MasteryFoundation.WeaponId(WeaponFamily.Sword),units=long.MaxValue});
+            MasteryFoundation.Increment(saturated,MasteryExecutionKind.BasicWeapon,MasteryFoundation.WeaponId(WeaponFamily.Sword));
+            Check(saturated.weapons[0].units==long.MaxValue,"saturate instead of overflow");
+        });
     }
 
     static CultivationPlaytestProfile ZonedDevelopmentProfile() => DevelopmentCultivation015.CreateProfile(

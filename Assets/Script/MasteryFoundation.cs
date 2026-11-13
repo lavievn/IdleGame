@@ -1,8 +1,9 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
+using TuTienCore;
 
-// Data contract only. No automatic award rate, level, cap or combat bonus is
-// defined. The contract is not installed as a new player-save component yet.
+// Units count committed uses. They do not grant levels or combat modifiers.
 [Serializable]
 public sealed class MasteryRecord
 {
@@ -51,12 +52,56 @@ public static class MasteryFoundation
             if(record==null || WeaponSkillRegistry.Find(record.id)==null || record.units<0 || !ids.Add(record.id))return false;
         return true;
     }
+
+    internal static bool TryReadHeroJson(string root,out MasterySnapshot snapshot)
+    {
+        snapshot=null;
+        if(!CultivationSaveJson.TryObject(root,out var fields,out _))return false;
+        if(!fields.TryGetValue("mastery",out var component)){snapshot=new MasterySnapshot();return true;}
+        if(!CultivationSaveJson.TryObject(component,out var parts,out _) || parts.Count!=3 ||
+            !parts.TryGetValue("version",out var version) || version!=Version.ToString(CultureInfo.InvariantCulture) ||
+            !ReadRecords(parts,"weapons",out var weapons) || !ReadRecords(parts,"skills",out var skills))return false;
+        var candidate=new MasterySnapshot {weapons=weapons,skills=skills};
+        if(!IsValid(candidate))return false;
+        snapshot=candidate;
+        return true;
+    }
+
+    static bool ReadRecords(Dictionary<string,string> parts,string field,out List<MasteryRecord> records)
+    {
+        records=null;
+        if(!parts.TryGetValue(field,out var token) || !CultivationSaveJson.TryArray(token,out var entries))return false;
+        var candidate=new List<MasteryRecord>(entries.Count);
+        foreach(var entry in entries)
+        {
+            if(!CultivationSaveJson.TryObject(entry,out var record,out _) || record.Count!=2 ||
+                !record.TryGetValue("id",out var rawId) || !CultivationSaveJson.TryString(rawId,out var id) ||
+                !record.TryGetValue("units",out var rawUnits) ||
+                !long.TryParse(rawUnits,NumberStyles.None,CultureInfo.InvariantCulture,out var units))return false;
+            candidate.Add(new MasteryRecord {id=id,units=units});
+        }
+        records=candidate;
+        return true;
+    }
+
+    internal static long Units(MasterySnapshot snapshot,MasteryExecutionKind kind,string id)
+    {
+        var records=kind==MasteryExecutionKind.BasicWeapon?snapshot.weapons:snapshot.skills;
+        return records.Find(record=>record.id==id)?.units??0;
+    }
+
+    internal static void Increment(MasterySnapshot snapshot,MasteryExecutionKind kind,string id)
+    {
+        var records=kind==MasteryExecutionKind.BasicWeapon?snapshot.weapons:snapshot.skills;
+        var record=records.Find(entry=>entry.id==id);
+        if(record==null)records.Add(new MasteryRecord {id=id,units=1});
+        else if(record.units<long.MaxValue)record.units++;
+    }
 }
 
 internal enum MasteryExecutionKind { BasicWeapon, Skill }
 
-// Transient execution evidence, not a saved reward or proof of hit/damage/kill.
-// A future approved award policy must consume evidence separately.
+// Transient execution evidence. One release can cause several hits or none.
 internal readonly struct MasteryExecutionEvidence
 {
     internal readonly Guid Epoch;
@@ -103,5 +148,13 @@ internal sealed class MasteryExecutionReceipts
         else if(!string.IsNullOrEmpty(evidence.SkillId))return false;
         lastSequence=evidence.Sequence;
         return true; // Acceptance does not mutate EXP, Mastery units, stats or cooldowns.
+    }
+
+    internal bool TryRecord(EntityDataSO data,MasteryExecutionEvidence evidence,bool executionCommitted)
+    {
+        if(data==null || data.mastery==null || !TryAccept(data,evidence,executionCommitted))return false;
+        MasteryFoundation.Increment(data.mastery,evidence.Kind,evidence.TargetId);
+        data.isDirty=true;
+        return true;
     }
 }

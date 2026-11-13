@@ -13,6 +13,7 @@ public class EntityDataSO : ScriptableObject
     public int realmEntryLevel = 1;
     // Versioned component JSON: empty is deliberately absent. Avoids Unity inline-class null/template inheritance.
     public CombatSkillProgress combatSkills = new CombatSkillProgress();
+    public MasterySnapshot mastery = new MasterySnapshot();
     public string tribulationJson=""; // Independent versioned component; empty on historical/production Heroes.
     public string cultivationJson = "";
     public OriginStoryState originStory;
