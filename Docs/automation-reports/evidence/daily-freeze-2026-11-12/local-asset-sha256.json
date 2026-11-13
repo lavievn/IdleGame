@@ -1,0 +1,2870 @@
+[
+  {
+    "path": "Assets/Free HDR Skyboxes Pack/Material.meta",
+    "bytes": 172,
+    "sha256": "e263b222322d4f7f00ee646586d68e576f3a86a88000934bff513aaa077de678",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Free HDR Skyboxes Pack/ReadMe.txt",
+    "bytes": 385,
+    "sha256": "de562edfc352fbef6210a4567aef5d793227b2e4419cdd87a9141bdef5f6d3c5",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Free HDR Skyboxes Pack/ReadMe.txt.meta",
+    "bytes": 158,
+    "sha256": "2ffe802ea5126fbe0956c2e8305a1cf598483b29e91f46c8b9e9bfdefa654603",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Free HDR Skyboxes Pack/Texture.meta",
+    "bytes": 172,
+    "sha256": "a9341a3a5f9fccd99fa388fed35767e72362147243d4032d0ece7d8dae694901",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Free HDR Skyboxes Pack/Material/sky-1.mat",
+    "bytes": 2273,
+    "sha256": "aea7b08082a96c64d05d0ba04a1a12d2ea936c598019fcb89be1bf5241301bef",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Free HDR Skyboxes Pack/Material/sky-1.mat.meta",
+    "bytes": 188,
+    "sha256": "022596a53a65d5b39f4194e7f9941f9b4915d76172e8e64790600bbc6e978520",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Free HDR Skyboxes Pack/Material/sky-2.mat",
+    "bytes": 2273,
+    "sha256": "3fd3f156e0bac06652d302947ea46c5a2855206097dcafecac9ab8d188ed09b5",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Free HDR Skyboxes Pack/Material/sky-2.mat.meta",
+    "bytes": 188,
+    "sha256": "922c4b1652f9c0116566fe2d94fa82b2b590d770a63729e407f09247d21af9d1",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Free HDR Skyboxes Pack/Material/sky-3.mat",
+    "bytes": 2273,
+    "sha256": "3cd143cd06827840308a70010fd8679e214489a4b951c63832bc937a4b2a6b17",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Free HDR Skyboxes Pack/Material/sky-3.mat.meta",
+    "bytes": 188,
+    "sha256": "21c421be06f8b4204529d9df8b7345e12348e97f3cef56ac4f345a0c529ae29f",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Free HDR Skyboxes Pack/Material/sky-4.mat",
+    "bytes": 2273,
+    "sha256": "b4e43cb54c9da151baad9c8d1b10bcd40b5d515dba1006a08828a969e72ace1a",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Free HDR Skyboxes Pack/Material/sky-4.mat.meta",
+    "bytes": 188,
+    "sha256": "1d63a92934680d7999d0ab4b007d36390da878601f31a46b9c03c80fbb640296",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Free HDR Skyboxes Pack/Material/sky-5.mat",
+    "bytes": 2273,
+    "sha256": "e7de93a9e4e64180c6172eb22e73a6a16c8c6a87952fe812ac4f03ca9c02b316",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Free HDR Skyboxes Pack/Material/sky-5.mat.meta",
+    "bytes": 188,
+    "sha256": "5e920f861fac7d9fc84e5a0468a6aad20c51f3dc480c7f26565159424d7f9958",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Free HDR Skyboxes Pack/Texture/Sky-1.hdr",
+    "bytes": 16888186,
+    "sha256": "b6c2b230de0ccd60ee055eafc62cfe72755d760c8bbfa1571872455483e94248",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Free HDR Skyboxes Pack/Texture/Sky-1.hdr.meta",
+    "bytes": 2527,
+    "sha256": "ad0d0abb4d836faefb7fead1ddc6dadb63378d72a73cac103071f5c9390f78e2",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Free HDR Skyboxes Pack/Texture/Sky-2.hdr",
+    "bytes": 19221628,
+    "sha256": "0411866699d5486f3d31860d7ef3cad66286d5f21bd0b48242993c3417a169fa",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Free HDR Skyboxes Pack/Texture/Sky-2.hdr.meta",
+    "bytes": 2527,
+    "sha256": "f472c1269c67e5e0447c7520fd079c1a889331a5dfa7e690041a77c49113f5b7",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Free HDR Skyboxes Pack/Texture/Sky-3.hdr",
+    "bytes": 21314182,
+    "sha256": "d9e80db01fc098f81b899f67d42ccddfd927ccf55e6d06aea613b705f6716da2",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Free HDR Skyboxes Pack/Texture/Sky-3.hdr.meta",
+    "bytes": 2527,
+    "sha256": "8e3e985e70288e81cf7ff9b1932ff8b0c986e37e58f3b96d3c3417e17eec85cd",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Free HDR Skyboxes Pack/Texture/Sky-4.hdr",
+    "bytes": 16050349,
+    "sha256": "f08f4afd64aad50302227f1e683a09870f2a662c7f9ff89c34bba1caa4127fd8",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Free HDR Skyboxes Pack/Texture/Sky-4.hdr.meta",
+    "bytes": 2527,
+    "sha256": "20638e318c37d9d1f3365b17e1f8c65932b57dde3e179a4bb013953100f79162",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Free HDR Skyboxes Pack/Texture/Sky-5.hdr",
+    "bytes": 20448665,
+    "sha256": "c36b7897def8356e7a35ed6f3d6f2921b9c1ef21f129ae3ce822b231367084d3",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Free HDR Skyboxes Pack/Texture/Sky-5.hdr.meta",
+    "bytes": 2527,
+    "sha256": "dad2be9ada5bcb478230cda41267f29abc7e6b26a10479fa331384620ce8e532",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Free HDR Skyboxes Pack.meta",
+    "bytes": 172,
+    "sha256": "0cd31140fec399448a6a81665466d21c1b1693f0f593b08f9f24c55e3c2efe01",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/RainMaker/Prefab.meta",
+    "bytes": 202,
+    "sha256": "d6e48d7f7ca350af8bde98b0817f716af56bd7279918237148e44f17c1918ecb",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/RainMaker/Readme.txt",
+    "bytes": 6504,
+    "sha256": "ea64b34c25bf4696cde61ea0ca61ff5dad2866ac4d1813d72a7375d1b0d7d6ca",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/RainMaker/Readme.txt.meta",
+    "bytes": 187,
+    "sha256": "2275096cdb54bfe024f6ced92676b44a206ad0fc798fba40a0ccad868d695a02",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/RainMaker/Prefab/BaseRainScript.cs",
+    "bytes": 14121,
+    "sha256": "97d52a732e18fc19434dc21ee074d00d4c37732d6d3f7feed23b57e428eb2553",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/RainMaker/Prefab/BaseRainScript.cs.meta",
+    "bytes": 276,
+    "sha256": "bcfb055d235ddfd3831201c50ac8fb83aedebb20cc62afa772583a3aba812d81",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/RainMaker/Prefab/rain_heavy.ogg",
+    "bytes": 527060,
+    "sha256": "421a1c2629fadefa258b5d6f34f6ec37d195a8bf0dd66925d4094f2126bef4de",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/RainMaker/Prefab/rain_heavy.ogg.meta",
+    "bytes": 466,
+    "sha256": "6f913d3bbf87702f1278e603db6a38f7b408ab7d54d9e2586e76c1e1cb86d29f",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/RainMaker/Prefab/rain_light.ogg",
+    "bytes": 136346,
+    "sha256": "f674ce76310c8572625791f0c4d718fc20cd97da8085e7cd7810f9866859e0e0",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/RainMaker/Prefab/rain_light.ogg.meta",
+    "bytes": 466,
+    "sha256": "3c721cc4b01cc96c61df42ef92c7d6c6a4d07e09d6d2308de40888a0832611fe",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/RainMaker/Prefab/rain_medium.ogg",
+    "bytes": 530488,
+    "sha256": "41e0ebf4918cf87f0b4ef982ebde6d1ee9ef4b284ab8bbef93db5153308c2304",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/RainMaker/Prefab/rain_medium.ogg.meta",
+    "bytes": 466,
+    "sha256": "9211b51f01bf23044188918b7e3d18d743129c7530e2c05cfa774a9350643149",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/RainMaker/Prefab/RainCollision.cs",
+    "bytes": 2159,
+    "sha256": "47ef774c0025daab4bdb8303c66f12c8a9fae91cd7a639ee2708dc69bfcad005",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/RainMaker/Prefab/RainCollision.cs.meta",
+    "bytes": 276,
+    "sha256": "00b05fc6c7003cec7040bb804f7d90ffe7ee98faf83d1573167469d140ac6132",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/RainMaker/Prefab/RainExplosionMaterial.mat",
+    "bytes": 2608,
+    "sha256": "8fae2122d0aa18e57cca7b9250f8b3da6ebad75d70341d63bb022b7859071ee2",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/RainMaker/Prefab/RainExplosionMaterial.mat.meta",
+    "bytes": 189,
+    "sha256": "fb3664913ed368a657465ad833ae43ad921baf6e34ae4ea3bdc3d6c4094af6c4",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/RainMaker/Prefab/RainExplosionMaterial2D.mat",
+    "bytes": 2228,
+    "sha256": "3a4525b61a47cfbcad48f03cf39f59b964f59c5d54419c0ad962d240ed9a213f",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/RainMaker/Prefab/RainExplosionMaterial2D.mat.meta",
+    "bytes": 189,
+    "sha256": "1d01309be958f6f68b3d4e7e4238611e675c435f88c92c45eae1b76fdbdc3d35",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/RainMaker/Prefab/RainMaterial.mat",
+    "bytes": 4425,
+    "sha256": "297536688a7c0d8760bd12d8b29e39f2d4ba8a0da56ce829a4225736b14df8c0",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/RainMaker/Prefab/RainMaterial.mat.meta",
+    "bytes": 189,
+    "sha256": "e97bac107b7dd005232b6e97f563361647633868dc1133c6bbd300f548f42b12",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/RainMaker/Prefab/RainMaterial2D.mat",
+    "bytes": 2230,
+    "sha256": "9bc6404ce8a923b050417590827cf50377ecffa0d74026f1ae98af36a9ed65d2",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/RainMaker/Prefab/RainMaterial2D.mat.meta",
+    "bytes": 189,
+    "sha256": "0da8c6b6048d2695625ea9a865f032890ccabbe63693d37dba42dc99700d7069",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/RainMaker/Prefab/RainMistMaterial.mat",
+    "bytes": 2551,
+    "sha256": "25b98f568871e063b451f87cf153497ab4147cb1b8c1849b71c822038b5d7b89",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/RainMaker/Prefab/RainMistMaterial.mat.meta",
+    "bytes": 189,
+    "sha256": "f4f990d52e9b2609710bdea24a8f4b9fe68fa874c54346ca935cdb0b1e35a0bf",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/RainMaker/Prefab/RainMistMaterial2D.mat",
+    "bytes": 2234,
+    "sha256": "8d5961040101611b8b6f41f0e945bda8dd1c20a374de96ee4c3480b38cdc0f33",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/RainMaker/Prefab/RainMistMaterial2D.mat.meta",
+    "bytes": 189,
+    "sha256": "f1d831c15efd1ef225c7ea1e41a78a30931843c52a5d11293bfafc509aba52a6",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/RainMaker/Prefab/RainPrefab.prefab",
+    "bytes": 351398,
+    "sha256": "23cefef66d5961a20682baf47ceb1d945e8a254c480956c044a5df3f66f4cf34",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/RainMaker/Prefab/RainPrefab.prefab.meta",
+    "bytes": 189,
+    "sha256": "23421e69d7e047188b90e93f89b3c9d27c24d7a0a9c2a633d044613bcb3d3ad4",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/RainMaker/Prefab/RainPrefab2D.prefab",
+    "bytes": 347356,
+    "sha256": "02f09c69b302960e5068525650b910a3e409a49dfffa2095f44e7a6b3e46c89c",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/RainMaker/Prefab/RainPrefab2D.prefab.meta",
+    "bytes": 189,
+    "sha256": "acca9f2abbf84784df0e32c19d352463016812ce101cf1a5b970cc6df8f3b84f",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/RainMaker/Prefab/RainScript.cs",
+    "bytes": 2640,
+    "sha256": "2058169e70b9193ed5f4a8cfc5d5466d52aea6f29163c66ad770e82e17b8897e",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/RainMaker/Prefab/RainScript.cs.meta",
+    "bytes": 863,
+    "sha256": "bf5a83c46b84901502835fff81a81729a7f45268ddb7cd30ab1f2787212e6b23",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/RainMaker/Prefab/RainScript2D.cs",
+    "bytes": 9567,
+    "sha256": "c470dd238e14d4b6920ad8517a4e624361d1761987c0620233fa306a6ac28790",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/RainMaker/Prefab/RainScript2D.cs.meta",
+    "bytes": 770,
+    "sha256": "ad2e78947a5c6127f62fcea9df79e2cb37ddce70fd9b967f27f5bce163c71f6b",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/RainMaker/Prefab/RainShader.shader",
+    "bytes": 4650,
+    "sha256": "d35c610f08f59a43f9c3c8bc6d2ceb4d52ca9eae32386ba7f10b2baa940bec23",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/RainMaker/Prefab/RainShader.shader.meta",
+    "bytes": 206,
+    "sha256": "0d27c3f336014e67a9ca78b77a205c5dfca3d78a76ce8173de5b56171787c158",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/RainMaker/Prefab/RainTexture.png",
+    "bytes": 2110,
+    "sha256": "341414eb1e2f5e4193cf497dee5e44cde3b449613707d77a2dff690453614ad2",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/RainMaker/Prefab/RainTexture.png.meta",
+    "bytes": 1242,
+    "sha256": "b85744777b033eb9d6453d9e6ddbcfe0a9427721b87800f7e3f4ded3087abb25",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/RainMaker/Prefab/RainTexturePSD.psd",
+    "bytes": 39071,
+    "sha256": "70cd6fb3240315b12ccd818a027c6666d2ece1a65f633394af451ab6522ebc1c",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/RainMaker/Prefab/RainTexturePSD.psd.meta",
+    "bytes": 1169,
+    "sha256": "5a83601fb83a6bf7a031a1c452cc4c06c74b482b208ff314dc0df5fca4efd4b1",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/RainMaker/Prefab/wind_normal1.ogg",
+    "bytes": 409730,
+    "sha256": "938edce6ef0ce89b5eb1136e7699950554e47d5b4bcd79f7d200dc4c6c00abb6",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/RainMaker/Prefab/wind_normal1.ogg.meta",
+    "bytes": 1707,
+    "sha256": "02c8020a120d46c489bfc6f50fbc8a8b3e98e8de3ab06d98de1b1b36d4ad2a1c",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/RainMaker.meta",
+    "bytes": 172,
+    "sha256": "33d659567ecf9a3247123c4f6f8e74d33ef9bc492e4cfb6174dfd83fb1439b70",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/WorldClimateVendor/Assets.asset",
+    "bytes": 918,
+    "sha256": "6dd82dd3ab95093a2d2e1cb0d74c021945869b44d1fe6119521a35efa538b159",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/WorldClimateVendor/Assets.asset.meta",
+    "bytes": 189,
+    "sha256": "6deec3fe7ddb5f8de63b3451ca002bf5058c4368abdb177b44d2376072deb2d8",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/WorldClimateVendor.meta",
+    "bytes": 172,
+    "sha256": "d0167e3ac0a7f2a63e61bb92d118d94f7998ef585e43e7ef216f1b37908fda63",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/WorldMapMusic/hanvu1.wav",
+    "bytes": 37472108,
+    "sha256": "64ec7bbcb25a5518943709173f75e37dc62cfbaef348ea8e0406398ee07811fe",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/WorldMapMusic/hanvu1.wav.meta",
+    "bytes": 488,
+    "sha256": "9f6238906cb3642fc1c7850af3b2a89e041807b15430874a2e5099523cb022e5",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/WorldMapMusic/hanvu2.wav",
+    "bytes": 37157228,
+    "sha256": "09941db079c4d4c435ba02d420f8d7e5f6554766257b0f3303566646207d6e07",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/WorldMapMusic/hanvu2.wav.meta",
+    "bytes": 488,
+    "sha256": "2631d4d82877a3d21ae9af049ba478baa5b1d51f690dce3d7b8fbcc7bea9a03d",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/WorldMapMusic/matusam1.wav",
+    "bytes": 39622508,
+    "sha256": "4761099026676254e56f37f396a385bb467ed20d0aa64f018eb535d25549eeb9",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/WorldMapMusic/matusam1.wav.meta",
+    "bytes": 488,
+    "sha256": "9e60eac83470859fc608636a25e34b56591845844e2bda2d50cd29d7928be3ca",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/WorldMapMusic/matusam2.wav",
+    "bytes": 41603948,
+    "sha256": "6f83581cea211fce346d70cbcc3752fde47bedbddbb46c922682d4372ef2e776",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/WorldMapMusic/matusam2.wav.meta",
+    "bytes": 488,
+    "sha256": "8daf471c791924a05dd7c1f0fc93d1f2b8df5c209ea7716aa79a6b83c6c7df37",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/WorldMapMusic/Mou1.wav",
+    "bytes": 40167788,
+    "sha256": "9a930c2f45000d6019b8a166aa1a6d371e4e992c0343497e8a1973401337c97d",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/WorldMapMusic/Mou1.wav.meta",
+    "bytes": 488,
+    "sha256": "037ddd74b8ad607cdbf22e40745228409899eea5c70225c762935bc534adc56a",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/WorldMapMusic/Mou2.wav",
+    "bytes": 39315308,
+    "sha256": "be69568b5e2ab92a5d2d6fdd0627953d9f5701d6994011808eb8866f6773fc7c",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/WorldMapMusic/Mou2.wav.meta",
+    "bytes": 488,
+    "sha256": "0d84da39bb9f25891b6f3b6a9895aa9efd1a6638a2fa02ce18504d3886ab5668",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/WorldMapMusic/Qir1.wav",
+    "bytes": 42994028,
+    "sha256": "932e831074eebfcec2cdb6cb1ff2b4a3d8ef82878a363cc79f2c6d6ed9bd0c87",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/WorldMapMusic/Qir1.wav.meta",
+    "bytes": 488,
+    "sha256": "32c0d264841a193bc446b64940bfd72cea9b1360fb314064a936c22bcae9d5b0",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/WorldMapMusic/Qir2.wav",
+    "bytes": 39084908,
+    "sha256": "6c2b50475a690d5669d48e5b0f18c21e28b9ddf1203eaa255d6ee1604c473a2c",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/WorldMapMusic/Qir2.wav.meta",
+    "bytes": 488,
+    "sha256": "56566deb2d60bce33379b8ffa00ab6de93da99ababe362164f49eecc59feaa38",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/WorldMapMusic/Rin1.wav",
+    "bytes": 35198828,
+    "sha256": "3705c301ae3fc4ecf3ac88bcf078c254eca51fa6aea371463a8d8a42cdbb5b4f",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/WorldMapMusic/Rin1.wav.meta",
+    "bytes": 488,
+    "sha256": "4ca9b5c492ce623306bd87c733bb9dce4ce89de8960e08cf7f7dccc847a02609",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/WorldMapMusic/Rin2.wav",
+    "bytes": 36473708,
+    "sha256": "0c49e3836343014413b79b4546e470a9c95ebf71b26e008649311df22df5f323",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/WorldMapMusic/Rin2.wav.meta",
+    "bytes": 488,
+    "sha256": "33c4193e715a542ec193201d983672165adcbb764773a01e6462404de12d8920",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/WorldMapMusic/souljungle1.wav",
+    "bytes": 38401388,
+    "sha256": "1c084e56d665adece4c5b22c1e5480461b375696afdf8587f6690647d3713778",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/WorldMapMusic/souljungle1.wav.meta",
+    "bytes": 488,
+    "sha256": "d3ce946081aa1e37999ef1a2805c8667d1c7ba1d191572ec7e802c0a7fa627cd",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/WorldMapMusic/souljungle2.wav",
+    "bytes": 39776108,
+    "sha256": "64ca9fb0e997ca8139486228d6c6a7e078037539b019c9802c9603dfce7a2cc6",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/WorldMapMusic/souljungle2.wav.meta",
+    "bytes": 488,
+    "sha256": "ca6e73e359358c5f116d82b8de57bf9250012853a203928baf25d3677ed0fc99",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/WorldMapMusic.meta",
+    "bytes": 172,
+    "sha256": "74cfb9b1c7ad9b6b40b9fc5f70e2050ae3364a40e4990232486c8628861ef99a",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Coast_02.ogg",
+    "bytes": 403152,
+    "sha256": "817e7b262e66c3bd7db582c33f9229ce1928ae2de8ad249989760d85d65cb740",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Coast_02.ogg.meta",
+    "bytes": 488,
+    "sha256": "4962dba40d623c51204e3684ee5435fb8e5a9fe49f726b8ab76b0ced2c42bb6f",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Coast_03.ogg",
+    "bytes": 501936,
+    "sha256": "5a873eab9ef21f187647430e5a59464f848c0fbc02da442dc4def8fbda29f66d",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Coast_03.ogg.meta",
+    "bytes": 488,
+    "sha256": "06f9fbdef7db5438debdbb78af6c74137af21e92d259f912e71c640ecf007bf7",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Coast_04.ogg",
+    "bytes": 569534,
+    "sha256": "9d35d895b9f78b25840df35ded240bae47fffc5de7d69040c2aac823cb74f152",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Coast_04.ogg.meta",
+    "bytes": 488,
+    "sha256": "67fc96b1f037102ebb0041dea5f03a6fe3a6debce6ed1713c274fcb078a50be4",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Coast_05.ogg",
+    "bytes": 493265,
+    "sha256": "3e8dfe7f37b9e82dd01c9002f569e1816bdc250eee1103620c605a2c7c338449",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Coast_05.ogg.meta",
+    "bytes": 488,
+    "sha256": "93e8b82c221a4346c97eec191545a0e391f372954ac27f80dba82a76d809ebee",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Coast_06.ogg",
+    "bytes": 797172,
+    "sha256": "4e24f6fbd1ac768b2f6836938bef23ad05456d99ad68cd974a2ad2ebc25ba6c5",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Coast_06.ogg.meta",
+    "bytes": 488,
+    "sha256": "6d251e8264c89c8f64a89496c2615b679d5d91ab90e90321fb101099402df43a",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Coast_07.ogg",
+    "bytes": 151669,
+    "sha256": "08380608853d52eec8b37eb485768d2015938af378d6e0464e75ba033b55d758",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Coast_07.ogg.meta",
+    "bytes": 488,
+    "sha256": "9d6e4a198ccd7adc199fcf3063522935f04f9d26671da49d0840339d360af075",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Coast_08.ogg",
+    "bytes": 468231,
+    "sha256": "a8ac50abc88846692106f414c0cbbbfee18386fd666414c1c7f557f5747b5718",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Coast_08.ogg.meta",
+    "bytes": 488,
+    "sha256": "582821debd36a644c48c963d5847020dc5f8112ec65afc8c1cf92f4456a9a1c9",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Coast_09.ogg",
+    "bytes": 145745,
+    "sha256": "a9710a1e06130285eb36b281dd8e1f284d085765a0e0bdfb2b095d02c6ae9809",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Coast_09.ogg.meta",
+    "bytes": 488,
+    "sha256": "fc90498166d314d2f0ee35c51b58a1eec6f1edd5b0c9fa00a5b3449c8f9d8f07",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Coast_10.ogg",
+    "bytes": 704984,
+    "sha256": "1da06d8e24b018936e13a703c3fe88994da33f263aa4a7536ac57b40feca9daf",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Coast_10.ogg.meta",
+    "bytes": 488,
+    "sha256": "a2f116ff0636a71eab04a03e41daa0e30fe732034cf537b007d4484975af8866",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Coast_11.ogg",
+    "bytes": 826833,
+    "sha256": "5a907c23ae07af367ba6e52ab8f5aba9402e05ce55e38cf7186f8f1d135173cb",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Coast_11.ogg.meta",
+    "bytes": 488,
+    "sha256": "533795989e7fa63dbec87c9f56bda9085fd30b314180f521d2cb37916727fd12",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Coast_12.ogg",
+    "bytes": 1247152,
+    "sha256": "5577cace02d5738057782e829388a928e4df7d55b350598c80b3da0abc5e8915",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Coast_12.ogg.meta",
+    "bytes": 488,
+    "sha256": "0279e2bdda10e3f11a32fad146a8e8b51620442fa96ce4a4efdaac06d1650822",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Coast_13.ogg",
+    "bytes": 403260,
+    "sha256": "9581571a719a53b4756c44a2f8bec00e9dab7d6267dad395e1573850ed9ba9ca",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Coast_13.ogg.meta",
+    "bytes": 488,
+    "sha256": "c6c5e2e7af7eeb80d2bda9c80b21fff30e9e521a84b417a0b62a1937b1d1b4dc",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Coast_14.ogg",
+    "bytes": 497463,
+    "sha256": "3e494984aaeffd858191c3b4d0ff3e7105cb7c194ed55517ed5e77a58bc3ed92",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Coast_14.ogg.meta",
+    "bytes": 488,
+    "sha256": "14ce8b297b7f4a9087627f1a53b2034f356b1c3aad60afad6f423310422d61d2",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Coast_15.ogg",
+    "bytes": 492466,
+    "sha256": "2cc6ce75d07753539e9b461ebf882a22e92c97a1054b08c6507b844537379afa",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Coast_15.ogg.meta",
+    "bytes": 488,
+    "sha256": "35a1af5f9a7f91458e5f7d29ac7a8eae22e7f40ef868fd5321b0ec909441c0e9",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Coast_16.ogg",
+    "bytes": 596007,
+    "sha256": "46681d8a90a11e78044aca5a08655fd6dc0d51d496aaafd1665bb438734d0636",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Coast_16.ogg.meta",
+    "bytes": 488,
+    "sha256": "52304480b61c7cfb349c0117f47e44008a43b12fd18490b3f01fe8113d591669",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Coast_17.ogg",
+    "bytes": 704359,
+    "sha256": "70de5dd8fc619bdf9ae14c1c41d25ad1813ba9eec22d6a7ff626a9ca31c028f9",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Coast_17.ogg.meta",
+    "bytes": 488,
+    "sha256": "fc47ed7697f0d5f1889b302f953a9921ca0c39c5209eb1c713f8627fdb87df31",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Coast_18.ogg",
+    "bytes": 1217133,
+    "sha256": "369f69e2b307198055b7d87544578c426d1215cf106e892f9ae5954103f135e6",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Coast_18.ogg.meta",
+    "bytes": 488,
+    "sha256": "60edf0aeb6c63e4b7a69202150ee2e73e90d44abd8eb5722be90311f85a25383",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Coast_19.ogg",
+    "bytes": 822180,
+    "sha256": "b153fcfac27596d7ca66387f1df87e2ff3c663df21e8d9772babbe9ec6fe55f8",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Coast_19.ogg.meta",
+    "bytes": 488,
+    "sha256": "67067322050ab30a0a7390eb748353408bcb2bc99c5f7b85af3c634c74f629bc",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Coast_20.ogg",
+    "bytes": 473071,
+    "sha256": "5c7c8622429fb9a15f14b49b4075d34d9a14d8d1847f37dac10ae2cba3c7e98e",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Coast_20.ogg.meta",
+    "bytes": 488,
+    "sha256": "0ebee0d83d3d5da81aa6e6b3414b37f7ea9388b751f6708d1707440cf5201545",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Coast_base.ogg",
+    "bytes": 830217,
+    "sha256": "efa32fbc3dc39ffd2cc1e0dc570d22c840a924545ba6e5f71c9cc3eb5d0e2e8f",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Coast_base.ogg.meta",
+    "bytes": 488,
+    "sha256": "3711add9b1d18709579ca9237ef9be8b7537b85a8ff9d4091a120be70ce14636",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/GateThunder.ogg",
+    "bytes": 130776,
+    "sha256": "367605b937d9fa086dfa825ab69180e83f1b73e8593a6848cffeea1f66cbe6ba",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/GateThunder.ogg.meta",
+    "bytes": 488,
+    "sha256": "e168fa4b65ccfc1edec08f1e44de21453f3a18888aadadfa490dfe4c521562dd",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Lodges_02.ogg",
+    "bytes": 384643,
+    "sha256": "2c232a88c1a0cf5f188c882b40c13a400a0bc26723665c877803a44abfb6f474",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Lodges_02.ogg.meta",
+    "bytes": 488,
+    "sha256": "fa7ff511c2ac010908466a83dec84447c0095ef674b6d98a7052fbf8a2f4d47a",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Lodges_03.ogg",
+    "bytes": 261212,
+    "sha256": "51741d65f69b17d8a328c700cad1242fdc526eab4ced6c19435956d28173c560",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Lodges_03.ogg.meta",
+    "bytes": 488,
+    "sha256": "51bfb33621cd45cdeb484ceb9e28b4f96c2b76cd036b1d60e2bb901a39eb0df5",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Lodges_04.ogg",
+    "bytes": 928551,
+    "sha256": "213972f66080f7b3af227cf94f0affeda5fb94350193ca0c4a9c3b08aaf9f258",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Lodges_04.ogg.meta",
+    "bytes": 488,
+    "sha256": "7ec1c288c8041e65aba37433e09b850259da13ee1a26a2eab901c08af03967de",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Lodges_05.ogg",
+    "bytes": 977731,
+    "sha256": "3601a8c9646620565f18c1ae1f7e8ada034a60349a73ed6e9dbbd68c27631e2a",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Lodges_05.ogg.meta",
+    "bytes": 488,
+    "sha256": "32231382c4d61ce94f42356ae63a9d4b6179bb8d6ec43ef0871fa10bf3de4a44",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Lodges_06.ogg",
+    "bytes": 574276,
+    "sha256": "80c6ac726fe23901f5864fbb63a69dfafef876a7c56393b87e0cf96fc73493e4",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Lodges_06.ogg.meta",
+    "bytes": 488,
+    "sha256": "1fac0b2d156983bccb2d70ee9658e3823592ce113c9dfb5ffb587b0f0003756b",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Lodges_07.ogg",
+    "bytes": 727775,
+    "sha256": "c2049aec3e6e6ebb586ca1974d4888c4fa775d0acd2cbc2b75f0df3a9b372126",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Lodges_07.ogg.meta",
+    "bytes": 488,
+    "sha256": "b946dfdbc0a5c164ed3fa24d21562cc75fe8155d560ce70471c572cc15c67ed6",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Lodges_08.ogg",
+    "bytes": 942472,
+    "sha256": "c6f8431237ae322f4a08eccab46f8fa22e0f6d6a4268a70d5653b2d7a8721304",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Lodges_08.ogg.meta",
+    "bytes": 488,
+    "sha256": "8c6df29e432be003c07823d0261902e0336a417add17cc7dad06cf07a99c3064",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Lodges_09.ogg",
+    "bytes": 388409,
+    "sha256": "047b29fc266225b513fb43833d2734bd71e058188b90343d6455daa863116541",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Lodges_09.ogg.meta",
+    "bytes": 488,
+    "sha256": "8dde5b4e659bc1ef90a5a1af2fc4dcb0210a21c5efd07cb313878386c2bffd8a",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Lodges_10.ogg",
+    "bytes": 648319,
+    "sha256": "d3324c347a418ade628833d0021ff08b0cbf36eb96d9e5d8f20f249ce50e682a",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Lodges_10.ogg.meta",
+    "bytes": 488,
+    "sha256": "f36784a7c8f6c13dc74c80c263242b243ec23d77452df6a61428d9f80699c5da",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Lodges_11.ogg",
+    "bytes": 786293,
+    "sha256": "50f55229cec09634372dbd7568b56214e73bb3306c03612097e3667dc20959dd",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Lodges_11.ogg.meta",
+    "bytes": 488,
+    "sha256": "8bccebcbece88dbbbb1aaf8a7da10a1b66121027590e8b1d409f2474e4c4a800",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Lodges_12.ogg",
+    "bytes": 377018,
+    "sha256": "3cbc14f496e6e35c1384ac43f7ca685a159b946a79052d3d897c351cac8229fa",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Lodges_12.ogg.meta",
+    "bytes": 488,
+    "sha256": "8c7125c60eb94976b7c8b713522323db378bd126efc48f50bee1148040ffc905",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Lodges_13.ogg",
+    "bytes": 376987,
+    "sha256": "bc75fc7e9f2ecb226acaff8614fdbae21c64ee28e3305cb187136ac29b0077e4",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Lodges_13.ogg.meta",
+    "bytes": 488,
+    "sha256": "d8d2f1df4462fb2b0d673eb81484b24d1041616a3b51b62947262447b88f5277",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Lodges_14.ogg",
+    "bytes": 896264,
+    "sha256": "7fbff0f7418562d115b708abf37fa6acc70ad182c06ab0091276279f0cf84c0d",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Lodges_14.ogg.meta",
+    "bytes": 488,
+    "sha256": "f41596e25ca54686a937044600c38c086e10f9ec26262c272247ce1a34f3341a",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Lodges_15.ogg",
+    "bytes": 674670,
+    "sha256": "307bfa31bdd90b2c249dd8deac455001b10ce8f8b7893da63f3bc9ed83c17174",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Lodges_15.ogg.meta",
+    "bytes": 488,
+    "sha256": "ff34c5daddc76c4eda0bc86c2dbf9b8d7c9b92fb499f3ed75d5d8b76cec4d865",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Lodges_16.ogg",
+    "bytes": 582788,
+    "sha256": "44587e987a67344dd6877f7aa1977e3e479639081a5c466910fb39e136dc07df",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Lodges_16.ogg.meta",
+    "bytes": 488,
+    "sha256": "4ab1a687fafb4d74adcec50d26ac4d219fe0f8a9c588bce953a38dec3b1bfc18",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Lodges_17.ogg",
+    "bytes": 433685,
+    "sha256": "734f227872155aeb5b7a6bad394c55633562cba2cdbe1e5e91e7d791b720914c",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Lodges_17.ogg.meta",
+    "bytes": 488,
+    "sha256": "dfb90a82cb35f9b02a46a0b13a75177013b52d000ebe5e19fc1a88a088735230",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Lodges_18.ogg",
+    "bytes": 1040986,
+    "sha256": "bae6d4d2027e962bb2f30a528bd5410b861330b390bc12170912857de02be9b5",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Lodges_18.ogg.meta",
+    "bytes": 488,
+    "sha256": "36a5abe5dfb70434e14ef809f19ed6e4efea0501b460c6bb625e93b32d81c4d7",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Lodges_base.ogg",
+    "bytes": 337601,
+    "sha256": "dcb8bc0cf4131ccd3101f92a5b5efc953ccf0572757d4ae11ed8ada4f8e26020",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Lodges_base.ogg.meta",
+    "bytes": 488,
+    "sha256": "d1bd1c27e61722728c19244ee39ed6023ef966ba97f829a3133dfae99b7b9b97",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Meadow_02.ogg",
+    "bytes": 562718,
+    "sha256": "f149ae8bc8089a6c6ff0eff578268d0bbfaa441109cd9d16ddf3d77cacef2c54",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Meadow_02.ogg.meta",
+    "bytes": 488,
+    "sha256": "fef9281ddb8d16b95876aebf86c52d0070dc4b03ca43d9350eee0e416978c8b5",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Meadow_03.ogg",
+    "bytes": 1055525,
+    "sha256": "58edfd67f861ef64e0b918803f3e66cb0a0082b2745a4668d3cc2bdcd72edbe6",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Meadow_03.ogg.meta",
+    "bytes": 488,
+    "sha256": "c1cdf68f5c01f1d071cad1248b41844b3e51aff109c2831d2134fdbd2ad25a9c",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Meadow_04.ogg",
+    "bytes": 809273,
+    "sha256": "7795199b7d5ac2ebbdb9c658dc05730b873b6aff1a57b1dd59b6e4c39fdf59f7",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Meadow_04.ogg.meta",
+    "bytes": 488,
+    "sha256": "d5b3bd373c53cce41160cd408eb8e8f1807dc64e21840201b13879949dfec86d",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Meadow_05.ogg",
+    "bytes": 1416605,
+    "sha256": "fbf96abf8cc2c9c44d1800f2d74dde54700b0a1d44f6ea8ec1fabadeca6e0208",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Meadow_05.ogg.meta",
+    "bytes": 488,
+    "sha256": "90c66603573ec23b9c3e5d3e83fa21f5e9421e52a77d869c7e477cbdb6461649",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Meadow_06.ogg",
+    "bytes": 507638,
+    "sha256": "7483b64dd6d9e7cde0c6110bceceeb0054ad94c17a2a04f438da090129b23ee7",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Meadow_06.ogg.meta",
+    "bytes": 488,
+    "sha256": "c8cddc1a40c9c3abb0bc18d0ee6f20c7fc579a7d5b8d69d1838e8104e20d7aa3",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Meadow_07.ogg",
+    "bytes": 1178431,
+    "sha256": "bece98a1ca0bd8e411bebdfc21df7d5a38324088533ad5e0c85d108b5bdc3455",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Meadow_07.ogg.meta",
+    "bytes": 488,
+    "sha256": "950952f271b62a018c8dc6303125d28ddc75b48f8599a227ba74228257bc8f5b",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Meadow_08.ogg",
+    "bytes": 499193,
+    "sha256": "cc65664269b66d3a1681cb0635ea15b365ca3e7450454792eb58f5a494ad8676",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Meadow_08.ogg.meta",
+    "bytes": 488,
+    "sha256": "796aaae49d96e134c1d8f5a61f49c9b63d19676d524e38bccfb7f97284c74f9e",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Meadow_09.ogg",
+    "bytes": 958758,
+    "sha256": "0d2e9a7b4c34ed9b47478fbf35137a86f43c215ed22b854d0c623c562611efa8",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Meadow_09.ogg.meta",
+    "bytes": 488,
+    "sha256": "a56657b01d19f3fb8b1903d9d57ef9adcdb7667c65495be01ec08f703997798f",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Meadow_10.ogg",
+    "bytes": 571627,
+    "sha256": "7d52795e22a95909233859d2a7daafd289f125bc4a1e5235e38ca2c9da16dde7",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Meadow_10.ogg.meta",
+    "bytes": 488,
+    "sha256": "f017cfc7ce686df671d2ccb12fb5b7dc47846376c5fd94763e700b1956f886c5",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Meadow_11.ogg",
+    "bytes": 443048,
+    "sha256": "45e9ffab06ba70ecdcfcc30dcb32dcdbaf513b98827756f9db3bccdc1d5050fb",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Meadow_11.ogg.meta",
+    "bytes": 488,
+    "sha256": "e76d3d6bbfd88c18c446dbe779b4c5941550aa633b0691d7a79fe0399cb75a85",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Meadow_12.ogg",
+    "bytes": 1145620,
+    "sha256": "d51a3db6eccf8bc0848f765bcd3f9eab8137feec4d5113edf2dd8deb4e662a3e",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Meadow_12.ogg.meta",
+    "bytes": 488,
+    "sha256": "853038d5267afe17d99985300b578885be6e5406692d7948313903dded141a24",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Meadow_13.ogg",
+    "bytes": 490020,
+    "sha256": "0e1d384234928fa2a9705133aa22d8b753065b708c99dfdf62637f430f76fbec",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Meadow_13.ogg.meta",
+    "bytes": 488,
+    "sha256": "b920d8bd937e6d2a1ddfa0e5149b8d5968aeb782b0d56c5996361d748adfa3ba",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Meadow_14.ogg",
+    "bytes": 811121,
+    "sha256": "b39adf2874f5d8cd5a8cc158a49a3a6312b73199599670b2bba33314179ed952",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Meadow_14.ogg.meta",
+    "bytes": 488,
+    "sha256": "6acc10c6ad9964d3afdcd80753adcf1216fea6d9c9f2bb00c12076cc3ba8171a",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Meadow_15.ogg",
+    "bytes": 1077428,
+    "sha256": "d9ca586958881fb52160faacdb934c19803f0cc5d8fe5b56445e86bf1f7fc095",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Meadow_15.ogg.meta",
+    "bytes": 488,
+    "sha256": "8eb75539f61d46ccd528528d5a801ae16e3e6191e84c535e0225fe5593a6cb84",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Meadow_16.ogg",
+    "bytes": 510817,
+    "sha256": "5ce3b54ca9db37d435c17ec290402aa35a680747ced209fab8ab58915813f2fd",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Meadow_16.ogg.meta",
+    "bytes": 488,
+    "sha256": "a99cfa059aa63d0e54ce769ab08800bd5b8a6e2779fa8a13bfc7cd7651ef47c7",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Meadow_17.ogg",
+    "bytes": 1419295,
+    "sha256": "5d2b257cb496332eab6c8a2f33a3deab49df32bc145eb62b185af6d907183fc9",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Meadow_17.ogg.meta",
+    "bytes": 488,
+    "sha256": "464f69dc184d94f7455e4a9c7019a77747ccc1042a83bc6c149e7eb3587031fd",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Meadow_18.ogg",
+    "bytes": 505771,
+    "sha256": "73454f0601a6838cce9828cf506f09650a88329be689c0bc254f1f83acf0ab2f",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Meadow_18.ogg.meta",
+    "bytes": 488,
+    "sha256": "d0f49dba1a82a00ded764778394e140730ea659a438c6c9c0074d2e9844ef601",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Meadow_19.ogg",
+    "bytes": 1524312,
+    "sha256": "c9d1a8cd2efe8bf64624ffe4bece4510c03aa9cded641119ec3be893bee6c8f7",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Meadow_19.ogg.meta",
+    "bytes": 488,
+    "sha256": "6572742b98ce17ccded1192a6784efe9f2eaf783142789084cc37fc4cff2284b",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Meadow_20.ogg",
+    "bytes": 939621,
+    "sha256": "a03e862b6ee391e4bcf4ecf9598746deaadeee7422a8566da8b59c98409e23f5",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Meadow_20.ogg.meta",
+    "bytes": 488,
+    "sha256": "d9e23ca48d8fb7cb3237a627a8f10d81f286e39897047291b361b84ca08cd6cd",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Meadow_base.ogg",
+    "bytes": 440386,
+    "sha256": "87c9b6966f2dbca28f7d06d05638bdefd1ed11daa7a72d5bb76f5a951c6815f7",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Meadow_base.ogg.meta",
+    "bytes": 488,
+    "sha256": "0b9c5bbb495c1b134ceca04fb54d5cc86369728d54ee2c6c1cb4413d99611e10",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Morning_02.ogg",
+    "bytes": 1585721,
+    "sha256": "327aaddc768a9d587118d732f3fceb343dcdddb419e0b540020b8a71be0782e7",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Morning_02.ogg.meta",
+    "bytes": 488,
+    "sha256": "709e50d45f1dfe7eff117f3a068ee355ebdd35548a5d6dee4afdab23b9512280",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Morning_03.ogg",
+    "bytes": 1084417,
+    "sha256": "f084a46451ef0e6ac20f11f09e423eab40dc063eb4babb8e068d53c4b5757e76",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Morning_03.ogg.meta",
+    "bytes": 488,
+    "sha256": "d4d2bd637e23d8ebd5e6ebc12fa0e1dd3349bd6dd8acbfab0a7d48a7a9098568",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Morning_04.ogg",
+    "bytes": 1285349,
+    "sha256": "32d5d6cc5056ee465b5e7ddc5f982b6c74653b18388454decfd6339cd9ff9a61",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Morning_04.ogg.meta",
+    "bytes": 488,
+    "sha256": "bdbe64143b01d972787f5b65da41d7fce388ba05845a83dc95e3131e87ccf83f",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Morning_05.ogg",
+    "bytes": 1031423,
+    "sha256": "d4c36ef3f9cd9ee38e8fcbe7aa959f2f0ad7bec3e2e7b58a3f0f6ba0acf54066",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Morning_05.ogg.meta",
+    "bytes": 488,
+    "sha256": "3394f373d3cf842a9d0f2c3f9e581ae3a185ac55a5768b9df3727ace0ece5581",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Morning_06.ogg",
+    "bytes": 1741160,
+    "sha256": "c2c2a0191be6ff95585784a0ec1eec6f20cada3ea7b59b142b5022858da91b77",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Morning_06.ogg.meta",
+    "bytes": 488,
+    "sha256": "1f287686a8f6788104992ee865cb8e2cd6e2abd03fd66826fe70c7e43881b63e",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Morning_07.ogg",
+    "bytes": 1292682,
+    "sha256": "95981d02261b7e4479279ab49dbe17a691533f2143cfbf93db3441b729d29967",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Morning_07.ogg.meta",
+    "bytes": 488,
+    "sha256": "9770ffff2ffdf8be9700ca6f57105f3d4053ba6e671b9d30610bb47a7c041b21",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Morning_08.ogg",
+    "bytes": 1147832,
+    "sha256": "771a353b957fbce19300148d9c2da85114326b5db3a557ff29ce741026bd4d1c",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Morning_08.ogg.meta",
+    "bytes": 488,
+    "sha256": "0caa8134c5626a0a6b64b8241881ea44422d07f3dec5777986c199805feb41b6",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Morning_09.ogg",
+    "bytes": 1169410,
+    "sha256": "7f0670f95afab8aaa1f6f63250adfa8d54a2e9174320392ec522641d8c42ecc6",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Morning_09.ogg.meta",
+    "bytes": 488,
+    "sha256": "f9584588cbe04f751527bf4cc8e1587a2091b22d5dbd7aa4a53b4e13047e13e3",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Morning_10.ogg",
+    "bytes": 845828,
+    "sha256": "a0854baa5f062e126630159f58844f48882fac55a3895218a81d84e616eb7653",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Morning_10.ogg.meta",
+    "bytes": 488,
+    "sha256": "0322aec6cd0028387fb46a8f48b80bb23e376e27edc5b6ccd2540b7d1e64a30e",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Morning_11.ogg",
+    "bytes": 1119825,
+    "sha256": "29bea2fd8bf71bd7ab3692df8cffdefece86cdc0816d31a2d46fa6aa2d6cda46",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Morning_11.ogg.meta",
+    "bytes": 488,
+    "sha256": "a12b056867e4f1b19528182ab0b1f228ddf09e210d2bc6533e10b6bc974c83b6",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Morning_12.ogg",
+    "bytes": 1627697,
+    "sha256": "594131e096cc07579c40f9fa03b5a133ad56da029b7cff0235cf1d4505ce5928",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Morning_12.ogg.meta",
+    "bytes": 488,
+    "sha256": "5d0aa75e58d54ab390a5a58ad81163cd234e6a0049556397f2565786d734789d",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Morning_13.ogg",
+    "bytes": 1743625,
+    "sha256": "e58a120170b9c01fe675dfcc4a70856bf25c5bf947ece363fa34e2c4b981a3b1",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Morning_13.ogg.meta",
+    "bytes": 488,
+    "sha256": "fedb9c0246f6458854a6bee93e73e8e52b30fd8188eb2fb1c4857f94761b80ac",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Morning_14.ogg",
+    "bytes": 1078623,
+    "sha256": "c1d9381697a3bf4a16a1aa2f89ca480d29c2ecd4c866196381deec0e790f655d",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Morning_14.ogg.meta",
+    "bytes": 488,
+    "sha256": "0421de51d942587f0ff0524d2e1935b0d56714ea728e7e494aa9ff1f3c24bcf1",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Morning_15.ogg",
+    "bytes": 1033299,
+    "sha256": "3276e0e1c7635036badc166b9c8fef8e6cd845921cc7cce0fab484b8cf9dba6b",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Morning_15.ogg.meta",
+    "bytes": 488,
+    "sha256": "6f1da9557a7cac1118fafee943a5c1e74f3569e627391ca033fe20e50616332f",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Morning_16.ogg",
+    "bytes": 1282368,
+    "sha256": "8669ad68b09ed55759f5f156a8396e9d6632bb40f67199424435b36800819e4d",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Morning_16.ogg.meta",
+    "bytes": 488,
+    "sha256": "d7d63896a333f3844831a96bdfc9c62858be4403f5552803b516d491a9423bc4",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Morning_17.ogg",
+    "bytes": 1284858,
+    "sha256": "6059a0d7295eca8c5e7ce1d56648fb4a10c8592c5b9c2e08fee3bd5345f196a2",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Morning_17.ogg.meta",
+    "bytes": 488,
+    "sha256": "4705eeb135cd2899ff5d6b4a0467f471d46f32f72a0d95a78bfb5a96c70a868a",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Morning_18.ogg",
+    "bytes": 1152139,
+    "sha256": "fa3553ce1fac17f16761ed3592521be1df4623c1ad4c7207128f530be93c9681",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Morning_18.ogg.meta",
+    "bytes": 488,
+    "sha256": "69720c659ef99ed0b6f2fb7939c0cd05530d04606d0509fcec3888a3043b55b7",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Morning_19.ogg",
+    "bytes": 847000,
+    "sha256": "da073a16d057107c5d3926cd0308260176b90731a80b813d204f6f57bb9eac5c",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Morning_19.ogg.meta",
+    "bytes": 488,
+    "sha256": "b37de9937c1be9b111b354249c6027b35cee4da8c712dae99af5a2ab468dcdba",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Morning_20.ogg",
+    "bytes": 1174380,
+    "sha256": "75e6e54d5a395e288f5f90a313e364abb8c567f851b8f32a154a9c94ca27a6fa",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Morning_20.ogg.meta",
+    "bytes": 488,
+    "sha256": "4be7df57cb846942dee86ae74a72d2a04ff0e0bee35b6301d59fc954ee4011dd",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Morning_base.ogg",
+    "bytes": 1116812,
+    "sha256": "0be05d7038f66f9b1da379a4dd8b1c6299553abf671e4e15a1c187e36411ea42",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Morning_base.ogg.meta",
+    "bytes": 488,
+    "sha256": "6af89d4c0204d2a71ce5d498906a698c67986975d7353bc4043578d02c2fa11d",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Night_02.ogg",
+    "bytes": 335718,
+    "sha256": "6aa501578d7200903da3cbbc7291aec51ab6243e2789861a574b9ea207ef8a95",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Night_02.ogg.meta",
+    "bytes": 488,
+    "sha256": "b349d259bc5daa5dbb97ce5b3b0fa4abded3553038edcf39106f3440b65abb98",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Night_03.ogg",
+    "bytes": 350147,
+    "sha256": "ed4f029580b8a51963ee7ef44dd9609d392c1eeac39f070203ddb49c25293e83",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Night_03.ogg.meta",
+    "bytes": 488,
+    "sha256": "a71a2459449a3182659042d7429162adb96614a6157fdce59c130a241b154fb6",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Night_04.ogg",
+    "bytes": 264527,
+    "sha256": "45843eafb365d5a9c5ebc82e25069b536b8f555dd0b47523312121c8bb7e4a63",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Night_04.ogg.meta",
+    "bytes": 488,
+    "sha256": "255a7d25d529ac520eccf17294f5ab6bc8817843c664c10eb5eb39a136817bb0",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Night_05.ogg",
+    "bytes": 197578,
+    "sha256": "344462e8f39fb11f55e9034db3dfc39fc5b29737e3efe58e4db12340bc42bba1",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Night_05.ogg.meta",
+    "bytes": 488,
+    "sha256": "9e1bd96770b44ffffb2d06a0537b4dc2b7cddc25d6f48c3e28f3b8eb9b32ddee",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Night_06.ogg",
+    "bytes": 187500,
+    "sha256": "d9a818ea798c290a4119c6d652b494b97acb445cb9858e633513e8fdf0844644",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Night_06.ogg.meta",
+    "bytes": 488,
+    "sha256": "27622e5fbe515656940ab7be8330484f731be50c6ce8587c4763137ca455e660",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Night_07.ogg",
+    "bytes": 329877,
+    "sha256": "eed8149f077498fa3f07b6bb52b79636f8354ef230a25ffdec50109b387604c0",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Night_07.ogg.meta",
+    "bytes": 488,
+    "sha256": "eaf16b387a2e69fdff67c5eecee523e5d8a52e37e9b1def2538c33971b4f9f77",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Night_08.ogg",
+    "bytes": 210738,
+    "sha256": "9cea8a69ee1faa4c7ff58eb02e9b99f09fc1c0979d0aa67434377aaa1f3e5cf1",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Night_08.ogg.meta",
+    "bytes": 488,
+    "sha256": "9eb6bea97e1ff47e0519205fa563aa1b6ba0dc1902ff1119f7ea4d2c7154f887",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Night_09.ogg",
+    "bytes": 356685,
+    "sha256": "f07b0a5d66b703c161991de762adecb2231dd580915e49e07956df0cffd17cc4",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Night_09.ogg.meta",
+    "bytes": 488,
+    "sha256": "0751d476b0c91c473a87e9bf130aec8b2d5f217713ec40302f41c269542dec27",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Night_10.ogg",
+    "bytes": 347089,
+    "sha256": "0d3729954e3a8a45f54df02029d9d28fcb68fab4404693ce0a7b2cd045c1d257",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Night_10.ogg.meta",
+    "bytes": 488,
+    "sha256": "ab179507cde920f6f2a7fe8f5f535fe5bf657c79c4a8e5c52a0d6889b03056cf",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Night_11.ogg",
+    "bytes": 340315,
+    "sha256": "3770f13bbfc722cfc61450ff3a235477d79f439365d8bff0eaffdeb5fc40da3b",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Night_11.ogg.meta",
+    "bytes": 488,
+    "sha256": "1e7e1a6e202555a23184cf3c2623f6de75cbc10c19e4cee6f55578c34ed32869",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Night_12.ogg",
+    "bytes": 211621,
+    "sha256": "572119a7228d28d9c201bacd19c881b1787b5d2ef5489d06c2f0feee15ff764d",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Night_12.ogg.meta",
+    "bytes": 488,
+    "sha256": "098f14550bba2693c89b8f0aa36f8e4259aa7810fd1a86c1c77c684061f32572",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Night_13.ogg",
+    "bytes": 334916,
+    "sha256": "5f4d5abf6427faef89446f7bb54702e61151d4dd72ba3b7ab136cd6e4c5a869b",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Night_13.ogg.meta",
+    "bytes": 488,
+    "sha256": "fedb6d1d0321995a624f94498c4f54c81e3c462092f4590b038c32523fe06c82",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Night_14.ogg",
+    "bytes": 298920,
+    "sha256": "0dbb7cb8712f4fa5cd836b2fba213c263b9287994e826f1d9bf6e30d7f90a6cb",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Night_14.ogg.meta",
+    "bytes": 488,
+    "sha256": "89139b7cbe68248dc0aea0bc5152f554f77a1bc325671434388d47cca21c10d6",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Night_15.ogg",
+    "bytes": 269702,
+    "sha256": "30f15acf8fb48dd5327c4cf925e6742ce439649191f87a7ed1e1a9ff5e2c0034",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Night_15.ogg.meta",
+    "bytes": 488,
+    "sha256": "a3cc08e6043e02017f6b15a04e3c8b3f9cb4e12fe4280865fe1de5e8c6fd6ffe",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Night_16.ogg",
+    "bytes": 185612,
+    "sha256": "75411bf88d5713b7c63a449baae507d40246f00de0835fa7b158d11c74b2e9bc",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Night_16.ogg.meta",
+    "bytes": 488,
+    "sha256": "cc63e6d6085742718012435442ab7e8f946545d3acc7798068d8db05d15aa990",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Night_base.ogg",
+    "bytes": 351766,
+    "sha256": "3dec94df7f61214b904b5418f4dbf55d5ec91df2320bb1ad076f722e63d25302",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Night_base.ogg.meta",
+    "bytes": 488,
+    "sha256": "f9a400d35c582171918dc2cadd95fe2c9c7b91cc88141b2526f408381234ef61",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Pebble_02.ogg",
+    "bytes": 929651,
+    "sha256": "399a5073b2bd8807b3044db23d8c1e1afdc156073c7f4fb302cc37e51eff6a95",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Pebble_02.ogg.meta",
+    "bytes": 488,
+    "sha256": "7fb8e4fd507c033e3eac7c7abc9b3ae19021336e614d264d23aadd67a328bb87",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Pebble_03.ogg",
+    "bytes": 1459071,
+    "sha256": "d578c485f4c7d1eaf2c0c0811879e8fd26bcea7e315aea6434d649ed57c21da3",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Pebble_03.ogg.meta",
+    "bytes": 488,
+    "sha256": "2805f0423600c17fe11ccebe91e00d519913340b06014228c34fa549f1865881",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Pebble_04.ogg",
+    "bytes": 2209498,
+    "sha256": "66d4f4e79b4fe7d6b426b4c9ed24922c269b527ec918dfc69b718a7f44c48c32",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Pebble_04.ogg.meta",
+    "bytes": 488,
+    "sha256": "1ff8bfa7a617ef81178bfb08c475bcb9312c2fa6b076bc7786af7a102620ba48",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Pebble_05.ogg",
+    "bytes": 1379941,
+    "sha256": "63264d914d1ec5bd44b385a1f4342869fc441752536493b1c414c3b33b1ed9a8",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Pebble_05.ogg.meta",
+    "bytes": 488,
+    "sha256": "a67d58c668adf9ec44645f4a251ebded44fb331c402d5d676a35dc3d0a0b1daf",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Pebble_06.ogg",
+    "bytes": 1704209,
+    "sha256": "cfc29f35e815199983a296464f41673061513bf72443b17b9a54099271c74128",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Pebble_06.ogg.meta",
+    "bytes": 488,
+    "sha256": "1815e54df0a9200fc7ceffb31aab9033d71cd5ea9525ab66f970e2918b1c25a4",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Pebble_07.ogg",
+    "bytes": 2104782,
+    "sha256": "bc115ad0e79b43e637d8cba11a26aed93d083713f00f414f119fceefbbc3c037",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Pebble_07.ogg.meta",
+    "bytes": 488,
+    "sha256": "8bcd262c39ee912eab05a6ff4181fdeb586df2c9254f337f8a45c1b111f13e15",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Pebble_08.ogg",
+    "bytes": 1901462,
+    "sha256": "f3691b2c72202727fea11c67b9ef0e2feb57da5ff59bcdcacb86a208c93e2eeb",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Pebble_08.ogg.meta",
+    "bytes": 488,
+    "sha256": "19586379a2df67c840476c59c40dd7b7cb1fed83b148673292cdad4dd276430f",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Pebble_09.ogg",
+    "bytes": 2206316,
+    "sha256": "c78f3e35ed4d8ba7f5df0b86d8e54fcb2a09cdad92af6dcc2da310db92924f75",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Pebble_09.ogg.meta",
+    "bytes": 488,
+    "sha256": "a64a44cf6cac6c3103f0cde8cf500b855e9fb58f158f8046490752ca85cf493c",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Pebble_10.ogg",
+    "bytes": 2146768,
+    "sha256": "98566e5d187c0b34c4c80d743a3a9043b18e9bd65c0b5fba38f7b49dd0f0f308",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Pebble_10.ogg.meta",
+    "bytes": 488,
+    "sha256": "ac49cf8b762cfd2b56ce4ba291c9ea9a662e128ad2dd61b479ef3e32bfe86ea7",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Pebble_11.ogg",
+    "bytes": 1258328,
+    "sha256": "09f3ab9d857f548bc66028e027cff90707c5ed793825486669f4d09409e13e0a",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Pebble_11.ogg.meta",
+    "bytes": 488,
+    "sha256": "cfe7d91234f75eb41ab97a71e21ea7516aa1e56e830ad363a93f7e86c5167e9d",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Pebble_12.ogg",
+    "bytes": 929989,
+    "sha256": "103114746f75b577bbd372551e0575d72c0bf04212c1a62156c46c3cb8231c74",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Pebble_12.ogg.meta",
+    "bytes": 488,
+    "sha256": "e81c08bbce62d0216a70c0fc91134dc56111e1e6d5a9ae3eb350267ce48bf22a",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Pebble_13.ogg",
+    "bytes": 1377664,
+    "sha256": "8f9ec351ffb84fe8027b4615acbc2e9853a9981019deebb4cddb4f33700b05b4",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Pebble_13.ogg.meta",
+    "bytes": 488,
+    "sha256": "505df08ab30d5214a508c95ef9fc4c4c5d8d14a80e7a7d28dd7d4325ffa6183c",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Pebble_14.ogg",
+    "bytes": 1456919,
+    "sha256": "337797383705176564c68ed8b58879722468ab8097e114d1aad91dde7b353dc9",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Pebble_14.ogg.meta",
+    "bytes": 488,
+    "sha256": "b15bf6b8962e62e2b918286976f23d11f35ec35d6e4168c5fab459742818d80f",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Pebble_15.ogg",
+    "bytes": 2106616,
+    "sha256": "1276ddec5319e15dbb0f19d359df5442decb8407a204c8c56f4c5b790a89bff7",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Pebble_15.ogg.meta",
+    "bytes": 488,
+    "sha256": "9281c8a88424eaa585ddb3df0d3bfdff4cd0bb98b5c45412429eed6aa7c07f7c",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Pebble_16.ogg",
+    "bytes": 2211417,
+    "sha256": "36a4f2ca2a812e35cf9ba955d16b243a3e9575ceab6d198a1ae989e13eec4efe",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Pebble_16.ogg.meta",
+    "bytes": 488,
+    "sha256": "0c7c74bd562bc9ba1512290f1214a2e1f1b832080c11d7e4198e50b8f7de70d5",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Pebble_17.ogg",
+    "bytes": 1901481,
+    "sha256": "c2b7003c7185c8374368075d861c76b83ac0b2a3b0cf78ffa695156ed183aa12",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Pebble_17.ogg.meta",
+    "bytes": 488,
+    "sha256": "4dd3b118b87152bf323fa29b3a7c2d0f2958b4962ae4d3342094df75f8f898e9",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Pebble_18.ogg",
+    "bytes": 1704331,
+    "sha256": "c1510cc3105ccf99b95d6cb263f4371ece905840774dce9f27c1695cfc597dda",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Pebble_18.ogg.meta",
+    "bytes": 488,
+    "sha256": "dfc5140c3a4d19fa683323ef3add3810dc7648907fa2931881dff6e89d623ab8",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Pebble_19.ogg",
+    "bytes": 2207678,
+    "sha256": "b4d101009f4820d920d7f36f3713e7e190f8e345faaf5e682885dc42f312493f",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Pebble_19.ogg.meta",
+    "bytes": 488,
+    "sha256": "4b701a0625f21aed3655afa70d6181b539431261a76f532cfdbb9755707e29b3",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Pebble_20.ogg",
+    "bytes": 2146514,
+    "sha256": "c3c283dd82cf22d389a85e055c56257818655b8da59c9d99958ea19a0979bcd1",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Pebble_20.ogg.meta",
+    "bytes": 488,
+    "sha256": "b6dc615ffcd7555f520fe8fc8b188b8fff8b326aa27aeb04428fc99304fbff49",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Pebble_base.ogg",
+    "bytes": 1258404,
+    "sha256": "afae3150300486cf467d9778db7402fa062375e5ebb9b499cd4d9d7d6cdb34b6",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Pebble_base.ogg.meta",
+    "bytes": 488,
+    "sha256": "fc20584d7e0a402e5b74aa22d1b5897e9ec5695b867334d34bd5a080676233cd",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Primeval_02.ogg",
+    "bytes": 551947,
+    "sha256": "9afe3e92ee73ad8bd442cce9afadacf7241291d5fa35bb95fb1e17d50d7aadc6",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Primeval_02.ogg.meta",
+    "bytes": 488,
+    "sha256": "22ee1e5824bfd277b07693d73a478aa0e494ecb844868aa791ec041f7a0f3bac",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Primeval_03.ogg",
+    "bytes": 944709,
+    "sha256": "17cf038d5087cff2b75fab044e2e74ad79621dbdc2fa1385d9f6808f708c96bc",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Primeval_03.ogg.meta",
+    "bytes": 488,
+    "sha256": "6ed79f7856ee5baba0dbef6d85c5a39502082ad6a6dccb67643e758b1fb33e97",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Primeval_04.ogg",
+    "bytes": 768837,
+    "sha256": "6eabedc7fd1ea6d807e3eeb00f477734a431bfd5d57e3898059b542c14b979c0",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Primeval_04.ogg.meta",
+    "bytes": 488,
+    "sha256": "5defd3e794ae42c291cfd5df3810556f2b5f39fd8c32de89e0261b7421b9b624",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Primeval_05.ogg",
+    "bytes": 907143,
+    "sha256": "bc567422754fa014772efade64f3d1e15bffa49a06e660e6fab1be937a048fc0",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Primeval_05.ogg.meta",
+    "bytes": 488,
+    "sha256": "a53857185736b20b8d2e2ea7e3e6d263540fba3cac3daf77f3727258dc04ad99",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Primeval_06.ogg",
+    "bytes": 732855,
+    "sha256": "28238d46be57b7c5b1b7c293defeff35320def179f1188ea1c1407b682a4ca38",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Primeval_06.ogg.meta",
+    "bytes": 488,
+    "sha256": "480b154b7376f4e06f04107a6ddea4363e9a493f846c409eb0157c5d0b7bca33",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Primeval_07.ogg",
+    "bytes": 1211286,
+    "sha256": "e4b1c94b12ee8af7b0b2bc1d2c24b9ca742e4c57d8b857421adac471d432064c",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Primeval_07.ogg.meta",
+    "bytes": 488,
+    "sha256": "cbe4047dbf597a2eb8aaea179044d68bd65b2bc1f7c5fadff44e31ab3698f4b7",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Primeval_08.ogg",
+    "bytes": 528180,
+    "sha256": "c5dd7b8b4f006cad36e8a5b6d6172c25f769f30db0a5dbac2ff484a4c5162b12",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Primeval_08.ogg.meta",
+    "bytes": 488,
+    "sha256": "cbb5a1251b53ab94ff3ee6ba2a3220ddf607b62630ed1b3c53d94413385024a6",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Primeval_09.ogg",
+    "bytes": 613659,
+    "sha256": "2e4eaf15b4f5563c979295482648403afd6ebdd88de07f5c74d9dfb78551438e",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Primeval_09.ogg.meta",
+    "bytes": 488,
+    "sha256": "7620270640d511deec51bca8c036fbe4f71c6d71676b2bd43af78c6b0df54a6e",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Primeval_10.ogg",
+    "bytes": 953769,
+    "sha256": "62244125ec827c9ca1fbe1d78ded2f929f9ef9e5ce5b92f158621fde60bb3bfd",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Primeval_10.ogg.meta",
+    "bytes": 488,
+    "sha256": "c4ce2e8adcd9a3d76dc7519187029926467aa8fd2e84d99834dd4c4ce5e393fc",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Primeval_11.ogg",
+    "bytes": 551992,
+    "sha256": "cf1696231f307656827a6dd82b907af48ebc051c351e06d911cf8d19b5ff3f1c",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Primeval_11.ogg.meta",
+    "bytes": 488,
+    "sha256": "834bd3622855174db361e1c30ab66a18167192372266119a9807fd959f017095",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Primeval_12.ogg",
+    "bytes": 757198,
+    "sha256": "4cab8a28fcde5c3a68493bb24511c4681867c818b27c9a5bec14329fab31cee8",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Primeval_12.ogg.meta",
+    "bytes": 488,
+    "sha256": "8f4a84c051cbe99babe430f246630ae41fb1abdd394d088721c5226729e3c6c0",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Primeval_13.ogg",
+    "bytes": 774631,
+    "sha256": "ebcf3989e93992482d5ebbe6b761689b60145364e6e0050c98a3118c4fc3f5c6",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Primeval_13.ogg.meta",
+    "bytes": 488,
+    "sha256": "77eecfe94bb5d63990dc6ae8f74359486e9d84b2f03475b486661a56a040fe85",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Primeval_14.ogg",
+    "bytes": 1039020,
+    "sha256": "92470bbbc315f2f5c1196662125bed14d0e45a7e07463361165ae59aac077c90",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Primeval_14.ogg.meta",
+    "bytes": 488,
+    "sha256": "e96ea3857ab20381dcc4a2d47fe0dde65b909f8dfa1cf4fadd0fc6fd9514d403",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Primeval_15.ogg",
+    "bytes": 944119,
+    "sha256": "0ce5669dfa6efd96a85dc9cceb7d255607f7c46d45f717144ea5381d06fd7dab",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Primeval_15.ogg.meta",
+    "bytes": 488,
+    "sha256": "55b49b5275e99232fdca41f8604e224fcdb2bcf62f025ee2ecd5c26d2dd9417f",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Primeval_16.ogg",
+    "bytes": 604898,
+    "sha256": "249bedccea810998d3b3b756d3735c710bf0290baef9cdb12b467d3b8f4cf10a",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Primeval_16.ogg.meta",
+    "bytes": 488,
+    "sha256": "b5216610316c6228d3a0ef106ce0e644241fe45f0d8e5fc63fc1f6e18b7a4afd",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Primeval_17.ogg",
+    "bytes": 500269,
+    "sha256": "e279a196870c02997c2e16175cb3fa6d302bf65e457c3a9fd8073ba73efd7de3",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Primeval_17.ogg.meta",
+    "bytes": 488,
+    "sha256": "0b0d4b7444a545151a3779d671cfa8e7e4f690d41d7262082e0e8a2c5c2aaeb1",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Primeval_18.ogg",
+    "bytes": 944153,
+    "sha256": "16ce75de32d78ea691537053ca9ccd4b264fff4eab8811df3991e6cd9b984962",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Primeval_18.ogg.meta",
+    "bytes": 488,
+    "sha256": "e2612796aefbb7a5c21dc5a47a4ac193e95bb800f5730623909cd2b005dc68fc",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Primeval_19.ogg",
+    "bytes": 787678,
+    "sha256": "88eeed48486011763e24e9d273c4dc592a47fcf9b3a98c329afe615e3d7124aa",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Primeval_19.ogg.meta",
+    "bytes": 488,
+    "sha256": "5cfaf30668a078739d38f615fc611a7aab134a5c52c47bf9f9e97ff9013f6450",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Primeval_20.ogg",
+    "bytes": 529688,
+    "sha256": "824e8e9b1003acc651857f220433ae30b988009334dbb295873365b6b5c3ecd7",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Primeval_20.ogg.meta",
+    "bytes": 488,
+    "sha256": "930f1eacb0c0f2a26f4cf4fe6528d04488e2f950c7fee4bd6b40bcea26273e46",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Primeval_base.ogg",
+    "bytes": 753021,
+    "sha256": "bf43b85f92fef61839157724b0636d90a43d22b09a4a940144717c26377e929d",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Primeval_base.ogg.meta",
+    "bytes": 488,
+    "sha256": "0509673f7d38e8a2dbcf37ba7807669e9d2c10cdd4bd7fd19adc741c87f0dc5f",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Rain_02.ogg",
+    "bytes": 184787,
+    "sha256": "c15d290a687aaaf529e6588e58cb003d1cd516a38837cc77fb3fe0f789794c84",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Rain_02.ogg.meta",
+    "bytes": 488,
+    "sha256": "4762526cf1ef923ca15ce08730bd24775bd0c25073414674b6bc21427398fab4",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Rain_03.ogg",
+    "bytes": 410189,
+    "sha256": "a842a8ea19a2eaeac9f4fc1f418eb9ef3ee6f777e95280a6b0158cb9f899867b",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Rain_03.ogg.meta",
+    "bytes": 488,
+    "sha256": "db43747831e95c38dea77ba53c5b7f3058bbcec1b4bebca80ee6ed078cdc9f56",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Rain_04.ogg",
+    "bytes": 240899,
+    "sha256": "05c26592e11ba0eb779df342110dcfb0b6bcc6681491d89bb0efc2baa659fcab",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Rain_04.ogg.meta",
+    "bytes": 488,
+    "sha256": "5a31efe50362ded1d978ff0c2695e323ba53f4b65f86a480aee2803bfb376e0d",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Rain_05.ogg",
+    "bytes": 282014,
+    "sha256": "676edf9c1f1e4bf241a57490cef5c7ed86d38b2ba8c3d727acc5236c3a903736",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Rain_05.ogg.meta",
+    "bytes": 488,
+    "sha256": "f018ba88a0dd433693b83ff2c3f948fbfc6162e207f77661442dfdb7b777e1e4",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Rain_06.ogg",
+    "bytes": 288081,
+    "sha256": "12e50c7fb6a3184eaa5922a38b1725691a156434f279cce7829da93a3ee426b2",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Rain_06.ogg.meta",
+    "bytes": 488,
+    "sha256": "815ca1ba9b0f37f97c1524633d5fe4bf2cc16f7a0834e70308392fdc3aa75679",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Rain_07.ogg",
+    "bytes": 241091,
+    "sha256": "5a7345eeb1b8e152a2ed2c158cc185105966cd4e51657584edfccd784f1a121b",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Rain_07.ogg.meta",
+    "bytes": 488,
+    "sha256": "b05b109fb48febb7e86e8594974a354c2e4dde55a2f662e904ce48119135b555",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Rain_08.ogg",
+    "bytes": 184102,
+    "sha256": "fad945510cd0df63e4d2086941f061dcadc1d60ed34e7bca208a31f918b2a4f2",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Rain_08.ogg.meta",
+    "bytes": 488,
+    "sha256": "ad05a9e256f4e28a0479068bc880a4cf3d939689be54f5b084d6d34760c391f1",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Rain_09.ogg",
+    "bytes": 470318,
+    "sha256": "ea98ff1b9a380af2d2ee901b61b6204a8080eb05bc4c1f8a811280b215522883",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Rain_09.ogg.meta",
+    "bytes": 488,
+    "sha256": "90e8052b32718fbedd14739316ee7fb7cf18494e7637649d5cdd22b112044e9e",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Rain_10.ogg",
+    "bytes": 242703,
+    "sha256": "c09d198630a882efef7c7d75256113b48092667f0cf39a3a1516cfe280de5b5e",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Rain_10.ogg.meta",
+    "bytes": 488,
+    "sha256": "1027d977fb0a8df41324967504ee16696582e902a9221cb57870745c8dfe1807",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Rain_11.ogg",
+    "bytes": 421142,
+    "sha256": "ae7feb7dc7da6ee02ed352c931579ea8cbb7c4585d17039bd303a3078e5761b3",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Rain_11.ogg.meta",
+    "bytes": 488,
+    "sha256": "ae89a365db6eb00d352f15c3259c8043cdaeb929c30aac10cf405861084c345d",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Rain_12.ogg",
+    "bytes": 244561,
+    "sha256": "cd39da0c39558b9bdaa32f19774a62277dcd029ea47e5bf51fbe2b876552a9bc",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Rain_12.ogg.meta",
+    "bytes": 488,
+    "sha256": "96978bba50d7999185e837e42374d89038eb770824b802c287a2c9e498cc3b98",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Rain_13.ogg",
+    "bytes": 293625,
+    "sha256": "d50ede5f60b6edf78c5cb1c425542f6e32cf05886604b474bbe908064af31217",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Rain_13.ogg.meta",
+    "bytes": 488,
+    "sha256": "72ab4a983c228759ead1d2c3a8c9fa05ccdfbb09cb81a42f398ce51b8e61a73d",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Rain_14.ogg",
+    "bytes": 409450,
+    "sha256": "dc811189c1669a47311785d1d38a99e9289ef7226ad9c88da75627c8c72218a3",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Rain_14.ogg.meta",
+    "bytes": 488,
+    "sha256": "8a46b9e2ec02559444d8d13ec618381fd04f41f92cdc866ba5b8dcab3b9a26f2",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Rain_15.ogg",
+    "bytes": 487426,
+    "sha256": "9f27828db40b51cbb49bf1a25a93c6d70f1bf3516419f84f480aa2a792019441",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Rain_15.ogg.meta",
+    "bytes": 488,
+    "sha256": "a2c08e7cfaf38769e19650e2ea14f2b1943537fd1c355c4e3b0a1bdbb95013f0",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Rain_16.ogg",
+    "bytes": 397295,
+    "sha256": "40e5c3ff5eabeff09f87087781c856cc37dab7ebfc1436d72b8edb52538fc1c7",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Rain_16.ogg.meta",
+    "bytes": 488,
+    "sha256": "fbfdc6cd594deb2d6b30916b1d1407eea8694b601d968c94ce2561d8900114dc",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Rain_base.ogg",
+    "bytes": 287861,
+    "sha256": "e780142619c12f1c96c13a3a0f3f250195bdc5babebedae572c888f95aef7668",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Rain_base.ogg.meta",
+    "bytes": 488,
+    "sha256": "556aa24b176cb54c8e0186a6931bbc4c2ec31dfc596f694248ac4480c0dbf9b7",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Thunder_02.ogg",
+    "bytes": 883001,
+    "sha256": "3c2c6b1d582af8ba32e07ab7f0245d40dcc6c49811fc5e932ba9ed56bd48c79f",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Thunder_02.ogg.meta",
+    "bytes": 488,
+    "sha256": "2da5efc6fb563abcb031f650ece777357420f8118abb7e4292f81eb2975c8719",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Thunder_03.ogg",
+    "bytes": 1335193,
+    "sha256": "3f8b8a556dfdcef9e875a50e1108570fa2de539d3e96b115683c7d5797a1d943",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Thunder_03.ogg.meta",
+    "bytes": 488,
+    "sha256": "bb0c98c6f496f3baa437b8f199098703d36424b9fbf1118f92e52a8f944c4565",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Thunder_04.ogg",
+    "bytes": 1771557,
+    "sha256": "3f211df5651f59f77fd40ba1938c55551cc96ad67aa48e1de42a01d1f7ca3469",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Thunder_04.ogg.meta",
+    "bytes": 488,
+    "sha256": "38974552aa66cb72a400baadb5fae9db9ad3f74aed010030243fdc23e9794e8e",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Thunder_05.ogg",
+    "bytes": 1184294,
+    "sha256": "d22f8754a72aaca0e0d52f0492a8a477c81157ff9ae3c865f5697fe1932cbf60",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Thunder_05.ogg.meta",
+    "bytes": 488,
+    "sha256": "2879ba4fa13616c63bf03a39822b32bd93162ae5f8b0cf3c1b201b5671f08b2e",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Thunder_06.ogg",
+    "bytes": 518934,
+    "sha256": "cabb49d69120a91dd82370e208feeace2c14198b4b9b9e7d08895ffe1264817a",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Thunder_06.ogg.meta",
+    "bytes": 488,
+    "sha256": "bb670fd35340a3c83494759b64145d524fb24b44621abd17d3603fdeb0f60209",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Thunder_07.ogg",
+    "bytes": 1563812,
+    "sha256": "3be93551d182d8c2dcc8699109498be25f9e0b9d90e692f96baea3c023d4ecc9",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Thunder_07.ogg.meta",
+    "bytes": 488,
+    "sha256": "debbe896e0cd58168fd4fa04c6dc4b3f5ff667ecc7039b172b46f2ad057917d6",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Thunder_08.ogg",
+    "bytes": 407584,
+    "sha256": "b66c0bd42ddf155092a19c6ccaa9bd8ad3dd0249aab715a3b522ba3a2ff98256",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Thunder_08.ogg.meta",
+    "bytes": 488,
+    "sha256": "0fccb903ac70b06279a948763b2b95cc2cccecba207cfc3b26f651c9fc884fce",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Thunder_09.ogg",
+    "bytes": 724071,
+    "sha256": "a1c4c44c038112158416fb13fe7bace447c84e07712efdfb53626f3840d74fd4",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Thunder_09.ogg.meta",
+    "bytes": 488,
+    "sha256": "2045870c4bbdd5b63ffcc50ca960677e9a78c4a122a8d634c38f257390341747",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Thunder_10.ogg",
+    "bytes": 810792,
+    "sha256": "eb95d62ab704d67d0fa93bd16dd3d61d271ef3890fa25c61be546b3cafb5095a",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Thunder_10.ogg.meta",
+    "bytes": 488,
+    "sha256": "537dfa5ff3f552e75e720350ccded3b1b110cad38dced50ced704a04c2e6ca44",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Thunder_11.ogg",
+    "bytes": 851549,
+    "sha256": "a725c4484c83f90bffca707842479e56d619e260d3c6ef0ac51dd8255855a641",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Thunder_11.ogg.meta",
+    "bytes": 488,
+    "sha256": "91b3ab5e2dba06c9d0b86b7f814c150c4537536118944a5866580c8acf4f3aff",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Thunder_12.ogg",
+    "bytes": 797306,
+    "sha256": "bcc3a7fd982c1fb105e38dac6265d1fdf2ae387b273684e9570b55e9597b58a0",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Thunder_12.ogg.meta",
+    "bytes": 488,
+    "sha256": "dd56d7a16654a9010a6a3794a7f14a74fc54da577649c9911a8535a97520af2b",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Thunder_13.ogg",
+    "bytes": 868595,
+    "sha256": "d76e65ae9569b36b5935839e2deb5de5336c2d6d9a19b6ad19c636d3d4fddba3",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Thunder_13.ogg.meta",
+    "bytes": 488,
+    "sha256": "cfc30c4cf74e0ea723084cd30da2a1573e6b0890815917c82e523b5c8b3b1371",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Thunder_14.ogg",
+    "bytes": 1390943,
+    "sha256": "44835738f0398de62782f3fa892ac861fabd3249f3dba825b5ac9fc2771bd16e",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Thunder_14.ogg.meta",
+    "bytes": 488,
+    "sha256": "356dad4455cf4af3b6df13a79f900608beb4551c6ab136f73e4559fe247995bd",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Thunder_15.ogg",
+    "bytes": 886927,
+    "sha256": "86537b8b50ba169c663d1bace737d64dca42e543007423562e2a7036ef68546e",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Thunder_15.ogg.meta",
+    "bytes": 488,
+    "sha256": "c23f3f2af0348a97b8dc71208e21fd8386ab7c9c192cf791c0538ff0a37dc7cd",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Thunder_16.ogg",
+    "bytes": 608797,
+    "sha256": "5ddbbe1c55ec63f746ce7051bc2222439864b9ac5e42050d813ef427e45a3d0c",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Thunder_16.ogg.meta",
+    "bytes": 488,
+    "sha256": "770e9908a3b3975f4ba183612d50bdc3679ec4aaba39f2cf466a42a9ffb183e2",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Thunder_17.ogg",
+    "bytes": 423850,
+    "sha256": "73e10a90f9a0cf93af5150397f82b152f22526ead17820d479423be9a31e0c5e",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Thunder_17.ogg.meta",
+    "bytes": 488,
+    "sha256": "d4822f7a2a90373de097c44216b070bab45c9bfb646145ecf326e06b8c3afd4b",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Thunder_18.ogg",
+    "bytes": 537735,
+    "sha256": "5d61a269d7b4402a8af2c48d95b96078e478d12e5cd079c2c33ec501b7a9be6f",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Thunder_18.ogg.meta",
+    "bytes": 488,
+    "sha256": "bd43b8c21a0d3eb6f810aae3a736dfb1357d6a0d85b738d028e032df8bbbba76",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Thunder_19.ogg",
+    "bytes": 402637,
+    "sha256": "795bc4b6634923e17e69268da0d4f268cc18086242928a8f8458c300360b223c",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Thunder_19.ogg.meta",
+    "bytes": 488,
+    "sha256": "36587b28ac8148fdcc3614485529dd62c285a39e3d9a18a208bd6395b8e2e0f2",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Thunder_20.ogg",
+    "bytes": 1850907,
+    "sha256": "e26b7349f69988a94058d9e7911afd899e995ef47457f4e2f119cc4cdc1591ce",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Thunder_20.ogg.meta",
+    "bytes": 488,
+    "sha256": "02d4cfae8ee586cc6e738b90d32078f8faa481c4a29e63e79bb8aad91e10dfb2",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Thunder_base.ogg",
+    "bytes": 466638,
+    "sha256": "bacfab9ab0846f9839afbcb11a8856e45c2098d5b67da7ee9cacccdffb9de9b9",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/Thunder_base.ogg.meta",
+    "bytes": 488,
+    "sha256": "11377db4c4e8b374076040422ee5f33b1a371da9f603497d138aae7054008713",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/WindRain_02.ogg",
+    "bytes": 1117174,
+    "sha256": "5a579fbb1ac668648bbc0c217ecda802d07e087822ecb397a3251063bdc5dabf",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/WindRain_02.ogg.meta",
+    "bytes": 488,
+    "sha256": "b12fd6fc92de13f64c0ead54b8457fc92caad88902626542720d24937ddcb861",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/WindRain_03.ogg",
+    "bytes": 1373074,
+    "sha256": "882a6e5f62d5fe79b9f8a7273f3294534e842167222ab300252775f4685a428c",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/WindRain_03.ogg.meta",
+    "bytes": 488,
+    "sha256": "d163a218e837692c477d767930a5b1cf7ebfa902c861f0a973ecccf7156ca500",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/WindRain_04.ogg",
+    "bytes": 2558628,
+    "sha256": "1606302049a9d6803e808aae40c6a80121d4b740f8864ad815766cc84327595d",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/WindRain_04.ogg.meta",
+    "bytes": 488,
+    "sha256": "05e082e08dc8412c502aa9c43b3d241b5e47e5b057203809ce85d55485de5107",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/WindRain_05.ogg",
+    "bytes": 2440907,
+    "sha256": "80ddb1973e3c81b59b5e86792a6aecf831740ab00dfc6cc7373c70777fda336f",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/WindRain_05.ogg.meta",
+    "bytes": 488,
+    "sha256": "b4d6eb58e83f4043e03c4b4b110518d0682cb2f34bed9e7337b191bf6c53688c",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/WindRain_06.ogg",
+    "bytes": 2588163,
+    "sha256": "aeb89921fcd92ca7f790d8f32b7f3cff5cc25e420994bea559c1933fc4f6e56c",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/WindRain_06.ogg.meta",
+    "bytes": 488,
+    "sha256": "a305e048edf4302cdc18253e7d25735bb9b6993b64a66c642c89494e08e51836",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/WindRain_07.ogg",
+    "bytes": 1278630,
+    "sha256": "0ba1e17f567f36dc0984bf77278830956df7172d49bdac22d1e4ce27a307e4f2",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/WindRain_07.ogg.meta",
+    "bytes": 488,
+    "sha256": "3220fdd54f4d725f8094d05d9b5783a305877eb12f788f410701b46e72c19880",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/WindRain_08.ogg",
+    "bytes": 1087782,
+    "sha256": "9888e72ae3f6f0055de893f946158a9cfb05fc3c70d49562ea494a9efacf4060",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/WindRain_08.ogg.meta",
+    "bytes": 488,
+    "sha256": "99d46d4ef4fd827a487ff43a0fe9d51991329c8302ade639d515660012d61572",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/WindRain_09.ogg",
+    "bytes": 1685233,
+    "sha256": "e6f88d60498a50d21355dc4e4aeaa295730861be4c2e449c06a985764a3797c2",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/WindRain_09.ogg.meta",
+    "bytes": 488,
+    "sha256": "27999af099964b5bd18ceffbf9170a7328aa3fb32c08f5fb62bc02d089ab69ce",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/WindRain_10.ogg",
+    "bytes": 870208,
+    "sha256": "5f75f66f5175a871d8702628293b9258964c8c47d281f6ebbb8dbc9f5c44c914",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/WindRain_10.ogg.meta",
+    "bytes": 488,
+    "sha256": "0c01bdae0eca0b3342958bdc63cec8ee5b7c70da0aac54f623b3ee4453c8da9a",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/WindRain_11.ogg",
+    "bytes": 920138,
+    "sha256": "1d1c15834bf4fdf403e33065ae4f6b87d361665a6d005ac0fd8d539dae4b8708",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/WindRain_11.ogg.meta",
+    "bytes": 488,
+    "sha256": "257405cc366ca07897cceed6eba2b16b9926a9ad6f247007c531d460f1e9177f",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/WindRain_12.ogg",
+    "bytes": 1128753,
+    "sha256": "769767076a3a4d7650a31c7ff8765b1e2a69ec1fc3e08ff0afce5e96b5449b63",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/WindRain_12.ogg.meta",
+    "bytes": 488,
+    "sha256": "f35230e6133f318a709e63b706ac45fa5b0d7dcc5fcd940c4397e6a78053a5f8",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/WindRain_13.ogg",
+    "bytes": 2473261,
+    "sha256": "d103b4b4d20d71f579f5a78bbc1a354467f6666d4d5b0b035a9f6ab2f4345bd7",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/WindRain_13.ogg.meta",
+    "bytes": 488,
+    "sha256": "02b672edfdd9e70cea0aee360cb09faafc7ddeb8728f2a944b203ed1f738d9dd",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/WindRain_14.ogg",
+    "bytes": 1380046,
+    "sha256": "b75a2b8be3506ef395433266ad0562f529750ff0f77790cbebb5e58b43902faa",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/WindRain_14.ogg.meta",
+    "bytes": 488,
+    "sha256": "56b930fd6517328cbd15f19d67f16da61a5bd69f95d756729286a2dde5f855fc",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/WindRain_15.ogg",
+    "bytes": 2578602,
+    "sha256": "8297b785fd10cb36d657353e5a8187947cba6defdad192c1564e8eb6ce2a1143",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/WindRain_15.ogg.meta",
+    "bytes": 488,
+    "sha256": "5f88ff6ee6138b057e754b5683a8d57b31edbc27e2d21a6ef5a240ac6ebfadd9",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/WindRain_16.ogg",
+    "bytes": 2553002,
+    "sha256": "7cbc6372dfbb1b87fa063f6c0a911bc796f493c582f89bdb103f74bed10a5d25",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/WindRain_16.ogg.meta",
+    "bytes": 488,
+    "sha256": "c78a3df4ddd038d0f5da70c4fdeb8f6c06c50ddd4ddd20a7355f2fc9b57442f4",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/WindRain_17.ogg",
+    "bytes": 1296938,
+    "sha256": "0c0dc3e389d747deaddbb18fbc2325abbbf2d3a5d906b35ce30f85f301425ff0",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/WindRain_17.ogg.meta",
+    "bytes": 488,
+    "sha256": "c511960629d145fb3246acfb473ad8f409f1a6ccdce324ca2f376da496ca4a53",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/WindRain_18.ogg",
+    "bytes": 887232,
+    "sha256": "7279a0c1980dabb652db789de1740a43bc892be4b9ad8e500d3eff6bd1f5b51e",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/WindRain_18.ogg.meta",
+    "bytes": 488,
+    "sha256": "b39cc5b258b0b783121234139d1f96847ebdd040131208f20c5f982a605105b2",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/WindRain_19.ogg",
+    "bytes": 1689288,
+    "sha256": "05a8a39f10ebc0fcb9134413717d0166b2535bd98d866c82399b394acf70b5bd",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/WindRain_19.ogg.meta",
+    "bytes": 488,
+    "sha256": "d5e8f83fc4dc9e29595fb1a8183838234f59927d1b2e906a4173a09d2978769e",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/WindRain_20.ogg",
+    "bytes": 1060325,
+    "sha256": "20c526178b741c50363883640530ff4667b3186f2da6f64cc17663673b1a447e",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/WindRain_20.ogg.meta",
+    "bytes": 488,
+    "sha256": "2e9c3cb1bcb11c56a5668b5c437856f5c24f5eb1dd4e57e8f7cfd3645c47c1bc",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/WindRain_base.ogg",
+    "bytes": 916048,
+    "sha256": "d078d394dae9f8f0b67999fa524610e2887e7c8e64371051a34b982657dce67e",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience/WindRain_base.ogg.meta",
+    "bytes": 488,
+    "sha256": "a656f34b39cd45e8d842a6a9b8b2498707b71d7f76b368beadac37f97b94bd47",
+    "git": "local-only"
+  },
+  {
+    "path": "Assets/Resources/IntegratedAmbience.meta",
+    "bytes": 172,
+    "sha256": "d51ad9178481f947114f087ea0fa4a5195a1aa422b1868519ca9eed00335f483",
+    "git": "local-only"
+  }
+]

@@ -1,6 +1,8 @@
 <!-- narrative-integration-audit-2026-11-12 -->
 
 <!-- daily-freeze-rc2 -->
+> **Build trên máy khác:** Xem [cách phục hồi asset HDR, mưa và âm thanh của RC2](Docs/automation-reports/DAILY_FREEZE_ASSET_HANDOFF.md).
+
 > **RC 12/11/2026.** Bản tổng hợp Unity/Windows đã có kết quả thử thật. Trạng thái RC PARTIAL và các lỗi còn lại ở báo cáo freeze. [Báo cáo Daily Freeze](Docs/automation-reports/DAILY_FREEZE_2026-11-12_FINAL_REPORT.md).
 
 > **Cập nhật kiểm toán sau PR #21 — 12/11/2026:** Chủ dự án xác nhận các nhánh tính năng đã được merge trên nhánh local; sẽ merge tài liệu tạm sau. Cloud chưa có SHA/build local nên chưa chứng nhận bản tổng hợp. Bảng PR ở phần5 bên dưới là snapshot nguồn đã công bố, không phủ nhận merge local.
