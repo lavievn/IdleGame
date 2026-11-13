@@ -100,6 +100,7 @@ namespace TuTienCore
         public CultivationCapacity Capacity {get{return session.Capacity;}}public CultivationStepFlow LastStepFlow {get{return session.LastStepFlow;}}
         public Guid Epoch {get{return session.Epoch;}}public Guid OwnerId {get{return session.OwnerId;}}
         public long TickCount {get;private set;}public double Density {get;private set;}
+        public double EnvironmentalQiPerSecond => Density*Profile.Rules.AbsorptionRate*Profile.Rules.AbsorptionEfficiency;
         double remainder,elapsed;string pendingNode,pendingConfigurationId;int pendingConfigurationVersion;long lastFrame=-1;string published;
         public double PendingSeconds {get{return remainder;}}public double ActiveSeconds {get{return elapsed;}}
         public double ProcessedSeconds {get{return elapsed-remainder;}}

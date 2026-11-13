@@ -6,6 +6,9 @@ using UnityEngine.UI;
 public partial class UIManager
 {
     Image cultivationTrack,cultivationFill;RectTransform cultivationUpgrade;
+    internal bool BlocksCultivationClock =>
+        (systemMenu != null && systemMenu.activeInHierarchy) ||
+        (exitConfirmPopup != null && exitConfirmPopup.activeInHierarchy);
     bool CultivationVisible {get {var g=GameForUI();return detailKind==1 && g!=null && g.Cultivation!=null;}}
     static string QiNumber(double n){return n.ToString("0.0#",CultureInfo.InvariantCulture);}
     string CultivationSummary(GameManager gm)
@@ -17,12 +20,12 @@ public partial class UIManager
         if(p.Rules.CapacityCatalog!=null){var cap=b.Capacity;var flow=b.LastStepFlow;
             rates="\nTrần hấp thu: "+QiNumber(cap.Absorption)+"/s · thực: "+QiNumber(flow.AbsorptionPerSecond)+"/s"+
                 "\nTrần luyện hóa: "+QiNumber(cap.Refinement)+"/s · thực: "+QiNumber(flow.RefinementPerSecond)+"/s";
-        }else rates="\nHấp thu: "+QiNumber(p.EnvironmentalQiPerSecond(h.worldMapId))+"/s · Luyện hóa: ≤"+QiNumber(p.Rules.RefinementRate)+"/s";
+        }else rates="\nHấp thu: "+QiNumber(b.EnvironmentalQiPerSecond)+"/s · Luyện hóa: ≤"+QiNumber(p.Rules.RefinementRate)+"/s";
         return (gm.IsDevelopmentTrial?"[DEV 0.1.5] ":p.IsProduction?"Tu luyện · ":(p.SaveVersion==1?"[PLAYTEST v":"[THỬ NGHIỆM v")+p.Version+"] ")+"Level "+h.currentLevel+" · EXP: "+h.currentExp+"/"+h.expToNextLevel+
             "\n"+p.RealmName(s.Foundation.ActualRealmId)+" · "+stage+
             "\nTu vi căn cơ: "+QiNumber(s.Foundation.Amount)+" / "+QiNumber(definition.Thresholds[3])+"\n"+
             "\nLinh khí dự trữ: "+QiNumber(s.Reserve.Amount)+
-            (p.IsProduction||gm.IsDevelopmentTrial?" · Qi map: "+QiNumber(p.EnvironmentalQiPerSecond(h.worldMapId))+"/s":" · Mật độ: "+QiNumber(p.Density(h.worldMapId)))+
+            (p.IsProduction||gm.IsDevelopmentTrial?" · Qi tại chỗ: "+QiNumber(b.EnvironmentalQiPerSecond)+"/s":" · Mật độ: "+QiNumber(b.Density))+
             rates+
             "\nLinh lực: "+QiNumber(s.Energy.Current)+" / "+QiNumber(p.Rules.EnergyMaximum(s.Injury.Severity))+
             "\nHuyết khóa · Điểm: "+h.statPoints+(p.Rules.CapacityCatalog!=null?" · thực = bước gần nhất":"")+"\nĐộ Kiếp: "+(gm.TribulationLockedReason==""?(gm.IsDevelopmentTrial?"Sẵn sàng":"[FIXTURE] sẵn sàng"):gm.TribulationLockedReason);

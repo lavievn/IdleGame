@@ -68,7 +68,9 @@ partial class MotionRegression
                 Check(b.Advance(h,1,.1,false,rich)==CultivationReason.None,"new map");
                 double total=b.Current.Foundation.Amount+b.Current.Reserve.Amount;
                 double expected=.04*.7+.1*Math.Min(b.Capacity.Absorption,p.EnvironmentalQiPerSecond(rich));
-                Check(Math.Abs(total-expected)<1e-9 && Math.Abs(b.ActiveSeconds-.14)<1e-9,"no pending lost or repriced");
+                Check(Math.Abs(total-expected)<1e-9 && Math.Abs(b.ActiveSeconds-.14)<1e-9 &&
+                    b.EnvironmentalQiPerSecond==p.EnvironmentalQiPerSecond(rich),
+                    "no pending lost or repriced; UI rate describes the active zone");
             }
         });
         Run("EXP normal awards preserve existing Level points and seeded growth",()=>{

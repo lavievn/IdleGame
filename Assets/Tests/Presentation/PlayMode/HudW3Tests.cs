@@ -288,10 +288,10 @@ namespace IdleGame.Tests.Presentation.PlayMode
                     var details=f.Own(new GameObject("Entry detail fixture",typeof(RectTransform)));
                     details.transform.SetParent(f.Root,false);S(f.UI,"damagePanel",details);
                     var label=C(f.UI,"MakeLabel",details.transform,"",Vector2.zero,new Vector2(300,200));S(f.UI,"damageText",label);
-                    C(f.UI,"OpenTextDetail",1,"old snapshot");C(f.UI,"SetPaused",true);
+                    C(f.UI,"OpenTextDetail",2,"old snapshot");C(f.UI,"SetPaused",true);
                     S(f.Game,"enteringGameplay",true);C(f.UI,"RefreshCombatHUDVisibility");
                     Assert.That(details.activeSelf,Is.False);Assert.That(Time.timeScale,Is.EqualTo(0));
-                    S(f.Game,"enteringGameplay",false);C(f.UI,"OpenTextDetail",1,"new snapshot");
+                    S(f.Game,"enteringGameplay",false);C(f.UI,"OpenTextDetail",2,"new snapshot");
                     Assert.That(details.activeSelf,Is.True);Assert.That((string)G(label,"text"),Does.Contain("new snapshot"));
                     Assert.That((string)G(label,"text"),Does.Not.Contain("old snapshot"));
                 }
@@ -345,7 +345,10 @@ namespace IdleGame.Tests.Presentation.PlayMode
                 var owner=new GameObject("HUD loot fixture");
                 try
                 {
-                    var loot=owner.AddComponent(R("LootDropPresentation"));var target=f.Card(0);
+                    var loot=owner.AddComponent(R("LootDropPresentation"));
+                    var button=f.Own(new GameObject("Owned inventory target",typeof(RectTransform)));
+                    var target=(RectTransform)button.transform;target.SetParent(f.Root,false);
+                    target.sizeDelta=new Vector2(80,30);
                     C(loot,"SetInventoryTarget",target);
                     Assert.That((Vector2)C(loot,"CollectionTarget"),Is.EqualTo(RectTransformUtility.WorldToScreenPoint(null,target.TransformPoint(target.rect.center))));
                     target.anchoredPosition+=new Vector2(-70,-20);

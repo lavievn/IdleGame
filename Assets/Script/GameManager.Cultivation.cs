@@ -53,12 +53,13 @@ public partial class GameManager
     void TickCultivation()
     {
         var binding=Cultivation;
-        if(HasTribulationLiability || binding==null || runtimeHeroData==null || !hasDeployed || enteringGameplay ||
+        if(HasTribulationLiability || binding==null || runtimeHeroData==null || !IsGameplayHUDVisible ||
             heroController==null || !heroController.IsDeployed || (combatManager!=null && combatManager.CurrentHeroCombatState.Data!=runtimeHeroData))return;
 #if DEVELOPMENT_BUILD && UNITY_STANDALONE_WIN && !UNITY_EDITOR
         long measured=WindowsDevelopmentAcceptanceV10.BeginAdvance();
 #endif
-        var result=binding.Advance(runtimeHeroData,Time.frameCount,Time.deltaTime,Time.timeScale==0f,CurrentQiSource(binding.Profile));
+        bool paused=Time.timeScale==0f || UIManager.Instance?.BlocksCultivationClock==true;
+        var result=binding.Advance(runtimeHeroData,Time.frameCount,Time.deltaTime,paused,CurrentQiSource(binding.Profile));
 #if DEVELOPMENT_BUILD && UNITY_STANDALONE_WIN && !UNITY_EDITOR
         WindowsDevelopmentAcceptanceV10.EndAdvance(measured);
 #endif
