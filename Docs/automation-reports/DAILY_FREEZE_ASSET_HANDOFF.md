@@ -33,4 +33,10 @@ GitHub công khai chứa code, manifest và công cụ xác minh. Gói nguồn A
 
 Trên máy build gốc, hai ZIP và `sha256.json` nằm tại `D:\IdleGame\Builds\DailyFreeze_2026-11-12\CrossMachineHandoff`. Bản Windows được đóng gói từ chính RC2 đã nghiệm thu. Gói chỉ chứa các tệp chạy và launcher, không kèm hồ sơ thử, Save hoặc log.
 
+## Kiểm tra gói bàn giao
+
+- Phục hồi đủ 478 tệp vào thư mục thử trống. Lượt xác minh tiếp theo khớp SHA-256 của toàn bộ tệp.
+- Giải nén ZIP Windows vào đường dẫn mới có dấu cách. Launcher mở tới trạng thái sẵn sàng chơi và chuyển Save sang hồ sơ thử trong thư mục giải nén.
+- Smoke từ bản đã giải nén ghi 14 kiểm tra đạt, gồm bốn pha HDR, Rain Maker 2D, chuyển map và BGM. Lượt chạy thoát với `UnityPlayer.dll` `0xc0000005` sau khi ghi kết quả. Thao tác chuột/phím thật và nghe ambience qua loa chưa được thử trong lượt đóng gói này.
+
 Các giới hạn nghiệm thu RC2 nằm trong [báo cáo Daily Freeze](DAILY_FREEZE_2026-11-12_FINAL_REPORT.md).
