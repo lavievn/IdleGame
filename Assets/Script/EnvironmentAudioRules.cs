@@ -4,7 +4,7 @@ using System.Collections.Generic;
 internal enum AudioFamily { Coast, Lodges, Meadow, Morning, Night, Pebble, Primeval, Rain, Thunder, WindRain }
 internal enum AudioVariant { Default, Beach, Wave, Wind, Rain, Storm, Cricket, LightRain }
 internal enum AudioWeather { Dry, Rain, Storm }
-internal enum AudioMap { Unassigned, Coast, Lodges, Meadow, ForestMountain }
+internal enum AudioMap { Unassigned, Coast, Lodges, Meadow, Forest, Mountain }
 internal enum AudioLayer { Coast, CoastEvent, CoastWeather, Lodges, Meadow, MeadowWeather,
     Morning, Night, Pebble, Primeval, Rain, Thunder, WindRain }
 
@@ -98,8 +98,9 @@ internal static class EnvironmentAudioRules
             case AudioFamily.Lodges: return map == AudioMap.Lodges;
             case AudioFamily.Meadow: return map == AudioMap.Meadow &&
                 (variant != AudioVariant.Rain && variant != AudioVariant.LightRain || weather == AudioWeather.Rain);
-            case AudioFamily.Morning: return map == AudioMap.ForestMountain && morning;
-            case AudioFamily.Primeval: return map == AudioMap.ForestMountain && !night && weather == AudioWeather.Dry;
+            case AudioFamily.Morning: return map == AudioMap.Forest && morning && weather == AudioWeather.Dry;
+            case AudioFamily.Primeval: return (map == AudioMap.Forest || map == AudioMap.Mountain) &&
+                !night && weather == AudioWeather.Dry;
             case AudioFamily.Night: return night && weather == AudioWeather.Dry;
             default: return weather != AudioWeather.Dry;
         }
@@ -173,7 +174,7 @@ internal sealed class EnvironmentAudioSchedule
             next[(int)AudioLayer.Thunder] = time + NextThunder(thunderInterval);
         Desired.Clear();
         if (!changed && (map != AudioMap.Meadow || time < next[(int)AudioLayer.Meadow]) &&
-            (map != AudioMap.ForestMountain || !morning || time < next[(int)AudioLayer.Morning]) &&
+            (map != AudioMap.Forest || !morning || weather != AudioWeather.Dry || time < next[(int)AudioLayer.Morning]) &&
             (map != AudioMap.Coast || time < next[(int)AudioLayer.CoastEvent]) &&
             (weather == AudioWeather.Dry || time < next[(int)AudioLayer.Thunder]))
         {

@@ -62,7 +62,8 @@ internal sealed class EnvironmentAudioPlayer
         switch (terrain)
         {
             case TerrainType.Bien: return AudioMap.Coast;
-            case TerrainType.RungRam: case TerrainType.DoiNui: case TerrainType.CaoNguyen: return AudioMap.ForestMountain;
+            case TerrainType.RungRam: return AudioMap.Forest;
+            case TerrainType.DoiNui: case TerrainType.CaoNguyen: return AudioMap.Mountain;
             case TerrainType.DongBang: return AudioMap.Meadow;
             default: return AudioMap.Unassigned;
         }
@@ -202,7 +203,8 @@ internal sealed class EnvironmentAudioPlayer
                 WorldDayPhase phase = WorldDayPhase.Day, float hour = 12f)
             {
                 var frame = new WorldClimateFrame(phase, weather, hour, 0f, 0f, 0f, Color.white, Color.white);
-                TerrainType terrain = map == "coast" ? TerrainType.Bien : map == "TV-16" ? TerrainType.RungRam : TerrainType.HoNuoc;
+                TerrainType terrain = map == "coast" ? TerrainType.Bien :
+                    WorldMapCatalog.TryGet(map, out var node) ? node.Terrain : TerrainType.HoNuoc;
                 player.Update(host, true, true, terrain, map, visit,
                     false, frame, 1f, 1f, dt, 2f, settings.coastWeatherLoopLimit, settings.thunderInterval);
             }
@@ -273,16 +275,28 @@ internal sealed class EnvironmentAudioPlayer
                 "Dry Meadow waits for the wet source to finish fading");
 
             player.Stop();
-            Step(WorldWeather.HeavyRain, "TV-16", phase: WorldDayPhase.Dawn, hour: 5f);
-            Step(WorldWeather.HeavyRain, "TV-16", dt: 2f);
+            Step(WorldWeather.Clear, "TV-16", phase: WorldDayPhase.Dawn, hour: 5f);
+            Step(WorldWeather.Clear, "TV-16", dt: 2f);
             var firstMorning = player.voices.Find(v => v.Entry?.Family == AudioFamily.Morning)?.Entry;
             Check(firstMorning != null && player.ActiveLoops(AudioLayer.Morning) == 1, "One Morning source at dawn through noon");
-            Step(WorldWeather.HeavyRain, "TV-16", dt: 118f);
+            Step(WorldWeather.Clear, "TV-16", dt: 118f);
             Check(!Has(firstMorning.Name) && player.ActiveLoops(AudioLayer.Morning) == 1, "Morning rotation uses one source");
             Step(WorldWeather.HeavyRain, "TV-16", dt: .25f, hour: 13f);
-            Check(player.ActiveLoops(AudioLayer.Morning) == 0 && WetGlobal(), "Morning stops at 13:00 while global Rain remains");
+            Check(player.ActiveLoops(AudioLayer.Morning) == 0, "Morning stops at 13:00");
             Step(WorldWeather.HeavyRain, "TV-16", phase: WorldDayPhase.Night, hour: 22f);
             Check(player.ActiveLoops(AudioLayer.Morning) == 0 && WetGlobal(), "Night storm has no Morning source");
+            Step(WorldWeather.Clear, "TV-16", phase: WorldDayPhase.Dawn, hour: 6.5f);
+            Step(WorldWeather.Clear, "TV-16", dt: 2f, phase: WorldDayPhase.Dawn, hour: 6.5f);
+            Step(WorldWeather.LightRain, "TV-16", dt: 2f, phase: WorldDayPhase.Dawn, hour: 6.5f);
+            Check(player.ActiveLoops(AudioLayer.Morning) == 0 && WetGlobal(), "Forest Morning fades out in light rain");
+            Step(WorldWeather.HeavyRain, "TV-16", phase: WorldDayPhase.Dawn, hour: 6.5f);
+            Check(player.ActiveLoops(AudioLayer.Morning) == 0 && WetGlobal(), "Forest storm at dawn has only wet overlays");
+            Step(WorldWeather.Clear, "TV-21", dt: 2f, phase: WorldDayPhase.Dawn, hour: 6.5f);
+            Check(player.ActiveLoops(AudioLayer.Morning) == 0 && player.ActiveLoops(AudioLayer.Primeval) == 3,
+                "Huyền Ảnh Cốc dry dawn uses Primeval without Morning");
+            Step(WorldWeather.HeavyRain, "TV-21", dt: 2f, phase: WorldDayPhase.Dawn, hour: 6.5f);
+            Check(player.ActiveLoops(AudioLayer.Morning) == 0 && player.ActiveLoops(AudioLayer.Primeval) == 0 && WetGlobal(),
+                "Huyền Ảnh Cốc storm at dawn keeps global Rain");
         }
         finally { UnityEngine.Object.Destroy(host); }
     }

@@ -98,9 +98,14 @@ internal static class IntegratedPlaytestSmoke
         yield return Ready(game, ui);
         Click(ui, "ClimateTestHour");
         Click(ui, "ClimateTestHour");
-        yield return Wait(() => family.ActiveLoops(AudioLayer.Morning) == 1 && family.ActiveLoops(AudioLayer.Rain) == 1,
-            6, "Dawn forest storm adds one Morning source");
-        pass("Cô Hồn Lâm heavy rain keeps global Rain at night and adds one Morning loop at dawn.");
+        yield return null;
+        Check(family.ActiveLoops(AudioLayer.Morning) == 0 && family.ActiveLoops(AudioLayer.Rain) == 1,
+            "Dawn forest storm has global Rain and no Morning");
+        Click(ui, "ClimateTestWeather");
+        Click(ui, "ClimateTestWeather");
+        yield return Wait(() => family.ActiveLoops(AudioLayer.Morning) == 1 && family.ActiveLoops(AudioLayer.Rain) == 0,
+            6, "Clear dawn forest plays one Morning source");
+        pass("Cô Hồn Lâm keeps Morning silent in heavy rain and plays one loop at clear dawn.");
         Clear(game, combat);
         ui.SetPaused(false);
         var modifier = new CombatStatModifier { sourceId = "owned:movement-probe", stat = CombatStatId.MovementSpeed, flat = 900f };
