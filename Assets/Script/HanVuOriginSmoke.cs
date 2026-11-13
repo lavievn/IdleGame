@@ -165,7 +165,8 @@ internal static class HanVuOriginSmoke
     {
         var label = Field<TMPro.TextMeshProUGUI>(ui, "originLabel");
         label.ForceMeshUpdate();
-        Check(label.text == line.Speaker + "\n" + line.Text && !label.isTextOverflowing,
+        Check(label.text.StartsWith(line.Speaker + " · ", StringComparison.Ordinal) &&
+            label.text.EndsWith("\n" + line.Text, StringComparison.Ordinal) && !label.isTextOverflowing,
             "Expected visible dialogue line: " + line.Speaker + " " + line.Text +
             " | overflow=" + label.isTextOverflowing + " actual=" + label.text);
     }
@@ -446,6 +447,14 @@ internal static class HanVuOriginSmoke
         Click(ui, "HanVuAccept");
         Check(game.HeroData.originStory.herbalParticipation == HerbalParticipation.Accepted &&
             game.HeroData.originStory.herbWaves == 0, "Explicit acceptance grants no retroactive herbs");
+        yield return null;
+        Click(ui, "WorldMapButton");
+        yield return null;
+        Check(StoryOrigin.GuidedDestination(game.HeroData) == Origin.Forest &&
+            game.HeroData.worldMapId == Origin.Village, "Opening the map preserves the current village");
+        SelectPolygon(ui, Origin.Forest);
+        Check(game.HeroData.worldMapId == Origin.Village, "Selecting the marked forest does not travel");
+        Click(ui, "WorldMapClose");
         yield return null;
         Click(ui, "HanVuJournal");
         yield return null;
