@@ -80,8 +80,6 @@ internal static class Development015Smoke
             UnityEngine.Object.FindObjectsByType<HeavenlyTrialView>(FindObjectsInactive.Include).Length == 0 &&
             Array.FindAll(Resources.FindObjectsOfTypeAll<RenderTexture>(), x => x.name == "Heavenly Trial Sky Target").Length == 0,
             "Trial terrain, wall, video and RenderTexture cleaned");
-        var music = Field<AudioSource>(MapBgmController.Instance, "trialSource");
-        Check(music != null && !music.isPlaying, "Trial BGM stopped");
         Check(UnityEngine.Object.FindObjectsByType<HeavenlyLightningVisual>(FindObjectsInactive.Include).Length == 0,
             "Lightning and committed break effect cleaned");
     }
@@ -100,8 +98,23 @@ internal static class Development015Smoke
         Check(game.Cultivation.Current.Foundation.Amount < 1 && game.TribulationLockedReason == "Chưa tới bình cảnh",
             "New starts at Luyện Khí Sơ kỳ and locks the early trial");
 
-        // Exercise real Update and world gameplay with scaled time. No direct
-        // grants of cultivation, realm, EXP or reserve to reach the bottleneck.
+        // Prove passive progression from New Game through the real Update.
+        ui.SetPaused(false);
+        Time.timeScale = 6;
+        yield return Wait(() => game.Cultivation.Current.Foundation.Amount >= 2, 10, "passive cultivation");
+        ui.SetPaused(true);
+        pass("New Game gains cultivation through the live clock before any fixture grants.");
+
+        // The one-hour balance is covered by the domain simulation. Seed only
+        // an owned checkpoint so native verification can exercise the final
+        // transition, Gate, combat and Save without waiting an hour.
+        var candidate = UnityEngine.Object.Instantiate(game.HeroData);
+        using (var binding = new CultivationGameplayBinding(candidate, saves.CultivationProfile,
+            HeavenlyGateV13Fixtures.NearBottleneck(saves.CultivationProfile, remaining: 3))) { }
+        Check(saves.SaveGame(candidate, SaveSlot.ManualSave2), "Write owned near-bottleneck fixture");
+        UnityEngine.Object.Destroy(candidate);
+        Check(game.LoadAndContinue(SaveSlot.ManualSave2), "Load owned near-bottleneck fixture");
+        yield return Ready(game, ui);
         ui.SetPaused(false);
         Time.timeScale = 6;
         yield return Wait(() =>
@@ -110,10 +123,10 @@ internal static class Development015Smoke
             if (Time.timeScale > 0) Time.timeScale = 6;
             return game.Cultivation != null && game.TribulationLockedReason == "" &&
                 game.Cultivation.Current.Reserve.Amount >= 2;
-        }, 100, "natural cultivation to bottleneck and reserve");
+        }, 12, "natural cultivation from near-cap checkpoint");
         ui.SetPaused(true);
         Check(game.TryManualSave(SaveSlot.ManualSave2), "Owned bottleneck checkpoint");
-        pass("New → Luyện Khí Viên mãn through gameplay Update at 6× time scale, no cultivation/EXP grants.");
+        pass("Live cultivation reaches Luyện Khí Viên mãn from the owned near-cap checkpoint.");
         var families = windows
             ? new[] { WeaponFamily.Sword, WeaponFamily.Unarmed, WeaponFamily.Bow, WeaponFamily.Staff }
             : new[] { WeaponFamily.Sword, WeaponFamily.Unarmed };
@@ -122,12 +135,19 @@ internal static class Development015Smoke
             Check(game.LoadAndContinue(SaveSlot.ManualSave2), "Load bottleneck before " + weapon);
             yield return Ready(game, ui);
             GearForOutcome(game, combat, weapon);
+            Check(ExperienceProgress.TryRead(game.HeroData.experienceJson, out var initialBank), "Read initial EXP bank");
+            game.HeroData.AddExp(250);
+            string banked = game.HeroData.experienceJson;
+            Check(ExperienceProgress.TryRead(banked, out var bank) &&
+                ExperienceProgress.Amount(bank) == ExperienceProgress.Amount(initialBank) + 250,
+                "The live bottleneck banks an EXP award");
             var before = game.Cultivation.Current;
             var cap = game.Cultivation.Capacity;
             double reserve = before.Reserve.Amount;
             double loss = saves.TrialPenalty.Loss(game.Cultivation.Profile.Catalog, before);
             int level = game.HeroData.currentLevel;
-            float exp = game.HeroData.currentExp;
+            int exp = game.HeroData.currentExp;
+            int points = game.HeroData.statPoints;
             string map = game.HeroData.worldMapId;
             long hits = combat.AcceptedHeroHitCount, strikes = combat.TrialStrikeCount;
 
@@ -157,6 +177,7 @@ internal static class Development015Smoke
             var audio = Field<AudioSource>(MapBgmController.Instance, "trialSource");
             Check(video != null && video.isLooping && audio != null && audio.isPlaying && audio.loop,
                 "Active sky and encounter BGM " + weapon);
+            var trialTrack = audio.clip;
             yield return Wait(() => !combat.HeavenlyGateApproaching, 26, "real Gate approach " + weapon);
             Check(combat.GateExplorationDistance >= CombatManager.TrialGateApproachDistance && view.GroundScroll > 0,
                 "Hero walks to revealed wall on trial terrain");
@@ -166,7 +187,9 @@ internal static class Development015Smoke
                 yield return capture("015-trial-sword");
                 yield return Wait(() => game.CanRetryTribulationCommit, 25, "failed terminal write");
                 Check(activeHash == saves.TrialSnapshotHash(SaveSlot.AutoSave) &&
-                    game.Cultivation.Current.Foundation.Amount == before.Foundation.Amount, "Failed terminal write publishes nothing");
+                    game.Cultivation.Current.Foundation.Amount == before.Foundation.Amount &&
+                    game.HeroData.experienceJson == banked && game.HeroData.currentLevel == level,
+                    "Failed terminal write publishes neither realm nor EXP");
                 Check(game.RequestTribulation(), "Retry commits the same terminal candidate");
             }
             else yield return Wait(() => !game.HasTribulationLiability, 25, "automatic result " + weapon);
@@ -178,19 +201,44 @@ internal static class Development015Smoke
             Check(combat.AcceptedHeroHitCount > hits && receipt.appliedId == receipt.attemptId &&
                 receipt.outcome == (won ? "Success" : "Failure") && after.Foundation.ActualRealmId == expectedRealm &&
                 after.Foundation.Amount == (won ? 0 : before.Foundation.Amount - loss) &&
-                after.Reserve.Amount == reserve && game.HeroData.currentLevel == level &&
-                game.HeroData.currentExp == exp && game.HeroData.worldMapId == map &&
+                after.Reserve.Amount == reserve && game.HeroData.worldMapId == map &&
                 (won ? game.LastTribulationHeroHP > 0 : game.LastTribulationHeroHP == 0) &&
                 combat.CurrentHeroHP > 0, "Real terminal HP, preserved snapshot and respawn " + weapon);
-            if (won) Check(game.Cultivation.Capacity.Absorption > cap.Absorption &&
-                game.Cultivation.Capacity.Refinement > cap.Refinement, "Trúc Cơ Sơ kỳ capacity");
+            if (won)
+            {
+                var expectedExp = ExperienceProgress.Amount(bank) + exp;
+                int expectedLevel = level;
+                while (expectedLevel < 999 && expectedExp >= CombatBalance.RequiredExp(expectedLevel))
+                    expectedExp -= CombatBalance.RequiredExp(expectedLevel++);
+                Check(ExperienceProgress.TryRead(game.HeroData.experienceJson, out var released) &&
+                    ExperienceProgress.Amount(released) == 0 && released.lastReleaseAttempt == receipt.attemptId &&
+                    released.lastReleaseRealm == expectedRealm && game.HeroData.currentLevel == expectedLevel &&
+                    game.HeroData.currentExp == expectedExp && game.HeroData.statPoints == points + expectedLevel - level &&
+                    !game.RetryTribulationCommit(), "Successful commit releases the bank exactly once through Level progression");
+                Check(game.Cultivation.Capacity.Absorption > cap.Absorption &&
+                    game.Cultivation.Capacity.Refinement > cap.Refinement, "Trúc Cơ Sơ kỳ capacity");
+            }
+            else
+                Check(game.HeroData.experienceJson == banked && game.HeroData.currentLevel == level &&
+                    game.HeroData.currentExp == exp && game.HeroData.statPoints == points, "Failure preserves the bank");
 
             yield return Ready(game, ui);
             yield return Wait(() => UnityEngine.Object.FindObjectsByType<HeavenlyLightningVisual>(FindObjectsInactive.Include).Length == 0,
                 5, "visual cleanup");
+            yield return Wait(() => Array.TrueForAll(MapBgmController.Instance.GetComponents<AudioSource>(),
+                source => !source.isPlaying || source.clip != trialTrack), 8, "trial BGM fade-out");
             CheckCleanup(combat);
             if (weapon == WeaponFamily.Sword)
             {
+                string released = game.HeroData.experienceJson;
+                int releasedLevel = game.HeroData.currentLevel;
+                int releasedExp = game.HeroData.currentExp;
+                int releasedPoints = game.HeroData.statPoints;
+                Check(game.LoadAndContinue(SaveSlot.AutoSave), "Reload the durable successful terminal");
+                yield return Ready(game, ui);
+                Check(game.HeroData.experienceJson == released && game.HeroData.currentLevel == releasedLevel &&
+                    game.HeroData.currentExp == releasedExp && game.HeroData.statPoints == releasedPoints,
+                    "Loading the successful terminal does not release or roll growth again");
                 Check(game.TryManualSave(SaveSlot.ManualSave1), "Persist successful terminal for fresh process");
                 ui.OpenHeroStats();
                 ui.RefreshCharacterProgression();

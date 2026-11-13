@@ -45,13 +45,22 @@ namespace TuTienCore
             {
                 if(depth>32)throw new FormatException();White();if(i>=s.Length)throw new FormatException();char c=s[i];
                 if(c=='{'){Object(depth);return;}if(c=='"'){String();return;}
-                if(c=='['){i++;White();if(i<s.Length && s[i]==']'){i++;return;}while(true){Value(depth+1);White();if(i<s.Length && s[i]==']'){i++;return;}Need(',');}}
+                if(c=='['){Array(depth,null);return;}
                 foreach(string word in new[]{"true","false","null"})if(i+word.Length<=s.Length && s.Substring(i,word.Length)==word){i+=word.Length;return;}
                 int begin=i;if(c=='-')i++;if(i>=s.Length)throw new FormatException();
                 if(s[i]=='0')i++;else {if(s[i]<'1' || s[i]>'9')throw new FormatException();while(i<s.Length && char.IsDigit(s[i]))i++;}
                 if(i<s.Length && s[i]=='.'){i++;int n=i;while(i<s.Length && char.IsDigit(s[i]))i++;if(n==i)throw new FormatException();}
                 if(i<s.Length && (s[i]=='e' || s[i]=='E')){i++;if(i<s.Length && (s[i]=='+' || s[i]=='-'))i++;int n=i;while(i<s.Length && char.IsDigit(s[i]))i++;if(n==i)throw new FormatException();}
                 if(begin==i)throw new FormatException();
+            }
+            public void Array(int depth,List<string> values)
+            {
+                Need('[');White();if(i<s.Length && s[i]==']'){i++;return;}
+                while(true)
+                {
+                    White();int start=i;Value(depth+1);values?.Add(s.Substring(start,i-start));White();
+                    if(i<s.Length && s[i]==']'){i++;return;}Need(',');
+                }
             }
             public void End(){White();if(i!=s.Length)throw new FormatException("Trailing JSON data.");}
         }
@@ -63,5 +72,11 @@ namespace TuTienCore
         }
         public static bool TryString(string token,out string text)
         {text=null;try{var r=new Reader(token);text=r.String();r.End();return true;}catch(FormatException){return false;}catch(OverflowException){return false;}}
+        public static bool TryArray(string token,out List<string> values)
+        {
+            values=new List<string>();
+            try{var reader=new Reader(token);reader.Array(0,values);reader.End();return true;}
+            catch(Exception e) when(e is FormatException || e is OverflowException){values=null;return false;}
+        }
     }
 }

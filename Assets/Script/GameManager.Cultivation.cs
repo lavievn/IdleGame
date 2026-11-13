@@ -58,11 +58,24 @@ public partial class GameManager
 #if DEVELOPMENT_BUILD && UNITY_STANDALONE_WIN && !UNITY_EDITOR
         long measured=WindowsDevelopmentAcceptanceV10.BeginAdvance();
 #endif
-        var result=binding.Advance(runtimeHeroData,Time.frameCount,Time.deltaTime,Time.timeScale==0f,runtimeHeroData.worldMapId);
+        var result=binding.Advance(runtimeHeroData,Time.frameCount,Time.deltaTime,Time.timeScale==0f,CurrentQiSource(binding.Profile));
 #if DEVELOPMENT_BUILD && UNITY_STANDALONE_WIN && !UNITY_EDITOR
         WindowsDevelopmentAcceptanceV10.EndAdvance(measured);
 #endif
         if(result!=CultivationReason.None && result!=CultivationReason.Paused && result!=CultivationReason.InvalidDelta)
             Debug.LogWarning("[Cultivation] Tick rejected: "+result);
+    }
+
+    string CurrentQiSource(CultivationPlaytestProfile profile)
+    {
+        string mapId=runtimeHeroData.worldMapId;
+        if(!profile.HasQiZones)return mapId;
+        if(StoryOrigin.IsSafe(runtimeHeroData))return profile.QiSourceAt(mapId,.5);
+        var space=environmentManager!=null?environmentManager:EnvironmentManager.Instance;
+        if(space==null || space.BattleArea==null || heroController.heroRect==null)return profile.QiSourceAt(mapId,.5);
+        Rect area=space.BattleArea.rect;
+        if(area.height<=0)return profile.QiSourceAt(mapId,.5);
+        float feet=space.Position(heroController.heroRect).y;
+        return profile.QiSourceAt(mapId,Mathf.Clamp01((feet-area.yMin)/area.height));
     }
 }

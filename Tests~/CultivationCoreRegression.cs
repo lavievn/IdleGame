@@ -13,8 +13,8 @@ partial class MotionRegression
             new CultivationRealmDefinition("fixture:next",4,thresholds,true,new[]{7,8,9,10})},out catalog,out reason),"fixture-only catalog "+reason);
         return catalog;
     }
-    static CultivationRules CultivationFixtureRules(double absorb=1,double refine=10,double efficiency=1,double bloodRate=0,double debt=.1)
-    {return new CultivationRules(60,absorb,1,refine,efficiency,100,1,1,bloodRate,debt,2,.001,.002,10,BloodCapacityOverflowPolicy.HoldExistingStopAccumulation);}
+    static CultivationRules CultivationFixtureRules(double absorb=1,double refine=10,double efficiency=1,double bloodRate=0,double debt=.1,double chargeDuration=30)
+    {return new CultivationRules(60,absorb,1,refine,efficiency,100,1,1,bloodRate,debt,2,.001,.002,10,BloodCapacityOverflowPolicy.HoldExistingStopAccumulation,null,chargeDuration);}
     static CultivationSession CultivationFixture(double foundation=0,double reserve=0,int charges=0,double injury=0,string realm="fixture:kim-dan",CultivationRules rules=null,CultivationRealmEvaluator catalog=null)
     {return new CultivationSession(Guid.NewGuid(),Guid.NewGuid(),catalog??CultivationCatalog(),rules??CultivationFixtureRules(),
         new CultivationSnapshot(new CultivationFoundation(realm,foundation),new UnrefinedQiReserve(reserve),new SpiritualEnergy(0),new BloodEssenceState(charges,0),new FoundationInjuryState(injury)));}

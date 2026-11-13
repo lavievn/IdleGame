@@ -100,8 +100,14 @@ internal static class Development016Smoke
         game.OnNewGameClicked();
         game.OnConfirmResetClicked();
         yield return Ready(game, ui);
+        if(StoryOrigin.IsSafe(game.HeroData))
+        {
+            Check(game.TryTravelToWorldMap(StoryOrigin.HanVu.Forest),"Leave the safe village before combat checks");
+            yield return Ready(game,ui);
+        }
         var actor = combat.CurrentHeroCombatState;
         var progress = game.HeroData.combatSkills;
+        Check(game.HeroData.mastery.weapons.Count==0 && game.HeroData.mastery.skills.Count==0, "New Mastery starts empty");
         Check(actor.CurrentMana == 100 && actor.MaxMana == 100 && progress.queue.Count == 0, "New Mana and empty queue");
         Click(ui, "WeaponSkillsButton");
         Click(ui, "SkillGrantDev");
@@ -129,6 +135,8 @@ internal static class Development016Smoke
         ui.SetPaused(true);
         Check(locked.currentHP < TestHP && enemies.FindAll(x => x.currentHP < TestHP).Count == 1 && combat.AcceptedHeroHitCount == hits+1 &&
             combat.WeaponSkillReleases == skills && actor.CurrentMana == 100, "Common Staff single-target without Mana");
+        Check(MasteryFoundation.Units(game.HeroData.mastery,MasteryExecutionKind.BasicWeapon,MasteryFoundation.WeaponId(WeaponFamily.Staff))==1 &&
+            game.HeroData.mastery.skills.Count==0, "Staff release counts once, without skill Mastery");
         pass("Common Staff basic is one accepted magical hit; no extra effect, learned leak or Mana spend.");
 
         Equip(game, EquipmentFoundation.SkillSampleIds[0]);
@@ -177,6 +185,9 @@ internal static class Development016Smoke
         ui.SetPaused(true);
         Check(combat.LastWeaponSkill == WeaponSkillRegistry.Volley && combat.VolleyProjectiles == arrows+3 &&
             combat.AcceptedHeroHitCount == hits+3 && enemies[2].currentHP == TestHP, "Exactly three aimed front shots");
+        Check(MasteryFoundation.Units(game.HeroData.mastery,MasteryExecutionKind.Skill,WeaponSkillRegistry.Thrust)==1 &&
+            MasteryFoundation.Units(game.HeroData.mastery,MasteryExecutionKind.Skill,WeaponSkillRegistry.Volley)==1,
+            "Sword AoE and three-arrow Bow each award one skill unit");
         pass("Bow sequence fires three arrows; moving the eligible targets beyond old collision radius still hits, rear target untouched.");
 
         Equip(game, EquipmentFoundation.SkillSampleIds[2]);
@@ -230,6 +241,7 @@ internal static class Development016Smoke
         Check(actor.CurrentHP == hpBefore, "No natural HP regeneration in combat");
         progress.cooldowns.Add(new CombatSkillCooldown { id = WeaponSkillRegistry.Fireball, seconds = 3.5f });
         string snapshot = Snapshot(progress);
+        string mastery = JsonUtility.ToJson(game.HeroData.mastery);
         yield return new WaitForSecondsRealtime(.25f);
         Check(Snapshot(progress) == snapshot, "Pause cannot advance cooldown or resources");
         ui.ToggleSystemMenu();
@@ -241,8 +253,9 @@ internal static class Development016Smoke
         Check(game.TryManualSave(SaveSlot.ManualSave1) && game.LoadAndContinue(SaveSlot.ManualSave1) &&
             Snapshot(game.HeroData.combatSkills) == snapshot, "Save and immediate Load retain ordered queue, cursor, Mana, HP and cooldown");
         yield return Ready(game, ui);
+        Check(JsonUtility.ToJson(game.HeroData.mastery)==mastery,"Manual Save/Load preserves Mastery exactly");
         Check(CultivationSaveJson.TryObject(JsonUtility.ToJson(game.HeroData), out var fields, out _) &&
-            fields.Remove("combatSkills"), "Prepare a pre-0.1.6 owned snapshot");
+            fields.Remove("combatSkills") && fields.Remove("mastery"), "Prepare a legacy owned snapshot");
         var legacyJson = new System.Text.StringBuilder("{");
         foreach (var field in fields)
         {
@@ -252,7 +265,8 @@ internal static class Development016Smoke
         File.WriteAllText(Path.Combine(saves.SaveDirectory, "ManualSave2.json"), legacyJson.Append('}').ToString());
         var oldHero = UnityEngine.Object.Instantiate(game.HeroData);
         Check(saves.LoadGame(oldHero, SaveSlot.ManualSave2) && oldHero.combatSkills.mana == 100 &&
-            oldHero.combatSkills.health == -1 && oldHero.combatSkills.queue.Count == 0,
+            oldHero.combatSkills.health == -1 && oldHero.combatSkills.queue.Count == 0 &&
+            oldHero.mastery.skills.Count==0 && oldHero.mastery.weapons.Count==0,
             "Real legacy load initializes absent component without inheriting runtime data");
         UnityEngine.Object.Destroy(oldHero);
         progress = game.HeroData.combatSkills;
@@ -264,6 +278,12 @@ internal static class Development016Smoke
         game.OnRetryClicked();
         Check(actor.CurrentHP == actor.MaxHP && actor.CurrentMana == mana, "Explicit Retry revives HP without refilling Mana");
         yield return Ready(game, ui);
+        Check(JsonUtility.ToJson(game.HeroData.mastery)==mastery,"Death, Load and Retry preserve Mastery without an award");
+        if(!game.HeroData.worldMapCleared.Contains(game.HeroData.worldMapId))
+            game.HeroData.worldMapCleared.Add(game.HeroData.worldMapId); // Owned return-route fixture.
+        Check(game.TryTravelToWorldMap(StoryOrigin.HanVu.Village),"Travel with Mastery");
+        yield return Ready(game,ui);
+        Check(JsonUtility.ToJson(game.HeroData.mastery)==mastery,"Travel preserves Mastery without an award");
         pass("Canonical regeneration, pause, Save/Load and explicit Retry preserve the combat resources contract.");
 
         Equip(game, EquipmentFoundation.SkillSampleIds[0]);
@@ -272,7 +292,7 @@ internal static class Development016Smoke
             stat = CombatStatId.Attack, flat = 100 });
         var profile = saves.CultivationProfile;
         using (var binding = new CultivationGameplayBinding(candidate, profile,
-            HeavenlyGateV13Fixtures.Session(profile, 180, 7))) { }
+            HeavenlyGateV13Fixtures.NearBottleneck(profile))) { }
         Check(saves.SaveGame(candidate, SaveSlot.ManualSave2), "Owned gate source snapshot");
         UnityEngine.Object.Destroy(candidate);
         Check(game.LoadAndContinue(SaveSlot.ManualSave2), "Load gate source");

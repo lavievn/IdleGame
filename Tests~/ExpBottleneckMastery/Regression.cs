@@ -26,6 +26,51 @@ partial class MotionRegression
 
     static partial void ExpMasteryTests()
     {
+        Run("DEV environmental Qi zones are deterministic and a standard Hàn Vụ start reaches cap in 60 active minutes",()=>{
+            var p=ZonedDevelopmentProfile();
+            const string start="TV-20";
+            string thin=p.QiSourceAt(start,.1),rich=p.QiSourceAt(start,.9);
+            Check(p.QiSourceAt(start,.5)==start && thin!=rich &&
+                p.QiSourceAt(start,.249)==thin && p.QiSourceAt(start,.25)==start &&
+                p.QiSourceAt(start,.75)==rich && p.QiSourceAt(start,.74)==start &&
+                Math.Abs(p.EnvironmentalQiPerSecond(thin)-.7)<1e-9 &&
+                p.EnvironmentalQiPerSecond(start)==1 && Math.Abs(p.EnvironmentalQiPerSecond(rich)-1.35)<1e-9,
+                "configured density and edges");
+            var h=HeroAt(1);
+            using(var b=new CultivationGameplayBinding(h,p,CultivationGameplayState.New(p)))
+            {
+                for(int i=1;i<=36001;i++)
+                {
+                    Check(b.Advance(h,i,.1,false,start)==CultivationReason.None,"active frame");
+                    if(i==9001 || i==21001)
+                        Check(Math.Abs(b.Current.Foundation.Amount-i*.1)<1e-7,"minor realm boundaries");
+                    if(i==35999)Check(!p.Catalog.Evaluate(p.StartingRealm,b.Current.Foundation.Amount).AtBottleneck,"below cap before an hour");
+                }
+                Check(Math.Abs(b.ActiveSeconds-3600)<.11 &&
+                    p.Catalog.Evaluate(p.StartingRealm,b.Current.Foundation.Amount).AtBottleneck &&
+                    h.currentLevel==1 && h.currentExp==0 && Bank(h)==0,"cap within one step, no combat EXP");
+                Console.WriteLine("  Hàn Vụ DEV: "+b.ActiveSeconds.ToString("F1")+" active s, foundation "+b.Current.Foundation.Amount+", 1 Qi/s standard");
+            }
+        });
+        Run("DEV Qi settles old band after Save/Load and Travel and pauses without granting",()=>{
+            var p=ZonedDevelopmentProfile();
+            var h=HeroAt(1);
+            string thin=p.QiSourceAt("TV-20",.1),rich=p.QiSourceAt("TV-16",.9);
+            using(var b=new CultivationGameplayBinding(h,p,CultivationGameplayState.New(p)))
+            {
+                Check(b.Advance(h,1,.04,false,thin)==CultivationReason.None && b.PendingSeconds==.04,"pending");
+                Check(b.Advance(h,2,.1,true,rich)==CultivationReason.Paused && b.ActiveSeconds==.04,"pause");
+                Check(b.Advance(h,3,.1,false,"TV-20#qi-invalid")==CultivationReason.InvalidValue,"invalid source");
+            }
+            Check(CultivationGameplayState.TryRestore(h.cultivationJson,p,out var saved,out var why),why);
+            using(var b=new CultivationGameplayBinding(h,p,saved))
+            {
+                Check(b.Advance(h,1,.1,false,rich)==CultivationReason.None,"new map");
+                double total=b.Current.Foundation.Amount+b.Current.Reserve.Amount;
+                double expected=.04*.7+.1*Math.Min(b.Capacity.Absorption,p.EnvironmentalQiPerSecond(rich));
+                Check(Math.Abs(total-expected)<1e-9 && Math.Abs(b.ActiveSeconds-.14)<1e-9,"no pending lost or repriced");
+            }
+        });
         Run("EXP normal awards preserve existing Level points and seeded growth",()=>{
             var h=HeroAt(1);UnityEngine.Random.InitState(325);int expected=UnityEngine.Random.Range(50,101);
             UnityEngine.Random.InitState(325);Check(h.AddExp(100) && h.currentLevel==2 && h.currentExp==0 &&
@@ -83,6 +128,51 @@ partial class MotionRegression
             Check(s.ApplyGatePenalty(s.OwnerId,s.Epoch,Guid.NewGuid(),0,b.Profile.StartingRealm,HeavenlyGateV13Fixtures.Penalty())==CultivationReason.None,"failure");
             h.AddExp(100);Check(h.currentLevel==2 && h.currentExp==0 && Bank(h)==300,"old bank intact; new outside-cap EXP normal");b.Dispose();
         });
+        Run("EXP releases once per successive configured realm with a reload between trials", () => {
+            var definition = new CultivationPlaytestDefinition {
+                schemaVersion = 3, version = 1, id = "balance:successive-gates-test", title = "Successive gates fixture",
+                startingRealm = "fixture:first", maximumFrameSeconds = .5, stepSeconds = .1,
+                fallbackDensity = 1, absorptionRate = 1, absorptionEfficiency = 1, refinementRate = 1,
+                refinementEfficiency = 1, maximumEnergy = 100, recoveryRate = 1,
+                realms = new[] {
+                    new CultivationPlaytestRealm { id = "fixture:first", name = "First", tier = 0, thresholds = new double[] {0, 1, 2, 3}, successor = "fixture:second" },
+                    new CultivationPlaytestRealm { id = "fixture:second", name = "Second", tier = 1, thresholds = new double[] {0, 1, 2, 3}, successor = "fixture:third" },
+                    new CultivationPlaytestRealm { id = "fixture:third", name = "Third", tier = 2, thresholds = new double[] {0, 1, 2, 3}, successor = "" }
+                },
+                qiSources = new CultivationQiSource[0]
+            };
+            Check(CultivationPlaytestProfile.TryCreate(definition, _ => true, out var profile, out var reason), reason);
+            var session = HeavenlyGateV13Fixtures.Session(profile, 3, 20);
+            var hero = HeroAt(1);
+            Guid previousAttempt = Guid.Empty;
+            foreach (var target in new[] { "fixture:second", "fixture:third" })
+            {
+                var gate = HeavenlyGateV13Fixtures.Configuration();
+                gate.cultivationConfiguration = profile.Id;
+                gate.sourceRealm = session.Current.Foundation.ActualRealmId;
+                gate.targetRealm = target;
+                using (var binding = new CultivationGameplayBinding(hero, profile, session, gate))
+                {
+                    int level = hero.currentLevel;
+                    hero.AddExp(CombatBalance.RequiredExp(level));
+                    Check(hero.currentLevel == level && Bank(hero) == CombatBalance.RequiredExp(level), "Bank isolated per attempt");
+                    if (previousAttempt != Guid.Empty)
+                        Check(ExperienceProgress.ApplyBreakthroughSuccess(hero, session, profile, gate, previousAttempt,
+                            session.RealmRevision) == CultivationReason.DuplicateCommand, "Earlier receipt cannot release the next bank");
+                    var attempt = Guid.NewGuid();
+                    Check(ExperienceProgress.ApplyBreakthroughSuccess(hero, session, profile, gate, attempt,
+                        session.RealmRevision) == CultivationReason.None, "Accepted configured success");
+                    Check(hero.currentLevel == level + 1 && hero.currentExp == 0 && Bank(hero) == 0 &&
+                        Xp(hero).lastReleaseAttempt == attempt.ToString("N") && session.Current.Foundation.ActualRealmId == target,
+                        "Exactly one Level and one actual realm per success");
+                    previousAttempt = attempt;
+                }
+                Check(CultivationGameplayState.TryRestore(hero.cultivationJson, profile, out session, out reason), reason);
+                for (long tick = 0; tick < 40; tick++)
+                    Check(session.Tick(session.OwnerId, session.Epoch, tick, .1, false, 1) == CultivationReason.None, "Refine after reload");
+                hero.cultivationJson = CultivationGameplayState.Capture(session, profile);
+            }
+        });
         Run("EXP duplicate success and stale restored source cannot spend a bank again",()=>{
             var h=BankHero(out var s,out var b);h.AddExp(500);string source=h.cultivationJson;var id=Guid.NewGuid();
             Check(Release(h,s,id)==CultivationReason.None,"first release");int points=h.statPoints,growth=h.meleeGrowthBonus,level=h.currentLevel;
@@ -102,6 +192,22 @@ partial class MotionRegression
                 Check(Release(h,s,Guid.NewGuid(),variant==0?9:0)!=CultivationReason.None && s.Current==before &&
                     h.experienceJson==json && h.cultivationJson==cult && h.currentLevel==1 && h.statPoints==points && h.meleeGrowthBonus==growth,"atomic rejection "+variant);b.Dispose();
             }
+        });
+        Run("Nonpositive awards leave legacy and banked EXP snapshots untouched", () => {
+            var hero = BankHero(out var session, out var binding);
+            using (binding)
+            {
+                string before = hero.experienceJson;
+                hero.isDirty = false;
+                Check(!hero.AddExp(0) && !hero.AddExp(-1) && !hero.AddExp(int.MinValue) &&
+                    hero.experienceJson == before && hero.currentExp == 0 && !hero.isDirty &&
+                    session.Current.Reserve.Amount == 1234, "No mutation at the bottleneck");
+            }
+            var legacy = HeroAt(1);
+            legacy.currentExp = legacy.expToNextLevel;
+            legacy.isDirty = false;
+            Check(!legacy.AddExp(-100) && legacy.currentLevel == 1 && legacy.statPoints == 0 &&
+                legacy.experienceJson == "" && !legacy.isDirty, "No level-up from a rejected award");
         });
         Run("REGRESSION Level 999 conserves overflow and arbitrarily large banks exactly",()=>{
             var h=HeroAt(999);h.currentExp=h.expToNextLevel-1;h.AddExp(int.MaxValue);h.AddExp(int.MaxValue);
@@ -199,5 +305,41 @@ partial class MotionRegression
             Check(!r.TryAccept(h,cast,true) && !r.TryAccept(h,basic,true),"swap cancels captured identity");
             Check(r.TryAccept(h,Evidence(r,1,WeaponFamily.Bow),true),"new family execution only");
         });
+        Run("Mastery records one unit per committed use and persists independent weapon and skill counts",()=>{
+            var h=BankHero(out var s,out var b);EquipForMastery(h,EquipmentFoundation.SkillSampleIds[0]);
+            var receipts=new MasteryExecutionReceipts(h,Guid.NewGuid(),1,1,0);
+            var sword=Evidence(receipts,1,WeaponFamily.Sword);
+            var thrust=Evidence(receipts,2,WeaponFamily.Sword,WeaponSkillRegistry.Thrust);
+            Check(!receipts.TryRecord(h,sword,false) && receipts.TryRecord(h,sword,true) &&
+                !receipts.TryRecord(h,sword,true) && receipts.TryRecord(h,thrust,true) && !receipts.TryRecord(h,thrust,true),
+                "cancel and replay");
+            EquipForMastery(h,EquipmentFoundation.SkillSampleIds[1]);
+            Check(receipts.TryRecord(h,Evidence(receipts,3,WeaponFamily.Bow,WeaponSkillRegistry.Volley),true),"second skill");
+            Check(receipts.TryRecord(h,Evidence(receipts,4,WeaponFamily.Bow),true),"second weapon");
+            Check(MasteryFoundation.TryReadHeroJson("{\"mastery\":"+auditJson.Serialize(h.mastery)+"}",out var loaded) &&
+                loaded.weapons.Count==2 && loaded.skills.Count==2 &&
+                MasteryFoundation.Units(loaded,MasteryExecutionKind.Skill,WeaponSkillRegistry.Thrust)==1 &&
+                MasteryFoundation.Units(loaded,MasteryExecutionKind.Skill,WeaponSkillRegistry.Volley)==1 &&
+                MasteryFoundation.Units(loaded,MasteryExecutionKind.BasicWeapon,MasteryFoundation.WeaponId(WeaponFamily.Sword))==1 &&
+                MasteryFoundation.Units(loaded,MasteryExecutionKind.BasicWeapon,MasteryFoundation.WeaponId(WeaponFamily.Bow))==1 &&
+                h.currentLevel==1 && Bank(h)==0 && s.Current.Foundation.Amount==3600,"independent durable counts");
+            b.Dispose();
+        });
+        Run("Mastery legacy absence is empty and invalid payloads never silently become empty",()=>{
+            Check(MasteryFoundation.TryReadHeroJson("{}",out var legacy) && legacy.weapons.Count==0 && legacy.skills.Count==0,"legacy");
+            foreach(string json in new[]{"{\"mastery\":null}","{\"mastery\":{\"version\":2,\"weapons\":[],\"skills\":[]}}",
+                "{\"mastery\":{\"version\":1,\"weapons\":[{\"id\":\"weapon-family:sword\"}],\"skills\":[]}}",
+                "{\"mastery\":{\"version\":1,\"weapons\":[{\"id\":\"weapon-family:sword\",\"units\":9223372036854775808}],\"skills\":[]}}"})
+                Check(!MasteryFoundation.TryReadHeroJson(json,out _),"refused invalid or unsupported");
+            var saturated=new MasterySnapshot();
+            saturated.weapons.Add(new MasteryRecord{id=MasteryFoundation.WeaponId(WeaponFamily.Sword),units=long.MaxValue});
+            MasteryFoundation.Increment(saturated,MasteryExecutionKind.BasicWeapon,MasteryFoundation.WeaponId(WeaponFamily.Sword));
+            Check(saturated.weapons[0].units==long.MaxValue,"saturate instead of overflow");
+        });
     }
+
+    static CultivationPlaytestProfile ZonedDevelopmentProfile() => DevelopmentCultivation015.CreateProfile(
+        "domain-fixture", ReadAuditData<DevelopmentCultivation015.Balance>("DevelopmentCultivation015"),
+        ReadAuditData<CultivationProductionDefinition>("CultivationProductionV3").cultivation,
+        ReadAuditData<CultivationCapacityDefinition>("CultivationCapacityV1"),AuditProfile());
 }

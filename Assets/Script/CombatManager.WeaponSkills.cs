@@ -124,7 +124,7 @@ public partial class CombatManager
         actor.Data.isDirty = true;
         WeaponSkillReleases++;
         LastWeaponSkill = skill.Id;
-        ObserveMasteryExecution(actor, skill.Id);
+        ObserveMasteryExecution(actor, skill.Id, WeaponSkillReleases);
         gameManager?.UpdateEventLog("Thi triển " + skill.Name);
         actor.Controller.PlayAttackFeedback();
         switch (skill.Effect)

@@ -26,7 +26,8 @@ public static class DualProgressionV06Verifier
             result.checks.Add("Unity compiled all revised domain/transaction/transition/DTO types from Assembly-CSharp.");
             CultivationRealmEvaluator catalog;CultivationReason reason;
             Require(CultivationRealmEvaluator.TryCreate(new[]{new CultivationRealmDefinition("fixture:kim-dan",2,new[]{0d,300,600,1000},true,new[]{1,2,3,4},true)},out catalog,out reason),"Fixture catalog");
-            var rules=new CultivationRules(60,1,1,0,1,100,0,1,0,.1,2,.001,.002,10,BloodCapacityOverflowPolicy.HoldExistingStopAccumulation);
+            var rules=new CultivationRules(60,1,1,0,1,100,0,1,0,.1,2,.001,.002,10,
+                BloodCapacityOverflowPolicy.HoldExistingStopAccumulation,bloodChargeDurationSeconds:30);
             var owner=Guid.NewGuid();var oldEpoch=Guid.NewGuid();
             var source=new CultivationSession(owner,oldEpoch,catalog,rules,new CultivationSnapshot(new CultivationFoundation("fixture:kim-dan",1000),new UnrefinedQiReserve(123.5),new SpiritualEnergy(40),new BloodEssenceState(3,.25),new FoundationInjuryState(0)));
             var burn=Guid.NewGuid();double hp;Require(source.ActivateBlood(owner,oldEpoch,burn,20,100,out hp)==CultivationReason.None && hp==100,"Activation");
@@ -49,7 +50,9 @@ public static class DualProgressionV06Verifier
                 var invalid=new CultivationComponentDto();JsonUtility.FromJsonOverwrite(bad,invalid);
                 Require(slot.TryLoad(invalid,catalog,rules,"fixture:native-v1",owner,Guid.NewGuid())!=CultivationReason.None && slot.Current==stable,"Future/unknown/hidden/missing component rejects before swap");
             }
-            Require(!CultivationIntegrationGate.ProductionEnabled,"Production gate must stay closed");
+            Require(CultivationProductionConfiguration.TryLoad(out var production,out _,out _,out _) &&
+                production.Catalog.TryGet(production.StartingRealm,out var start) && !start.BloodUnlocked &&
+                production.Rules.BloodChargeDurationSeconds==0,"Production cultivation must leave Blood locked");
             result.checks.Add("Future/unknown/missing/hidden-liability JSON rejected before swap; no player Save or incomplete production component used.");
             Debug.Log("[DUAL V06] PASS "+root);
         }

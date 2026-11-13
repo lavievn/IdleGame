@@ -131,6 +131,7 @@ public partial class SaveManager
     public bool CommitTrialCandidate(EntityDataSO candidate,string expectedHash,out string reason)
     {
         reason=null;if(TrialConfiguration==null||!customSaveDirectoryRequested||candidate==null||!ExperienceProgress.TryRead(candidate.experienceJson,out _)||string.IsNullOrEmpty(candidate.tribulationJson)||candidate.combatSkills==null||!candidate.combatSkills.IsValid()||!ValidateTrial(candidate,out reason)||!ValidateCultivationComponent(candidate.cultivationJson)||!EquipmentFoundation.TryValidateSaveVersions(candidate,out reason))return false;
+        if(!MasteryFoundation.IsValid(candidate.mastery)){reason="Invalid Mastery snapshot";return false;}
         Action<string> fault=point=>{
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             if(developmentProfileLock==null&&FailNextTrialWrite==point){FailNextTrialWrite=null;throw new IOException("Owned trial fault "+point);}

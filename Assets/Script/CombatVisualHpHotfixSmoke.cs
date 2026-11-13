@@ -319,7 +319,7 @@ internal static class CombatVisualHpHotfixSmoke
         candidate.combatSkills.Add(WeaponSkillRegistry.Thrust);
         candidate.combatStatModifiers.Add(new CombatStatModifier {sourceId="owned:hotfix:gate",stat=CombatStatId.Attack,flat=120});
         var profile=saves.CultivationProfile;
-        using (var binding=new CultivationGameplayBinding(candidate,profile,HeavenlyGateV13Fixtures.Session(profile,180,7))) { }
+        using (var binding=new CultivationGameplayBinding(candidate,profile,HeavenlyGateV13Fixtures.NearBottleneck(profile))) { }
         Check(saves.SaveGame(candidate,SaveSlot.ManualSave2),"Owned Gate fixture");
         UnityEngine.Object.Destroy(candidate);
         Check(game.LoadAndContinue(SaveSlot.ManualSave2),"Load Gate fixture");

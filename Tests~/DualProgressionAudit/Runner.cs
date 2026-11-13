@@ -45,7 +45,7 @@ partial class MotionRegression
         DualProgressionAuditTests();
         ExpMasteryTests();
         Console.WriteLine("RESULT "+auditPassed+" PASS, "+auditFailed+" FAIL (production data APIs / UnityStub; no SaveManager or save I/O)");
-        Console.WriteLine("NOT TESTED: native Unity, SaveManager gameplay/I/O. Mastery awards remain unspecified; production successors/trials/Blood remain gated.");
+        Console.WriteLine("NOT TESTED by this runner: native Unity, SaveManager gameplay/I/O. Production successors/trials/Blood remain gated.");
         if(auditFailed>0)Environment.Exit(1);
     }
     static partial void ExpMasteryTests();

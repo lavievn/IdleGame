@@ -8,6 +8,24 @@ partial class MotionRegression
     {double hp;var id=Guid.NewGuid();Check(c.ActivateBlood(c.OwnerId,c.Epoch,id,20,100,out hp)==CultivationReason.None && hp==100,"fixture first burn/heal");return id;}
     static void BloodEssenceTests()
     {
+        Run("Blood duration must be configured and only explicit fixture duration is applied per charge",()=>{
+            var missing=CultivationFixture(1000,charges:1,rules:CultivationFixtureRules(chargeDuration:0));
+            var original=missing.Current;
+            Check(missing.ActivateBlood(missing.OwnerId,missing.Epoch,Guid.NewGuid(),20,100,out var hp)==CultivationReason.MissingPolicy &&
+                hp==20 && missing.Current==original,"unconfigured activation cannot spend or heal");
+            var pre=CultivationFixture(realm:"fixture:luyen-khi",rules:CultivationFixtureRules(bloodRate:1));
+            Check(pre.Tick(pre.OwnerId,pre.Epoch,0,5,false,0)==CultivationReason.None && pre.Current.Blood.Charges==0 &&
+                pre.ActivateBlood(pre.OwnerId,pre.Epoch,Guid.NewGuid(),20,100,out hp)==CultivationReason.Locked &&
+                hp==20,"earlier realm remains locked");
+            var c=CultivationFixture(1000,charges:2,rules:CultivationFixtureRules(refine:0,chargeDuration:8));
+            var id=ActivateFixtureBlood(c);
+            Check(c.Current.Burning.RemainingSeconds==8 && c.Tick(c.OwnerId,c.Epoch,0,3,false,0)==CultivationReason.None &&
+                c.ExtendBlood(c.OwnerId,c.Epoch,Guid.NewGuid(),id)==CultivationReason.None &&
+                c.Current.Burning.RemainingSeconds==13 && c.Current.Burning.TotalDebt==200,"extension adds configured duration and one debt");
+            Check(c.Tick(c.OwnerId,c.Epoch,1,13,false,0)==CultivationReason.None &&
+                c.Current.Burning.Status==BurningStatus.SettlementPending &&
+                c.SettleBlood(c.OwnerId,c.Epoch,id)==CultivationReason.None && c.Current.Foundation.Amount==800,"expiry pays once");
+        });
         Run("revised blood first activation requires owner charge alive HP strictly below30percent",()=>{
             var c=CultivationFixture(1000,charges:3);double hp;var before=c.Current;
             foreach(double current in new[]{30d,31,100,0,-1,double.NaN})Check(c.ActivateBlood(c.OwnerId,c.Epoch,Guid.NewGuid(),current,100,out hp)==CultivationReason.HpCondition && c.Current==before,"first HP condition");

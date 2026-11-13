@@ -13,6 +13,7 @@ public class EntityDataSO : ScriptableObject
     public int realmEntryLevel = 1;
     // Versioned component JSON: empty is deliberately absent. Avoids Unity inline-class null/template inheritance.
     public CombatSkillProgress combatSkills = new CombatSkillProgress();
+    public MasterySnapshot mastery = new MasterySnapshot();
     public string tribulationJson=""; // Independent versioned component; empty on historical/production Heroes.
     public string cultivationJson = "";
     public OriginStoryState originStory;
@@ -293,6 +294,7 @@ public class EntityDataSO : ScriptableObject
 
     public bool AddExp(int amount)
     {
+        if (amount <= 0) return false;
         if (!ExperienceProgress.TryRead(experienceJson, out var xp) || !CanApplyExperience())
         {
             Debug.LogWarning("[EXP] Invalid experience state; award rejected without mutation.");
@@ -300,12 +302,12 @@ public class EntityDataSO : ScriptableObject
         }
         if (experienceBinding != null && experienceBinding.ShouldBankExperience(this))
         {
-            xp.reserve = (ExperienceProgress.Amount(xp) + System.Math.Max(0, amount)).ToString(System.Globalization.CultureInfo.InvariantCulture);
+            xp.reserve = (ExperienceProgress.Amount(xp) + amount).ToString(System.Globalization.CultureInfo.InvariantCulture);
             experienceJson = ExperienceProgress.Capture(xp);
             isDirty = true;
             return false;
         }
-        return ApplyExperience(System.Math.Max(0, amount), xp);
+        return ApplyExperience(amount, xp);
     }
 
     internal bool CanApplyExperience() => currentExp >= 0 && statPoints >= 0 &&

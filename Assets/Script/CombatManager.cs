@@ -69,12 +69,23 @@ public partial class CombatManager : MonoBehaviour
     public HeroCombatState CurrentHeroCombatState => primaryHeroState;
     MasteryExecutionReceipts masteryReceipts;
     long masterySequence;
+    long lastBasicMasteryRelease,lastSkillMasteryRelease;
     internal long MasteryExecutionObservations { get; private set; }
     internal MasteryExecutionEvidence LastMasteryExecution { get; private set; }
-    void ObserveMasteryExecution(HeroCombatState actor,string skillId)
+    void ObserveMasteryExecution(HeroCombatState actor,string skillId,long release)
     {
         if(actor!=primaryHeroState || !IsRegistered(actor) || !actor.CanFight ||
             !actor.Controller.UsesWeaponBasicAttack || Time.timeScale==0f)return;
+        if(skillId==null)
+        {
+            if(release<=lastBasicMasteryRelease)return;
+            lastBasicMasteryRelease=release;
+        }
+        else
+        {
+            if(release<=lastSkillMasteryRelease)return;
+            lastSkillMasteryRelease=release;
+        }
         int spawn=actor.Controller.SpawnVersion;
         if(masteryReceipts==null || !masteryReceipts.Matches(actor.Data,actor.LifeVersion,spawn,battleVersion))
         {
@@ -85,7 +96,7 @@ public partial class CombatManager : MonoBehaviour
         var evidence=new MasteryExecutionEvidence(masteryReceipts.Epoch,++masterySequence,actor.LifeVersion,spawn,battleVersion,
             skillId==null?MasteryExecutionKind.BasicWeapon:MasteryExecutionKind.Skill,
             WeaponBasicAttack.Family(WeaponBasicAttack.Equipped(actor.Data)),skillId);
-        if(!masteryReceipts.TryAccept(actor.Data,evidence,true))return;
+        if(!masteryReceipts.TryRecord(actor.Data,evidence,true))return;
         LastMasteryExecution=evidence;
         if(MasteryExecutionObservations<long.MaxValue)MasteryExecutionObservations++;
     }
@@ -698,7 +709,7 @@ public partial class CombatManager : MonoBehaviour
         hero.UpdateChargeBar(!basic && mode==AttackMode.RangedMagic,0f);
         hero.PlayAttackFeedback();
         impactRelease=++HeroReleaseCount;
-        ObserveMasteryExecution(actor, null);
+        ObserveMasteryExecution(actor, null, impactRelease);
         var trace=basic?SynergyMath.EvaluateBasicDamage(actor.Data,target.data,mode,Random.Range(.85f,1f)):
             RollDamageTrace(actor.Data,target.data,actor.WindupMode);
         if (mode==AttackMode.Melee)

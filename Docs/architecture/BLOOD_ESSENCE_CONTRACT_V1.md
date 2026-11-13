@@ -14,9 +14,9 @@ Khi settlement làm tụt tiểu cảnh giới, policy fixture `HoldExistingStop
 
 ## Kích hoạt và bổ sung
 
-`ActivateBlood(owner,epoch,attempt,currentHp,maxHp,out hpAfter)` chỉ thành công khi HP hữu hạn, sống, **0 < HP < 30% Max**, có charge, realm unlock, identity hợp lệ và không có Burning/pending cũ. Tiêu1 charge, trả HP đầy đúng một lần, tạo BurningTransaction30 giây. Host tương lai phải commit HP output và transaction cùng lifecycle; API thuần chưa điều khiển HP MainGame.
+`ActivateBlood(owner,epoch,attempt,currentHp,maxHp,out hpAfter)` chỉ thành công khi HP hữu hạn, sống, **0 < HP < 30% Max**, có charge, realm unlock, identity hợp lệ và không có Burning/pending cũ. Tiêu 1 charge, trả HP đầy đúng một lần và tạo transaction theo thời lượng cấu hình. Thiếu thời lượng trả `MissingPolicy`. Fixture V06 dùng 30 giây để kiểm thử. Host tương lai phải commit HP và transaction cùng lifecycle. API domain chưa điều khiển HP MainGame.
 
-`ExtendBlood(owner,epoch,command,burningSession)` là command riêng: cùng owner/epoch/session đang Active, còn charge. Mỗi lượt tiêu1, cộng30 giây vào remaining và thêm1 chi phí. Không áp HP threshold lại, không trả HP heal, không reset thời gian dư, không tăng tầng buff hoặc nhân modifier lần nữa. Duplicate command/session cũ bị reject.
+`ExtendBlood(owner,epoch,command,burningSession)` là command riêng cho cùng owner/epoch/session đang Active và còn charge. Mỗi lượt tiêu 1 charge, cộng thời lượng cấu hình vào thời gian còn lại và ghi thêm một khoản phí. Không áp HP threshold lại, không hồi HP, không tăng tầng buff. Duplicate command/session cũ bị từ chối.
 
 ActualRealm không đổi. `RealmTierFor(CombatAbility,true)` mới trả tier thực+1 khi Active. Breakthrough, PermanentLearning, Sect, MapEntry và ProgressionReward luôn dùng tier thực; ability không hỗ trợ forced execution cũng dùng tier thực. Đây là numeric eligibility fixture, không cấp successor/unlock/reward thật hoặc tạo ability Nguyên Anh.
 
@@ -33,7 +33,7 @@ Lần đầu chụp `ReferenceFoundation`, `DebtRatio`, `ActualRealmId`. Top-up 
 State machine:
 
 ```text
-Không Burning --Activate--> Active --Extend--> Active (cộng30s/chi phí)
+Không Burning --Activate--> Active --Extend--> Active (cộng thời lượng cấu hình và chi phí)
 Active --hết giờ/EndBlood(reason)--> SettlementPending
 SettlementPending --SettleBlood đúng identity--> Không Burning + receipt
 ```
@@ -42,7 +42,7 @@ SettlementPending --SettleBlood đúng identity--> Không Burning + receipt
 
 | Sự kiện | Policy domain/fixture | Trạng thái production |
 |---|---|---|
-| Hết30s game-time | Tick tạo Pending/Expired; explicit settlement | Chưa nối clock |
+| Hết thời lượng game-time | Tick tạo Pending/Expired, sau đó settlement | Chưa nối clock |
 | Death, Retry, Travel, NewGame, Menu | EndBlood(reason) → Pending → settle explicit | Chưa nối lifecycle |
 | Hủy explicit | Giữ khoản nợ, không có cancel miễn phí | Chưa có UI |
 | Pause | Không giảm remaining, không cô đọng/treatment | Chưa bật runtime |
