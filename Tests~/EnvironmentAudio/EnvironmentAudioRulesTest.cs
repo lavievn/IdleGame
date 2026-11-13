@@ -58,9 +58,9 @@ internal static class EnvironmentAudioRulesTest
         Check(schedule.Desired.Count == 3, "Storm to Clear removes all wet layers");
         Update(AudioMap.Meadow, AudioWeather.Dry, time:20);
         var meadow = schedule.Desired.Where(item => item.Layer == AudioLayer.Meadow).Select(item => item.Name).ToArray();
-        Check(meadow.Length == 2 && Has("Meadow_01_cricket"), "Meadow chooses two regular and one cricket");
+        Check(meadow.Length == 1 && Count(AudioFamily.Meadow) == 1, "Meadow chooses one clip from the dry pool");
         Update(AudioMap.Meadow, AudioWeather.Dry, time:320);
-        Check(!meadow.Any(Has) && Has("Meadow_01_cricket"), "Meadow rotates both regular clips but keeps cricket");
+        Check(!meadow.Any(Has) && Count(AudioFamily.Meadow) == 1, "Meadow rotates its single clip after five minutes");
         Update(AudioMap.Meadow, AudioWeather.Rain, time:321);
         Check(Count(AudioFamily.Meadow) == 1 && Count(AudioFamily.Rain) == 1 && !Has("Meadow_01_cricket") &&
             !Has("Coast_01_rain"), "Meadow rain excludes dry Meadow only");

@@ -5,7 +5,7 @@ internal enum AudioFamily { Coast, Lodges, Meadow, Morning, Night, Pebble, Prime
 internal enum AudioVariant { Default, Beach, Wave, Wind, Rain, Storm, Cricket, LightRain }
 internal enum AudioWeather { Dry, Rain, Storm }
 internal enum AudioMap { Unassigned, Coast, Lodges, Meadow, ForestMountain }
-internal enum AudioLayer { Coast, CoastEvent, CoastWeather, Lodges, Meadow, MeadowCricket, MeadowWeather,
+internal enum AudioLayer { Coast, CoastEvent, CoastWeather, Lodges, Meadow, MeadowWeather,
     Morning, Night, Pebble, Primeval, Rain, Thunder, WindRain }
 
 internal static class EnvironmentAudioRules
@@ -59,8 +59,8 @@ internal static class EnvironmentAudioRules
         {
             case AudioFamily.Coast: return variant == AudioVariant.Default ? AudioLayer.Coast :
                 variant == AudioVariant.Rain || variant == AudioVariant.Storm ? AudioLayer.CoastWeather : AudioLayer.CoastEvent;
-            case AudioFamily.Meadow: return variant == AudioVariant.Default ? AudioLayer.Meadow :
-                variant == AudioVariant.Cricket ? AudioLayer.MeadowCricket : AudioLayer.MeadowWeather;
+            case AudioFamily.Meadow: return variant == AudioVariant.Rain || variant == AudioVariant.LightRain ?
+                AudioLayer.MeadowWeather : AudioLayer.Meadow;
             default: return (AudioLayer)Enum.Parse(typeof(AudioLayer), family.ToString());
         }
     }
@@ -72,7 +72,7 @@ internal static class EnvironmentAudioRules
             case AudioLayer.CoastWeather: return Math.Max(0, coastWeatherLimit);
             case AudioLayer.Night: return 4;
             case AudioLayer.Coast: case AudioLayer.Morning: case AudioLayer.Primeval: return 3;
-            case AudioLayer.Meadow: case AudioLayer.Pebble: return 2;
+            case AudioLayer.Pebble: return 2;
             default: return 1;
         }
     }
@@ -82,7 +82,6 @@ internal static class EnvironmentAudioRules
         switch (family)
         {
             case AudioFamily.Coast: return 4 + Limit(AudioLayer.CoastWeather, coastWeatherLimit);
-            case AudioFamily.Meadow: return 3;
             default: return Limit(Layer(family, AudioVariant.Default), coastWeatherLimit);
         }
     }
@@ -187,7 +186,7 @@ internal sealed class EnvironmentAudioSchedule
             if (changed || due)
             {
                 candidates.Clear();
-                if (!meadowWet || (layer != AudioLayer.Meadow && layer != AudioLayer.MeadowCricket))
+                if (!meadowWet || layer != AudioLayer.Meadow)
                     foreach (var entry in pools[index])
                         if (EnvironmentAudioRules.Eligible(entry.Family, entry.Variant, map, weather, night)) candidates.Add(entry);
                 if (eventLayer)

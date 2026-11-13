@@ -62,15 +62,16 @@ internal static class IntegratedPlaytestSmoke
 
         var weatherAudio = Read<WorldWeatherAudio>(game, "weatherAudio");
         var mix = Read<WorldWeatherAudioSettings>(game, "worldWeatherAudioSettings");
-        float bedTarget = .50f * mix.environmentVolume * AudioVolumeSettings.Get(GameAudioChannel.Environment);
+        float bedTarget = .30f * mix.environmentVolume * AudioVolumeSettings.Get(GameAudioChannel.Environment);
+        float wetTarget = .30f * mix.weatherVolume * AudioVolumeSettings.Get(GameAudioChannel.Environment);
         Check(bedTarget > 0f, "Environment master is audible for the integration fixture");
         var family = Read<EnvironmentAudioPlayer>(weatherAudio, "familyPlayer");
         Check(family != null, "Verified asset manifest owns environment audio");
-        yield return Wait(() => family.ActiveLoops(AudioLayer.Meadow, bedTarget) == 2 &&
-            family.ActiveLoops(AudioLayer.MeadowCricket, bedTarget) == 1, 6, "Village has two Meadow beds and one cricket");
+        yield return Wait(() => family.ActiveLoops(AudioLayer.Meadow, bedTarget) == 1,
+            6, "Village has one Meadow clip at reduced gain");
         Preview(game, 22f, WorldWeather.LightRain);
         yield return Wait(() => family.ActiveLoops(AudioLayer.Meadow) == 0 &&
-            family.ActiveLoops(AudioLayer.MeadowCricket) == 0 && family.ActiveLoops(AudioLayer.MeadowWeather) == 1 &&
+            family.ActiveLoops(AudioLayer.MeadowWeather, wetTarget) == 1 &&
             family.ActiveLoops(AudioLayer.Rain) == 1 && family.ActiveLoops(AudioLayer.Night) == 0, 8,
             "Wet Meadow is exclusive while global Rain remains independent");
         var vendor = Read<WorldClimateAssetAdapter>(game, "worldClimateAssets") as WorldClimateVendorAdapter;
@@ -181,6 +182,12 @@ internal static class IntegratedPlaytestSmoke
     {
         Check(EnvironmentAudioPlayer.Load() != null && WorldMapCatalog.All.Count > 100,
             "The real map catalog and verified audio manifest are loaded");
+        var meadowMaps = WorldMapCatalog.All.Where(node =>
+            EnvironmentAudioPlayer.Map(node.Terrain, node.Id, node.Id == StoryOrigin.HanVu.Village, false) == AudioMap.Meadow)
+            .Select(node => node.Id);
+        var expectedMeadow = new[] { "TV-04", "TV-10", "TV-14", "TV-20", "TV-37", "TL-06", "TL-07", "TL-08",
+            "TL-11", "TL-13", "TL-16", "TL-17", "TL-21", "TL-23", "TL-25", "TL-26", "TL-27", "HT-17", "TM-21" };
+        Check(expectedMeadow.ToHashSet().SetEquals(meadowMaps), "All 19 mapped Meadow locations match the audio inventory");
         var imported = Resources.LoadAll<AudioClip>("IntegratedAmbience");
         Check(imported.Length == 191 && imported.Where(x => x.name != "GateThunder")
             .All(x => x.loadType == AudioClipLoadType.Streaming), "All 190 environment OGG remain streaming");

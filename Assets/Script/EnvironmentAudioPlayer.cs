@@ -129,10 +129,8 @@ internal sealed class EnvironmentAudioPlayer
         {
             if (voice.Entry == null || voice.Entry.Family != entry.Family) continue;
             if (voice.Entry.Layer == entry.Layer) totalLayer++;
-            if (entry.Family == AudioFamily.Meadow && (entry.Layer == AudioLayer.MeadowWeather) !=
-                (voice.Entry.Layer == AudioLayer.MeadowWeather)) return false;
             // A bounded overlap provides crossfade for rotating loops.
-            bool transition = !voice.Desired && (entry.Layer == AudioLayer.Meadow || entry.Layer == AudioLayer.Morning);
+            bool transition = !voice.Desired && entry.Layer == AudioLayer.Morning;
             if (transition && entry.Layer == voice.Entry.Layer) continue;
             family++;
             if (voice.Entry.Layer == entry.Layer) layer++;
@@ -251,6 +249,26 @@ internal sealed class EnvironmentAudioPlayer
                 player.Stop();
                 Check(host.GetComponents<AudioSource>().Length == pool, "Repeated updates and stop/reset reuse the same sources");
             }
+
+            void Meadow(WorldWeather weather, float dt = 1f) => Step(weather, "TL-25", dt: dt);
+            Voice MeadowVoice() => player.voices.Find(v => v.Entry?.Family == AudioFamily.Meadow);
+            Meadow(WorldWeather.Clear);
+            Meadow(WorldWeather.Clear, 2f);
+            var initial = MeadowVoice()?.Entry;
+            Check(initial != null && player.ActiveLoops(AudioLayer.Meadow, .30f) == 1, "One dry Meadow source at reduced gain");
+            Meadow(WorldWeather.Clear, 301f);
+            Check(MeadowVoice()?.Entry != initial && player.ActiveLoops(AudioLayer.Meadow) == 1, "Meadow rotation stops the old source first");
+            Meadow(WorldWeather.Clear, 2f);
+            Meadow(WorldWeather.LightRain, .25f);
+            Check(player.ActiveLoops(AudioLayer.Meadow) == 1 && player.ActiveLoops(AudioLayer.MeadowWeather) == 0 && WetGlobal(),
+                "Meadow fades its dry clip before starting a wet clip while global Rain starts independently");
+            Meadow(WorldWeather.LightRain, 2f);
+            Meadow(WorldWeather.LightRain, 2f);
+            Check(player.ActiveLoops(AudioLayer.Meadow) == 0 && player.ActiveLoops(AudioLayer.MeadowWeather, .30f) == 1 && WetGlobal(),
+                "One wet Meadow source at reduced gain");
+            Meadow(WorldWeather.Clear, .25f);
+            Check(player.ActiveLoops(AudioLayer.Meadow) == 0 && player.ActiveLoops(AudioLayer.MeadowWeather) == 1,
+                "Dry Meadow waits for the wet source to finish fading");
         }
         finally { UnityEngine.Object.Destroy(host); }
     }
