@@ -314,7 +314,7 @@ public partial class UIManager
                 originLabel.text = "Hoàn thành 5 đợt quái ở đây để mở đường đi tiếp.";
         }
         bool hasText = originLabel.text.Length > 0;
-        originDismiss.gameObject.SetActive(hasText && (!idle || originNotice != null));
+        originDismiss.gameObject.SetActive(hasText && (!idle || !guideMap && originNotice != null));
         originDismissLabel.text =
             conversation == HanVuConversation.Opening && !LastLine ? "Để sau" : "Đóng";
         originPanel.sizeDelta = new Vector2(300f, hasText ? 88f : 30f);

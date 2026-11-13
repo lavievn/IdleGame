@@ -315,7 +315,7 @@ internal static class HanVuOriginSmoke
         Application.targetFrameRate = 60;
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
         EnvironmentAudioPlayer.VerifyTransitions();
-        pass("AudioSource Coast Rain/Storm crossfade, Clear, Travel and repeated reset reuse.");
+        pass("Real Coast, Meadow and Morning AudioSources crossfade, respect weather limits and reuse voices.");
 #endif
         UnityEngine.Random.InitState(17312);
         VerifyGeneratedCast();
@@ -473,16 +473,14 @@ internal static class HanVuOriginSmoke
             Check(map.IsOpen && !label.gameObject.activeInHierarchy &&
                 Field<string>(Field<WorldMapOutlineGraphic>(map, "outlines"), "guidedId") == Origin.Forest,
                 "Map replaces the HUD guide and marks the quest forest");
-            Check(summary.text == "Chọn khu vực được đánh dấu để tiếp tục hành trình.", "Map explains selection");
+            Check(summary.text == "Chọn khu vực được đánh dấu để tiếp tục hành trình.", "A previously visited destination keeps selection");
             SelectPolygon(ui, TravelerMap);
             Check(Field<string>(map, "selectedMapId") == TravelerMap && game.HeroData.worldMapId == Origin.Village &&
                 Field<RectTransform>(map, "travel").gameObject.activeInHierarchy &&
                 summary.text.Contains("Chọn khu vực được đánh dấu"), "Wrong eligible map keeps its Travel and quest guide");
-            SelectPolygon(ui, Origin.Forest);
             Canvas.ForceUpdateCanvases();
             summary.ForceMeshUpdate();
-            Check(Field<string>(map, "selectedMapId") == Origin.Forest && game.HeroData.worldMapId == Origin.Village &&
-                summary.text.Contains("Nhấn Tới ô đã chọn") && !summary.isTextOverflowing, "Selecting the forest prompts explicit Travel");
+            Check(!summary.isTextOverflowing, "Travel instruction fits after selecting another map");
             yield return capture("opening-guide-map-" + preset.x);
             Click(ui, "WorldMapClose");
             yield return null;
@@ -504,7 +502,7 @@ internal static class HanVuOriginSmoke
         PointerClick(ui, Field<RectTransform>(map, "travel"));
         yield return Ready(game, ui);
         Check(game.HeroData.worldMapId == Origin.Forest && !map.IsOpen && !Field<bool>(ui, "originMapHighlighted") &&
-            label.text.StartsWith("Lá bạc 0/5", StringComparison.Ordinal), "Manual Travel advances to the local combat objective");
+            label.text.StartsWith("Lá bạc 0/5", StringComparison.Ordinal), "Returning to the forest shows the local objective");
         pass("Opening route resumes after Load, receives HUD pointer hits, distinguishes alternate maps, and shows the combat objective after explicit Travel.");
         Click(ui, "HanVuPrompts");
         for (int i = 0; i < 2; i++) yield return ClearWave(game, ui, combat, hero, space, false);
@@ -586,6 +584,29 @@ internal static class HanVuOriginSmoke
             StoryOrigin.Definition(game.HeroData) == null && game.HeroData.worldMapId == Origin.EliteMap,
             "Origin-less snapshot keeps old identity and map");
         pass("Version 1 and 2 Hàn Vụ saves preserve prior progress and identity. Origin-less snapshots remain compatible.");
+
+        Check(game.ReturnToMainMenu(), "Return to menu for the fresh opening fixture");
+        game.OnNewGameClicked();
+        game.OnConfirmResetClicked();
+        yield return Ready(game, ui);
+        yield return ReadDialogue(ui, game.HeroData, HanVuConversation.Opening);
+        PointerClick(ui, Field<RectTransform>(ui, "originAccept"));
+        yield return Restore(game, ui, Identity(game.HeroData));
+        PointerClick(ui, mapButton);
+        yield return null;
+        Check(map.IsOpen && summary.text.Contains("Nhấn Cô Hồn Lâm") &&
+            game.HeroData.worldMapId == Origin.Village, "First visit explains travel without starting it");
+        SelectPolygon(ui, TravelerMap);
+        Check(map.IsOpen && game.HeroData.worldMapId == Origin.Village, "Another polygon only selects");
+        SelectPolygon(ui, Origin.Forest);
+        yield return Wait(() => game.IsGameplayHUDVisible && Enemies(combat).Count > 0, 25f,
+            "Actual combat starts after first guided travel");
+        yield return null; // Let the HUD paint the newly deployed map.
+        Check(!map.IsOpen && game.HeroData.worldMapId == Origin.Forest && game.HeroData.originStory.herbWaves == 0 &&
+            label.text.StartsWith("Lá bạc 0/5", StringComparison.Ordinal),
+            $"The explicit click advances to the next goal (map={game.HeroData.worldMapId}, map open={map.IsOpen}, " +
+            $"herbs={game.HeroData.originStory.herbWaves}, label={label.text})");
+        pass("Fresh accepted onboarding travels on the marked polygon, opens combat and updates the HUD without an extra confirmation.");
     }
 }
 #endif
