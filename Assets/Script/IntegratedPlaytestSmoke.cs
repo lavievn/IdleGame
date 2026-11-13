@@ -38,6 +38,8 @@ internal static class IntegratedPlaytestSmoke
         yield return Ready(game, ui);
         Check(StoryOrigin.IsSafe(game.HeroData) && StoryOrigin.Definition(game.HeroData) == StoryOrigin.HanVu,
             "New game starts in Hàn Vụ");
+        yield return VerifyClimateButtons(game, ui, resize, capture);
+        pass("Climate buttons cycle independently through four phases and five weather presets, fit all three layouts, and leave the saved clock intact.");
         Preview(game, 12f, WorldWeather.Clear);
         var bridge = hero.heroRect.GetComponent<CultivationSpriteBridge>();
         Check(bridge != null && bridge.BodyGraphic.sprite.texture.name.StartsWith("sword_", StringComparison.Ordinal),
@@ -69,7 +71,11 @@ internal static class IntegratedPlaytestSmoke
         Check(family != null, "Verified asset manifest owns environment audio");
         yield return Wait(() => family.ActiveLoops(AudioLayer.Meadow, bedTarget) == 1,
             6, "Village has one Meadow clip at reduced gain");
-        Preview(game, 22f, WorldWeather.LightRain);
+        Set(game, "previewWorldClimate", false);
+        for (int i = 0; i < 4; i++) Click(ui, "ClimateTestHour");
+        Click(ui, "ClimateTestWeather");
+        yield return Wait(() => family.ActiveLoops(AudioLayer.Night) == 4, 6, "Night button enables the Night audio overlay");
+        for (int i = 0; i < 3; i++) Click(ui, "ClimateTestWeather");
         yield return Wait(() => family.ActiveLoops(AudioLayer.Meadow) == 0 &&
             family.ActiveLoops(AudioLayer.MeadowWeather, wetTarget) == 1 &&
             family.ActiveLoops(AudioLayer.Rain) == 1 && family.ActiveLoops(AudioLayer.Night) == 0, 8,
@@ -81,7 +87,7 @@ internal static class IntegratedPlaytestSmoke
         yield return capture("integrated-night-rain");
         pass("Wet Meadow fades out its dry loops while Rain Maker and global Rain remain active.");
 
-        Preview(game, 12f, WorldWeather.HeavyRain);
+        Click(ui, "ClimateTestWeather");
         Check(game.TryTravelToWorldMap(StoryOrigin.HanVu.Forest), "Travel from Hàn Vụ to forest via real handler");
         yield return Wait(() => family.ActiveLoops(AudioLayer.MeadowWeather) == 0 && family.ActiveLoops(AudioLayer.Morning) == 3 &&
             family.ActiveLoops(AudioLayer.Primeval) == 0 && family.ActiveLoops(AudioLayer.Rain) == 1, 10,
@@ -106,7 +112,6 @@ internal static class IntegratedPlaytestSmoke
         pass("Walk measures 100 and enemy approach Run measures 200 with an owned movement stat modifier present.");
 
         var forest = game.HeroData.worldMapId;
-        Set(game, "previewWorldClimate", false);
         Clear(game, combat);
         ui.SetPaused(true);
         var checkpoint = game.HeroData.worldClimate;
@@ -117,8 +122,61 @@ internal static class IntegratedPlaytestSmoke
             game.HeroData.worldClimate.seed == checkpoint.seed && game.HeroData.worldClimate.day == checkpoint.day &&
             Math.Abs(game.HeroData.worldClimate.dayFraction - checkpoint.dayFraction) < .003, "Combined snapshot survives Load");
         pass("Save/Load preserves world location, Hàn Vụ identity and the climate seed/clock.");
+        Click(ui, "ClimateTestHour");
+        Click(ui, "ClimateTestWeather");
 
         yield return Gate(game, saves, ui, combat, hero, capture, pass);
+    }
+
+    private static IEnumerator VerifyClimateButtons(GameManager game, UIManager ui,
+        Func<int,int,IEnumerator> resize, Func<string,IEnumerator> capture)
+    {
+        var panel = Read<RectTransform>(ui, "climateTestPanel");
+        var hour = Read<TMPro.TextMeshProUGUI>(ui, "climateTestHourLabel");
+        var weather = Read<TMPro.TextMeshProUGUI>(ui, "climateTestWeatherLabel");
+        bool paused = ui.IsPaused;
+        ui.SetPaused(true);
+        var clock = game.HeroData.worldClimate;
+        foreach (var width in new[] { 600, 1150, 800 })
+        {
+            yield return resize(width, width == 600 ? 338 : width == 1150 ? 647 : 450);
+            foreach (var control in new[] { hour, weather })
+            {
+                var button = (RectTransform)control.transform.parent;
+                var corners = new Vector3[4];
+                button.GetWorldCorners(corners);
+                var min = RectTransformUtility.WorldToScreenPoint(null, corners[0]);
+                var max = RectTransformUtility.WorldToScreenPoint(null, corners[2]);
+                Check(panel.gameObject.activeInHierarchy && min.x >= 0 && min.y >= 0 &&
+                    max.x < Screen.width / 2f && max.y < Screen.height / 2f &&
+                    ui.HitControl((min + max) * .5f)?.GetRect() == button,
+                    "Climate control is reachable in the lower-left HUD at " + width);
+            }
+        }
+        var phases = new[] { "Bình minh", "Ban ngày", "Hoàng hôn", "Ban đêm", "Tự động" };
+        for (int i = 0; i < phases.Length; i++)
+        {
+            Click(ui, "ClimateTestHour");
+            Check(hour.text.EndsWith(phases[i], StringComparison.Ordinal) && game.ClimateTestWeather == 0,
+                "Hour changes without forcing weather");
+        }
+        var conditions = new[] { "Quang", "Nhiều mây", "Sương", "Mưa nhẹ", "Mưa lớn", "Tự động" };
+        foreach (string condition in conditions)
+        {
+            Click(ui, "ClimateTestWeather");
+            Check(weather.text.EndsWith(condition, StringComparison.Ordinal) && game.ClimateTestHour == 0,
+                "Weather changes without forcing the hour");
+            yield return null;
+        }
+        Check(clock.day == game.HeroData.worldClimate.day && clock.dayFraction == game.HeroData.worldClimate.dayFraction &&
+            clock.seed == game.HeroData.worldClimate.seed, "Preview clicks leave the paused climate clock untouched");
+        Click(ui, "ClimateTestHour");
+        for (int i = 0; i < 4; i++) Click(ui, "ClimateTestWeather");
+        yield return capture("climate-test-controls");
+        for (int i = 0; i < 4; i++) Click(ui, "ClimateTestHour");
+        Click(ui, "ClimateTestWeather");
+        Click(ui, "ClimateTestWeather");
+        ui.SetPaused(paused);
     }
 
     private static IEnumerator Gate(GameManager game, SaveManager saves, UIManager ui, CombatManager combat,
