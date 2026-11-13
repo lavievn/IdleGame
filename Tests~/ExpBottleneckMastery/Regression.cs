@@ -83,6 +83,51 @@ partial class MotionRegression
             Check(s.ApplyGatePenalty(s.OwnerId,s.Epoch,Guid.NewGuid(),0,b.Profile.StartingRealm,HeavenlyGateV13Fixtures.Penalty())==CultivationReason.None,"failure");
             h.AddExp(100);Check(h.currentLevel==2 && h.currentExp==0 && Bank(h)==300,"old bank intact; new outside-cap EXP normal");b.Dispose();
         });
+        Run("EXP releases once per successive configured realm with a reload between trials", () => {
+            var definition = new CultivationPlaytestDefinition {
+                schemaVersion = 3, version = 1, id = "balance:successive-gates-test", title = "Successive gates fixture",
+                startingRealm = "fixture:first", maximumFrameSeconds = .5, stepSeconds = .1,
+                fallbackDensity = 1, absorptionRate = 1, absorptionEfficiency = 1, refinementRate = 1,
+                refinementEfficiency = 1, maximumEnergy = 100, recoveryRate = 1,
+                realms = new[] {
+                    new CultivationPlaytestRealm { id = "fixture:first", name = "First", tier = 0, thresholds = new double[] {0, 1, 2, 3}, successor = "fixture:second" },
+                    new CultivationPlaytestRealm { id = "fixture:second", name = "Second", tier = 1, thresholds = new double[] {0, 1, 2, 3}, successor = "fixture:third" },
+                    new CultivationPlaytestRealm { id = "fixture:third", name = "Third", tier = 2, thresholds = new double[] {0, 1, 2, 3}, successor = "" }
+                },
+                qiSources = new CultivationQiSource[0]
+            };
+            Check(CultivationPlaytestProfile.TryCreate(definition, _ => true, out var profile, out var reason), reason);
+            var session = HeavenlyGateV13Fixtures.Session(profile, 3, 20);
+            var hero = HeroAt(1);
+            Guid previousAttempt = Guid.Empty;
+            foreach (var target in new[] { "fixture:second", "fixture:third" })
+            {
+                var gate = HeavenlyGateV13Fixtures.Configuration();
+                gate.cultivationConfiguration = profile.Id;
+                gate.sourceRealm = session.Current.Foundation.ActualRealmId;
+                gate.targetRealm = target;
+                using (var binding = new CultivationGameplayBinding(hero, profile, session, gate))
+                {
+                    int level = hero.currentLevel;
+                    hero.AddExp(CombatBalance.RequiredExp(level));
+                    Check(hero.currentLevel == level && Bank(hero) == CombatBalance.RequiredExp(level), "Bank isolated per attempt");
+                    if (previousAttempt != Guid.Empty)
+                        Check(ExperienceProgress.ApplyBreakthroughSuccess(hero, session, profile, gate, previousAttempt,
+                            session.RealmRevision) == CultivationReason.DuplicateCommand, "Earlier receipt cannot release the next bank");
+                    var attempt = Guid.NewGuid();
+                    Check(ExperienceProgress.ApplyBreakthroughSuccess(hero, session, profile, gate, attempt,
+                        session.RealmRevision) == CultivationReason.None, "Accepted configured success");
+                    Check(hero.currentLevel == level + 1 && hero.currentExp == 0 && Bank(hero) == 0 &&
+                        Xp(hero).lastReleaseAttempt == attempt.ToString("N") && session.Current.Foundation.ActualRealmId == target,
+                        "Exactly one Level and one actual realm per success");
+                    previousAttempt = attempt;
+                }
+                Check(CultivationGameplayState.TryRestore(hero.cultivationJson, profile, out session, out reason), reason);
+                for (long tick = 0; tick < 40; tick++)
+                    Check(session.Tick(session.OwnerId, session.Epoch, tick, .1, false, 1) == CultivationReason.None, "Refine after reload");
+                hero.cultivationJson = CultivationGameplayState.Capture(session, profile);
+            }
+        });
         Run("EXP duplicate success and stale restored source cannot spend a bank again",()=>{
             var h=BankHero(out var s,out var b);h.AddExp(500);string source=h.cultivationJson;var id=Guid.NewGuid();
             Check(Release(h,s,id)==CultivationReason.None,"first release");int points=h.statPoints,growth=h.meleeGrowthBonus,level=h.currentLevel;
@@ -102,6 +147,22 @@ partial class MotionRegression
                 Check(Release(h,s,Guid.NewGuid(),variant==0?9:0)!=CultivationReason.None && s.Current==before &&
                     h.experienceJson==json && h.cultivationJson==cult && h.currentLevel==1 && h.statPoints==points && h.meleeGrowthBonus==growth,"atomic rejection "+variant);b.Dispose();
             }
+        });
+        Run("Nonpositive awards leave legacy and banked EXP snapshots untouched", () => {
+            var hero = BankHero(out var session, out var binding);
+            using (binding)
+            {
+                string before = hero.experienceJson;
+                hero.isDirty = false;
+                Check(!hero.AddExp(0) && !hero.AddExp(-1) && !hero.AddExp(int.MinValue) &&
+                    hero.experienceJson == before && hero.currentExp == 0 && !hero.isDirty &&
+                    session.Current.Reserve.Amount == 1234, "No mutation at the bottleneck");
+            }
+            var legacy = HeroAt(1);
+            legacy.currentExp = legacy.expToNextLevel;
+            legacy.isDirty = false;
+            Check(!legacy.AddExp(-100) && legacy.currentLevel == 1 && legacy.statPoints == 0 &&
+                legacy.experienceJson == "" && !legacy.isDirty, "No level-up from a rejected award");
         });
         Run("REGRESSION Level 999 conserves overflow and arbitrarily large banks exactly",()=>{
             var h=HeroAt(999);h.currentExp=h.expToNextLevel-1;h.AddExp(int.MaxValue);h.AddExp(int.MaxValue);
