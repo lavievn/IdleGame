@@ -5,8 +5,15 @@ using UnityEngine;
 
 internal sealed class EnvironmentAudioPlayer
 {
-    [Serializable] private sealed class Manifest { public bool complete; public Asset[] assets; public string[] lodgesMapIds; }
+    [Serializable] private sealed class Manifest
+    {
+        public bool complete;
+        public Asset[] assets;
+        public string[] lodgesMapIds;
+        public FamilyGain[] familyGains;
+    }
     [Serializable] private sealed class Asset { public string clip; public float gain; }
+    [Serializable] private sealed class FamilyGain { public string family; public float gain; }
 
     private sealed class Voice
     {
@@ -18,6 +25,7 @@ internal sealed class EnvironmentAudioPlayer
 
     private readonly Dictionary<string, AudioClip> clips = new Dictionary<string, AudioClip>(StringComparer.Ordinal);
     private readonly Dictionary<string, float> gains = new Dictionary<string, float>(StringComparer.Ordinal);
+    private readonly Dictionary<AudioFamily, float> familyGains = new Dictionary<AudioFamily, float>();
     private readonly HashSet<string> lodges;
     private readonly List<Voice> voices = new List<Voice>();
     private readonly EnvironmentAudioSchedule schedule;
@@ -28,6 +36,10 @@ internal sealed class EnvironmentAudioPlayer
     private EnvironmentAudioPlayer(Manifest manifest, System.Random random)
     {
         lodges = new HashSet<string>(manifest.lodgesMapIds ?? Array.Empty<string>(), StringComparer.Ordinal);
+        foreach (var setting in manifest.familyGains ?? Array.Empty<FamilyGain>())
+            if (setting != null && Enum.TryParse(setting.family, out AudioFamily family) &&
+                family.ToString() == setting.family && !float.IsNaN(setting.gain) && !float.IsInfinity(setting.gain))
+                familyGains[family] = Mathf.Clamp01(setting.gain);
         foreach (Asset asset in manifest.assets)
         {
             if (asset == null || string.IsNullOrEmpty(asset.clip) || clips.ContainsKey(asset.clip) ||
@@ -85,17 +97,12 @@ internal sealed class EnvironmentAudioPlayer
         if (running) elapsed += delta;
         var weather = frame.Weather == WorldWeather.HeavyRain ? AudioWeather.Storm :
             frame.Weather == WorldWeather.LightRain ? AudioWeather.Rain : AudioWeather.Dry;
-        schedule.Update(category, weather, frame.Phase == WorldDayPhase.Night, frame.Hour, elapsed, coastWeatherLimit, thunderInterval);
+        schedule.Update(category, weather, frame.Phase == WorldDayPhase.Night, elapsed, coastWeatherLimit, thunderInterval);
         var coastCrossfade = CoastCrossfadeVoice(coastWeatherLimit);
         foreach (Voice voice in voices)
         {
-            if (voice.Entry?.Family == AudioFamily.Morning && !EnvironmentAudioRules.IsMorningHour(frame.Hour))
-            {
-                Clear(voice);
-                continue;
-            }
             voice.Desired = voice.Event ? voice.Source.isPlaying &&
-                EnvironmentAudioRules.Eligible(voice.Entry.Family, voice.Entry.Variant, category, weather, false, false) :
+                EnvironmentAudioRules.Eligible(voice.Entry.Family, voice.Entry.Variant, category, weather, false) :
                 voice.Entry != null && schedule.Desired.Contains(voice.Entry);
             if (voice.Entry == null) continue;
             voice.Target = voice.Desired ? 1f : 0f;
@@ -134,14 +141,26 @@ internal sealed class EnvironmentAudioPlayer
         foreach (Voice voice in voices)
         {
             if (voice.Entry == null || voice.Entry.Family != entry.Family) continue;
+            if (entry.Family == AudioFamily.Meadow &&
+                (entry.Layer == AudioLayer.MeadowWeather) != (voice.Entry.Layer == AudioLayer.MeadowWeather))
+                return false; // Wet and dry Meadow never overlap.
             family++;
             if (voice.Entry.Layer == entry.Layer) layer++;
         }
-        return family < EnvironmentAudioRules.FamilyLimit(entry.Family, coastWeatherLimit) &&
+        int familyLimit = EnvironmentAudioRules.FamilyLimit(entry.Family, coastWeatherLimit);
+        if (entry.Layer == AudioLayer.Meadow || entry.Layer == AudioLayer.Morning)
+        {
+            // At most one fading set during a rotation. The scheduler still
+            // caps the incoming set and does not rotate the cricket layer.
+            familyLimit += limit;
+            limit *= 2;
+        }
+        return family < familyLimit &&
             layer < limit;
     }
 
     private float Gain(EnvironmentAudioSchedule.Entry entry, float environment, float weather) => gains[entry.Name] *
+        (familyGains.TryGetValue(entry.Family, out float familyGain) ? familyGain : 1f) *
         (entry.Layer == AudioLayer.Rain || entry.Layer == AudioLayer.WindRain || entry.Layer == AudioLayer.Thunder ||
          entry.Layer == AudioLayer.Pebble || entry.Layer == AudioLayer.CoastWeather || entry.Layer == AudioLayer.MeadowWeather ? weather : environment);
 
@@ -255,20 +274,21 @@ internal sealed class EnvironmentAudioPlayer
             }
 
             void Meadow(WorldWeather weather, float dt = 1f) => Step(weather, "TL-25", dt: dt);
-            Voice MeadowVoice() => player.voices.Find(v => v.Entry?.Family == AudioFamily.Meadow);
             Meadow(WorldWeather.Clear);
             Meadow(WorldWeather.Clear, 2f);
-            var initial = MeadowVoice()?.Entry;
-            Check(initial != null && player.ActiveLoops(AudioLayer.Meadow, .30f) == 1, "One dry Meadow source at reduced gain");
-            Meadow(WorldWeather.Clear, 301f);
-            Check(MeadowVoice()?.Entry != initial && player.ActiveLoops(AudioLayer.Meadow) == 1, "Meadow rotation stops the old source first");
+            var cricket = player.voices.Find(v => v.Entry?.Layer == AudioLayer.MeadowCricket)?.Entry;
+            Check(cricket != null && player.ActiveLoops(AudioLayer.Meadow, .30f) == 2, "Two dry Meadow sources and cricket");
+            Meadow(WorldWeather.Clear, 297.75f);
+            Meadow(WorldWeather.Clear, .5f);
+            Check(player.ActiveLoops(AudioLayer.Meadow) == 4 && Has(cricket.Name), "Meadow crossfades two sets without rotating cricket");
             Meadow(WorldWeather.Clear, 2f);
             Meadow(WorldWeather.LightRain, .25f);
-            Check(player.ActiveLoops(AudioLayer.Meadow) == 1 && player.ActiveLoops(AudioLayer.MeadowWeather) == 0 && WetGlobal(),
+            Check(player.ActiveLoops(AudioLayer.Meadow) == 2 && player.ActiveLoops(AudioLayer.MeadowWeather) == 0 && WetGlobal(),
                 "Meadow fades its dry clip before starting a wet clip while global Rain starts independently");
             Meadow(WorldWeather.LightRain, 2f);
             Meadow(WorldWeather.LightRain, 2f);
-            Check(player.ActiveLoops(AudioLayer.Meadow) == 0 && player.ActiveLoops(AudioLayer.MeadowWeather, .30f) == 1 && WetGlobal(),
+            Check(player.ActiveLoops(AudioLayer.Meadow) == 0 && player.ActiveLoops(AudioLayer.MeadowCricket) == 0 &&
+                player.ActiveLoops(AudioLayer.MeadowWeather, .30f) == 1 && WetGlobal(),
                 "One wet Meadow source at reduced gain");
             Meadow(WorldWeather.Clear, .25f);
             Check(player.ActiveLoops(AudioLayer.Meadow) == 0 && player.ActiveLoops(AudioLayer.MeadowWeather) == 1,
@@ -278,11 +298,14 @@ internal sealed class EnvironmentAudioPlayer
             Step(WorldWeather.Clear, "TV-16", phase: WorldDayPhase.Dawn, hour: 5f);
             Step(WorldWeather.Clear, "TV-16", dt: 2f);
             var firstMorning = player.voices.Find(v => v.Entry?.Family == AudioFamily.Morning)?.Entry;
-            Check(firstMorning != null && player.ActiveLoops(AudioLayer.Morning) == 1, "One Morning source at dawn through noon");
-            Step(WorldWeather.Clear, "TV-16", dt: 118f);
-            Check(!Has(firstMorning.Name) && player.ActiveLoops(AudioLayer.Morning) == 1, "Morning rotation uses one source");
-            Step(WorldWeather.HeavyRain, "TV-16", dt: .25f, hour: 13f);
-            Check(player.ActiveLoops(AudioLayer.Morning) == 0, "Morning stops at 13:00");
+            Check(firstMorning != null && player.ActiveLoops(AudioLayer.Morning) == 3, "Three Morning sources at dawn");
+            Step(WorldWeather.Clear, "TV-16", dt: 117.75f, phase: WorldDayPhase.Night, hour: 22f);
+            Check(Has(firstMorning.Name) && player.ActiveLoops(AudioLayer.Morning) == 3 &&
+                player.ActiveLoops(AudioLayer.Night) == 4, "Night overlays the existing dry Morning set");
+            Step(WorldWeather.Clear, "TV-16", dt: .5f, phase: WorldDayPhase.Night, hour: 22f);
+            Check(Has(firstMorning.Name) && player.ActiveLoops(AudioLayer.Morning) == 6, "Morning crossfade overlaps only two sets");
+            Step(WorldWeather.HeavyRain, "TV-16", dt: 2f);
+            Check(player.ActiveLoops(AudioLayer.Morning) == 0, "Storm fades out Morning");
             Step(WorldWeather.HeavyRain, "TV-16", phase: WorldDayPhase.Night, hour: 22f);
             Check(player.ActiveLoops(AudioLayer.Morning) == 0 && WetGlobal(), "Night storm has no Morning source");
             Step(WorldWeather.Clear, "TV-16", phase: WorldDayPhase.Dawn, hour: 6.5f);
@@ -293,7 +316,7 @@ internal sealed class EnvironmentAudioPlayer
             Check(player.ActiveLoops(AudioLayer.Morning) == 0 && WetGlobal(), "Forest storm at dawn has only wet overlays");
             Step(WorldWeather.Clear, "TV-21", dt: 2f, phase: WorldDayPhase.Dawn, hour: 6.5f);
             Check(player.ActiveLoops(AudioLayer.Morning) == 0 && player.ActiveLoops(AudioLayer.Primeval) == 3,
-                "Huyền Ảnh Cốc dry dawn uses Primeval without Morning");
+                "Huyền Ảnh Cốc dry dawn uses Primeval only");
             Step(WorldWeather.HeavyRain, "TV-21", dt: 2f, phase: WorldDayPhase.Dawn, hour: 6.5f);
             Check(player.ActiveLoops(AudioLayer.Morning) == 0 && player.ActiveLoops(AudioLayer.Primeval) == 0 && WetGlobal(),
                 "Huyền Ảnh Cốc storm at dawn keeps global Rain");

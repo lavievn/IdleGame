@@ -38,8 +38,8 @@ internal static class EnvironmentAudioRulesTest
         var schedule = new EnvironmentAudioSchedule(clips, random);
         int Count(AudioFamily family) => schedule.Desired.Count(x => x.Family == family);
         bool Has(string name) => schedule.Desired.Any(item => item.Name == name);
-        void Update(AudioMap map, AudioWeather weather, bool night = false, float time = 0f, float? hour = null) =>
-            schedule.Update(map, weather, night, hour ?? (night ? 22f : 12f), time, 1);
+        void Update(AudioMap map, AudioWeather weather, bool night = false, float time = 0f) =>
+            schedule.Update(map, weather, night, time, 1);
 
         Update(AudioMap.Coast, AudioWeather.Dry);
         Check(Count(AudioFamily.Coast) == 3 && schedule.Events.Count == 0, "Coast chooses three regular loops");
@@ -59,9 +59,11 @@ internal static class EnvironmentAudioRulesTest
         Check(schedule.Desired.Count == 3, "Storm to Clear removes all wet layers");
         Update(AudioMap.Meadow, AudioWeather.Dry, time:20);
         var meadow = schedule.Desired.Where(item => item.Layer == AudioLayer.Meadow).Select(item => item.Name).ToArray();
-        Check(meadow.Length == 1 && Count(AudioFamily.Meadow) == 1, "Meadow chooses one clip from the dry pool");
+        Check(meadow.Length == 2 && Count(AudioFamily.Meadow) == 3 && Has("Meadow_01_cricket"),
+            "Meadow chooses two loops and one cricket from separate pools");
         Update(AudioMap.Meadow, AudioWeather.Dry, time:320);
-        Check(!meadow.Any(Has) && Count(AudioFamily.Meadow) == 1, "Meadow rotates its single clip after five minutes");
+        Check(!meadow.Any(Has) && Count(AudioFamily.Meadow) == 3 && Has("Meadow_01_cricket"),
+            "Meadow rotates two loops after five minutes while keeping cricket");
         Update(AudioMap.Meadow, AudioWeather.Rain, time:321);
         Check(Count(AudioFamily.Meadow) == 1 && Count(AudioFamily.Rain) == 1 && !Has("Meadow_01_cricket") &&
             !Has("Coast_01_rain"), "Meadow rain excludes dry Meadow only");
@@ -72,32 +74,30 @@ internal static class EnvironmentAudioRulesTest
             "Global Thunder is a scheduled one-shot");
         Update(AudioMap.Forest, AudioWeather.Dry, time:400);
         var morning = schedule.Desired.Where(item => item.Family == AudioFamily.Morning).Select(item => item.Name).ToArray();
-        Check(morning.Length == 1 && Count(AudioFamily.Primeval) == 3, "Forest and mountains schedule both families independently");
-        Update(AudioMap.Forest, AudioWeather.Dry, time:519, hour:12.99f);
-        Check(morning.All(Has), "Morning stays through the noon hour");
+        Check(morning.Length == 3 && Count(AudioFamily.Primeval) == 3, "Forest schedules both families independently");
+        Update(AudioMap.Forest, AudioWeather.Dry, time:519);
+        Check(morning.All(Has), "Morning keeps the set until rotation");
         Update(AudioMap.Forest, AudioWeather.Dry, time:520);
-        Check(!morning.Any(Has) && Count(AudioFamily.Morning) == 1, "One Morning clip rotates after 120 seconds");
-        Update(AudioMap.Forest, AudioWeather.Dry, time:521, hour:13f);
-        Check(Count(AudioFamily.Morning) == 0 && Count(AudioFamily.Primeval) == 3, "Morning stops at 13:00");
+        Check(!morning.Any(Has) && Count(AudioFamily.Morning) == 3, "Three Morning loops rotate after 120 seconds");
         Update(AudioMap.Forest, AudioWeather.Dry, true, 522);
-        Check(Count(AudioFamily.Morning) == 0 && Count(AudioFamily.Primeval) == 0 &&
-            Count(AudioFamily.Night) == 4, "Only Night overlay plays in a dry forest at night");
+        Check(Count(AudioFamily.Morning) == 3 && Count(AudioFamily.Primeval) == 0 &&
+            Count(AudioFamily.Night) == 4, "Night overlays Morning; Primeval stops at night");
         Update(AudioMap.Forest, AudioWeather.Storm, true, 523);
         Check(Count(AudioFamily.Morning) == 0 && Count(AudioFamily.Night) == 0 && Count(AudioFamily.Rain) == 1,
             "Night storm keeps global Rain while Morning is silent");
-        Update(AudioMap.Forest, AudioWeather.Dry, true, 524, 4.99f);
-        Check(Count(AudioFamily.Morning) == 0, "Morning is silent before dawn");
-        Update(AudioMap.Forest, AudioWeather.Dry, time:525, hour:5f);
-        Check(Count(AudioFamily.Morning) == 1, "Morning starts at dry forest dawn");
-        Update(AudioMap.Forest, AudioWeather.Rain, time:526, hour:6.5f);
+        Update(AudioMap.Forest, AudioWeather.Dry, true, 524);
+        Check(Count(AudioFamily.Morning) == 3, "Dry Morning can start at night");
+        Update(AudioMap.Forest, AudioWeather.Dry, time:525);
+        Check(Count(AudioFamily.Morning) == 3 && Count(AudioFamily.Night) == 0, "Dawn removes only the Night overlay");
+        Update(AudioMap.Forest, AudioWeather.Rain, time:526);
         Check(Count(AudioFamily.Morning) == 0 && Count(AudioFamily.Primeval) == 0 && Count(AudioFamily.Rain) == 1,
             "Forest light rain excludes Morning and Primeval");
-        Update(AudioMap.Forest, AudioWeather.Storm, time:527, hour:6.5f);
+        Update(AudioMap.Forest, AudioWeather.Storm, time:527);
         Check(Count(AudioFamily.Morning) == 0 && Count(AudioFamily.Primeval) == 0 && Count(AudioFamily.Rain) == 1,
             "Forest heavy rain excludes Morning and Primeval");
-        Update(AudioMap.Mountain, AudioWeather.Dry, time:528, hour:6.5f);
-        Check(Count(AudioFamily.Morning) == 0 && Count(AudioFamily.Primeval) == 3, "Dry mountains keep Primeval only");
-        Update(AudioMap.Mountain, AudioWeather.Storm, time:529, hour:6.5f);
+        Update(AudioMap.Mountain, AudioWeather.Dry, time:528);
+        Check(Count(AudioFamily.Morning) == 0 && Count(AudioFamily.Primeval) == 3, "Dry mountains schedule Primeval only");
+        Update(AudioMap.Mountain, AudioWeather.Storm, time:529);
         Check(Count(AudioFamily.Morning) == 0 && Count(AudioFamily.Primeval) == 0 && Count(AudioFamily.Rain) == 1,
             "Mountain storm keeps global Rain");
         Update(AudioMap.Unassigned, AudioWeather.Rain, true, 530);
@@ -111,18 +111,18 @@ internal static class EnvironmentAudioRulesTest
                 "Reset/reload chooses one Lodges clip without duplicate registrations " + (i + 1));
         }
         schedule.Reset();
-        schedule.Update(AudioMap.Coast, AudioWeather.Rain, false, 12f, 0f, 0);
+        schedule.Update(AudioMap.Coast, AudioWeather.Rain, false, 0f, 0);
         Check(!Has("Coast_01_rain") && Has("Rain_01"), "Unconfigured Coast weather slots stay off");
-        schedule.Update(AudioMap.Coast, AudioWeather.Rain, false, 12f, 1f, 1);
+        schedule.Update(AudioMap.Coast, AudioWeather.Rain, false, 1f, 1);
         Update(AudioMap.Unassigned, AudioWeather.Rain, time:2f);
         Check(Count(AudioFamily.Coast) == 0 && Has("Rain_01"), "Travel leaves Coast while retaining global Rain");
         var empty = new EnvironmentAudioSchedule(Array.Empty<string>(), random);
-        empty.Update(AudioMap.Coast, AudioWeather.Rain, false, 12f, 0f, 1);
+        empty.Update(AudioMap.Coast, AudioWeather.Rain, false, 0f, 1);
         Check(empty.Desired.Count == 0 && empty.Events.Count == 0, "Empty manifest pool is safe");
         var actual = new EnvironmentAudioSchedule(new[] { "Coast_heavy_rain", "Coast_medium_rain", "Coast_wave_storm" }, random);
-        actual.Update(AudioMap.Coast, AudioWeather.Rain, false, 12f, 0f, 2);
+        actual.Update(AudioMap.Coast, AudioWeather.Rain, false, 0f, 2);
         Check(actual.Desired.Count == 2 && actual.Desired.All(entry => entry.Variant == AudioVariant.Rain), "Configured two Coast Rain loops");
-        actual.Update(AudioMap.Coast, AudioWeather.Storm, false, 12f, 1f, 2);
+        actual.Update(AudioMap.Coast, AudioWeather.Storm, false, 1f, 2);
         Check(actual.Desired.Single().Variant == AudioVariant.Storm, "One verified Coast Storm loop");
     }
 }

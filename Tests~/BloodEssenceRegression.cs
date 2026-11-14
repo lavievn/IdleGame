@@ -8,6 +8,14 @@ partial class MotionRegression
     {double hp;var id=Guid.NewGuid();Check(c.ActivateBlood(c.OwnerId,c.Epoch,id,20,100,out hp)==CultivationReason.None && hp==100,"fixture first burn/heal");return id;}
     static void BloodEssenceTests()
     {
+        Run("Blood activation boundary distinguishes just below thirty percent from exactly thirty",()=>{
+            var c=CultivationFixture(1000,charges:1);
+            var before=c.Current;
+            Check(c.ActivateBlood(c.OwnerId,c.Epoch,Guid.NewGuid(),300,1000,out var hp)==CultivationReason.HpCondition &&
+                hp==300 && c.Current==before,"exactly thirty percent has no heal or debt");
+            Check(c.ActivateBlood(c.OwnerId,c.Epoch,Guid.NewGuid(),299,1000,out hp)==CultivationReason.None &&
+                hp==1000 && c.Current.Blood.Charges==0 && c.Current.Burning.TotalDebt==100,"below threshold heals and charges once");
+        });
         Run("Blood duration must be configured and only explicit fixture duration is applied per charge",()=>{
             var missing=CultivationFixture(1000,charges:1,rules:CultivationFixtureRules(chargeDuration:0));
             var original=missing.Current;

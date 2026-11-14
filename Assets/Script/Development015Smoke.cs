@@ -104,6 +104,13 @@ internal static class Development015Smoke
         yield return Wait(() => game.Cultivation.Current.Foundation.Amount >= 2, 10, "passive cultivation");
         ui.SetPaused(true);
         pass("New Game gains cultivation through the live clock before any fixture grants.");
+        double beforeMenu = game.Cultivation.ActiveSeconds;
+        ui.ToggleSystemMenu();
+        ui.SetPaused(false);
+        yield return new WaitForSecondsRealtime(.25f);
+        Check(game.Cultivation.ActiveSeconds == beforeMenu, "System menu does not advance the cultivation clock");
+        ui.SetPaused(true);
+        ui.CloseSystemMenu();
 
         // The one-hour balance is covered by the domain simulation. Seed only
         // an owned checkpoint so native verification can exercise the final

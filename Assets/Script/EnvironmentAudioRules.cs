@@ -5,7 +5,7 @@ internal enum AudioFamily { Coast, Lodges, Meadow, Morning, Night, Pebble, Prime
 internal enum AudioVariant { Default, Beach, Wave, Wind, Rain, Storm, Cricket, LightRain }
 internal enum AudioWeather { Dry, Rain, Storm }
 internal enum AudioMap { Unassigned, Coast, Lodges, Meadow, Forest, Mountain }
-internal enum AudioLayer { Coast, CoastEvent, CoastWeather, Lodges, Meadow, MeadowWeather,
+internal enum AudioLayer { Coast, CoastEvent, CoastWeather, Lodges, Meadow, MeadowCricket, MeadowWeather,
     Morning, Night, Pebble, Primeval, Rain, Thunder, WindRain }
 
 internal static class EnvironmentAudioRules
@@ -59,8 +59,10 @@ internal static class EnvironmentAudioRules
         {
             case AudioFamily.Coast: return variant == AudioVariant.Default ? AudioLayer.Coast :
                 variant == AudioVariant.Rain || variant == AudioVariant.Storm ? AudioLayer.CoastWeather : AudioLayer.CoastEvent;
-            case AudioFamily.Meadow: return variant == AudioVariant.Rain || variant == AudioVariant.LightRain ?
-                AudioLayer.MeadowWeather : AudioLayer.Meadow;
+            case AudioFamily.Meadow:
+                if (variant == AudioVariant.Cricket) return AudioLayer.MeadowCricket;
+                return variant == AudioVariant.Rain || variant == AudioVariant.LightRain ?
+                    AudioLayer.MeadowWeather : AudioLayer.Meadow;
             default: return (AudioLayer)Enum.Parse(typeof(AudioLayer), family.ToString());
         }
     }
@@ -71,8 +73,8 @@ internal static class EnvironmentAudioRules
         {
             case AudioLayer.CoastWeather: return Math.Max(0, coastWeatherLimit);
             case AudioLayer.Night: return 4;
-            case AudioLayer.Coast: case AudioLayer.Primeval: return 3;
-            case AudioLayer.Pebble: return 2;
+            case AudioLayer.Coast: case AudioLayer.Primeval: case AudioLayer.Morning: return 3;
+            case AudioLayer.Pebble: case AudioLayer.Meadow: return 2;
             default: return 1;
         }
     }
@@ -82,14 +84,14 @@ internal static class EnvironmentAudioRules
         switch (family)
         {
             case AudioFamily.Coast: return 4 + Limit(AudioLayer.CoastWeather, coastWeatherLimit);
+            case AudioFamily.Meadow: return Limit(AudioLayer.Meadow, coastWeatherLimit) +
+                Limit(AudioLayer.MeadowCricket, coastWeatherLimit);
             default: return Limit(Layer(family, AudioVariant.Default), coastWeatherLimit);
         }
     }
 
-    internal static bool IsMorningHour(float hour) => hour >= 5f && hour < 13f;
-
     internal static bool Eligible(AudioFamily family, AudioVariant variant, AudioMap map, AudioWeather weather,
-        bool night, bool morning)
+        bool night)
     {
         switch (family)
         {
@@ -97,8 +99,9 @@ internal static class EnvironmentAudioRules
                 variant != AudioVariant.Storm || weather == AudioWeather.Storm);
             case AudioFamily.Lodges: return map == AudioMap.Lodges;
             case AudioFamily.Meadow: return map == AudioMap.Meadow &&
-                (variant != AudioVariant.Rain && variant != AudioVariant.LightRain || weather == AudioWeather.Rain);
-            case AudioFamily.Morning: return map == AudioMap.Forest && morning && weather == AudioWeather.Dry;
+                (variant == AudioVariant.Rain || variant == AudioVariant.LightRain
+                    ? weather == AudioWeather.Rain : weather == AudioWeather.Dry);
+            case AudioFamily.Morning: return map == AudioMap.Forest && weather == AudioWeather.Dry;
             case AudioFamily.Primeval: return (map == AudioMap.Forest || map == AudioMap.Mountain) &&
                 !night && weather == AudioWeather.Dry;
             case AudioFamily.Night: return night && weather == AudioWeather.Dry;
@@ -132,7 +135,7 @@ internal sealed class EnvironmentAudioSchedule
     private readonly Random random;
     private AudioMap previousMap;
     private AudioWeather previousWeather;
-    private bool previousNight, previousMorning, started;
+    private bool previousNight, started;
     private int previousLimit;
     internal readonly List<Entry> Desired = new List<Entry>();
     internal readonly List<Entry> Events = new List<Entry>(2);
@@ -162,26 +165,25 @@ internal sealed class EnvironmentAudioSchedule
         started = false;
     }
 
-    internal void Update(AudioMap map, AudioWeather weather, bool night, float hour, float time,
+    internal void Update(AudioMap map, AudioWeather weather, bool night, float time,
         int coastWeatherLimit, float thunderInterval = 35f)
     {
         Events.Clear();
-        bool morning = EnvironmentAudioRules.IsMorningHour(hour);
+        bool morningEligible = map == AudioMap.Forest && weather == AudioWeather.Dry;
         bool changed = !started || map != previousMap || weather != previousWeather ||
-            night != previousNight || morning != previousMorning || coastWeatherLimit != previousLimit;
+            night != previousNight || coastWeatherLimit != previousLimit;
         if (!started || map != previousMap) next[(int)AudioLayer.CoastEvent] = time + Interval();
         if (!started || (weather != AudioWeather.Dry && previousWeather == AudioWeather.Dry))
             next[(int)AudioLayer.Thunder] = time + NextThunder(thunderInterval);
         Desired.Clear();
-        if (!changed && (map != AudioMap.Meadow || time < next[(int)AudioLayer.Meadow]) &&
-            (map != AudioMap.Forest || !morning || weather != AudioWeather.Dry || time < next[(int)AudioLayer.Morning]) &&
+        if (!changed && (map != AudioMap.Meadow || weather != AudioWeather.Dry || time < next[(int)AudioLayer.Meadow]) &&
+            (!morningEligible || time < next[(int)AudioLayer.Morning]) &&
             (map != AudioMap.Coast || time < next[(int)AudioLayer.CoastEvent]) &&
             (weather == AudioWeather.Dry || time < next[(int)AudioLayer.Thunder]))
         {
             foreach (var selection in selections) Desired.AddRange(selection);
             return;
         }
-        bool meadowWet = map == AudioMap.Meadow && weather != AudioWeather.Dry;
         foreach (var layer in Layers)
         {
             int index = (int)layer;
@@ -192,9 +194,8 @@ internal sealed class EnvironmentAudioSchedule
             if (changed || due)
             {
                 candidates.Clear();
-                if (!meadowWet || layer != AudioLayer.Meadow)
-                    foreach (var entry in pools[index])
-                        if (EnvironmentAudioRules.Eligible(entry.Family, entry.Variant, map, weather, night, morning)) candidates.Add(entry);
+                foreach (var entry in pools[index])
+                    if (EnvironmentAudioRules.Eligible(entry.Family, entry.Variant, map, weather, night)) candidates.Add(entry);
                 if (eventLayer)
                 {
                     if (due)
@@ -230,7 +231,6 @@ internal sealed class EnvironmentAudioSchedule
         previousMap = map;
         previousWeather = weather;
         previousNight = night;
-        previousMorning = morning;
         previousLimit = coastWeatherLimit;
         started = true;
     }

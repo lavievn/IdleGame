@@ -195,7 +195,7 @@ public sealed class WorldMapPanelUI
         artRect.anchoredPosition = new Vector2(Mathf.Clamp(pan.x,-x,x), Mathf.Clamp(pan.y,-y,y));
     }
 
-    // Hit against the exact six-corner region. Selection never auto-travels.
+    // The initial quest marker is an explicit travel action. Other polygons select.
     public bool HandleMapClick(Vector2 screenPoint)
     {
         if (!HitMapSurface(screenPoint)) return false;
@@ -214,6 +214,11 @@ public sealed class WorldMapPanelUI
             (hero.worldMapVisited != null && hero.worldMapVisited.Contains(candidate)) ||
             (current != null && current.Links.Contains(candidate)));
         selectedMapId = id ?? "";
+        if (StoryOrigin.IsOpeningTravelClick(hero, id))
+        {
+            TravelSelected();
+            return true;
+        }
         Refresh();
         return true;
     }
@@ -332,7 +337,9 @@ public sealed class WorldMapPanelUI
                     summary.text = "Đích nhiệm vụ · " + StoryOrigin.MapName(hero, goal) + "\nNhấn Tới ô đã chọn để lên đường.";
                 else if (selectedMapId == current.Id || selectedAccessible || string.IsNullOrEmpty(summary.text))
                     summary.text = (selectedAccessible ? StoryOrigin.MapName(hero, selected) + "\n" : "") +
-                        "Chọn khu vực được đánh dấu để tiếp tục hành trình.";
+                        (StoryOrigin.IsOpeningTravelClick(hero, destination)
+                            ? "Nhấn " + StoryOrigin.MapName(hero, goal) + " được đánh dấu để lên đường."
+                            : "Chọn khu vực được đánh dấu để tiếp tục hành trình.");
             }
             else if (selectedMapId == current.Id || string.IsNullOrEmpty(summary.text))
                 summary.text = "Đích nhiệm vụ · " + StoryOrigin.MapName(hero, goal) + "\n" + goalBlock;

@@ -1,6 +1,18 @@
 {
   "complete": true,
   "lodgesMapIds": [],
+  "familyGains": [
+    { "family": "Coast", "gain": 1.0 },
+    { "family": "Lodges", "gain": 1.0 },
+    { "family": "Meadow", "gain": 1.0 },
+    { "family": "Morning", "gain": 1.0 },
+    { "family": "Night", "gain": 1.0 },
+    { "family": "Pebble", "gain": 1.0 },
+    { "family": "Primeval", "gain": 1.0 },
+    { "family": "Rain", "gain": 1.0 },
+    { "family": "Thunder", "gain": 1.0 },
+    { "family": "WindRain", "gain": 1.0 }
+  ],
   "assets": [
     {
       "clip": "Coast_02",

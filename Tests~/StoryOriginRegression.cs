@@ -7,6 +7,27 @@ partial class MotionRegression
 {
     static void StoryOriginTests()
     {
+        Run("Opening destination click is available only after an explicit herbal choice in the village", () =>
+        {
+            var hero = ScriptableObject.CreateInstance<EntityDataSO>();
+            StoryOrigin.InitializeNewHero(hero);
+            var origin = StoryOrigin.HanVu;
+            Check(WorldMapCatalog.StartNew(hero, origin.Village), "Start in Hàn Vụ");
+            StoryOrigin.Arrive(hero);
+            Check(!StoryOrigin.IsOpeningTravelClick(hero, origin.Forest), "Offer still pending");
+            Check(StoryOrigin.ChooseHerbs(hero, false) && !StoryOrigin.IsOpeningTravelClick(hero, origin.Forest),
+                "Declining leaves ordinary map selection");
+            Check(StoryOrigin.ChooseHerbs(hero, true) && StoryOrigin.IsOpeningTravelClick(hero, origin.Forest) &&
+                !StoryOrigin.IsOpeningTravelClick(hero, "TV-24"), "Only the accepted destination is a direct action");
+            hero.originStory.hideStoryPrompts = true;
+            Check(!StoryOrigin.IsOpeningTravelClick(hero, origin.Forest), "Hidden guide leaves ordinary map selection");
+            hero.originStory.hideStoryPrompts = false;
+            Check(WorldMapCatalog.TryTravel(hero, origin.Forest) && !StoryOrigin.IsOpeningTravelClick(hero, origin.Forest) &&
+                hero.originStory.herbWaves == 0, "Arrival retires the direct action without awarding quest progress");
+            hero.worldMapCleared.Add(origin.Forest);
+            Check(WorldMapCatalog.TryTravel(hero, origin.Village) && !StoryOrigin.IsOpeningTravelClick(hero, origin.Forest),
+                "Returning to the village after a previous visit keeps ordinary selection");
+        });
         Run("Hàn Vụ identity reuses name pools and preserves Human root diversity", () =>
         {
             var genders = new HashSet<GenderType>();

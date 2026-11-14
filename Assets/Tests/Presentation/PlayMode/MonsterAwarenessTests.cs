@@ -112,19 +112,21 @@ namespace IdleGame.Tests.Presentation.PlayMode
             }
         }
 
-        [TestCase(false)] [TestCase(true)]
-        public void SightRequiresCorrectFacingAndInclusive500UnitGroundDistance(bool right)
+        [TestCase(false, 0, 550f)] [TestCase(true, 0, 550f)]
+        [TestCase(false, 1, 800f)] [TestCase(true, 2, 800f)]
+        public void SightRequiresCorrectFacingAndInclusiveModeSpecificDistance(bool right, int mode, float range)
         {
             using (var f = new Fixture())
             {
                 var m = f.Spawn(0); f.Battle(); f.Look(m, right);
+                Set(m, "attackMode", Enum.ToObject(Runtime("TuTienCore.AttackMode"), mode));
                 float sign = right ? 1 : -1;
-                foreach (var p in new[] { new Vector2(-sign * 50, 0), new Vector2(sign * 501, 0), new Vector2(sign * 500, 90) })
+                foreach (var p in new[] { new Vector2(-sign * 50, 0), new Vector2(sign * (range + 1f), 0), new Vector2(sign * range, 90) })
                 {
                     f.Place(f.HeroRect, p.x, p.y); f.Tick(0f);
-                    Assert.That(Get(m, "HasDetectedHero"), Is.EqualTo(false));
+                    Assert.That(Get(m, "HasDetectedHero"), Is.EqualTo(false), $"Mode {mode}, Hero at {p}");
                 }
-                f.Place(f.HeroRect, sign * 500); f.Tick(0f);
+                f.Place(f.HeroRect, sign * range); f.Tick(0f);
                 Assert.That(Get(m, "Awareness").ToString(), Is.EqualTo("Suspicious"));
             }
         }
@@ -142,7 +144,10 @@ namespace IdleGame.Tests.Presentation.PlayMode
                     var color = (Color)Get(label, "color"); Assert.That(color.r, Is.GreaterThan(.9f)); Assert.That(color.g, Is.GreaterThan(.7f));
                     Assert.That((float)Get(label, "fontSize") * f.Canvas.scaleFactor, Is.EqualTo(24f).Within(.01f));
                     Vector2 p = f.Position(m); Call(m, "TickMovement", f.Space, .2f, -37f);
-                    Assert.That(f.Position(m).x, Is.EqualTo(p.x - 37f).Within(.01f), "Suspicious monsters only move with Ground.");
+                    Vector2 moved = f.Position(m) - p - new Vector2(-37f, 0f);
+                    Assert.That(moved.magnitude, Is.EqualTo(50f * .2f).Within(.02f),
+                        "Suspicious monsters still wander at idle speed relative to the ground.");
+                    Assert.That(Get(m, "IsAggressive"), Is.EqualTo(false));
                     Assert.That(Call(m, "CanAttack", f.Hero, f.Space), Is.EqualTo(false));
                 }
                 f.Tick(.49f); Assert.That(Get(a, "IsAggressive"), Is.EqualTo(false));

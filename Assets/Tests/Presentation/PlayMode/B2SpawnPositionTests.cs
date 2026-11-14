@@ -306,10 +306,10 @@ namespace IdleGame.Tests.Presentation.PlayMode
             }
         }
 
-        [TestCase(0,450f)]
-        [TestCase(1,450f)]
-        [TestCase(2,200f)]
-        public void NativeVfxFinish_InjectedLongWalkingStep_IsBoundedWithoutCatchUp(int mode,float speed)
+        [TestCase(0)]
+        [TestCase(1)]
+        [TestCase(2)]
+        public void NativeVfxFinish_InjectedLongWalkingStep_IsBoundedWithoutCatchUp(int mode)
         {
             // Real Unity objects/imported sprites/Canvas/VFX, but injected dt.
             // Synchronous: does NOT reproduce a 280-ms native render/CPU stall.
@@ -334,7 +334,8 @@ namespace IdleGame.Tests.Presentation.PlayMode
                 {
                     var p=Position(f.Space,rect);before=NativeFootScreen(f.Primary);
                     Call(f.Primary,"TickMovement",f.Space,dt);Canvas.ForceUpdateCanvases();
-                    float expected=speed*Mathf.Min(dt,1f/30f);
+                    // Exploration walks at 100 even when stance overrides are set.
+                    float expected=100f*Mathf.Min(dt,1f/30f);
                     Assert.That(p.x-Position(f.Space,rect).x,Is.EqualTo(expected).Within(.002f));
                     Assert.That((float)Get(f.Primary,"MovementDeltaThisFrame"),Is.EqualTo(Mathf.Min(dt,1f/30f)));
                     Assert.That(NativeFootScreen(f.Primary).x-before.x,

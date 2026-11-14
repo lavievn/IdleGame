@@ -205,12 +205,14 @@ namespace IdleGame.Tests.SaveLoad
             Assert.That(RuntimeData.Get<int>(loaded, "addedHealth"), Is.EqualTo(12));
             Assert.That(RuntimeData.Get<int>(loaded, "addedDamage"), Is.EqualTo(2));
             Assert.That(JsonUtility.ToJson(Sword(loaded)), Is.EqualTo(JsonUtility.ToJson(Sword(source))));
-            int[] expectedHealth = { 1554, 410, 608 }; // Base stance HP + 12 points + gear; melee adds 450.
+            // Stored origin 400, six level steps of 16, 12 allocated,
+            // 450 legacy growth, and the active +100 health charm.
+            const int expectedHealth = 400 + 6 * 16 + 12 + 450 + 100;
             int[] expectedAttack = { 31, 21, 25 }; // Base 16 + points 2 + trait 3 + stance-eligible gear.
             for (int mode = 0; mode < 3; mode++)
             {
                 object stance = Enum.ToObject(RuntimeData.Type("TuTienCore.AttackMode"), mode);
-                Assert.That((int)RuntimeData.Call(loaded, "GetCalculatedHealth", stance), Is.EqualTo(expectedHealth[mode]));
+                Assert.That((int)RuntimeData.Call(loaded, "GetCalculatedHealth", stance), Is.EqualTo(expectedHealth));
                 Assert.That((int)RuntimeData.Call(loaded, "GetCalculatedDamage", stance), Is.EqualTo(expectedAttack[mode]));
             }
             Assert.That(JsonUtility.ToJson(source), Is.EqualTo(sourceBefore));

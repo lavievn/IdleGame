@@ -394,6 +394,11 @@ namespace TuTienCore
 
         public static bool HintMap(EntityDataSO hero) => GuidedDestination(hero) != null;
 
+        internal static bool IsOpeningTravelClick(EntityDataSO hero, string destination) =>
+            IsSafe(hero) && hero.originStory.stage == OriginStage.Gather && !string.IsNullOrEmpty(destination) &&
+            (hero.worldMapVisited == null || !hero.worldMapVisited.Contains(destination)) &&
+            GuidedDestination(hero) == destination && WorldMapCatalog.TravelBlockReason(hero, destination) == null;
+
         public static string GuidedDestination(EntityDataSO hero)
         {
             if (Definition(hero) == null || hero.originStory.hideStoryPrompts ||
