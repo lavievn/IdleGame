@@ -69,13 +69,18 @@ internal static class IntegratedPlaytestSmoke
         Check(bedTarget > 0f, "Environment master is audible for the integration fixture");
         var family = Read<EnvironmentAudioPlayer>(weatherAudio, "familyPlayer");
         Check(family != null, "Verified asset manifest owns environment audio");
+        Click(ui, "RC4Diagnostics");
+        yield return null;
+        Check(Read<bool>(ui, "diagnosticsOpen"), "Gameplay button opens the Development diagnostics");
+        Set(ui, "diagnosticsOpen", false); // Closing the IMGUI window requires native pointer input.
         yield return Wait(() => family.ActiveLoops(AudioLayer.Meadow, bedTarget) == 2 &&
-            family.ActiveLoops(AudioLayer.MeadowCricket, bedTarget) == 1,
-            6, "Village has two Meadow loops and one cricket at reduced gain");
+            family.ActiveLoops(AudioLayer.MeadowCricket) == 0,
+            6, "Village at dawn has two Meadow loops and no cricket");
         Set(game, "previewWorldClimate", false);
         for (int i = 0; i < 4; i++) Click(ui, "ClimateTestHour");
         Click(ui, "ClimateTestWeather");
-        yield return Wait(() => family.ActiveLoops(AudioLayer.Night) == 4, 6, "Night button enables the Night audio overlay");
+        yield return Wait(() => family.ActiveLoops(AudioLayer.Night) == 4 &&
+            family.ActiveLoops(AudioLayer.MeadowCricket, bedTarget) == 1, 6, "Dry night enables Night and Meadow cricket");
         for (int i = 0; i < 3; i++) Click(ui, "ClimateTestWeather");
         yield return Wait(() => family.ActiveLoops(AudioLayer.Meadow) == 0 && family.ActiveLoops(AudioLayer.MeadowCricket) == 0 &&
             family.ActiveLoops(AudioLayer.MeadowWeather, wetTarget) == 1 &&
@@ -104,9 +109,9 @@ internal static class IntegratedPlaytestSmoke
             "Dawn forest storm has global Rain and no Morning");
         Click(ui, "ClimateTestWeather");
         Click(ui, "ClimateTestWeather");
-        yield return Wait(() => family.ActiveLoops(AudioLayer.Morning) == 3 && family.ActiveLoops(AudioLayer.Rain) == 0,
-            6, "Clear dawn forest plays three Morning sources");
-        pass("Cô Hồn Lâm keeps Morning silent in heavy rain and plays three loops at clear dawn.");
+        yield return Wait(() => family.ActiveLoops(AudioLayer.Morning) == 1 && family.ActiveLoops(AudioLayer.Rain) == 0,
+            6, "Clear dawn forest plays one Morning source");
+        pass("Cô Hồn Lâm keeps Morning silent in heavy rain and plays one loop at clear dawn.");
         Clear(game, combat);
         ui.SetPaused(false);
         var modifier = new CombatStatModifier { sourceId = "owned:movement-probe", stat = CombatStatId.MovementSpeed, flat = 900f };

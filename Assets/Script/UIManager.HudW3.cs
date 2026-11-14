@@ -228,7 +228,11 @@ public partial class UIManager
     {
         climateTestPanel = (RectTransform)new GameObject("ClimateTestControls", typeof(RectTransform)).transform;
         climateTestPanel.SetParent(w3.Root, false);
-        PlaceUI(climateTestPanel, Vector2.zero, Vector2.zero, new Vector2(8f, 38f), new Vector2(120f, 54f));
+        PlaceUI(climateTestPanel, Vector2.zero, Vector2.zero, new Vector2(8f, 38f), new Vector2(120f, 82f));
+        var diagnostics = SmallButton(climateTestPanel, "RC4Diagnostics", "Chẩn đoán · F8",
+            Vector2.zero, Vector2.zero, new Vector2(0f, 56f), new Vector2(120f, 26f),
+            () => diagnosticsOpen = !diagnosticsOpen);
+        LayoutHudButton(diagnostics, 12f);
         var hour = SmallButton(climateTestPanel, "ClimateTestHour", ClimateTestHourLabels[0],
             Vector2.zero, Vector2.zero, new Vector2(0f, 28f), new Vector2(120f, 26f),
             () => { hudGame?.CycleClimateTestHour(); TickClimateTestButtons(); });

@@ -762,16 +762,24 @@ public partial class CombatManager : MonoBehaviour
         if (gameManager!=null)
             gameManager.RecordDamage(trace.Describe(1f,1,trace.elementDamage) +
                 (damage != trace.elementDamage ? "\n0.0.51 — Sau bổ trợ và phòng ngự: " + damage : ""));
-        DealDamageFromHero(target,damage,attacker,impactSourceX);
+        DealDamageFromHero(target,damage,attacker,impactSourceX,damageMode);
     }
     private void DealDamageToMonster(ActiveMonsterInfo target,int finalDmg,float? impactSourceX=null)
     {
         DealDamageFromHero(target,finalDmg,primaryHeroState,impactSourceX);
     }
     private long lastImpactSoundRelease = -1;
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+    private EntityDataSO lootDiagnosticOwner;
+    private string lootDiagnostic;
+    internal string LootDiagnostic => ReferenceEquals(lootDiagnosticOwner, LootRecipient) ? lootDiagnostic : null;
+    private EntityDataSO hitDiagnosticOwner;
+    private string hitDiagnostic;
+    internal string HitDiagnostic => ReferenceEquals(hitDiagnosticOwner, LootRecipient) ? hitDiagnostic : null;
+#endif
 
     private void DealDamageFromHero(ActiveMonsterInfo target,int damage,
-        HeroCombatState attacker,float? impactSourceX=null)
+        HeroCombatState attacker,float? impactSourceX=null,AttackMode? sourceMode=null)
     {
         if (target==null || !activeMonsters.Contains(target) || target.controller==null ||
             !target.controller.IsAlive || !IsRegistered(attacker) ||
@@ -785,6 +793,12 @@ public partial class CombatManager : MonoBehaviour
         }
         bool surprise = target!=gateTarget && !target.controller.HasDetectedHero;
         if (surprise) damage = (int)System.Math.Min(int.MaxValue, (long)damage * 2L);
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        hitDiagnosticOwner = LootRecipient;
+        AttackMode resolvedMode = sourceMode ?? attacker.SelectedMode;
+        hitDiagnostic = $"{resolvedMode} · {(resolvedMode == AttackMode.RangedMagic ? "Magical" : "Physical")} · " +
+            $"{target.data?.entityName ?? "target"} · {damage} final{(surprise ? " · ambush ×2" : "")}";
+#endif
         // Resolve at the accepted impact, after defense. A stale/missed shot
         // cannot consume surprise or wake this encounter; a lethal ambush still
         // alerts the other living members before the victim leaves the pool.
@@ -862,6 +876,11 @@ public partial class CombatManager : MonoBehaviour
             :lootRewards.CompleteProduction(target.lootKey,LootRecipient,
                 gameManager!=null?gameManager.ProductionLoot:null,out production,out lootError);
         if(!testProfile)lootItem=production.Equipment.instanceId;
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        lootDiagnosticOwner = LootRecipient;
+        lootDiagnostic = testProfile ? $"Fixture {lootOutcome} · {lootItem}" :
+            $"Material {production.MaterialOutcome} x{production.Material.quantity} · Gear {production.EquipmentOutcome} {production.Equipment.id}";
+#endif
         if((testProfile && lootOutcome==CombatLootRewards.Outcome.Awarded) ||
             (!testProfile && production.EquipmentOutcome==CombatLootRewards.Outcome.Awarded))
         {

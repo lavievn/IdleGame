@@ -223,7 +223,7 @@ internal sealed class EnvironmentAudioSchedule
             night != previousNight || coastWeatherLimit != previousLimit || previousMorningLimit != morningLimit ||
             !ReferenceEquals(previousMix, mix);
         if (!started || map != previousMap) next[(int)AudioLayer.CoastEvent] = time + Interval();
-        if (!started || weather != previousWeather)
+        if (!started || weather != previousWeather || !ReferenceEquals(previousMix, mix))
             next[(int)AudioLayer.Thunder] = time + NextThunder(thunderInterval);
         Desired.Clear();
         if (!changed && (map != AudioMap.Meadow || weather != AudioWeather.Dry || time < next[(int)AudioLayer.Meadow]) &&

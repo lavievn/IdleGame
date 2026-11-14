@@ -352,6 +352,9 @@ public partial class GameManager : MonoBehaviour
     public string FullEventHistory => fullEventHistory.Count==0 ? "Chưa có sự kiện." : string.Join("\n",fullEventHistory.ToArray());
     private readonly List<string> damageHistory = new List<string>();
     public string[] DamageHistory => damageHistory.ToArray();
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+    internal string LatestDamageDiagnostic => damageHistory.Count == 0 ? "—" : damageHistory[0];
+#endif
     public void RecordDamage(string detail)
     {
         damageHistory.Insert(0, detail);

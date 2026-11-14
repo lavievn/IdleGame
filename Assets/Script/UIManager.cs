@@ -166,6 +166,9 @@ public partial class UIManager : MonoBehaviour
 
     public bool CheckInteractableHover(Vector2 mousePos)
     {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        if (HitDiagnostics(mousePos)) return true;
+#endif
         if (worldMapUI != null && worldMapUI.HitMapSurface(mousePos)) return true;
         if(martialButton!=null && martialButton.gameObject.activeInHierarchy && RectTransformUtility.RectangleContainsScreenPoint(martialButton,mousePos,null))return true;
         if(!worldMapButtonAvailable && worldMapButton!=null && worldMapButton.gameObject.activeInHierarchy && RectTransformUtility.RectangleContainsScreenPoint(worldMapButton,mousePos,null))return true;
@@ -222,6 +225,9 @@ public partial class UIManager : MonoBehaviour
     }
     public void HandleMouseClick(Vector2 mousePos)
     {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        if (HitDiagnostics(mousePos)) return;
+#endif
         // Buttons drawn above the map (Close, route list, confirmation) win
         // over hex hit tests when their rectangles overlap the map artwork.
         var hit = HitControl(mousePos);
@@ -231,6 +237,9 @@ public partial class UIManager : MonoBehaviour
     }
     public void HandlePointerClick(Vector2 press, Vector2 release)
     {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        if (HitDiagnostics(press) || HitDiagnostics(release)) return;
+#endif
         var hit = HitControl(press);
         if (TryBeginWorldMapPointer(press))
         {
@@ -242,6 +251,9 @@ public partial class UIManager : MonoBehaviour
 
     internal bool TryBeginWorldMapPointer(Vector2 point)
     {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        if (HitDiagnostics(point)) return false;
+#endif
         if (GameForUI()?.HasPendingConfirmation == true || worldMapUI == null || !worldMapUI.HitMapSurface(point))
             return false;
         var hit = HitControl(point);
@@ -288,6 +300,9 @@ public partial class UIManager : MonoBehaviour
     }
     public bool IsTextInputAt(Vector2 point)
     {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        if (HitDiagnostics(point)) return true;
+#endif
         return devUI != null && devUI.IsOpen && devUI.InputAt(point);
     }
 

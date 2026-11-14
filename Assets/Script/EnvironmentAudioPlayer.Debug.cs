@@ -213,11 +213,12 @@ internal sealed partial class EnvironmentAudioPlayer
             if (voice.Entry == null) continue;
             var entry = voice.Entry;
             bool eligible = EnvironmentAudioRules.Eligible(entry.Family, entry.Variant, category, weather, debugNight);
+            string reason = AuditionGain(entry) == 0f ? "mix silenced" :
+                voice.Desired ? "scheduled" : eligible ? "rotating/limit" : "map/time/weather";
             GUILayout.Label($"{entry.Name}.ogg · {entry.Family}/{entry.Variant} · {(voice.Event ? "one-shot" : "loop")} · " +
                 $"{(voice.Source.isPlaying ? "playing" : "stopped")} · clip {ClipGain(entry.Name):0.00} · " +
                 $"family {DebugFamilyGain(entry.Family):0.00} · mix {rainMix?.Gain(entry.Layer) ?? 1f:0.00} · " +
-                $"volume {voice.Source.volume:0.000} · {(AuditionGain(entry) == 0f ? "mix silenced" :
-                    voice.Desired ? "scheduled" : eligible ? "rotating/limit" : "map/time/weather")}");
+                $"volume {voice.Source.volume:0.000} · {reason}");
         }
         if (audition != null && audition.clip != null)
             GUILayout.Label($"Audition · {audition.clip.name}.ogg · {(audition.isPlaying ? "playing" : "stopped")} · volume {audition.volume:0.000}");

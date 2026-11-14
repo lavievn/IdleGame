@@ -24,13 +24,15 @@ internal sealed class WorldWeatherAudio
         float environment = AudioVolumeSettings.Get(GameAudioChannel.Environment);
         bool village = safeVillage || (settings.villageMapIds != null && Array.IndexOf(settings.villageMapIds, map) >= 0);
         if (familyPlayer == null) return;
+        AudioWeather? previewWeather = null;
+        bool? previewNight = null;
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        previewWeather = familyPlayer.PreviewWeather;
+        previewNight = familyPlayer.PreviewNight;
+#endif
         familyPlayer.Update(host, true, running, terrain, map, mapNumber, village, frame,
             Mathf.Clamp01(settings.environmentVolume) * environment, Mathf.Clamp01(settings.weatherVolume) * environment,
-            Time.unscaledDeltaTime, settings
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-            , familyPlayer.PreviewWeather, familyPlayer.PreviewNight
-#endif
-        );
+            Time.unscaledDeltaTime, settings, previewWeather, previewNight);
     }
 
     internal void Stop() => familyPlayer?.Stop();
