@@ -29,6 +29,7 @@ internal sealed partial class EnvironmentAudioPlayer
     private string status;
     private string[] selectableClips;
     private static readonly string[] Families = Enum.GetNames(typeof(AudioFamily));
+    private static readonly AudioLayer[] DebugLayers = (AudioLayer[])Enum.GetValues(typeof(AudioLayer));
     internal AudioWeather? PreviewWeather { get; private set; }
     internal bool? PreviewNight { get; private set; }
 
@@ -147,7 +148,9 @@ internal sealed partial class EnvironmentAudioPlayer
         var entry = voice?.Entry ?? throw new InvalidOperationException("Expected a scheduled Morning source.");
         float timer = schedule.SecondsUntil(AudioLayer.Morning, elapsed);
         muted.Add(entry.Name);
-        if (AuditionGain(entry) != 0f || !voice.Source.isPlaying ||
+        if (schedule.ExplainLayer(AudioLayer.Morning) != null ||
+            schedule.ExplainLayer(AudioLayer.Rain) != "excluded by map, time or weather" ||
+            AuditionGain(entry) != 0f || !voice.Source.isPlaying ||
             schedule.SecondsUntil(AudioLayer.Morning, elapsed) != timer)
             throw new InvalidOperationException("Mute must keep the voice and its schedule.");
         muted.Clear();
@@ -206,8 +209,8 @@ internal sealed partial class EnvironmentAudioPlayer
         if (GUILayout.Button("Import JSON")) SaveOrLoadMix(false);
         GUILayout.EndHorizontal();
         if (!string.IsNullOrEmpty(status)) GUILayout.Label(status);
-        GUILayout.Label($"Rotation seconds · Morning {schedule.SecondsUntil(AudioLayer.Morning, elapsed):0} · " +
-            $"Meadow {schedule.SecondsUntil(AudioLayer.Meadow, elapsed):0}");
+        foreach (AudioLayer layer in DebugLayers)
+            GUILayout.Label($"{layer} · {DescribeDebugLayer(layer)}");
         foreach (var voice in voices)
         {
             if (voice.Entry == null) continue;
@@ -223,6 +226,24 @@ internal sealed partial class EnvironmentAudioPlayer
         if (audition != null && audition.clip != null)
             GUILayout.Label($"Audition · {audition.clip.name}.ogg · {(audition.isPlaying ? "playing" : "stopped")} · volume {audition.volume:0.000}");
         GUILayout.EndScrollView();
+    }
+
+    private string DescribeDebugLayer(AudioLayer layer)
+    {
+        int playing = 0, audible = 0;
+        foreach (Voice voice in voices)
+        {
+            if (voice.Entry?.Layer != layer || !voice.Source.isPlaying) continue;
+            playing++;
+            if (voice.Source.volume > 0f) audible++;
+        }
+        string reason = schedule.ExplainLayer(layer);
+        if (reason != null) return playing == 0 ? reason : $"{reason} · {playing} fading";
+        bool eventLayer = layer == AudioLayer.CoastEvent || layer == AudioLayer.Thunder;
+        bool timed = eventLayer || layer == AudioLayer.Morning || layer == AudioLayer.Meadow;
+        string state = playing > 0 ? $"{playing} playing, {audible} with gain" :
+            eventLayer ? "waiting for event" : "waiting for available voice";
+        return timed ? $"{state} · next {schedule.SecondsUntil(layer, elapsed):0.0}s" : state;
     }
 
     private void DrawMuteSolo(string id, ref string solo)

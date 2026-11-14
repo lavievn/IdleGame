@@ -213,6 +213,22 @@ internal sealed class EnvironmentAudioSchedule
 
     internal float SecondsUntil(AudioLayer layer, float time) => Math.Max(0f, next[(int)layer] - time);
 
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+    internal string ExplainLayer(AudioLayer layer)
+    {
+        var pool = pools[(int)layer];
+        if (pool.Count == 0) return "no verified clips";
+        var eligible = pool.FindAll(entry => EnvironmentAudioRules.Eligible(entry.Family, entry.Variant,
+            previousMap, previousWeather, previousNight));
+        if (eligible.Count == 0) return "excluded by map, time or weather";
+        if (EnvironmentAudioRules.Limit(layer, previousLimit, previousMorningLimit) == 0 ||
+            previousMix?.Limit(layer) == 0) return "voice limit is zero";
+        if (previousMix != null && !eligible.Exists(entry => previousMix.Allows(layer, entry.Name)))
+            return "excluded by profile clip list";
+        return null;
+    }
+#endif
+
     internal void Update(AudioMap map, AudioWeather weather, bool night, float time,
         int coastWeatherLimit, float thunderInterval = 35f, int morningLimit = 1,
         float morningSeconds = 120f, EnvironmentRainMix mix = null)
