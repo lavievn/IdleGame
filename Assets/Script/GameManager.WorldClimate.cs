@@ -18,6 +18,7 @@ public partial class GameManager
     private static readonly float[] ClimateTestHours = { 6.5f, 12f, 18.5f, 22f };
     internal int ClimateTestHour { get; private set; }
     internal int ClimateTestWeather { get; private set; }
+    internal EnvironmentAudioPlayer AudioDebugPlayer => weatherAudio.DebugPlayer;
     internal void CycleClimateTestHour() => ClimateTestHour = (ClimateTestHour + 1) % (ClimateTestHours.Length + 1);
     internal void CycleClimateTestWeather() => ClimateTestWeather = (ClimateTestWeather + 1) % ((int)WorldWeather.HeavyRain + 2);
 #endif

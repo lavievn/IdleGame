@@ -45,5 +45,19 @@ public sealed class WorldWeatherAudioSettings
     [Range(.1f, 8f)] public float fadeSeconds = 2f;
     [Min(0)] public int coastWeatherLoopLimit = 2;
     [Min(1f)] public float thunderInterval = 35f;
+    [Range(0, 3)] public int morningLoopLimit = 1;
+    [Min(1f)] public float morningRotationSeconds = 120f;
+    [Range(.1f, 8f)] public float morningFadeSeconds = 2f;
+    [Range(.5f, 1f)] public float stormAudioThreshold = .85f;
+    [Header("RC3.1 TEST_PROFILE")]
+    public EnvironmentRainMix lightRainAudio = new EnvironmentRainMix {
+        rainGain = .45f, windGain = .18f, pebbleGain = .45f, thunderGain = .2f,
+        coastGain = .65f, pebbleVoices = 1, thunderVoices = 0, thunderSeconds = 100f };
+    public EnvironmentRainMix heavyRainAudio = new EnvironmentRainMix {
+        rainGain = .8f, windGain = .65f, pebbleGain = .75f, thunderGain = .45f,
+        coastGain = .85f, thunderSeconds = 65f };
+    public EnvironmentRainMix stormAudio = new EnvironmentRainMix {
+        rainGain = 1f, windGain = 1f, pebbleGain = 1f, thunderGain = .9f,
+        coastGain = 1f, thunderSeconds = 35f };
     public string[] villageMapIds = Array.Empty<string>();
 }

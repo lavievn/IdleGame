@@ -1,0 +1,52 @@
+section,id,label,value,status,source,slot,weapon,main_stat,secondary_stat,level_requirement,cultivation_requirement,rarity,icon,drop_eligibility,forge_compatibility
+Player,base_hp,New Hero,1000,CURRENT_RUNTIME_VALUE,CombatBalance.cs,,,,,,,,,,
+Player,base_atk,Level 1,10,CURRENT_RUNTIME_VALUE,CombatBalance.cs,,,,,,,,,,
+Player,base_matk,Before modifiers,0,CURRENT_RUNTIME_VALUE,WeaponBasicAttack.cs,,,,,,,,,,
+Player,hp_growth,Base HP per level,16,CURRENT_RUNTIME_VALUE,CombatBalance.cs,,,,,,,,,,
+Player,melee_growth,Additional HP on level-up,50–100,CURRENT_RUNTIME_VALUE,EntityDataSO.cs,,,,,,,,,,
+Player,attack_growth,ATK per level,1,CURRENT_RUNTIME_VALUE,CombatBalance.cs,,,,,,,,,,
+Player,attack_speed,Level 1 and per level,1 + .005 per level capped at +.25,CURRENT_RUNTIME_VALUE,CombatBalance.cs,,,,,,,,,,
+Player,physical_defense,Armor half reduction,100,EXISTING_CONFIG_VALUE,MainGame.unity,,,,,,,,,,
+Player,magical_defense,MagicResistance half reduction,100,EXISTING_CONFIG_VALUE,MainGame.unity,,,,,,,,,,
+Player,class,Freedom of weapon and skills,No fixed class,APPROVED_DESIGN,Narrative baseline,,,,,,,,,,
+Equipment,sample:skill-sword,Kiếm Đâm · mẫu,10,EXISTING_CONFIG_VALUE,EquipmentFoundation.cs,Weapon,Sword,Attack,UNDEFINED,UNDEFINED,UNDEFINED,Hoàng sample,UNDEFINED,Excluded,Prototype normal schema
+Equipment,sample:skill-bow,Cung Liên Hoàn · mẫu,10,EXISTING_CONFIG_VALUE,EquipmentFoundation.cs,Weapon,Bow,Attack,UNDEFINED,UNDEFINED,UNDEFINED,Hoàng sample,UNDEFINED,Excluded,Prototype normal schema
+Equipment,sample:skill-staff,Trượng Hỏa Cầu · mẫu,10,EXISTING_CONFIG_VALUE,EquipmentFoundation.cs,Weapon,Staff,MagicalAttack,UNDEFINED,UNDEFINED,UNDEFINED,Hoàng sample,UNDEFINED,Excluded,Prototype normal schema
+Equipment,sample:iron_sword,Thiết Kiếm,4 for loot instance,CURRENT_RUNTIME_VALUE,MainGame.unity,Weapon,Sword,Attack,UNDEFINED,UNDEFINED,UNDEFINED,Common drop,UNDEFINED,MainGame,Yes
+Equipment,sample:basic_bow,Cung mẫu,4 for loot instance,CURRENT_RUNTIME_VALUE,MainGame.unity,Weapon,Bow,Attack,UNDEFINED,UNDEFINED,UNDEFINED,Common drop,UNDEFINED,MainGame,Yes
+Equipment,sample:basic_staff,Pháp trượng mẫu,10,EXISTING_CONFIG_VALUE,EquipmentFoundation.cs,Weapon,Staff,MagicalAttack,UNDEFINED,UNDEFINED,UNDEFINED,Common prototype,UNDEFINED,Excluded,Prototype normal schema
+Equipment,base:head,Mũ vải,10,EXISTING_CONFIG_VALUE,EquipmentFoundation.cs,Head,UNDEFINED,Armor,UNDEFINED,UNDEFINED,UNDEFINED,UNDEFINED,UNDEFINED,Excluded,Prototype normal schema
+Equipment,base:chest,Áo vải,12,EXISTING_CONFIG_VALUE,EquipmentFoundation.cs,Chest,UNDEFINED,Armor,UNDEFINED,UNDEFINED,UNDEFINED,Common sample,UNDEFINED,Excluded,Prototype normal schema
+Equipment,sample:mana-charm,Phù Tụ Linh · mẫu DEV,25,EXISTING_CONFIG_VALUE,EquipmentFoundation.cs,Artifact,UNDEFINED,MaxMana,UNDEFINED,UNDEFINED,UNDEFINED,Common sample,UNDEFINED,Excluded,Prototype normal schema
+Equipment,base:boots,Giày vải,10,EXISTING_CONFIG_VALUE,EquipmentFoundation.cs,Boots,UNDEFINED,MovementSpeed,UNDEFINED,UNDEFINED,UNDEFINED,UNDEFINED,UNDEFINED,Excluded,Prototype normal schema
+Equipment,base:artifact,Pháp bảo,10,EXISTING_CONFIG_VALUE,EquipmentFoundation.cs,Artifact,UNDEFINED,MaxHealth,UNDEFINED,UNDEFINED,UNDEFINED,UNDEFINED,UNDEFINED,Excluded,Prototype normal schema
+Equipment,base:necklace,Dây chuyền,10,EXISTING_CONFIG_VALUE,EquipmentFoundation.cs,Necklace,UNDEFINED,MagicResistance,UNDEFINED,UNDEFINED,UNDEFINED,UNDEFINED,UNDEFINED,Excluded,Prototype normal schema
+Equipment,base:ring,Nhẫn,10,EXISTING_CONFIG_VALUE,EquipmentFoundation.cs,RingLeft / RingRight,UNDEFINED,Attack,UNDEFINED,UNDEFINED,UNDEFINED,UNDEFINED,UNDEFINED,Excluded,Prototype normal schema
+Equipment legacy,sample:health_charm,Hộ phù Sinh Mệnh,100,CURRENT_RUNTIME_VALUE,EquipmentInventory.cs,Artifact,UNDEFINED,MaxHealth,UNDEFINED,UNDEFINED,UNDEFINED,UNDEFINED,UNDEFINED,Excluded,No
+Equipment legacy,sample:attack_charm,Hộ phù Công Kích,20,CURRENT_RUNTIME_VALUE,EquipmentInventory.cs,Artifact,UNDEFINED,Attack,UNDEFINED,UNDEFINED,UNDEFINED,UNDEFINED,UNDEFINED,Excluded,No
+Weapon,Unarmed,Physical melee,1.4s / width×.035,CURRENT_RUNTIME_VALUE,CombatBalance.cs / MainGame.unity,,,,,,,,,,
+Weapon,Sword,Physical melee,1.4s / width×.035,CURRENT_RUNTIME_VALUE,CombatBalance.cs / MainGame.unity,,,,,,,,,,
+Weapon,Bow,Physical ranged,1.4s/1.5 / width×.36,CURRENT_RUNTIME_VALUE,CombatBalance.cs / MainGame.unity,,,,,,,,,,
+Weapon,Staff,Magical ranged,1.4s / width×.42,CURRENT_RUNTIME_VALUE,CombatBalance.cs / MainGame.unity,,,,,,,,,,
+Skill,combat:kiem-dam,Đâm kiếm,Sword | .5s cast | 5s CD | 0 Mana,CURRENT_RUNTIME_VALUE,WeaponSkillRegistry.cs,,,,,,,,,,
+Skill,combat:lien-hoan-tien,Liên Hoàn Tiễn,Bow | .5s cast | 5s CD | 0 Mana | 3 projectiles,CURRENT_RUNTIME_VALUE,WeaponSkillRegistry.cs,,,,,,,,,,
+Skill,combat:hoa-cau-thuat,Hỏa Cầu Thuật,Staff | 1s cast | 5s CD | 5 Mana,CURRENT_RUNTIME_VALUE,WeaponSkillRegistry.cs,,,,,,,,,,
+Mastery,weapon,Stable weapon family ID,Counter per accepted use,CURRENT_RUNTIME_VALUE,MasteryFoundation.cs,,,,,,,,,,
+Mastery,skill,Stable skill registry ID,Counter per accepted execution,CURRENT_RUNTIME_VALUE,MasteryFoundation.cs,,,,,,,,,,
+Mastery,future_schema,Threshold and modifier reward,Stable ID / threshold / compatibility / reward,PROPOSED_VALUE,MASTERY_ELEMENTAL_READINESS.md,,,,,,,,,,
+Mastery,bonus,Damage and speed,UNDEFINED,UNDEFINED,RC4_DESIGN_DECISIONS.md,,,,,,,,,,
+Enemy,hp,Level 1 and per level,55 + 6 per level,CURRENT_RUNTIME_VALUE,CombatBalance.cs,,,,,,,,,,
+Enemy,attack,Level 1 and per level,6 + ceil(.6 per level),CURRENT_RUNTIME_VALUE,CombatBalance.cs,,,,,,,,,,
+Enemy,speed,Base attack speed,1 + .005 per level capped at +.25,CURRENT_RUNTIME_VALUE,CombatBalance.cs,,,,,,,,,,
+Enemy,interval,Base melee/physical ranged/magic,1.4/.7/2 seconds,CURRENT_RUNTIME_VALUE,CombatBalance.cs,,,,,,,,,,
+Element,counters,Current cycle,Kim→Mộc→Thổ→Thủy→Hỏa→Kim,CURRENT_RUNTIME_VALUE,TuTienEnums.cs,,,,,,,,,,
+Element,neutral,Outside cycle cases,1.0,CURRENT_RUNTIME_VALUE,TuTienEnums.cs,,,,,,,,,,
+Element,affinity,Future compatibility,UNDEFINED,UNDEFINED,RC4_DESIGN_DECISIONS.md,,,,,,,,,,
+Loot,material:refinement,Independent material stream,60% | quantity 1–2,EXISTING_CONFIG_VALUE,MainGame.unity,,,,,,,,,,
+Loot,common_gear,Independent gear stream,8% | uniform Sword or Bow,EXISTING_CONFIG_VALUE,MainGame.unity,,,,,,,,,,
+Forge,regular,Material cost,1,CURRENT_RUNTIME_VALUE,EquipmentRefinement.cs,,,,,,,,,,
+Forge,special,Material cost,10,CURRENT_RUNTIME_VALUE,EquipmentRefinement.cs,,,,,,,,,,
+Forge,promotion,Prototype normal attempts,3/6/12/24/48,CURRENT_RUNTIME_VALUE,EquipmentRefinement.cs,,,,,,,,,,
+Decision,equipment,Minimum level and cultivation,UNDEFINED,UNDEFINED,RC4_DESIGN_DECISIONS.md,,,,,,,,,,
+Decision,element,Final affinity and counter balance,UNDEFINED,UNDEFINED,RC4_DESIGN_DECISIONS.md,,,,,,,,,,
+Decision,blood,Kim Đan pathway and active persistence,UNDEFINED,UNDEFINED,RC4_DESIGN_DECISIONS.md,,,,,,,,,,

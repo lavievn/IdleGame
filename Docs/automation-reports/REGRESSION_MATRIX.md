@@ -14,3 +14,29 @@ Baseline RC2 và PR #28 có cùng danh sách lỗi, lấy từ XML Edit Mode và
 **Dual Progression.** Character UI lấy tốc độ nguồn Qi theo dải hiện tại từ binding. Menu hệ thống hoặc xác nhận thoát giữ đồng hồ đứng, bao gồm lúc timeScale vẫn chạy. Các hành vi EXP, Thiên Kiếp, Mastery và checkpoint Save dùng authority cũ. Không đổi cân bằng Thiên Kiếp.
 
 Log chạy ban đầu `D:\IdleGame\Logs\RC3-unity-EditMode.xml` và `RC3-unity-PlayMode.xml`. Lượt giữa Edit 51 PASS, Play 132 PASS / 2 FAIL. Hai lỗi còn lại do fixture tầm nhìn vẫn random mode. Lượt cuối và Windows nằm trong [báo cáo tích hợp](RC3_INTEGRATION_REPORT.md).
+
+## RC4 — So sánh với RC3
+
+| Kiểm tra | RC3 | RC4 | Bằng chứng |
+|---|---:|---:|---|
+| Unity Edit Mode | 51/51 | 51/51 | `RC4-final-unity-EditMode.xml` |
+| Unity Play Mode | 136/136 | 136/136 | `RC4-final-unity-PlayMode.xml` |
+| MainGame tích hợp | — | 10/10 nhóm | `Unity-MainGameIntegrated-20261115-021722.log` |
+| Windows Player tự động | 6/6 | 6/6 | `RC4-final-Windows-*.log` |
+| Scheduler âm thanh | — | 47/47 | `RC4-AudioDomain.log` |
+| EXP, Qi và Mastery | — | 58/58 | `RC4-ExpBottleneckMastery.log` |
+| Trang bị, loot và Forge | — | 19/19 | `RC4-ItemLootFoundation.log` |
+| Hàn Vụ N3 / N4 | — | 31/31 và 36/36 | `RC4-HanVuN3.log`, `RC4-HanVuN4.log` |
+
+Các bộ domain kiểm tra logic và dữ liệu. Unity Edit/Play Mode và Windows Player chạy native Unity. Kiểm tra giao diện bằng handler không thay thế chuột/phím thật. Các log ở `D:\IdleGame\Logs`.
+
+| Windows fixture | Kết quả | Phạm vi |
+|---|---|---|
+| HanVuOrigin | PASS | Âm thanh qua AudioSource thật, Morning, Cricket, vòng đời nguồn. Chẩn đoán Mute/Solo, lý do layer và JSON round-trip trong bộ nhớ. Thoại, tự do Travel, N3/N4, Retry, tương thích Save. |
+| Integrated | PASS | Hero, climate, Rain Maker, map và HUD, Save/Load, EXP Reserve và sấm riêng Thiên Quan. |
+| Playable015 | PASS | Qi bằng đồng hồ game, bốn kiểu vũ khí, thắng/thua Thiên Kiếp và checkpoint Active. |
+| Playable015Replay | PASS | Khôi phục trong tiến trình khác và chặn áp dụng hai lần. |
+| Playable016 | PASS | Ba kỹ năng, Staff basic, cooldown, Mana, đổi đồ, Save và Retry. |
+| Development017 | PASS | Loot thực, Equip, Inventory, Forge, giữ item instance và cập nhật stats. |
+
+Các Player hoàn thành với mã 0. Fixture có cảnh báo ComputeBuffer khi đóng, video H.264 và một số lượt ảnh tự động không được chụp, nên không dùng log đó để nghiệm thu hình ảnh. Kiểm F8 để thao tác gain/preview và xuất/nhập file thật bằng checklist bàn giao.
